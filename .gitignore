@@ -1,0 +1,23 @@
+.env
+
+# Dados
+data/bronze/
+data/silver/
+data/gold/
+*.duckdb
+*.duckdb.wal
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Sistema e editores
+.DS_Store
+.vscode/
+.idea/
+
+# Streamlit
+.streamlit/secrets.toml

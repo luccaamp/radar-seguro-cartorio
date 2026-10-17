@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radar Seguro-Garantia Cartórios</title>
+<style>
+:root{--bg:#ffffff;--fg:#1f2328;--muted:#59636e;--border:#d1d9e0;--code:#f6f8fa;--accent:#0b5cad;--note:#eef5fc}
+@media (prefers-color-scheme: dark){:root{--bg:#0f1115;--fg:#e6e8eb;--muted:#9aa4af;--border:#30363d;--code:#161b22;--accent:#6cb6ff;--note:#13233a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+main{max-width:920px;margin:0 auto;padding:40px 16px 80px}
+h1{font-size:2rem;line-height:1.25;margin:0 0 24px}
+h2{font-size:1.45rem;margin:48px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+h3{font-size:1.15rem;margin:28px 0 8px}
+p,li{margin:8px 0}
+blockquote{margin:0 0 24px;padding:12px 16px;background:var(--note);border-left:4px solid var(--accent);border-radius:6px}
+blockquote p{margin:4px 0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;background:var(--code);padding:2px 5px;border-radius:4px}
+pre{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow-x:auto;line-height:1.45}
+pre code{background:none;padding:0;font-size:.85em}
+.table-wrap{overflow-x:auto;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:.92em}
+th,td{border:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--code)}
+</style>
+</head>
+<body>
+<main>
+<h1>Radar Seguro-Garantia Cartórios: Especificação do Projeto</h1>
+<blockquote>
+<p>Documento para entregar a uma IA de código (ex.: Claude Code) como briefing do projeto.
+Leia tudo antes de escrever código. Siga as fases em ordem e não pule os critérios de aceite.</p>
+</blockquote>
+<h2>0. Contexto e objetivo</h2>
+<p><strong>Problema de negócio.</strong> O Provimento CNJ 227/2026 foi publicado em 11/06/2026 e está em vigor desde 10/08/2026. Ele obriga os delegatários de cartórios a:</p>
+<ul>
+<li>declarar todo ano o passivo trabalhista, com base em 31/12 e entrega até 31/03;</li>
+<li>demonstrar solvência com bens livres de ônus.</li>
+</ul>
+<p>Se houver déficit de cobertura, o delegatário tem 60 dias para regularizar ou apresentar <strong>fiança bancária ou seguro-garantia</strong> no valor descoberto.</p>
+<p>Ficam fora da norma:</p>
+<ul>
+<li>as serventias da <strong>Classe I do Provimento 213/2026</strong>, alterado pelo Provimento 243/2026;</li>
+<li>as serventias <strong>sob interinidade</strong>.</li>
+</ul>
+<p>A ANOREG/BR ajuizou a <strong>ADI 8015</strong> contra os <strong>arts. 8º a 17</strong>, que são justamente os que criam a exigência de garantia. O relator é o Min. Flávio Dino, e a ação foi distribuída em setembro de 2026.</p>
+<p><strong>Objetivo do projeto.</strong> Três coisas, todas só com dados públicos:</p>
+<ul>
+<li>estimar o tamanho do mercado potencial de seguro-garantia criado por essa norma;</li>
+<li>acompanhar a evolução regulatória automaticamente;</li>
+<li>responder perguntas em linguagem natural, com respostas rastreáveis.</li>
+</ul>
+<p><strong>Uso final.</strong> Projeto de portfólio para entrevista: 5 minutos, 5 slides e demo ao vivo. Isso define as prioridades: <strong>uma fatia vertical funcionando de ponta a ponta vale mais que cinco módulos pela metade.</strong></p>
+<p><strong>Restrições inegociáveis.</strong></p>
+<ol>
+<li>Só dados públicos. Nenhuma precificação interna de qualquer seguradora.</li>
+<li>Nenhum número fixo no código. Toda premissa é versionada e tem fonte.</li>
+<li>Nenhum dado pessoal exposto em nível individual (ver §6, LGPD).</li>
+<li>Todo número mostrado ao usuário carrega a fonte, a data de referência e a versão das premissas.</li>
+</ol>
+<h2>1. Fontes de dados</h2>
+<h3>1.1 Mapa de fontes</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Entidade</th>
+<th>Fonte primária</th>
+<th>Reconciliação / fallback</th>
+<th>Granularidade</th>
+<th>Risco</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Universo de serventias (CNS, UF, município, atribuição, titular/interino)</td>
+<td>Justiça Aberta (nova plataforma, justicaaberta.cnj.jus.br)</td>
+<td>Listagens das corregedorias estaduais (TJs); CNPJ da Receita (CNAE 6912-5/00) via dados abertos ou Base dos Dados; relatório "Cartório em Números" (ANOREG) para totais de controle</td>
+<td>Serventia</td>
+<td><strong>Alto</strong>: formato, cobertura e download incertos</td>
+</tr>
+<tr>
+<td>Arrecadação</td>
+<td>Justiça Aberta (declarada <strong>por faixa</strong>)</td>
+<td>Editais de concurso e sorteio dos TJs que trazem a classe da serventia; totais agregados das associações</td>
+<td>Serventia (faixa)</td>
+<td><strong>Alto</strong></td>
+</tr>
+<tr>
+<td>Vínculos, salários e tempo de emprego</td>
+<td>Microdados da RAIS (Base dos Dados / BigQuery), CNAE 6912-5/00</td>
+<td>Novo CAGED para a tendência recente</td>
+<td>Município × faixas</td>
+<td>Médio: defasagem de 1 a 2 anos e não identifica a serventia</td>
+</tr>
+<tr>
+<td>Contexto</td>
+<td>IBGE (população, PIB municipal)</td>
+<td>—</td>
+<td>Município</td>
+<td>Baixo</td>
+</tr>
+<tr>
+<td>Seguro-garantia</td>
+<td>SUSEP SES (prêmios e sinistros dos ramos de garantia)</td>
+<td>Publicações setoriais com faixas de taxa</td>
+<td>Ramo/seguradora/mês</td>
+<td>Médio: <strong>não traz importância segurada</strong>, então serve para sinistralidade, não para taxa</td>
+</tr>
+<tr>
+<td>Normas</td>
+<td>atos.cnj.jus.br (Provimentos 227, 213, 243 e posteriores); STF (ADI 8015); DJe</td>
+<td>Sites das associações (ANOREG, Arpen, IRTDPJ, IRIB, CNB)</td>
+<td>Documento/artigo</td>
+<td>Médio: o portal do STF costuma bloquear scraping</td>
+</tr>
+<tr>
+<td>Proposições legislativas</td>
+<td>APIs de dados abertos da Câmara e do Senado</td>
+<td>—</td>
+<td>Proposição</td>
+<td>Baixo</td>
+</tr>
+</tbody>
+</table></div>
+<h3>1.2 Regras para as fontes</h3>
+<ul>
+<li>Toda coleta grava o <strong>bruto imutável</strong> em <code>data/bronze/&lt;fonte&gt;/&lt;data_coleta&gt;/</code>, com metadados: URL, data, hash e versão do coletor.</li>
+<li>Respeitar o robots.txt e os termos de uso, com intervalo entre requisições e User-Agent identificável.</li>
+<li>Quando uma fonte não puder ser coletada automaticamente, <strong>aceitar upload manual</strong> do arquivo e registrar a origem. Isso é melhor que um scraper frágil.</li>
+<li>Se o CNS não estiver disponível em alguma fonte, a junção usa UF, município (normalizado pelo código IBGE), atribuição e nome normalizado, com <strong>score de match</strong> e revisão manual dos casos ambíguos. Registrar a taxa de match.</li>
+</ul>
+<h2>2. Arquitetura</h2>
+<h3>2.1 Camadas</h3>
+<ul>
+<li><strong>Bronze</strong>: o bruto como veio, particionado por data de coleta.</li>
+<li><strong>Silver</strong>: dados limpos e tipados, com chaves normalizadas (código IBGE do município, CNS) e uma tabela por entidade.</li>
+<li><strong>Gold</strong>: tabelas de negócio e métricas, como <code>fato_mercado_uf</code>, <code>fato_passivo_municipio</code> e <code>dim_serventia</code>.</li>
+<li><strong>Estado operacional</strong>: fica fora do pipeline analítico, em banco persistente. Inclui <code>eventos_radar</code>, <code>aprovacoes</code>, <code>cenarios_salvos</code> e <code>log_decisoes</code>.</li>
+</ul>
+<h3>2.2 Stack</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Função</th>
+<th>Escolha</th>
+<th>Observação</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Linguagem</td>
+<td>Python 3.12</td>
+<td>gerenciar com <code>uv</code></td>
+</tr>
+<tr>
+<td>Processamento analítico</td>
+<td>DuckDB + Parquet</td>
+<td>gold publicado em Parquet</td>
+</tr>
+<tr>
+<td>Transformações</td>
+<td>SQL em arquivos versionados (dbt-duckdb <strong>opcional</strong>)</td>
+<td>com dbt, os testes de schema vêm de graça</td>
+</tr>
+<tr>
+<td>Estado persistente</td>
+<td>MotherDuck (free) <strong>ou</strong> Postgres gratuito (Supabase/Neon)</td>
+<td>decidir na Fase 0. Runners do GitHub Actions e o disco do Streamlit Cloud são efêmeros</td>
+</tr>
+<tr>
+<td>Validação de dados</td>
+<td>Pandera ou testes SQL simples</td>
+<td>contratos por tabela</td>
+</tr>
+<tr>
+<td>Saída estruturada do LLM</td>
+<td>Pydantic</td>
+<td>schema com campo de citação obrigatório</td>
+</tr>
+<tr>
+<td>LLM</td>
+<td>Claude API com tool use</td>
+<td>registrar modelo, versão do prompt e custo por chamada</td>
+</tr>
+<tr>
+<td>Interface</td>
+<td>Streamlit</td>
+<td>lê o gold e o estado persistente</td>
+</tr>
+<tr>
+<td>Agendamento</td>
+<td>GitHub Actions (cron)</td>
+<td>grava no armazenamento persistente, nunca no runner</td>
+</tr>
+<tr>
+<td>Testes</td>
+<td>pytest</td>
+<td>testes de unidade nas funções de cálculo</td>
+</tr>
+</tbody>
+</table></div>
+<h3>2.3 Estrutura de pastas</h3>
+<pre><code>radar-seguro-cartorio/
+├── data/
+│   ├── bronze/                # bruto imutável (git-ignored; amostras pequenas em data/samples/)
+│   ├── silver/
+│   └── gold/
+├── config/
+│   ├── premissas/             # um YAML por versão: premissas_v001.yaml ...
+│   ├── regras_classificacao.yaml  # limites de Classe por norma e vigência
+│   └── cenarios_stf.yaml
+├── src/
+│   ├── ingest/                # um coletor por fonte, todos idempotentes
+│   ├── transform/             # bronze→silver→gold
+│   ├── quality/               # contratos e checagens
+│   ├── model/                 # funções puras de cálculo
+│   ├── radar/
+│   ├── agent/
+│   │   └── tools/             # camada semântica
+│   └── eval/
+├── app/                       # Streamlit
+├── tests/
+├── eval/
+│   ├── gabarito_radar.csv
+│   └── gabarito_chat.csv
+├── docs/
+│   ├── diario.md              # decisões e limitações, com data
+│   ├── erros_ia.md
+│   └── dicionario_dados.md
+└── README.md
+</code></pre>
+<h3>2.4 Premissas versionadas</h3>
+<p>Cada premissa no YAML tem <code>valor</code> (ou <code>min</code>/<code>base</code>/<code>max</code>), <code>unidade</code>, <code>fonte</code> (URL ou "suposição"), <code>data_referencia</code> e <code>justificativa</code>. Exemplo:</p>
+<pre><code class="language-yaml">versao: 1
+criada_em: 2026-10-18
+premissas:
+  pct_deficit_por_faixa:
+    fonte: suposição
+    justificativa: patrimônio do titular não é público
+    valores:
+      faixa_1: {min: 0.30, base: 0.50, max: 0.70}
+  taxa_seguro_anual:
+    fonte: &lt;url da referência pública&gt;
+    valores: {min: ..., base: ..., max: ...}
+</code></pre>
+<p>Os números acima são <strong>placeholders</strong>. A IA não deve inventar valores. Onde não houver fonte, marcar <code>fonte: suposição</code> e pedir validação humana.</p>
+<p>A definição de Classe I também é premissa. Ela fica em <code>regras_classificacao.yaml</code>, com a norma de origem e a data de vigência de cada versão dos limites.</p>
+<h2>3. Modelo de mercado (<code>src/model</code>)</h2>
+<p>Funções puras, sem I/O, cada uma com teste. Todas recebem as premissas de forma explícita.</p>
+<ol>
+<li><strong><code>universo(serventias, regras_classificacao, data_ref)</code></strong>
+   Remove os interinos e as serventias da Classe I, <strong>conforme a versão da regra vigente em <code>data_ref</code></strong>. Também retorna os excluídos e o motivo, para auditoria.
+   Como a arrecadação vem em faixa, a classificação pode ficar <strong>indeterminada</strong> quando a faixa cruza o limite. Nesse caso, tratar como categoria própria e mostrar no dashboard.</li>
+<li><strong><code>passivo_por_vinculo(salario, meses_servico, premissas)</code></strong>
+   Soma os seguintes itens: saldo de salário (opcional); aviso prévio proporcional (30 dias + 3 por ano completo, com teto de 90, Lei 12.506/2011); 13º proporcional; férias vencidas e proporcionais + 1/3; multa de 40% sobre o saldo estimado de FGTS (8% × remuneração × meses, com premissa de correção); encargos. Os parâmetros legais também ficam em config.</li>
+<li><strong><code>passivo_municipio(rais_distribuicao, premissas)</code></strong>
+   Aplica a função anterior a <strong>cada célula</strong> (faixa salarial × faixa de tempo) e depois agrega. Nunca usar média de salário ou de tempo como entrada, porque o passivo não é linear no tempo de serviço.</li>
+<li><strong><code>ratear_passivo(passivo_municipio, serventias, metodo)</code></strong>
+   <code>metodo ∈ {arrecadacao_ponto_medio_faixa, uniforme, peso_por_atribuicao}</code>. O padrão é definido em premissa, e o dashboard mostra a sensibilidade a essa escolha.</li>
+<li><strong><code>deficit(passivo_serventia, premissas)</code></strong>
+   Retorna um intervalo (min/base/max) do valor descoberto e do número de serventias com déficit. É a variável mais incerta do modelo, por isso o dashboard sempre mostra a faixa e nunca um ponto único. Se der tempo, fazer um Monte Carlo simples.</li>
+<li><strong><code>demanda_seguro(deficit, premissas)</code></strong>
+   Aplica o % que escolhe seguro em vez de fiança.</li>
+<li><strong><code>receita(demanda, premissas)</code></strong>
+   Retorna <strong>quatro saídas separadas</strong>: importância segurada; prêmio emitido (IS × taxa × adesão × market share); sinistro esperado (prêmio × sinistralidade); resultado técnico.</li>
+<li><strong><code>aplicar_cenario_stf(premissas, cenario)</code></strong>
+   <code>mantem</code>: regra integral. <code>suspende_8_17</code>: uma liminar suspende os arts. 8º a 17, a obrigação de garantia cai e a demanda tende a zero (a declaração de passivo continua). <code>parcial</code>: parâmetros configuráveis, por exemplo só alguns artigos ou um prazo maior. Cada cenário é um diff sobre as premissas, e não um YAML inteiro copiado.</li>
+</ol>
+<p><strong>Testes mínimos</strong>:</p>
+<ul>
+<li>sem vínculos, o passivo é zero;</li>
+<li>o aviso prévio respeita o teto de 90 dias;</li>
+<li>o universo nunca contém interino;</li>
+<li>trocar a versão da regra de classe muda o universo;</li>
+<li>o cenário <code>suspende_8_17</code> zera a demanda de garantia;</li>
+<li>o resultado é monotônico na taxa.</li>
+</ul>
+<h2>4. Qualidade de dados</h2>
+<p>Cada tabela silver e gold tem um contrato com:</p>
+<ul>
+<li>chaves únicas e campos não nulos;</li>
+<li>domínios válidos (UF existente, código IBGE com 7 dígitos);</li>
+<li>faixas plausíveis de valores;</li>
+<li><strong>checagens de reconciliação</strong>:<ul>
+<li>total de serventias por UF comparado ao total de controle de outra fonte, com tolerância configurável. Uma divergência gera alerta no diário, nunca falha silenciosa;</li>
+<li>total de vínculos RAIS do CNAE comparado à soma por município;</li>
+<li>cobertura do Justiça Aberta (% de serventias com faixa de arrecadação preenchida), exibida no dashboard.</li>
+</ul>
+</li>
+</ul>
+<p>O pipeline <strong>falha</strong> quando há violação de chave ou tipo e <strong>avisa</strong> quando há violação de reconciliação.</p>
+<h2>5. Agentes</h2>
+<h3>5.1 Radar regulatório (<code>src/radar</code>)</h3>
+<p><strong>Montar o gabarito (§7) antes de escrever o prompt.</strong></p>
+<p>Pipeline:</p>
+<ol>
+<li><strong>Coleta.</strong> Um coletor por fonte: atos do CNJ, DJe, associações, APIs da Câmara e do Senado, andamento da ADI 8015. Cada item guarda URL, data de publicação, data de coleta, texto e hash.</li>
+<li><strong>Filtro barato.</strong> Palavras-chave e lista de normas monitoradas (227, 213, 243, ADI 8015 e as que vierem depois).</li>
+<li><strong>Classificação.</strong> O LLM classifica a relevância, com saída Pydantic e justificativa curta.</li>
+<li><strong>Extração.</strong> O LLM extrai <code>tipo_evento</code>, <code>norma</code>, <code>artigos</code>, <code>uf</code>, <code>vigencia</code>, <code>efeito_demanda</code> (aumenta / reduz / neutro / incerto) e <code>trecho_citado</code>. A citação é obrigatória e é verificada como substring do texto de origem. Se não bater, o evento é rejeitado.</li>
+<li><strong>Deduplicação em dois níveis.</strong> Primeiro hash de URL e texto, depois uma <strong>chave de evento</strong> (norma + tipo + data), porque a mesma notícia sai em várias associações com textos diferentes.</li>
+<li><strong>Sugestão.</strong> Uma mudança de premissa ou cenário é gravada com status <code>proposto</code>. <strong>O radar nunca aplica nada sozinho.</strong></li>
+<li><strong>Aprovação humana.</strong> Feita no app, grava em <code>aprovacoes</code> com autor e data e gera uma nova versão das premissas.</li>
+<li><strong>Resumo diário.</strong> Em markdown, com links e trechos citados, enviado por e-mail ou Slack.</li>
+</ol>
+<p><strong>Fallback do STF</strong>: se o portal bloquear a coleta, monitorar a cobertura da ADI nas associações e notícias e marcar o status como "não verificado na fonte primária".</p>
+<h3>5.2 Agente de dúvidas (<code>src/agent</code>)</h3>
+<p>Ferramentas da camada semântica:</p>
+<ul>
+<li><code>contar_serventias(uf?, municipio?, atribuicao?, classe?, situacao?)</code></li>
+<li><code>estimar_passivo(uf?, municipio?, versao_premissas?)</code></li>
+<li><code>estimar_deficit(uf?, cenario?, versao_premissas?)</code></li>
+<li><code>simular(ajustes_premissas, cenario)</code></li>
+<li><code>buscar_normas(pergunta)</code>: devolve trechos com norma, artigo e data</li>
+<li><code>listar_eventos(filtro)</code></li>
+<li><code>consultar_decisoes(tema)</code>: lê o log de decisões do time</li>
+<li><code>sql_readonly(query)</code>: só como fallback, com allowlist de views, LIMIT 1000 e timeout</li>
+</ul>
+<p>Regras do system prompt:</p>
+<ul>
+<li><strong>Nenhum número sem chamada de ferramenta.</strong> Toda resposta numérica mostra a conta, a fonte, a data de referência e a versão das premissas.</li>
+<li><strong>Estimativas em faixa</strong> sempre que a premissa for uma faixa.</li>
+<li><strong>"Não sei"</strong> quando a informação não estiver na base. Nunca completar com conhecimento geral sobre números do setor.</li>
+<li><strong>Perguntas jurídicas</strong> (ex.: "fiança substitui o seguro?"): responder citando o texto da norma e deixar claro que não é parecer jurídico.</li>
+</ul>
+<h2>6. LGPD e ética</h2>
+<ul>
+<li>Nome e CPF de titulares não aparecem no dashboard nem nas respostas do chat.</li>
+<li>Estimativas de déficit nunca saem em nível de serventia identificável. O menor nível exibido é o município, e municípios com poucas serventias (ex.: menos de 3) entram agregados.</li>
+<li>O README declara que os números são estimativas de mercado com premissas públicas, e não avaliação de nenhum cartório.</li>
+</ul>
+<h2>7. Avaliação (<code>src/eval</code>)</h2>
+<h3>7.1 Gabaritos (rotulados à mão, antes dos prompts)</h3>
+<ul>
+<li><strong>Radar</strong>: 60 a 100 documentos reais, estratificados: pelo menos 20 relevantes, cobrindo cada <code>tipo_evento</code>; duplicatas (a mesma notícia em fontes diferentes); itens "quase relevantes" (normas de cartório sem relação com passivo trabalhista).</li>
+<li><strong>Chat</strong>: 40 a 60 perguntas de 4 tipos (números, normas, simulação e armadilhas), cada uma com resposta esperada e fonte esperada.</li>
+<li><strong>Congelamento</strong>: o gabarito é congelado com hash e data. Não editar depois de ver as saídas do modelo. Qualquer mudança vira uma nova versão do gabarito, com justificativa no diário.</li>
+</ul>
+<h3>7.2 Métricas</h3>
+<ul>
+<li><strong>Radar</strong>: precisão e recall da relevância, com intervalo de confiança; acurácia por campo extraído; taxa de citações válidas; duplicatas não detectadas; latência entre a publicação e o alerta.</li>
+<li><strong>Chat</strong>: % de respostas corretas; % de alucinações (número ou norma inexistente); % de respostas sem fonte; % de "não sei" corretos e incorretos.</li>
+<li><strong>Comparação de versões</strong>: (a) sem contexto, (b) norma inteira no prompt, (c) RAG, (d) RAG + ferramentas. O corpus de normas é pequeno, então a versão (b) pode competir com o RAG, e o eval decide.</li>
+<li><strong>Custo e latência</strong>: tokens e R$ por execução, e tempo de resposta.</li>
+<li><strong>Forma de avaliar</strong>: por regra sempre que possível (o número bate? a citação existe?). Usar LLM-as-judge só onde for inevitável, com uma amostra conferida à mão.</li>
+</ul>
+<h2>8. Fases e critérios de aceite</h2>
+<h3>Fase 0: Viabilidade (timebox de 1 a 2 dias)</h3>
+<ul>
+<li>Testar o acesso real a cada fonte do §1.1 e registrar no diário o formato, os campos, a cobertura e se há download em massa.</li>
+<li>Decidir a fonte do universo e o plano B.</li>
+<li>Decidir o armazenamento persistente.</li>
+<li><strong>Aceite</strong>: <code>docs/viabilidade.md</code> com uma linha por fonte (ok / parcial / bloqueada + plano B). Se o universo não puder ser obtido para todo o Brasil, o projeto segue com as UFs disponíveis e declara isso.</li>
+</ul>
+<h3>Fase 1: Fatia vertical com 1 UF (sugestão: MG)</h3>
+<ul>
+<li>Ingestão, silver e gold só para MG.</li>
+<li>Modelo completo (§3), com testes.</li>
+<li>Páginas "Mercado" e "Simulador" básicas.</li>
+<li><strong>Aceite</strong>: <code>make all</code> rodado do zero gera o dashboard de MG, os testes passam e todo número na tela tem fonte e versão.</li>
+</ul>
+<h3>Fase 2: Brasil inteiro e qualidade</h3>
+<ul>
+<li>Expandir para todas as UFs disponíveis, com contratos e reconciliação (§4).</li>
+<li><strong>Aceite</strong>: relatório de qualidade gerado e divergências documentadas.</li>
+</ul>
+<h3>Fase 3: Radar</h3>
+<ul>
+<li>Ordem de construção: gabarito, coletores, pipeline, aprovação, resumo diário e agendamento.</li>
+<li><strong>Aceite</strong>: métricas do radar no relatório, e um evento real passa pela aprovação e muda o simulador.</li>
+</ul>
+<h3>Fase 4: Agente de dúvidas</h3>
+<ul>
+<li>Ordem de construção: gabarito, ferramentas, as 4 versões e a integração na página Chat.</li>
+<li><strong>Aceite</strong>: métricas do chat e o gráfico comparando as 4 versões.</li>
+</ul>
+<h3>Fase 5: Entrega</h3>
+<ul>
+<li>Deploy (Streamlit Community Cloud) apontando para o armazenamento persistente.</li>
+<li>README com o problema, a arquitetura em diagrama, como rodar, os resultados do eval e as limitações.</li>
+<li>Medida de antes e depois: tempo da tarefa manual vs. com o sistema, e atraso entre a publicação de uma norma e o alerta.</li>
+<li>Slides (5): problema, arquitetura, demo, onde a IA errou e o que mudou, resultados com o gráfico das versões.</li>
+<li>Demo de 1 minuto: uma norma real entra, o radar detecta, você aprova, o simulador recalcula e o chat responde com a fonte. Gravar um vídeo de backup.</li>
+<li>Na véspera: conferir o andamento da ADI 8015 e rodar o radar.</li>
+</ul>
+<p><strong>Se o tempo apertar, cortar nesta ordem</strong>: projetos de lei no radar, depois o Monte Carlo, depois a versão RAG (mantendo o contexto longo com ferramentas) e por último o deploy (roda local).</p>
+<p><strong>Nunca cortar</strong>: a Fase 0, os testes do modelo, o eval e o diário de erros.</p>
+<h2>9. Como a IA deve trabalhar neste projeto</h2>
+<ul>
+<li><strong>Ritmo</strong>: trabalhar fase por fase e parar ao fim de cada uma para revisão humana.</li>
+<li><strong>Coletores</strong>: antes de escrever um, inspecionar uma amostra real da fonte e mostrar os campos encontrados.</li>
+<li><strong>Nada inventado</strong>: nunca inventar valores de premissa, URLs de fonte, números de normas ou dados de exemplo apresentados como reais. Dados sintéticos só em <code>tests/</code>, marcados como tal.</li>
+<li><strong>Diário</strong>: registrar em <code>docs/diario.md</code> toda limitação, suposição e decisão, com data.</li>
+<li><strong>Falhas de fonte</strong>: quando uma fonte falhar, propor o plano B em vez de contornar o problema em silêncio.</li>
+<li><strong>Regulação atual</strong>: no início do trabalho, conferir o status da ADI 8015 e se houve novas alterações nos Provimentos 213 e 227, porque o cenário regulatório muda rápido.</li>
+</ul>
+</main>
+</body>
+</html>
