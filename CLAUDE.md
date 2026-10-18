@@ -19,20 +19,21 @@ Projeto de portfólio que estima, só com dados públicos, o mercado de seguro-g
 - Se uma fonte falhar, proponha o plano B e registre no diário.
 
 ## Regras inegociáveis
+- **Git: NUNCA rode `git commit`, `git push` ou qualquer comando que altere o histórico ou a branch (`reset`, `rebase`, `merge`, `checkout`, `switch`, `stash`, `tag`) sem eu pedir explicitamente na mensagem atual.** Um pedido anterior não vale para os próximos. Ao terminar uma etapa, apenas avise que há alterações prontas para commit e sugira uma mensagem. Comandos só de leitura (`git status`, `git diff`, `git log`) são permitidos.
 - Nunca invente valores de premissa, URLs, números de normas ou dados apresentados como reais. Onde não houver fonte, use `fonte: suposição` e me avise.
 - Nenhum número fixo no código. Premissas ficam em `config/`, versionadas e com fonte.
 - Dados sintéticos só em `tests/`, marcados como sintéticos.
 - Nenhum nome ou CPF de titular em dashboard, resposta do chat ou log de saída.
-- Nunca commitar segredos. Chaves ficam no `.env` (fora do git); o modelo está em `.env.example`.
+- Segredos nunca entram em arquivos versionados. Chaves ficam no `.env` (fora do git); o modelo está em `.env.example`.
 - O estado (eventos, aprovações, cenários) vai para o armazenamento persistente definido na Fase 0, nunca para o disco do runner ou do Streamlit.
 
 ## Padrões de código
 - Python 3.12, dependências gerenciadas com `uv`.
 - Funções de cálculo em `src/model` são puras (sem I/O) e têm teste em `tests/`.
 - Rode `pytest` antes de declarar uma fase concluída.
-- Commits pequenos e com mensagem descritiva em português.
 
 ## Ao terminar cada sessão
 1. Atualize `docs/diario.md` com o que foi feito, decidido e descoberto.
 2. Se a IA errou algo relevante, registre em `docs/erros_ia.md`.
-3. Diga qual é o próximo passo segundo o SPEC.
+3. Se houver alterações pendentes, liste os arquivos alterados e sugira uma mensagem de commit. **Não faça o commit.**
+4. Diga qual é o próximo passo segundo o SPEC.
