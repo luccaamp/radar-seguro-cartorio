@@ -7,6 +7,9 @@ data/gold/
 *.duckdb
 *.duckdb.wal
 
+# Transcrições das conversas com a IA (uso pessoal do autor)
+conversas/
+
 # Python
 __pycache__/
 *.pyc

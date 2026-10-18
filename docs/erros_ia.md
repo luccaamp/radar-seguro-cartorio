@@ -17,6 +17,15 @@ Formato de cada entrada:
 
 ---
 
+## 2026-10-18 — E-mail do autor colocado no User-Agent de uma requisição externa
+- **Onde:** código gerado (primeiro teste de acesso a atos.cnj.jus.br, Fase 0, Etapa 3)
+- **O que aconteceu:** o comando incluía o e-mail pessoal do autor no cabeçalho User-Agent das requisições ao site do CNJ. Esperado: um User-Agent identificável **sem** dado pessoal.
+- **Como foi detectado:** pela própria IA, ao procurar dados pessoais nas transcrições das conversas (18/10/2026). Por sorte, o comando tinha falhado antes de rodar (erro de aspas no PowerShell; ver entrada "Código Python colado direto no PowerShell"), então **o e-mail não foi enviado**. Os scripts seguintes já usavam um User-Agent sem e-mail.
+- **Causa provável:** a regra "User-Agent identificável" (SPEC §1.2) foi interpretada como "incluir um contato", sem pesar que o e-mail é um dado pessoal do autor e não deve ir para serviços externos.
+- **Correção:** User-Agent padrão do projeto: `radar-seguro-cartorio/<versão> (projeto de portfolio)`, sem e-mail. Na Fase 1, fica num só lugar em `config/`, para nenhum coletor montar o seu.
+- **Resultado depois da correção:** nenhuma requisição enviada com o e-mail (o único comando que o continha não executou).
+- **Bom para os slides?** não
+
 ## 2026-10-18 — Número de serventias sem CLT trocado no resumo (315 × 316)
 - **Onde:** resposta da IA ao autor (Fase 0, Etapa 5)
 - **O que aconteceu:** o texto da Etapa 5 disse "315 das ativas em MG têm 0 CLT no CNJ". A saída do script mostrava 57 (providas) + 258 (vagas) + 0 (diligência) + 1 (intervenção) = **316**.
