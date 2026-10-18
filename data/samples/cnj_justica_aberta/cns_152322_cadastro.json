@@ -1,0 +1,15 @@
+{
+ "_url": "https://justicaabertaapi.cnj.jus.br/v1/api/serventias/152322",
+ "_coletado_em": "2026-10-17",
+ "_obs": "campos pessoais mascarados",
+ "dados": {
+  "denominacao_fantasia": "Registro de Imóveis, Títulos e Documentos e Civil das Pessoas Jurídicas de Pedralva",
+  "denominacao_padrao": "Registro de Imóveis, Registro de Títulos e Documentos, Registro Civil das Pessoas Jurídicas",
+  "cns": "152322",
+  "status": "Ativo",
+  "tipo_cartorio": "PRIVATIZADO",
+  "situacao_juridica_cartorio": "PROVIDO",
+  "instalacao": "1948-11-15T00:00:00.000Z",
+  "atribuicoes": "Registro de Títulos e Documentos | Registro Civil das Pessoas Jurídicas | Registro de Imóveis"
+ }
+}

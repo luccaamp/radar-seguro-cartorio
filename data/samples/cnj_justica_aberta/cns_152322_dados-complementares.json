@@ -1,0 +1,15 @@
+{
+ "_url": "https://justicaabertaapi.cnj.jus.br/v1/api/serventias/152322/dados-complementares",
+ "_coletado_em": "2026-10-17",
+ "_obs": "campos pessoais mascarados",
+ "dados": {
+  "quantidade_colaboradores_clt": 4,
+  "quantidade_colaboradores_estatutarios": 0,
+  "quantidade_colaboradores_estagiarios": 0,
+  "quantidade_total_colaboradores": 4,
+  "quantidade_colaboradores_terceirizados": 0,
+  "informatizada": "S",
+  "acesso_internet": "S",
+  "conciliacao_mediacao": "N"
+ }
+}

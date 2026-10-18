@@ -1,0 +1,13 @@
+[project]
+name = "radar-seguro-cartorio"
+version = "0.1.0"
+description = "Painel de cartórios, simulador de seguro-garantia (Prov. CNJ 227/2026) e chat com fontes. Tudo local e gratuito."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "httpx>=0.28.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
