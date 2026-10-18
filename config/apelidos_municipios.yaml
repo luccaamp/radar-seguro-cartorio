@@ -1,0 +1,6 @@
+# Grafias de município que diferem do nome oficial do IBGE (localidades, 2026-10-18).
+# Chave: nome normalizado como vem na fonte (sem acento, maiúsculas). Valor: código IBGE de 7 dígitos.
+# Conferido pela IA comparando a grafia da fonte com a lista oficial do IBGE (Fase 1, 2026-10-18).
+MG:
+  BRASOPOLIS: 3108909        # CNPJ (Receita); IBGE: "Brazópolis"
+  AMPARO DA SERRA: 3102506   # CNPJ (Receita); IBGE: "Amparo do Serra"

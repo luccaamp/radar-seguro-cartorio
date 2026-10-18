@@ -1,0 +1,12 @@
+# UFs processadas pelo pipeline. Fase 1: só MG. Fase 2 expande.
+ufs: [MG]
+cod_uf_ibge:
+  MG: 31
+# snapshots do bronze usados pelo pipeline ("do zero" = a partir destes, sem coletar de novo)
+snapshots:
+  cnj_justica_aberta: "2026-10-17"   # listagem e colaboradores
+  cnj_arrecadacoes: "2026-10-18"     # arrecadação semestral (coletada na Fase 1)
+  rais: "2025"
+  cnpj: "2026-10"
+  susep_ses: "2026-10-17"
+  ibge: "2026-10-18"

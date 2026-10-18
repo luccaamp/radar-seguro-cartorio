@@ -27,6 +27,50 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 
 ---
 
+## 2026-10-18 — Fase 1, etapa (a): coletas e silver
+- **O que foi feito:**
+  - decisões D-007 a D-012 registradas (D-007 e D-008 aprovadas; D-009 a D-012 novas);
+  - **código do tipo de vínculo conferido no layout da RAIS** (`RAIS_vinculos_layout2020.xls`, aba "RAISD - layout"): prazo indeterminado = 10, 15, 20, 25. Os códigos citados pela IA na sessão anterior estavam certos;
+  - dependências adicionadas com `uv add`: duckdb, pandas, pyyaml, pydantic, streamlit, plotly, py7zr (todas gratuitas e abertas);
+  - coletores em `src/ingest/` (idempotentes): `cnj_serventias`, `cnj_complementares`, `cnj_arrecadacoes` (novo), `ibge` (novo), `rais`, `cnpj`, `susep`. Os de RAIS, CNPJ e SUSEP reaproveitam os scripts da Fase 0 e só pulam o que já existe no bronze;
+  - coleta nova: IBGE (853 municípios de MG, população 2026, malha municipal, IPCA e INPC até set/2026) e arrecadação semestral das 2.525 ativas de MG (em andamento);
+  - `src/transform/silver.py`, `src/quality/contratos.py` e `pipeline.py`; `config/escopo.yaml` (UFs e snapshots) e `config/apelidos_municipios.yaml`.
+- **Descobertas:**
+  - **junção de municípios:** CNJ × IBGE por nome normalizado casa 100% (3.213 registros). CNPJ × IBGE casa tudo menos 9 registros de 2 grafias ("BRASOPOLIS" = Brazópolis 3108909; "AMPARO DA SERRA" = Amparo do Serra 3102506), resolvidos na tabela de apelidos. A RAIS usa o código IBGE de 6 dígitos (sem o dígito verificador);
+  - **arrecadação duplicada na fonte:** a API repete períodos de algumas serventias. Cópias idênticas foram reduzidas a uma linha; períodos com **valores diferentes** ficam marcados com `conflito_fonte` (ex.: CNS 048108, 1º sem/2025: R$ 2.343.813,15 × R$ 479.828,50). O contrato de chave única pegou isso;
+  - `atos_praticados` também pode vir "NÃO INFORMADO" (a primeira execução do silver quebrou por isso);
+  - **SUSEP:** os valores do `Ses_seguros.csv` têm centavos e vírgula decimal (ex.: `350407,58`), o que indica **reais**, e não milhares. Isso resolve a pendência de unidade da Fase 0 (inferência; o `Ses_campos.csv` não declara a unidade);
+  - tipo de cartório das ativas de MG: 1.442 privatizados, 1.074 oficializados, 9 públicos;
+  - 887 vínculos ativos e por prazo indeterminado estão sem remuneração de dezembro na RAIS (de 11.865); mediana de 85 meses de casa, só 154 têm remuneração média anual. Hipótese: afastados (licença, INSS). A decidir com o autor;
+  - **arrecadação coletada:** 2.525 de 2.525 ativas, integridade 100%, 0 erros de rede (~70 min). 103.602 linhas no silver (série desde 2005);
+  - **2025 sem "NÃO INFORMADO":** todas as ativas têm os dois semestres de 2025. O "NÃO INFORMADO" aparece só no 1º sem/2026 (57 serventias). A classe indeterminada de D-004 quase não ocorre em 2025;
+  - **mas há zeros:** 76 ativas declaram **R$ 0 nos dois semestres de 2025** (135 e 143 zeros por semestre). Zero cairia na Classe 1 e sairia do universo. 13 das 28 em diligência têm zero. Pergunta aberta para o autor;
+  - conflitos de valor em 2025: só 2 serventias (CNS 048108 e 053439, 1º semestre);
+  - prévia de classe (v2, média 2025, sem os conflitos): Classe 1 = 1.263, Classe 2 = 863, Classe 3 = 399. Com v1 (R$ 100 mil): Classe 1 = 647. Entre providas, intervenção e diligência, 65,6% ficam fora da Classe 1 na v2 e 90,6% na v1;
+  - SUSEP (set/2020 a ago/2026, agregado): sinistro ÷ prêmio ganho = 10,9% (0775) e 73,9% (0776); despesa de comercialização ÷ prêmio emitido = 17,1% e 18,9%. 50 seguradoras emitiram nos últimos 12 meses; líder com 16,4%, 5ª com 5,2%, 10ª com 3,9%.
+- **Próximo passo:** ponto de parada (a) com o autor: decisões sobre zeros, conflitos e vínculos sem remuneração; aprovação da tabela de premissas.
+
+## 2026-10-18 — Início da Fase 1: decisões pendentes da Fase 0
+- **O que foi feito:** respostas do autor às 6 pendências do `viabilidade.md` registradas em `docs/decisoes.md` (D-003 a D-008); SPEC §3.3 atualizado com o rateio `por_empregados_cnj`. Análise exploratória do bronze (CNJ e RAIS de MG) para as pendências 2 e 4.
+- **Decisões (aprovadas pelo autor):**
+  - D-003: só CLT no passivo; estatutários (178), estagiários (86) e terceirizados (135) de MG ficam fora, como limitação;
+  - D-004: arrecadação "NÃO INFORMADO" = classe indeterminada;
+  - D-005: rateio padrão `por_empregados_cnj`;
+  - D-006: `fator_cobertura_rais` = 1,0 em MG, a revisar na Fase 2.
+- **Propostas aguardando o autor:**
+  - D-007: intervenção e diligência fora no `min`/`base` e dentro no `max` (proposta do autor, pendente de confirmação depois da explicação);
+  - D-008: limiar de 20 vínculos para usar a distribuição do município (10 e 30 como sensibilidade).
+- **Descobertas:**
+  - situação jurídica das ativas de MG: PROVIDO 1.654 (9.745 CLT, 5,9 por serventia), VAGO 830 (2.105 CLT, 2,5), CONVERSÃO EM DILIGÊNCIA 28 (238 CLT, 8,5), SOB INTERVENÇÃO 13 (46 CLT, 3,5);
+  - as intervenções são recentes (9 de 13 decididas em 2026); as diligências vêm de 2024 a 2026 e incluem 9 serventias de Registro de Imóveis/RTD/RCPJ, que costumam ser grandes;
+  - RAIS 2025 MG: 12.347 vínculos ativos em 757 municípios, mediana de 4 por município; 910 sem remuneração de dezembro;
+  - **tipos de vínculo na RAIS:** 11.558 CLT por prazo indeterminado com empregador pessoa física (código 15), 402 CLT por prazo determinado (65), 258 CLT PJ indeterminado (10), 68 aprendizes (55), 48 rural PF (25), 4 outros (90). Códigos lidos pela IA; os rótulos foram conferidos no layout de 2020, mas a correspondência código → rótulo precisa ser confirmada. Prazo determinado e aprendiz têm rescisão diferente: pergunta aberta para o autor;
+  - **arrecadação de MG não foi coletada em massa na Fase 0** (só a amostra de 30) e o **IBGE não está no bronze**: as duas coletas entram na Fase 1.
+- **Interpretação das situações (IA, a confirmar):**
+  - *Sob intervenção*: o titular continua sendo o delegatário, mas foi afastado preventivamente durante um processo disciplinar, e um interventor nomeado pelo juiz responde pela serventia (Lei 8.935/1994, art. 36, citado de memória pela IA, a conferir no texto). Não é interinidade no sentido estrito, porque a delegação não está vaga.
+  - *Conversão em diligência*: termo processual ("o julgamento foi suspenso para colher mais informações"). No cadastro do CNJ, a hipótese da IA é que a situação provido/vago da serventia está sob verificação. Não há documentação da API que confirme.
+- **Próximo passo:** autor confirma D-007 e D-008, responde as perguntas do plano da Fase 1 e aprova o plano.
+
 ## 2026-10-17 a 2026-10-18 — Fase 0 (viabilidade) concluída
 - **O que foi feito:**
   - **Ambiente:** uv 0.13.1 e Python 3.12.15 instalados pelo uv, com o sistema mantido em 3.13.3. `pyproject.toml` mínimo (httpx; pytest como dev), `.python-version` e `uv.lock`.

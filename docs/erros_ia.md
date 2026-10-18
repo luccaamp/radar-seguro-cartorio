@@ -17,6 +17,24 @@ Formato de cada entrada:
 
 ---
 
+## 2026-10-18 — Vínculos por prazo indeterminado somados de cabeça (11.864 × 11.865)
+- **Onde:** `docs/decisoes.md`, D-009 (Fase 1)
+- **O que aconteceu:** a IA escreveu "ficam 11.864 vínculos" somando os códigos 15, 10 e 25 de uma lista que mostrava só os 6 tipos mais frequentes. O código 20 (1 vínculo) estava fora da lista. A consulta ao silver deu **11.865**.
+- **Como foi detectado:** pela própria IA, ao conferir o número com uma consulta direta ao `silver.rais_vinculo`.
+- **Causa provável:** a mesma do erro 315 × 316: conta feita ao redigir, a partir de uma saída truncada (`most_common(6)`).
+- **Correção:** D-009 corrigida com o número da consulta. Reforço da regra: número em documento vem de uma consulta que conta exatamente aquilo, não de soma de parciais.
+- **Resultado depois da correção:** número consistente com o silver.
+- **Bom para os slides?** não
+
+## 2026-10-18 — Silver supôs que "atos praticados" era sempre número
+- **Onde:** código gerado (`src/transform/silver.py`, Fase 1)
+- **O que aconteceu:** a primeira execução do silver quebrou com `Could not convert string 'NÃO INFORMADO' to INT32`. A IA tinha tratado "NÃO INFORMADO" só no campo de arrecadação, mas a API usa o mesmo texto em `atos_praticados`.
+- **Como foi detectado:** erro de tipo do DuckDB ao gravar a tabela.
+- **Causa provável:** a amostra inspecionada (CNS 152322) não tinha esse caso; a IA generalizou a partir dela.
+- **Correção:** `atos_praticados` passa pela mesma conversão (`para_float_br`) e vira nulo quando não informado.
+- **Resultado depois da correção:** silver gravado; o tipo forte da tabela pegou o problema antes de virar dado errado.
+- **Bom para os slides?** não
+
 ## 2026-10-18 — E-mail do autor colocado no User-Agent de uma requisição externa
 - **Onde:** código gerado (primeiro teste de acesso a atos.cnj.jus.br, Fase 0, Etapa 3)
 - **O que aconteceu:** o comando incluía o e-mail pessoal do autor no cabeçalho User-Agent das requisições ao site do CNJ. Esperado: um User-Agent identificável **sem** dado pessoal.

@@ -2,7 +2,7 @@
 
 > Documento de referência para a IA de código (Claude Code) que constrói o projeto.
 > Leia tudo antes de escrever código. Siga as fases em ordem e não pule os critérios de aceite.
-> Última revisão: 2026-10-17 (Fase 0, etapa 3: fatos normativos conferidos no texto oficial). Esta versão torna o projeto **100% gratuito** e muda a prioridade para **painel e chat**. Histórico no `docs/diario.md`; decisões com opções e justificativa em `docs/decisoes.md`.
+> Última revisão: 2026-10-18 (início da Fase 1: rateio `por_empregados_cnj` como padrão, D-005). Revisão anterior: 2026-10-17 (fatos normativos conferidos no texto oficial). Esta versão torna o projeto **100% gratuito** e muda a prioridade para **painel e chat**. Histórico no `docs/diario.md`; decisões com opções e justificativa em `docs/decisoes.md`.
 
 ## 0. Contexto e objetivo
 
@@ -248,7 +248,7 @@ Funções puras, sem I/O, cada uma com teste. Todas recebem as premissas de form
 2. **`passivo_municipio(rais_distribuicao, premissas)`**
    Aplica a função anterior a **cada célula** (faixa salarial × faixa de tempo) e depois agrega. Nunca usar média de salário ou de tempo como entrada, porque o passivo não é linear no tempo de serviço.
 3. **`ratear_passivo(passivo_municipio, serventias, metodo)`**
-   Rateia o passivo entre **todas as serventias do município**, inclusive interinos e Classe 1, porque a RAIS conta os empregados delas também. `metodo ∈ {arrecadacao, uniforme, peso_por_atribuicao}`. O padrão é definido em premissa, e o painel mostra a sensibilidade a essa escolha.
+   Rateia o passivo entre **todas as serventias do município**, inclusive interinos e Classe 1, porque a RAIS conta os empregados delas também. `metodo ∈ {por_empregados_cnj, arrecadacao, uniforme, peso_por_atribuicao}`. O padrão é **`por_empregados_cnj`** (D-005): passivo da serventia = colaboradores CLT declarados no Justiça Aberta × passivo médio por vínculo da distribuição RAIS do município (ou do estado, abaixo do limiar de vínculos, D-008). Os demais métodos são sensibilidade, e o painel mostra o efeito da escolha.
 4. **`universo(serventias_com_passivo, regras_classificacao, data_ref)`**
    Remove, **depois do rateio**, os interinos e as serventias da Classe 1, conforme a versão da regra vigente em `data_ref` ou a versão escolhida explicitamente. Retorna também os excluídos, o motivo e a marca `classificacao_aproximada`, porque a arrecadação das fontes públicas aproxima, mas não é igual, a receita bruta do art. 2º, XXIV do 213.
    O pipeline calcula **as duas versões** (`v2` base e `v1` sensibilidade) e registra a diferença de universo (nº de serventias e passivo) e de mercado (IS e prêmio). Essa diferença aparece no diário e na página Qualidade dos dados.
@@ -279,7 +279,7 @@ Funções puras, sem I/O, cada uma com teste. Todas recebem as premissas de form
 - o aviso prévio respeita o teto de 90 dias;
 - o universo nunca contém interino;
 - trocar a versão da regra de classe muda o universo;
-- a soma rateada é igual ao passivo do município;
+- a soma rateada é igual ao passivo do município (no `por_empregados_cnj`, igual a CLT declarados × passivo por vínculo);
 - a classe indeterminada fica fora no `min` e dentro no `max`;
 - as três parcelas de `escolha_garantia` somam 1, e a validação falha se não somarem;
 - o cenário `suspende_8_17` zera a demanda de garantia;
