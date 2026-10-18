@@ -53,9 +53,26 @@ def _yaml(nome: str) -> dict:
     return yaml.safe_load((CONFIG / nome).read_text(encoding="utf-8"))
 
 
-def _registrar(fontes: list, fonte: str, arquivo: Path, data_referencia: str, obs: str = "") -> None:
-    meta_path = arquivo.with_name(arquivo.name + ".meta.json")
-    meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
+def _meta(arquivo: Path) -> dict:
+    """Metadados de coleta do arquivo. Padrões: <arq>.meta.json (Fase 1), <stem>.meta.json e _metadados.json (Fase 0).
+    Para arquivos filtrados (RAIS, CNPJ, SUSEP), usa os metadados do pacote de origem."""
+    for cand in (arquivo.with_name(arquivo.name + ".meta.json"), arquivo.with_name(arquivo.stem + ".meta.json")):
+        if cand.exists():
+            return json.loads(cand.read_text(encoding="utf-8"))
+    for pasta in (arquivo.parent, arquivo.parent.parent):
+        m = pasta / "_metadados.json"
+        if m.exists():
+            d = json.loads(m.read_text(encoding="utf-8"))
+            origem = [k for k in d if arquivo.stem.startswith(Path(k).stem)]  # filtrado -> pacote de origem
+            return d.get(arquivo.name) or (d[origem[0]] if origem else next(iter(d.values())))
+    return {}
+
+
+def _registrar(fontes: list, fonte: str, arquivo: Path, data_referencia: str, obs: str = "",
+               coletado_em: str | None = None) -> None:
+    meta = _meta(arquivo)
+    if coletado_em and not meta.get("coletado_em"):
+        meta["coletado_em"] = coletado_em
     fontes.append({"fonte": fonte, "arquivo": str(arquivo.relative_to(BRONZE)).replace("\\", "/"),
                    "sha256": sha256_arquivo(arquivo), "bytes": arquivo.stat().st_size,
                    "url": meta.get("url"), "coletado_em": meta.get("coletado_em"),
@@ -147,7 +164,8 @@ def ler_colaboradores(snap: str, uf: str, fontes: list) -> pd.DataFrame:
         "informatizada": r.get("informatizada"), "data_coleta": r.get("coletado_em")} for r in regs.values()])
     for c in ("clt", "estatutarios", "estagiarios", "terceirizados", "total_declarado"):
         df[c] = df[c].astype("Int64")
-    _registrar(fontes, "cnj_colaboradores", arq, snap, "contagem declarada pela serventia, sem data por serventia")
+    _registrar(fontes, "cnj_colaboradores", arq, snap, "contagem declarada pela serventia, sem data por serventia",
+               coletado_em=str(df["data_coleta"].max()))
     return df
 
 

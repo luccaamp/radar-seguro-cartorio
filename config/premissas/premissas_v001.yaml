@@ -46,6 +46,12 @@ premissas:
     fonte: Prov. 227/2026, art. 4º (posição de 31 de dezembro); Lei 4.090/1962, art. 1º (pago em dezembro)
     data_referencia: 2026-06-11
     justificativa: na posição de 31/12 o 13º do ano já foi pago; resta o 13º proporcional à projeção do aviso prévio.
+  data_posicao:
+    valor: 2025-12-31
+    unidade: data
+    fonte: Prov. 227/2026, art. 4º (posição de 31 de dezembro); RAIS 2025 (vínculos e tempo de emprego em 31/12/2025)
+    data_referencia: 2025-12-31
+    justificativa: os 13º da projeção do aviso são contados pelo calendário a partir desta data (Lei 4.090, art. 1º).
   aliquota_fgts:
     valor: 0.08
     unidade: fração da remuneração
@@ -89,17 +95,37 @@ premissas:
     data_referencia: 2020-06-30
     justificativa: o FAP é individual por empregador e não é público.
   incidencias:
-    valor:
-      aviso_previo_indenizado: {fgts: true, inss: false}
-      decimo_terceiro: {fgts: true, inss: true}
-      ferias_indenizadas: {fgts: false, inss: false}
+    valores:
+      min:
+        aviso_previo_indenizado: {fgts: true, inss: false}
+        decimo_terceiro: {fgts: true, inss: true}
+        ferias_indenizadas: {fgts: false, inss: false}
+      base:
+        aviso_previo_indenizado: {fgts: true, inss: false}
+        decimo_terceiro: {fgts: true, inss: true}
+        ferias_indenizadas: {fgts: false, inss: false}
+      max:
+        aviso_previo_indenizado: {fgts: true, inss: true}   # cenário com INSS no aviso (D-017, decisão do autor)
+        decimo_terceiro: {fgts: true, inss: true}
+        ferias_indenizadas: {fgts: false, inss: false}
     unidade: verba -> encargo incide?
     fonte: >-
       FGTS: Lei 8.036/1990, art. 15 e § 6º (exclui as parcelas do § 9º do art. 28 da Lei 8.212).
       INSS: Lei 8.212/1991, art. 28, § 7º (13º integra) e § 9º, d (férias indenizadas não integram).
-      Aviso prévio indenizado sem INSS: jurisprudência do STJ (REsp 1.230.957/RS, repetitivo), citada de memória pela IA, A CONFIRMAR.
-    data_referencia: 2026-10-18
+      Aviso prévio indenizado sem INSS: STJ, Tema Repetitivo 478 (REsp 1.230.957/RS), tese mantida na retratação de 13/05/2026
+      (data/bronze/normas/2026-10-18/stj_tema_repetitivo_478.html). No max, o INSS incide sobre o aviso.
+    data_referencia: 2026-06-10
     justificativa: Prov. 227, art. 5º, parágrafo único, manda incluir INSS, RAT x FAP e FGTS mensal; aplica-se onde a lei faz incidir.
+  contribuicoes_terceiros:
+    valor: 0.0
+    unidade: fração da remuneração
+    fonte: >-
+      Prov. 227/2026, art. 5º, parágrafo único (lista fechada: INSS, RAT + FAP e FGTS mensal).
+      Salário-educação: STJ, Tema Repetitivo 1228 (não exigível da pessoa física que exerce serviço notarial ou registral;
+      julgado em 20/08/2026, acórdão publicado em 09/10/2026, sem trânsito em julgado).
+      Sistema S: sem fonte oficial localizada para o titular pessoa física (limitação).
+    data_referencia: 2026-10-09
+    justificativa: terceiros não são encargos previdenciários nem fundiários, que é o que o art. 5º manda incluir (D-018).
   fracao_ferias_vencidas_pendentes:
     valores: {min: 0.0, base: 0.5, max: 1.0}
     unidade: fração de um período de férias vencido e ainda não gozado (para quem tem 1 ano ou mais)

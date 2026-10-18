@@ -5,6 +5,7 @@ com aviso prévio indenizado. A projeção do aviso integra o tempo de serviço 
 gera 13º e férias proporcionais adicionais.
 """
 from dataclasses import asdict, dataclass
+from datetime import date, timedelta
 
 import pandas as pd
 
@@ -50,6 +51,18 @@ def avos(dias: float, dias_fracao: int) -> int:
     return dias // 30 + (1 if dias % 30 >= dias_fracao else 0)
 
 
+def avos_13_da_projecao(data_posicao: date, dias_aviso: int, dias_fracao: int) -> int:
+    """Avos de 13º gerados pela projeção do aviso, contados pelo CALENDÁRIO (Lei 4.090/1962, art. 1º, §§ 1º e 2º).
+
+    O aviso começa no dia seguinte à posição. Ex.: 31/12 + 45 dias = 14/02 -> janeiro inteiro + 14 dias de
+    fevereiro (menos de 15) = 1/12.
+    """
+    fim = data_posicao + timedelta(days=dias_aviso)
+    if fim.year == data_posicao.year:
+        return 0
+    return (fim.month - 1) + (1 if fim.day >= dias_fracao else 0)
+
+
 def dias_aviso_previo(meses_servico: float, p: dict) -> int:
     """30 dias + 3 por ano completo de serviço, com teto de 90 (Lei 12.506/2011)."""
     anos_completos = int(meses_servico // 12)
@@ -71,12 +84,14 @@ def passivo_por_vinculo(salario: float, meses_servico: float, p: dict) -> Passiv
     dias_av = dias_aviso_previo(meses_servico, p)
     aviso = salario * dias_av / 30
 
-    # III - 13º proporcional: o do ano já foi pago em dezembro; resta a projeção do aviso
-    meses_13_no_ano = 0 if p["decimo_terceiro_quitado_na_data_base"] else 12
-    avos_13 = min(meses_13_no_ano + avos(dias_av, fr), 12)
+    # III - 13º proporcional: na posição de 31/12 o do ano já foi pago; resta a projeção do aviso, pelo calendário
+    if not p["decimo_terceiro_quitado_na_data_base"]:
+        raise ValueError("o modelo só calcula na posição de 31/12 com o 13º do ano quitado (art. 4º do Prov. 227)")
+    avos_13 = avos_13_da_projecao(p["data_posicao"], dias_av, fr)
     decimo = salario * avos_13 / 12
 
-    # II - férias proporcionais (período aquisitivo em curso + projeção do aviso) e vencidas pendentes, + 1/3
+    # II - férias proporcionais (período aquisitivo em curso + projeção do aviso) e vencidas pendentes, + 1/3.
+    # Aqui o mês é de 30 dias de propósito: o período aquisitivo conta da data de admissão, que a RAIS não traz.
     dias_periodo_em_curso = (meses_servico - 12 * anos_completos) * 30 + dias_av
     avos_fer = avos(dias_periodo_em_curso, fr)
     vencidas = 0.0

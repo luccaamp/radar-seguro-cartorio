@@ -1,4 +1,5 @@
 """Validação das premissas e resolução de um nível (min / base / max) em valores escalares. Sem I/O."""
+import copy
 from typing import Any
 
 NIVEIS = ("min", "base", "max")
@@ -40,6 +41,41 @@ def _no_nivel(valores: Any, nivel: str) -> Any:
     if isinstance(valores, dict):
         return {k: _no_nivel(v, nivel) for k, v in valores.items()}
     return valores
+
+
+def iguais(a: Any, b: Any, tol: float = 1e-9) -> bool:
+    """Igualdade com tolerância numérica (0,052 e 0,052000000000000005 são a mesma premissa)."""
+    if isinstance(a, dict) and isinstance(b, dict):
+        return a.keys() == b.keys() and all(iguais(a[k], b[k], tol) for k in a)
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)) and not isinstance(a, bool):
+        return abs(a - b) <= tol * max(1.0, abs(a), abs(b))
+    return a == b
+
+
+def com_novo_base(semente: dict, ajustes: dict[str, Any]) -> tuple[dict, dict]:
+    """Nova versão das premissas com os `ajustes` no lugar do valor base (min e max ficam como estavam).
+
+    Devolve (conteúdo novo, diff {premissa: {"de": ..., "para": ...}}). Ajustes de premissas que não existem
+    na semente (ex.: fracao_exigencia_garantia do cenário) não entram na versão.
+    """
+    novo = copy.deepcopy(semente)
+    diff = {}
+    for nome, valor in ajustes.items():
+        p = novo["premissas"].get(nome)
+        if p is None:
+            continue
+        if "valor" in p:
+            antes, p["valor"] = p["valor"], valor
+        elif isinstance(p.get("valores"), dict) and set(p["valores"]) == set(NIVEIS):
+            antes, p["valores"]["base"] = p["valores"]["base"], valor
+        else:  # premissa por faixa (ex.: prob_deficit por classe)
+            antes = {k: v["base"] for k, v in p["valores"].items()}
+            for k, v in valor.items():
+                p["valores"][k]["base"] = v
+        if not iguais(antes, valor):
+            diff[nome] = {"de": antes, "para": valor}
+    validar(novo)
+    return novo, diff
 
 
 def resolver(semente: dict, nivel: str = "base", ajustes: dict | None = None) -> dict[str, Any]:

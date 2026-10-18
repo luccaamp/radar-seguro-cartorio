@@ -27,6 +27,47 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 
 ---
 
+## 2026-10-18 — Fase 1, etapa (c): gold, qualidade e painel
+- **O que foi feito:**
+  - `src/motor.py`: encadeia o modelo, e o pipeline e o Simulador usam o mesmo código (o Simulador reproduz o cenário base do gold com diferença zero);
+  - `src/transform/gold.py`: 3 níveis × 2 regras de classe × 3 cenários do STF, sensibilidade do rateio, diferença v1 × v2, agregação LGPD;
+  - `src/estado.py`: `premissas_versoes` (semente = versão 1), `cenarios_salvos` e `log_decisoes` (espelho de `docs/decisoes.md`, para o chat);
+  - `src/quality/reconciliacao.py` e `config/qualidade.yaml`: 6 reconciliações e 28 contratos do gold;
+  - função pura `src/model/lgpd.py` com teste;
+  - painel em `app/`: Início, Mercado (filtros, mapa, ranking, faixas), Simulador (controles, cenário do STF, mercado × seguradora, salvar) e Qualidade dos dados. Todo número tem rodapé com fonte, data de referência e versão das premissas;
+  - testes do painel com o executor de testes do Streamlit;
+  - conferência visual por captura de tela.
+- **Aceite da Fase 1 (SPEC §8):**
+  - `uv run pipeline.py` reconstruiu banco, silver e gold do zero, a partir dos snapshots do bronze, em 6 s e sem internet;
+  - 75 testes passando;
+  - rodapé de fonte, data e versão conferido em todas as páginas (teste automático).
+- **Resultados (MG, regra v2, regra mantida; min / base / max):**
+  - passivo de todas as ativas: R$ 302,7 / 343,4 / 390,5 mi;
+  - universo do Prov. 227: 1.103 / 1.121 / 1.159 serventias;
+  - déficit: R$ 10,5 / 40,4 / 124,2 mi;
+  - IS: R$ 2,6 / 20,2 / 86,9 mi;
+  - prêmio do mercado: R$ 26 mil / 404 mil / 3,0 mi por ano; seguradora hipotética: R$ 1,0 mil / 21,0 mil / 499 mil;
+  - **resultado técnico negativo no máximo** (−R$ 237 mil): sinistralidade de 73,9% + comissão de 21,9% + despesa de 12% passam de 100%.
+- **Descobertas:**
+  - as reconciliações reproduziram de forma independente os números da Fase 0 (CNPJ +15,8%; RAIS × CNJ +1,8%; correlação 0,996);
+  - **v1 dá déficit menor que v2**, mesmo com um universo maior (1.545 contra 1.121 no base; prêmio de R$ 383 mil contra R$ 404 mil). Na v1, o teto da Classe 2 cai para R$ 500 mil, e as serventias entre R$ 500 mil e R$ 1,5 mi viram Classe 3, com `prob_deficit` e `pct_descoberto` menores (D-011 usa a classe da mesma regra). Pergunta para o autor;
+  - **método de rateio:** por empregados R$ 40,4 mi; por arrecadação 40,3; uniforme 36,4; por atribuição 37,0. O número de serventias com déficit não muda, porque depende só do universo;
+  - **LGPD:** 532 dos 851 municípios com serventia têm menos de 3 e entram agregados; o mapa mostra estimativa para 319;
+  - metadados de coleta da Fase 0 em dois padrões de nome (`<stem>.meta.json` e `_metadados.json`): o silver passou a ler os dois, e os arquivos filtrados herdam os metadados do pacote de origem.
+- **Erros da IA:** 2 novos (`docs/erros_ia.md`): ponto flutuante no salvar e "R$"/mapa no painel.
+- **Próximo passo:** revisão do autor (ponto c); depois a Fase 2 (Brasil inteiro e qualidade).
+
+## 2026-10-18 — Fase 1, revisão do ponto (b) pelo autor
+- **O que foi feito:**
+  - D-017 aprovada com ajustes;
+  - D-018 nova (terceiros);
+  - páginas oficiais do STJ (Temas 478 e 1228) salvas no bronze por `src/ingest/legislacao.py`.
+- **Descobertas:**
+  - **Tema 478 do STJ confirmado no site oficial:** não incide INSS sobre o aviso prévio indenizado. A tese foi mantida na retratação de 13/05/2026; o que mudou foi só o terço de férias gozadas, que passou a ter INSS patronal (Tema 985/STF). Isso não afeta a rescisão, porque nela as férias são indenizadas;
+  - **Tema 1228 do STJ** (julgado em 20/08/2026, sem trânsito): o titular pessoa física não paga salário-educação. Para o Sistema S não foi encontrada fonte oficial;
+  - **erro da IA no 13º**, achado pelo autor: a contagem é pelo calendário, então 45 dias a partir de 31/12 dão 1/12, e não 2/12. Exemplo corrigido: **R$ 16.161,17**.
+- **Próximo passo:** ponto (c).
+
 ## 2026-10-18 — Fase 1, etapa (b): modelo e testes
 - **O que foi feito:**
   - respostas do autor ao ponto (a) registradas: D-013 (zero), D-014 (conflito), D-015 (vínculos sem salário de dezembro) e D-016 (premissas, com sinistralidade base no 0775 e máximo do market share = líder atual). "Responda sempre em português" no CLAUDE.md;
@@ -190,3 +231,27 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 ## 2026-10-17 — Início do projeto
 - **O que foi feito:** SPEC, CLAUDE.md e estrutura de documentação criados; repositório publicado em `luccaamp/radar-seguro-cartorio`.
 - **Próximo passo:** Sessão 0 (revisão do SPEC pela IA).
+
+---
+
+## 2026-10-18 (tarde) — Verificação final da Fase 1 (só leitura e comparação)
+- **O que foi feito:**
+  - leitura de `docs/revisao_fase1.md` e `docs/verificacao_final_fase1.md`;
+  - CSV do BI do CNJ movido, sem alteração, para `data/bronze/cnj_bi_painel/2026-10-18/` (524.712 linhas; SHA-256 `5797a96a26d80d06…`; linhagem no `.meta.json`; hora da exportação não informada, cópia para o projeto às 13:43). Não tem dado pessoal. Só conferência: não entra no silver nem no gold;
+  - scripts novos, só de leitura, em `scripts/verificacao_fase1/` (DuckDB em memória sobre o CSV, os Parquet de `data/silver` e `data/gold` e o bronze). O banco real estava travado pelo Streamlit aberto pelo autor (PID 26744, desde 13:27) e não foi aberto; o recálculo em memória reproduz o gold de 09:52 com diferença zero;
+  - `data/radar.duckdb` antes e depois: 2026-10-18T09:52:40, 11.022.336 bytes (sem mudança). A suíte de testes não foi rodada porque grava no banco real (ver `erros_ia.md`).
+- **Descobertas:**
+  - **armadilhas do CSV confirmadas:** 2º sem/2025 com 28.308 linhas por atribuição para 11.066 CNS; custeio idêntico em todas as linhas de 8.183 CNS (1.445 em MG): soma ingênua R$ 15,86 bi, um por CNS R$ 7,30 bi; 1º sem/2026 misto e sem custeio; 952 linhas sem data (341 CNS, arrecadação 0); 4 custeios negativos; 6 CNS com 2 linhas no 1º sem/2025;
+  - **F1:** cadastro igual ao BI (2.525; 1.654; 830; 28; 13). Todas as 2.525 estão no CSV; 1 CNS do CSV não existe em nenhum cadastro do Justiça Aberta;
+  - **F2: o coletor não perde linhas.** A API devolve uma linha por CNS e semestre (o BI é que divide por atribuição). Silver × BI, 2.525 ativas: 1º sem/2025 R$ 2.379,6 × 2.373,9 mi (+0,24%); 2º sem/2025 R$ 3.133,9 × 3.067,7 mi (+2,16%). A diferença do 2º semestre vem de 168 CNS que a API já tem (R$ 62,7 mi) e o BI ainda não; sem eles, +0,11%. CNS a CNS: 16 divergem > 1% no 1º sem e 6 no 2º sem;
+  - **F3:** o "154" do contrato são 154 **linhas** = 77 pares CNS-período com conflito no silver (a API e o BI duplicam períodos diferentes: BI 151 pares). Em 2025 há 2 conflitos nas duas fontes, os mesmos 2 CNS. Conflitos de anos antigos não entram no modelo (só 2025 é usado);
+  - **F4:** no silver não falta semestre de 2025 (0 ausentes; zeros: 135 no 1º e 143 no 2º); no BI faltam 168 no 2º sem. Com o 1º sem > R$ 300 mil e o 2º ausente ou zero: BI 45 providos, silver 14 (classificados pelo 1º semestre, entram no universo);
+  - **F5:** leitura atual = média dos semestres com valor > 0 (1.103 providos no silver; 1.095 aplicando a mesma regra ao BI). Literal com zero (média dos dois) = 1.087 no silver. Referências do BI conferidas: 928 / 1.065 / 1.106 / 1.161;
+  - **F6:** a API do Justiça Aberta não traz repasse nem custeio (só período, atos e arrecadação), então o CSV do BI é a fonte. Custeio 2025 das ativas de MG R$ 1.406 mi × folha RAIS com encargos R$ 713 mi; 29 de 389 áreas com custeio menor que a folha. Passivo dos obrigados ÷ saldo anual 2025 (base v2): < 3 meses 708 serventias; 3 a 12 meses 260; > 12 meses 41; saldo ≤ 0 47; sem dado 74. Agregado: 1,94 mês de saldo;
+  - **F7 (controle da Fase 2):** BI 2025 R$ 36,23 bi de arrecadação, R$ 12,34 bi de repasse e R$ 13,26 bi de custeio (conferem). O Justiça Aberta tem 12.121 ativas e o BI 11.866: 256 ativas do Justiça Aberta não têm linha no BI, quase todas sem situação jurídica (RJ 80, SE 35, ES 25). A diferença para a ANOREG (12.210, dez/2025, mesma base do CNJ) segue inconclusiva;
+  - **F8:** o estudo externo usa o universo "dois semestres > R$ 300 mil" (928 providos; R$ 4.015 mi × 11,5% = R$ 461,7 mi). Ponte: com o nosso método por vínculos e as premissas do estudo (10 anos fixos, INSS no aviso e nas férias, RAT 2%), o passivo desse universo é R$ 281,2 mi; com as nossas premissas, R$ 234,5 mi; no nosso universo (esperado), R$ 256,5 mi. Prêmio do estudo para MG: 461,5 × 100% × 70% × 1% = R$ 3,23 mi/ano, contra R$ 0,40 mi no nosso base. Não usar o estudo como fonte;
+  - **C1:** correlação bruta 0,996 (0,985 sem BH); em log 0,965; erro mediano 13,2%; 69,1% dentro de ±20% (376 municípios com ≥ 5); escondidos no log: 64 com RAIS 0 e 2 com CNJ 0;
+  - **C6:** os 2 municípios sem serventia no CNJ são Campo Azul e Senador José Bento (0 registros no CNJ, 1 CNPJ ativo do CNAE em cada): inconclusivo. Dos 887 vínculos sem remuneração de dezembro, 714 têm também remuneração média zero e 12+ meses de casa (afastados o ano todo, provável) e só 4 foram admitidos em dezembro;
+  - **E4 (teto):** passivo do universo × taxa = R$ 5,13 mi/ano no base (2%) e R$ 10,56 mi/ano no máximo (3,5%), conferindo as contas do autor;
+  - **B3:** 245 apólices no base (seguradora 12,7), IS média R$ 82,6 mil e prêmio médio R$ 1.651.
+- **Próximo passo:** aprovação do autor, item a item, do plano da verificação final. Nada foi implementado.

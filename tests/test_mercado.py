@@ -6,7 +6,7 @@ import pytest
 
 from src.model.cenario import aplicar_cenario_stf
 from src.model.mercado import deficit, demanda_seguro, receita
-from src.model.premissas import PremissaInvalida, resolver, validar, validar_escolha_garantia
+from src.model.premissas import PremissaInvalida, com_novo_base, resolver, validar, validar_escolha_garantia
 
 
 def test_semente_valida(semente):
@@ -27,6 +27,21 @@ def test_resolver_niveis(semente):
     assert resolver(semente, "min")["fap"] == 0.5
     assert resolver(semente, "max")["prob_deficit"]["classe_3"] == 0.50
     assert resolver(semente, "base", {"taxa_seguro_anual": 0.03})["taxa_seguro_anual"] == 0.03
+
+
+def test_nova_versao_muda_so_o_base(semente):
+    novo, diff = com_novo_base(semente, {"taxa_seguro_anual": 0.025, "prob_deficit": {"classe_2": 0.6},
+                                         "fap": 1.0, "fracao_exigencia_garantia": 0.5})
+    assert novo["premissas"]["taxa_seguro_anual"]["valores"] == {"min": 0.010, "base": 0.025, "max": 0.035}
+    assert novo["premissas"]["prob_deficit"]["valores"]["classe_2"]["base"] == 0.6
+    assert novo["premissas"]["prob_deficit"]["valores"]["classe_3"]["base"] == 0.30
+    assert set(diff) == {"taxa_seguro_anual", "prob_deficit"}   # fap não mudou; fração do cenário não é premissa
+    assert semente["premissas"]["taxa_seguro_anual"]["valores"]["base"] == 0.020   # semente intacta
+
+
+def test_nova_versao_ignora_ruido_de_ponto_flutuante(semente):
+    _, diff = com_novo_base(semente, {"market_share_hipotetico": 5.2 / 100, "sinistralidade": 10.9 / 100})
+    assert diff == {}
 
 
 def _serv():

@@ -18,9 +18,24 @@ Formato:
 
 ---
 
+## D-018 — Contribuições de terceiros (salário-educação, Sistema S) fora do passivo
+- **Data:** 2026-10-18
+- **Contexto:** o autor perguntou se as contribuições de terceiros se aplicam ao titular que contrata pelo CPF/CAEPF (98% dos vínculos de MG).
+- **O que a fonte oficial diz:**
+  - **Salário-educação:** STJ, **Tema Repetitivo 1228**, tese firmada: "não é exigível da pessoa física que exerce serviço notarial ou registral, a qual não se enquadra na definição de contribuinte trazida na legislação que rege o tributo". Julgado em 20/08/2026, acórdão publicado em 09/10/2026, **sem trânsito em julgado** (página do STJ em `data/bronze/normas/2026-10-18/stj_tema_repetitivo_1228.html`);
+  - **Sistema S (SESC, SENAC etc.):** nenhuma fonte oficial (tema repetitivo, lei ou norma da Receita) foi localizada para o titular pessoa física. A exclusão do salário-educação não se estende automaticamente ao Sistema S.
+- **Decisão:** `contribuicoes_terceiros` = 0 no passivo.
+- **Justificativa:** independentemente da cobrança, o Prov. 227 fecha a lista: o parágrafo único do art. 5º inclui os "encargos previdenciários e fundiários devidos pelo empregador (INSS, RAT + FAP e FGTS mensal)". Contribuições de terceiros não são previdenciárias nem fundiárias.
+- **Limitação:** a situação do Sistema S para o titular pessoa física fica em aberto; não afeta o passivo do art. 5º.
+- **Fonte:** Prov. 227/2026, art. 5º, parágrafo único; STJ, Tema 1228.
+
 ## D-017 — Fórmula do passivo por vínculo: parâmetros legais e interpretações
 - **Data:** 2026-10-18
-- **Status:** parâmetros legais conferidos no texto oficial; **três interpretações (marcadas com ⚠) aguardam o autor**.
+- **Status:** **aprovada pelo autor em 2026-10-18**, com os ajustes abaixo.
+- **Ajustes do autor e da conferência:**
+  - INSS sobre o aviso prévio indenizado **confirmado no site oficial do STJ**: Tema Repetitivo 478 (REsp 1.230.957/RS, relator Min. Marco Aurélio Bellizze), tese "não incide contribuição previdenciária sobre os valores pagos a título de aviso prévio indenizado, por não se tratar de verba salarial", **mantida** no juízo de retratação de 13/05/2026 (que reformou só o terço de férias gozadas, pelo Tema 985/STF). **Base e min sem INSS no aviso; max com INSS no aviso** (decisão do autor);
+  - 13º da projeção do aviso contado **pelo calendário** a partir de 31/12 (correção pedida pelo autor; ver `docs/erros_ia.md`). Nas férias, o mês de 30 dias continua, como aproximação declarada;
+  - 13º quitado em 31/12, férias pendentes 0 / 0,5 / 1 e `fator_correcao_saldo_fgts` = 1,0 (suposição): aprovados.
 - **Contexto:** o art. 5º do 227 lista as verbas, mas não diz como calcular cada uma com os dados da RAIS (salário de dezembro e tempo de emprego em 31/12).
 - **Parâmetros legais (texto conferido em `data/bronze/normas/2026-10-18/`):**
   - aviso prévio: 30 dias + 3 por ano completo, até 90 (Lei 12.506/2011, art. 1º);
@@ -33,7 +48,7 @@ Formato:
   - RAT de **1%** para o CNAE 6912-5/00 Cartórios (Decreto 3.048/1999, Anexo V, redação do Decreto 10.410/2020); FAP entre 0,5 e 2,0 (art. 202-A, § 1º), com base 1,0.
 - **Interpretações propostas pela IA:**
   - ⚠ **13º na posição de 31/12:** o 13º do ano já foi pago em dezembro, então resta só o 13º da projeção do aviso (art. 4º do 227 + Lei 4.090, art. 1º);
-  - ⚠ **INSS não incide sobre o aviso prévio indenizado.** A lei não o exclui expressamente; a não incidência vem da jurisprudência do STJ (REsp 1.230.957/RS, repetitivo), **citada de memória, a confirmar**. O FGTS incide sobre o aviso (ele não está no § 9º do art. 28);
+  - ⚠ **INSS não incide sobre o aviso prévio indenizado.** A lei não o exclui expressamente; a não incidência vem da jurisprudência do STJ (Tema 478, confirmado depois; ver ajustes acima). O FGTS incide sobre o aviso (ele não está no § 9º do art. 28);
   - ⚠ **férias vencidas não gozadas:** a RAIS não informa se o último período foi gozado. Premissa nova `fracao_ferias_vencidas_pendentes` (min 0, base 0,5, max 1; `fonte: suposição`), com base no prazo de 12 meses do art. 134 da CLT.
 - **Suposição de cálculo:** o saldo do FGTS é estimado como 8% × salário atual × meses × 13⅓/12 (12 salários + 13º + 1/3 de férias), com `fator_correcao_saldo_fgts` = 1,0 (`fonte: suposição`). O salário atual superestima os depósitos antigos e a falta de juros os subestima; os efeitos se compensam em parte.
 - **Fonte:** leis citadas (Planalto, coletadas em 2026-10-18); Prov. 227/2026, arts. 4º a 6º.
@@ -191,3 +206,45 @@ Formato:
   - a opção 2 isentaria uma faixa intermediária de serventias grandes, o que não tem lógica regulatória aparente.
 - **Consequências / onde aparece:** `universo()` exclui a Classe 1. A interpretação é citada no chat quando a pergunta envolver as exclusões. Se uma norma ou decisão posterior esclarecer o ponto, esta decisão é revista (monitorado pelo radar).
 - **Fonte:** Prov. 227/2026, art. 19; Prov. 213/2026, art. 16 (texto compilado).
+
+---
+
+> Propostas acrescentadas em 2026-10-18 (tarde), na verificação final da Fase 1. **Nenhuma está aprovada nem implementada.** Números: `scripts/verificacao_fase1/` (Parquet de 09:52; motor reproduz o gold com diferença zero).
+
+## D-019 — PROPOSTA: faixas de déficit sempre pela classe v2; a regra v1 só muda o universo
+- **Data:** 2026-10-18
+- **Contexto:** A1. Hoje a v1 reclassifica Classe 2/3 e recalcula o peso da indeterminada (0,932 × 0,678), e o prêmio cai com o universo maior.
+- **Proposta:** `deficit()` recebe a classe v2 para as faixas; o peso da indeterminada é o da v2 nas duas regras; a v1 só decide quem entra. Teste de monotonicidade em min, base e max.
+- **Impacto (base, mantém):** v2 sem mudança; v1: universo 1.545,2 → 1.538,3, déficit R$ 38,3 → 44,9 mi, prêmio R$ 382,9 → 448,8 mil.
+
+## D-020 — PROPOSTA: data-base única 31/12/2025
+- **Data:** 2026-10-18
+- **Contexto:** A2. Art. 4º do 227: declaração "com base na posição de 31 de dezembro do exercício anterior". Art. 18: no primeiro ano só muda o **prazo** de entrega (30 dias da vigência), não a posição.
+- **Proposta:** tudo em 31/12/2025 (tempo de casa e salário da RAIS, aviso, 13º quitado, férias); INPC dez/2025 → set/2026 vira sensibilidade ("valor atualizado para a data da declaração"), fora da base. Empregados seguem do CNJ (out/2026) por falta de contagem em 31/12/2025, como limitação (RAIS 31/12/2025 difere 1,8%). Rodapé com "data-base 31/12/2025".
+- **Impacto (base v2):** −3,86% em passivo (R$ 343,4 → 330,1 mi todas; 256,5 → 246,6 mi obrigados), déficit (40,4 → 38,9), IS (20,2 → 19,4) e prêmio (404 → 389 mil).
+
+## D-021 — PROPOSTA: probabilidade de déficit só onde o passivo é maior que zero
+- **Data:** 2026-10-18
+- **Proposta:** `n_deficit = peso × prob × [passivo > 0]`. **Impacto:** "com déficit" base 489,9 → 486,1 (min 277,8 → 275,7; max 738,3 → 732,0). Valores em R$ não mudam.
+
+## D-022 — PROPOSTA: reserva da distribuição salarial pela região imediata do IBGE
+- **Data:** 2026-10-18
+- **Contexto:** C2. A distribuição "estado" usa todos os 10.978 vínculos de MG, com BH: R$ 24.951 por vínculo, contra R$ 13.842 nos municípios abaixo do limiar.
+- **Proposta:** município (≥ 20 vínculos) → região imediata (≥ 20) → estado. Com isso os 716 municípios hoje "estado" passam todos a usar a região.
+- **Impacto:** passivo de todas as ativas R$ 343,4 → 324,4 mi (−5,5%); só nos 716 municípios, R$ 90,0 → 71,0 mi. O efeito no universo será medido na implementação.
+
+## D-023 — PROPOSTA: leitura do art. 16, § 1º, do 213 (receita para a Classe 1)
+- **Data:** 2026-10-18
+- **Texto (Prov. 243, art. 1º):** "O enquadramento da serventia será reavaliado anualmente, com base na média das receitas brutas semestrais do exercício imediatamente anterior". Classe 1: "receita bruta semestral não superior a R$ 300.000,00".
+- **Leitura atual (`src/model/universo.py:24-30`):** média só dos semestres de 2025 com valor > 0; zero nos dois → indeterminada. Providos acima de R$ 300 mil: 1.103 (silver).
+- **Proposta:** principal = média literal dos dois semestres de 2025, com o zero declarado contando como zero (1.087 providos no silver; −16); semestre **ausente** = desconhecido, usa o disponível com aviso; zero nos dois e conflito continuam indeterminados (D-013, D-014). Sensibilidade, na mesma tabela de v1 × v2: leitura atual, "dois semestres", "2º semestre", "algum semestre" (BI: 928 / 1.106 / 1.161 providos).
+
+## D-024 — PROPOSTA: contrato de total de controle da arrecadação de MG
+- **Data:** 2026-10-18
+- **Contexto:** F2. Silver × BI (18/10/2026): 1º sem/2025 +0,24%; 2º sem/2025 +2,16%, dos quais R$ 62,7 mi vêm de 168 CNS que a API já tem e o BI ainda não (prazo prorrogado até 15/04/2026). Sem esses 168: +0,11%.
+- **Proposta:** `config/qualidade.yaml` com o total de controle do BI por semestre; o contrato compara os CNS presentes nas duas fontes (tolerância 0,5%, erro) e lista à parte os CNS só na API (aviso).
+
+## D-025 — PROPOSTA (etapa 2, discutir): sinistro por frequência × severidade
+- **Data:** 2026-10-18
+- **Contexto:** B1. A SES (0775/0776) é carteira de obras e contratos; o produto tem seleção adversa e o risco é o fim da delegação sem pagamento.
+- **Proposta:** sinistro = P(fim da delegação no ano) × P(não paga | déficit) × parte paga da IS − recuperação; a SES fica como comparação. Para a P(fim), o cadastro do Justiça Aberta só tem a data da decisão da **situação atual** (VAGO por ano da decisão em MG: 2019 66; 2020 13; 2021 37; 2022 34; 2023 36; 2024 250; 2025 133), o que não basta para uma taxa (falta o histórico de quem voltou a ser provido). O cadastro do BI tem as datas; decisão do autor.

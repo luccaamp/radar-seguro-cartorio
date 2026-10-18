@@ -17,6 +17,35 @@ Formato de cada entrada:
 
 ---
 
+## 2026-10-18 — Simulador criava versão nova de premissas sem nenhuma mudança (ponto flutuante)
+- **Onde:** código gerado (`src/model/premissas.py::com_novo_base`, usado pelo botão "Salvar" do Simulador)
+- **O que aconteceu:** salvar um cenário sem mexer em nada criava a versão 2 das premissas com o diff `market_share_hipotetico: 0.052 → 0.052000000000000005`. O controle devolve 5,2 e o código divide por 100, e no computador 5,2 ÷ 100 não é exatamente 0,052. Esperado: nenhuma versão nova.
+- **Como foi detectado:** teste automático novo (`test_simulador_salva_cenario_sem_nova_versao`), escrito antes de entregar a página.
+- **Causa provável:** comparação de números decimais com `!=`.
+- **Correção:** função `iguais()` com tolerância numérica e teste com o caso real (5,2/100 e 10,9/100). A versão 2 e o cenário criados pelo teste foram apagados do banco.
+- **Resultado depois da correção:** 75 testes passando; salvar sem mudança não cria versão.
+- **Bom para os slides?** não
+
+## 2026-10-18 — Painel: "R$" virava fórmula matemática e o mapa não desenhava
+- **Onde:** código gerado (`app/`)
+- **O que aconteceu:** (1) no `st.markdown`, o Streamlit lê `$...$` como LaTeX, e as frases com dois "R$" saíam embaralhadas; (2) o mapa com `px.choropleth` aparecia como um retângulo azul (orientação dos polígonos do IBGE).
+- **Como foi detectado:** **conferência visual**: captura de tela das páginas com o Edge (Playwright). Os testes automáticos passavam, porque a página rodava sem exceção.
+- **Causa provável:** a IA testou "roda sem erro", mas não "aparece certo".
+- **Correção:** função `md()` que escapa o cifrão nos textos; mapa trocado por `px.choropleth_map` com fundo branco (também funciona offline, requisito da demo); cor do mapa saturada no percentil 95, porque Belo Horizonte concentrava a escala.
+- **Resultado depois da correção:** capturas conferidas nas 4 páginas.
+- **Lição:** teste automático de interface prova que a tela abre, não que está legível. Olhar a tela faz parte do aceite.
+- **Bom para os slides?** sim (junto com o erro do 13º: os dois foram pegos por conferência humana ou visual, não por teste)
+
+## 2026-10-18 — 13º da projeção do aviso contado com mês de 30 dias, e não pelo calendário
+- **Onde:** código gerado (`src/model/passivo.py`) e exemplo à mão do ponto (b)
+- **O que aconteceu:** para um aviso de 45 dias a partir de 31/12, a IA calculou 2/12 de 13º ("45 dias = 1 mês + 15 dias, e 15 dias conta como mês"). Pelo calendário, os 45 dias vão de 1º/jan a 14/fev: janeiro inteiro + 14 dias de fevereiro, que não completam a fração de 15 dias. O certo é **1/12** (Lei 4.090/1962, art. 1º, §§ 1º e 2º, conta "por mês de serviço do ano"). O passivo do exemplo caiu de R$ 16.491,67 para **R$ 16.161,17** (−2%).
+- **Como foi detectado:** **pelo autor**, conferindo o exemplo feito à mão. O teste automático não pegou, porque tinha sido escrito com a mesma conta errada.
+- **Causa provável:** a IA usou a mesma aproximação de "mês de 30 dias" para o 13º e para as férias sem perceber que as duas leis contam o tempo de formas diferentes: o 13º conta meses do ano civil; as férias contam a partir da data de admissão.
+- **Correção:** nova função `avos_13_da_projecao(data_posicao, dias_aviso, ...)` pelo calendário, com a premissa `data_posicao` = 31/12/2025; teste do exemplo corrigido e teste novo com 7 casos de fronteira (30, 33, 44, 45, 46, 59 e 90 dias). Nas férias, o mês de 30 dias continua, agora como aproximação declarada no código (a RAIS não traz o dia de admissão).
+- **Resultado depois da correção:** 64 testes passando; exemplo à mão e código dão o mesmo valor.
+- **Lição:** um teste escrito pela mesma cabeça que escreveu o código repete o erro do código. A conferência humana do exemplo foi o que pegou.
+- **Bom para os slides?** **sim**
+
 ## 2026-10-18 — Vínculos por prazo indeterminado somados de cabeça (11.864 × 11.865)
 - **Onde:** `docs/decisoes.md`, D-009 (Fase 1)
 - **O que aconteceu:** a IA escreveu "ficam 11.864 vínculos" somando os códigos 15, 10 e 25 de uma lista que mostrava só os 6 tipos mais frequentes. O código 20 (1 vínculo) estava fora da lista. A consulta ao silver deu **11.865**.
@@ -176,3 +205,59 @@ Formato de cada entrada:
 - **Correção:** corrigido pelo autor no SPEC; na Fase 0 a IA confirmou o art. 18 e o art. 20 no texto oficial.
 - **Resultado depois da correção:** prazo correto no SPEC, com o artigo citado.
 - **Bom para os slides?** sim. Mostra por que a regra "toda norma conferida no texto oficial" existe.
+
+---
+
+> Registros acrescentados em 2026-10-18 (tarde), na verificação final da Fase 1 (`docs/revisao_fase1.md` e `docs/verificacao_final_fase1.md`). Fonte dos números: `scripts/verificacao_fase1/` sobre os Parquet de 09:52 (o motor reproduz o gold com diferença zero).
+
+## 2026-10-18 — Troca da regra de classe reclassificava as faixas de déficit (A1)
+- **Onde:** código gerado (`src/model/universo.py`, `src/model/mercado.py`, `src/transform/gold.py:67`)
+- **O que aconteceu:** `universo()` recalcula a classe com os limites da regra escolhida e `deficit()` usa essa classe nas faixas. Na v1, 834 serventias do universo base ficam na Classe 3 (contra 354 na v2), com prob. e parte descoberta menores; e o peso da indeterminada é recalculado por regra (v1 0,932 × v2 0,678). Resultado: universo maior (1.545 × 1.121) com prêmio menor (R$ 382,9 mil × 404,4 mil). Esperado: a v1 só inclui serventias; as faixas seguem a classe v2. Com a correção: déficit base v1 R$ 44,9 mi e prêmio R$ 448,8 mil (≥ v2 em min, base e max).
+- **Como foi detectado:** revisão do autor (A1); a IA havia apontado o efeito como "pergunta" no ponto (c), mas não corrigiu nem registrou como erro.
+- **Causa provável:** D-011 aplicado ao pé da letra sem testar monotonicidade.
+- **Correção:** proposta D-019 (aguarda aprovação) e teste de monotonicidade.
+- **Bom para os slides?** sim (universo maior, mercado menor: falta de teste de propriedade).
+
+## 2026-10-18 — "Serventias com déficit" contava serventias sem empregado (A4)
+- **Onde:** `src/model/mercado.py`, `deficit()`
+- **O que aconteceu:** `n_deficit = peso_universo × prob_deficit` sem olhar o passivo. No base v2, 8 serventias do universo com 0 CLT somam 3,8 das 489,9 "com déficit" (min 2,1; max 6,3). O valor do déficit delas já é zero.
+- **Como foi detectado:** revisão do autor (A4: o número não muda entre métodos de rateio).
+- **Correção:** proposta D-021 (prob. só onde passivo > 0) com teste.
+- **Bom para os slides?** não
+
+## 2026-10-18 — Testes gravando no banco real (A5, item 5)
+- **Onde:** `tests/test_app.py` (`test_simulador_salva_cenario_sem_nova_versao`) e `app/comum.py:47` (conexão de escrita)
+- **O que aconteceu:** o teste insere e apaga linhas em `estado.cenarios_salvos` de `data/radar.duckdb`. Na carga de 09:52, uma falha anterior desse teste já tinha criado uma versão 2 espúria das premissas no banco real (apagada à mão pela IA).
+- **Como foi detectado:** leitura do código na verificação (a suíte NÃO foi rodada nesta etapa para não alterar o banco; data do arquivo antes e depois da verificação: 2026-10-18T09:52:40, 11.022.336 bytes).
+- **Correção:** proposta: fixture que copia o banco para uma pasta temporária e aponta o app para ela por variável de ambiente.
+- **Bom para os slides?** sim (teste que muda o dado que deveria proteger).
+
+## 2026-10-18 — Correções 2, 3, 4 e 6 do painel não implementadas (A5)
+- **Onde:** `app/`
+- **O que aconteceu:** nenhum arquivo de `app/` mudou depois das 09:52; o Streamlit aberto às 13:27 já roda o código atual. As correções não foram feitas (não há registro delas nos docs desta sessão).
+- **Correção:** etapa 1 do plano da verificação final.
+- **Bom para os slides?** não
+
+## 2026-10-18 — Datas-base misturadas no passivo (A2)
+- **Onde:** `config/premissas/premissas_v001.yaml` (`data_posicao` 31/12/2025; `correcao_salarial_rais` INPC até o último mês) e `src/motor.py`
+- **O que aconteceu:** tempo de casa, aviso, 13º e férias na posição de 31/12/2025 (RAIS e art. 4º do 227), mas salário corrigido até set/2026 (fator 1,0401) e empregados contados em out/2026 (CNJ). Efeito do INPC: +3,86% em passivo, déficit, IS e prêmio.
+- **Correção:** proposta D-020 (data-base única 31/12/2025; INPC só como sensibilidade).
+- **Bom para os slides?** não
+
+## 2026-10-18 — Tabelas de conferência expõem municípios com menos de 3 serventias (D1)
+- **Onde:** `app/pages/3_Qualidade_dos_dados.py` (tabelas de maiores diferenças e texto do gráfico CNJ × RAIS)
+- **O que aconteceu:** 2 dos 10 municípios da tabela CNPJ − CNJ e 502 dos 821 pontos do gráfico têm menos de 3 serventias, com nome no texto ao passar o mouse.
+- **Correção:** etapa 1 do plano (regra de 3 serventias + teste).
+- **Bom para os slides?** não
+
+## 2026-10-18 — Sinistralidade sobre prêmio ganho aplicada ao prêmio emitido (B5)
+- **Onde:** `src/model/mercado.py` `_receita()`; rótulo do Simulador
+- **O que aconteceu:** as premissas vêm de sinistro ÷ prêmio ganho (0775: 10,9%), e a conta multiplica pelo prêmio emitido. Pela mesma SES, sinistro ÷ emitido = 8,2% (0775) e 59,3% (0776).
+- **Correção:** alinhar conta e rótulo (etapa 2, junto com o B1).
+- **Bom para os slides?** não
+
+## 2026-10-18 — Rastreabilidade incompleta e checagem de correlação fraca (C5, C1)
+- **Onde:** `silver.fonte_metadados`; `src/quality/reconciliacao.py`
+- **O que aconteceu:** sem URL em `cnj_colaboradores` e `susep_ses_garantia`; sem hora em `cnj_colaboradores`; data de referência = dia do download em `ibge_municipios`, `ibge_malha` (e no cadastro do CNJ, onde o snapshot é a referência). A correlação bruta (0,996) passa só por causa de BH: em log é 0,965, o erro mediano é 13,2% e só 69,1% dos municípios com ≥ 5 empregados ficam dentro de ±20%.
+- **Correção:** etapa 1 do plano.
+- **Bom para os slides?** sim (C1: métrica que passa sem testar nada).

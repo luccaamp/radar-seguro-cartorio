@@ -17,6 +17,12 @@ LEIS = {
     # Anexo V: relação de atividades preponderantes (CNAE) e alíquota RAT (link do próprio decreto)
     "decreto_3048_1999_anexo_v": "https://www.planalto.gov.br/ccivil_03/decreto/D3048anexov-vol1.htm",
     "clt_decreto_lei_5452_1943": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del5452.htm",
+    # STJ, Tema Repetitivo 478 (aviso prévio indenizado sem contribuição previdenciária; REsp 1.230.957/RS)
+    "stj_tema_repetitivo_478": ("https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp"
+                                "?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=478&cod_tema_final=478"),
+    # STJ, Tema Repetitivo 1228 (salário-educação e titular de serventia pessoa física)
+    "stj_tema_repetitivo_1228": ("https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp"
+                                 "?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=1228&cod_tema_final=1228"),
 }
 
 
