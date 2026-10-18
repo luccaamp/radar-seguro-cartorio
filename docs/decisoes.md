@@ -18,6 +18,67 @@ Formato:
 
 ---
 
+## D-017 — Fórmula do passivo por vínculo: parâmetros legais e interpretações
+- **Data:** 2026-10-18
+- **Status:** parâmetros legais conferidos no texto oficial; **três interpretações (marcadas com ⚠) aguardam o autor**.
+- **Contexto:** o art. 5º do 227 lista as verbas, mas não diz como calcular cada uma com os dados da RAIS (salário de dezembro e tempo de emprego em 31/12).
+- **Parâmetros legais (texto conferido em `data/bronze/normas/2026-10-18/`):**
+  - aviso prévio: 30 dias + 3 por ano completo, até 90 (Lei 12.506/2011, art. 1º);
+  - a projeção do aviso conta como tempo de serviço (CLT, art. 487, § 1º), por isso gera 13º e férias;
+  - fração de 15 dias ou mais = 1/12 (Lei 4.090/1962, art. 1º, § 2º; CLT, art. 146, parágrafo único);
+  - férias proporcionais na despedida sem justa causa, mesmo com menos de 12 meses (CLT, arts. 146 e 147), + 1/3 (art. 5º, II, do 227);
+  - FGTS: 8% da remuneração, incluindo o 13º (Lei 8.036/1990, art. 15); não incide sobre as parcelas do § 9º do art. 28 da Lei 8.212, como as férias indenizadas (art. 15, § 6º);
+  - multa de 40% sobre todos os depósitos do contrato (Lei 8.036, art. 18, § 1º);
+  - INSS patronal de 20% (Lei 8.212/1991, art. 22, I), com o titular pessoa física equiparado a empresa (art. 15, parágrafo único); o 13º integra (art. 28, § 7º) e as férias indenizadas não (art. 28, § 9º, d);
+  - RAT de **1%** para o CNAE 6912-5/00 Cartórios (Decreto 3.048/1999, Anexo V, redação do Decreto 10.410/2020); FAP entre 0,5 e 2,0 (art. 202-A, § 1º), com base 1,0.
+- **Interpretações propostas pela IA:**
+  - ⚠ **13º na posição de 31/12:** o 13º do ano já foi pago em dezembro, então resta só o 13º da projeção do aviso (art. 4º do 227 + Lei 4.090, art. 1º);
+  - ⚠ **INSS não incide sobre o aviso prévio indenizado.** A lei não o exclui expressamente; a não incidência vem da jurisprudência do STJ (REsp 1.230.957/RS, repetitivo), **citada de memória, a confirmar**. O FGTS incide sobre o aviso (ele não está no § 9º do art. 28);
+  - ⚠ **férias vencidas não gozadas:** a RAIS não informa se o último período foi gozado. Premissa nova `fracao_ferias_vencidas_pendentes` (min 0, base 0,5, max 1; `fonte: suposição`), com base no prazo de 12 meses do art. 134 da CLT.
+- **Suposição de cálculo:** o saldo do FGTS é estimado como 8% × salário atual × meses × 13⅓/12 (12 salários + 13º + 1/3 de férias), com `fator_correcao_saldo_fgts` = 1,0 (`fonte: suposição`). O salário atual superestima os depósitos antigos e a falta de juros os subestima; os efeitos se compensam em parte.
+- **Fonte:** leis citadas (Planalto, coletadas em 2026-10-18); Prov. 227/2026, arts. 4º a 6º.
+
+## D-016 — Valores das premissas de mercado (versão 1)
+- **Data:** 2026-10-18
+- **Contexto:** tabela proposta pela IA no ponto de parada (a), conforme D-012.
+- **Decisão (aprovada pelo autor):**
+
+  | Premissa | min | base | max | Fonte |
+  |---|---|---|---|---|
+  | `prob_deficit` Classe 2 / Classe 3 | 30% / 15% | 50% / 30% | 70% / 50% | suposição |
+  | `pct_descoberto` Classe 2 / Classe 3 | 30% / 20% | 50% / 40% | 80% / 70% | suposição |
+  | `escolha_garantia` (bens / fiança / seguro) | 50/25/25 | 30/20/50 | 15/15/70 | suposição |
+  | `taxa_seguro_anual` (% da IS) | 1,0% | 2,0% | 3,5% | suposição |
+  | `despesa_administrativa` (% do prêmio) | 5% | 8% | 12% | suposição |
+  | `market_share_hipotetico` | 3,9% (10ª) | 5,2% (5ª) | 16,4% (**líder atual**) | SES, 12 meses até ago/2026 |
+  | `peso_classe_indeterminada_base` | 0 | 65,6% | 1 | fração fora da Classe 1 (v2) entre as não vagas com receita conhecida |
+  | `sinistralidade` | **1,7%** (menor janela anual do 0775, set/2021–ago/2022) | **10,9%** (0775, set/2020–ago/2026) | **73,9%** (0776, set/2020–ago/2026) | SES |
+  | `comissao` (despesa de comercialização ÷ prêmio emitido) | 14,3% | 17,1% | 21,9% | SES |
+  | `correcao_salarial_rais` | sem correção | INPC dez/2025 → mês mais recente | — | IBGE/SIDRA, tabela 1736 |
+
+- **Justificativa da sinistralidade (autor):** base no ramo 0775 (setor público) pelo art. 13, §1º, do 227 ("apta a elidir a presunção de risco à continuidade do serviço público"); o 0776 fica como máximo.
+- **Consequências:** o painel deixa claro que o máximo do market share é a **fatia do líder atual**. `desp_com` do SES é despesa de comercialização inteira, não só comissão (limitação declarada). O `peso_classe_indeterminada_base` é recalculado pelo pipeline a cada carga: 65,6% na prévia do ponto (a) e **67,8%** depois de aplicar as regras de zero e conflito (D-013, D-014).
+- **Fonte:** decisão do autor em 2026-10-18; números do SES em `docs/diario.md` (2026-10-18).
+
+## D-015 — Vínculos sem remuneração de dezembro fora da distribuição
+- **Data:** 2026-10-18
+- **Contexto:** 887 dos 11.865 vínculos ativos por prazo indeterminado na RAIS 2025 de MG têm remuneração de dezembro zerada (mediana de 85 meses de casa; provável afastamento).
+- **Decisão:** ficam **fora da distribuição de salário × tempo**. A contagem de empregados continua vindo do CNJ (D-005).
+- **Limitação:** supõe que os afastados têm o mesmo perfil dos demais.
+- **Fonte:** RAIS 2025; aprovado pelo autor em 2026-10-18.
+
+## D-014 — Valores conflitantes na fonte = classe indeterminada
+- **Data:** 2026-10-18
+- **Contexto:** a API do Justiça Aberta traz, para algumas serventias, o mesmo período com valores diferentes. Em 2025: CNS 048108 e 053439 (1º semestre).
+- **Decisão:** se algum semestre de 2025 tem conflito, a serventia fica com **classe indeterminada** (D-004).
+- **Fonte:** silver `serventia_arrecadacao.conflito_fonte`; aprovado pelo autor em 2026-10-18.
+
+## D-013 — Arrecadação zero em 2025
+- **Data:** 2026-10-18
+- **Contexto:** em 2025 não há "NÃO INFORMADO", mas 76 ativas de MG declaram R$ 0 nos dois semestres. Uma serventia em funcionamento sem arrecadação é improvável; o zero provavelmente significa "não declarado".
+- **Decisão:** zero nos dois semestres → **classe indeterminada**; zero em um só → usa o outro semestre (mesma regra de "um semestre informado" de D-010).
+- **Fonte:** silver `serventia_arrecadacao`; aprovado pelo autor em 2026-10-18.
+
 ## D-012 — Premissas sem fonte pública × premissas da SUSEP
 - **Data:** 2026-10-18
 - **Contexto:** várias premissas do §2.4 não têm fonte pública (`prob_deficit`, `pct_descoberto`, `escolha_garantia`, `taxa_seguro_anual`, `market_share_hipotetico`, `despesa_administrativa`, `peso_classe_indeterminada_base`).

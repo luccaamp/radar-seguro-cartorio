@@ -1,0 +1,18 @@
+# Cenários fixos do STF (ADI 8015). Cada cenário é um diff sobre as premissas (SPEC §3.8).
+# Situação em 17/10/2026: rito do art. 12 da Lei 9.868/1999, sem liminar (docs/SPEC.md §0).
+cenarios:
+  mantem:
+    descricao: Regra integral do Prov. 227. A obrigação de garantia (art. 13) vale.
+    ajustes: {}
+  suspende_8_17:
+    descricao: >-
+      Liminar ou decisão suspende os arts. 8º a 17. A declaração de passivo (arts. 3º a 7º) continua,
+      mas a obrigação de garantia e as penalidades caem, e a demanda de garantia vai a zero.
+    ajustes:
+      fracao_exigencia_garantia: 0.0
+  parcial:
+    descricao: >-
+      Decisão intermediária (ex.: suspende só as penalidades do art. 17, ou modula prazos).
+      Parte dos delegatários com déficit continua contratando garantia. Fração ajustável no simulador.
+    ajustes:
+      fracao_exigencia_garantia: 0.5   # fonte: suposição (valor inicial do controle no simulador)

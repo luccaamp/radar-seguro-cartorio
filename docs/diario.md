@@ -27,6 +27,29 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 
 ---
 
+## 2026-10-18 — Fase 1, etapa (b): modelo e testes
+- **O que foi feito:**
+  - respostas do autor ao ponto (a) registradas: D-013 (zero), D-014 (conflito), D-015 (vínculos sem salário de dezembro) e D-016 (premissas, com sinistralidade base no 0775 e máximo do market share = líder atual). "Responda sempre em português" no CLAUDE.md;
+  - **textos legais baixados do Planalto** (`src/ingest/legislacao.py`): Lei 12.506/2011, Lei 4.090/1962, Lei 8.036/1990, Lei 8.212/1991, Decreto 3.048/1999 com o Anexo V e a CLT. Cada parâmetro do passivo foi conferido no texto (D-017);
+  - `config/premissas/premissas_v001.yaml` (semente) e `config/cenarios_stf.yaml`;
+  - modelo em `src/model/`: `premissas`, `passivo`, `distribuicao`, `rateio`, `universo`, `mercado`, `cenario`;
+  - 56 testes passando, inclusive os 10 mínimos do SPEC e o **exemplo feito à mão** (`tests/test_passivo.py::test_exemplo_feito_a_mao`).
+- **Descobertas:**
+  - **o RAT de cartórios é 1%** (Anexo V do Decreto 3.048, CNAE 6912-5/00);
+  - o art. 16, § 4º, do próprio Prov. 227 cita "a medida cautelar de suspensão prevista no art. 36 da Lei nº 8.935/1994, com a consequente designação de interventor". Isso confirma, no texto oficial, a explicação sobre intervenção que a IA deu de memória no início da Fase 1;
+  - a Lei 8.212 não exclui expressamente o aviso prévio indenizado do salário de contribuição; a não incidência do INSS vem da jurisprudência (a confirmar);
+  - **prévia do modelo nos dados reais de MG** (não é o gold; v2, rateio por empregados do CNJ, cenário "mantém"):
+    - INPC dez/2025 → set/2026: fator 1,0401;
+    - 10.978 vínculos na distribuição; 135 municípios com distribuição própria (a contagem do limiar já sem os vínculos de D-009 e D-015);
+    - passivo de todas as ativas: R$ 303 mi (min) / R$ 344 mi (base) / R$ 372 mi (max);
+    - universo: 1.103 / 1.121 / 1.159 serventias (com peso);
+    - déficit: R$ 10,5 / 40,5 / 118,4 mi;
+    - IS: R$ 2,6 / 20,2 / 82,9 mi;
+    - prêmio do mercado: R$ 0,03 / 0,40 / 2,90 mi por ano;
+    - **o mercado de MG é pequeno.** A faixa é larga porque as suposições de déficit se multiplicam.
+- **Suposições novas (aguardando o autor):** as três interpretações de D-017 e `fator_correcao_saldo_fgts` = 1,0.
+- **Próximo passo:** aprovação de D-017 pelo autor; depois o ponto (c): gold, qualidade e páginas do painel.
+
 ## 2026-10-18 — Fase 1, etapa (a): coletas e silver
 - **O que foi feito:**
   - decisões D-007 a D-012 registradas (D-007 e D-008 aprovadas; D-009 a D-012 novas);

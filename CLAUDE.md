@@ -14,6 +14,7 @@ Projeto de portfólio, 100% gratuito e rodando localmente, com um painel de cart
 - `docs/prompts.md`: pedidos que o autor usa em cada fase.
 
 ## Como trabalhar
+- Responda sempre em português.
 - Trabalhe **uma fase por vez**, na ordem do SPEC. Pare ao cumprir o critério de aceite da fase e me mostre o resultado antes de seguir.
 - Antes de codar algo grande, apresente um plano curto e espere minha confirmação.
 - Antes de escrever um coletor, inspecione uma amostra real da fonte e me mostre os campos encontrados.
