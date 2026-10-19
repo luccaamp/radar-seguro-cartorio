@@ -7,3 +7,22 @@ tolerancias:
   cobertura_arrecadacao_min: 0.95       # fração das ativas com receita de referência válida em 2025
   cobertura_colaboradores_min: 0.99
   vinculos_com_distribuicao_municipal_min: 0.50
+  # C1 (PROPOSTA da IA, a confirmar pelo autor; critério anterior ao resultado, não escolhido para passar):
+  correlacao_log_minima_municipio: 0.90          # correlação 'muito forte' convencional; insensível ao peso de BH
+  erro_pct_mediano_max_municipio: 0.20           # mediana <= 20% equivale a metade dos municípios dentro de ±20%
+  fracao_municipios_dentro_20pct_min: 0.75       # três quartos dos municípios com >= 5 empregados dentro de ±20%
+  minimo_empregados_para_erro_pct: 5             # só municípios com >= 5 empregados em uma das fontes (evita ruído)
+
+# Totais de controle da arrecadação de MG por semestre (F2; D-024). Universo: as 2.525 serventias ativas do cadastro.
+controle_arrecadacao_mg:
+  silver:   # contrato 1 (erro): a carga não pode cair mais que a tolerância em relação a estes totais
+    fonte: silver.serventia_arrecadacao (versão 1 de cada período), carga de 2026-10-18 a partir de data/bronze/cnj_justica_aberta/2026-10-18/arrecadacoes_MG.jsonl
+    tolerancia_queda: 0.005
+    totais: {"2025-1": 2379639987.32, "2025-2": 3133904766.00}
+  bi:       # contrato 2 (aviso): conferência cruzada com o BI do CNJ
+    fonte: CNJ, Painel de Dados Estatísticos das Serventias Extrajudiciais (exportação manual em 2026-10-18)
+    arquivo: data/bronze/cnj_bi_painel/2026-10-18/atos_arrecadacoes_custeio_e_repasse.csv
+    data_referencia: 2025-12-31
+    totais: {"2025-1": 2373919679.17, "2025-2": 3067663494.52}
+    tolerancias: {"2025-1": 0.01, "2025-2": 0.03}
+    motivo_tolerancia_2025_2: BI incompleto no 2º sem/2025 (168 CNS de MG ausentes em 18/10/2026)

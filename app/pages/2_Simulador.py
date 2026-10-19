@@ -8,7 +8,8 @@ import pandas as pd
 import streamlit as st
 import yaml
 
-from comum import RAIZ, aviso_estimativa, brl, conexao, consulta, md, num, pct, rodape
+from comum import (RAIZ, aviso_estimativa, brl, conexao, consulta, md_seguro, num, pct, rodape,
+                   slider_br, universo_txt, aprox)
 from src import estado
 from src.model.premissas import PremissaInvalida, com_novo_base
 from src.model.rateio import METODOS
@@ -23,6 +24,7 @@ CONFIG = RAIZ / "config"
 REGRAS = yaml.safe_load((CONFIG / "regras_classificacao.yaml").read_text(encoding="utf-8"))
 CENARIOS = yaml.safe_load((CONFIG / "cenarios_stf.yaml").read_text(encoding="utf-8"))
 ROT_CEN = {"mantem": "Regra mantida", "suspende_8_17": "STF suspende arts. 8º a 17", "parcial": "Decisão parcial"}
+ROTULO_RESULTADO = "Resultado técnico (antes de impostos, resseguro e capital)"
 ROT_MET = {"por_empregados_cnj": "Por empregados (CNJ) — padrão", "arrecadacao": "Por arrecadação",
            "uniforme": "Uniforme", "peso_por_atribuicao": "Por atribuição"}
 
@@ -37,11 +39,12 @@ def calcular(regra: str, metodo: str, ajustes_json: str, versao: int) -> pd.Data
     semente, _ = estado.premissas_vigentes(conexao())
     lim = REGRAS["versoes"][regra]["limites"]
     p = premissas_nivel(semente, "base", peso_indeterminada(insumos().serventias, lim), json.loads(ajustes_json))
-    return calcular_serventias(insumos(), p, lim, metodo)[0]
+    return calcular_serventias(insumos(), p, lim, metodo, limites_faixa=LIM_BASE)[0]
 
 
+LIM_BASE = REGRAS["versoes"][REGRAS["versao_base"]]["limites"]  # classe das faixas de déficit (D-019)
 semente, versao = estado.premissas_vigentes(conexao())
-lim_v2 = REGRAS["versoes"]["v2"]["limites"]
+lim_v2 = LIM_BASE
 pb = premissas_nivel(semente, "base", peso_indeterminada(insumos().serventias, lim_v2))
 P = semente["premissas"]
 
@@ -60,10 +63,14 @@ regra = c2.radio("Regra da Classe 1", ["v2", "v1"], horizontal=True,
                  format_func=lambda r: {"v2": "R$ 300 mil (Prov. 243)", "v1": "R$ 100 mil (213 original)"}[r])
 metodo = c3.selectbox("Rateio do passivo entre serventias", METODOS, format_func=ROT_MET.get)
 fracao_parcial = None
+fracao_semente = float(CENARIOS["cenarios"]["parcial"]["ajustes"]["fracao_exigencia_garantia"])
 if cenario == "parcial":
-    fracao_parcial = st.slider("Fração dos delegatários com déficit que continua obrigada a apresentar garantia",
-                               0.0, 1.0, float(CENARIOS["cenarios"]["parcial"]["ajustes"]["fracao_exigencia_garantia"]),
-                               0.05, help="fonte: suposição (valor inicial 50%)")
+    fracao_parcial = c1.slider("Parte do valor hoje exigido que continua exigida", 0, 100, int(round(100 * fracao_semente)),
+                               5, format="%d%%", help="fonte: suposição (valor inicial 50%)") / 100
+x_parcial = pct(fracao_parcial if fracao_parcial is not None else fracao_semente, 0)
+c1.caption(md_seguro(f"**Decisão parcial:** cenário hipotético: o STF suspende parte da obrigação, e só {x_parcial} do valor "
+              f"hoje exigido continua exigido. {x_parcial} é suposição sem base em decisão real; até 17/10/2026 não "
+              "havia liminar."))
 
 aj: dict = {}
 with st.expander("Premissas do déficit e da escolha da garantia (suposições, D-016)", expanded=True):
@@ -91,30 +98,30 @@ with st.expander("Premissas do déficit e da escolha da garantia (suposições, 
 
 with st.expander("Premissas da receita do seguro", expanded=True):
     a, b, c = st.columns(3)
-    aj["taxa_seguro_anual"] = a.slider("Taxa anual (% da importância segurada)", 0.5, 5.0,
-                                       100 * pb["taxa_seguro_anual"], 0.1, format="%.1f%%",
-                                       help="Faixa da semente: 1,0% a 3,5% (fonte: suposição)") / 100
-    aj["market_share_hipotetico"] = a.slider(
-        "Market share da seguradora hipotética", 1.0, 30.0, 100 * pb["market_share_hipotetico"], 0.1, format="%.1f%%",
+    aj["taxa_seguro_anual"] = slider_br(a, "Taxa anual (% da importância segurada)", 0.5, 5.0, 0.1,
+                                        100 * pb["taxa_seguro_anual"],
+                                        help="Faixa da semente: 1,0% a 3,5% (fonte: suposição)") / 100
+    aj["market_share_hipotetico"] = slider_br(
+        a, "Market share da seguradora hipotética", 1.0, 30.0, 0.1, 100 * pb["market_share_hipotetico"],
         help="Semente (SES, garantia, 12 meses até ago/2026): mínimo 3,9% = 10ª seguradora; base 5,2% = 5ª; "
              "**máximo 16,4% = fatia do líder atual do mercado**.") / 100
-    aj["sinistralidade"] = b.slider("Sinistralidade (sobre o prêmio ganho)", 0.0, 100.0, 100 * pb["sinistralidade"], 0.1,
-                                    format="%.1f%%",
-                                    help="SES: mín 1,7% (menor janela anual do ramo 0775), base 10,9% (ramo 0775, "
+    aj["sinistralidade"] = slider_br(b, "Sinistralidade da SES (sinistro ÷ prêmio ganho), aplicada ao prêmio emitido "
+                                     "do ano — aproximação", 0.0, 100.0, 0.1, 100 * pb["sinistralidade"],
+                                     help="SES: mín 1,7% (menor janela anual do ramo 0775), base 10,9% (ramo 0775, "
                                          "setor público, art. 13, § 1º), máx 73,9% (ramo 0776, setor privado)") / 100
-    aj["comissao"] = b.slider("Despesa de comercialização (sobre o prêmio)", 0.0, 40.0, 100 * pb["comissao"], 0.1,
-                              format="%.1f%%",
-                              help="SES: 14,3% a 21,9%; base 17,1% (ramo 0775)") / 100
-    aj["despesa_administrativa"] = c.slider("Despesa administrativa (sobre o prêmio)", 0.0, 30.0,
-                                            100 * pb["despesa_administrativa"], 0.5, format="%.1f%%",
-                                            help="Faixa da semente: 5% a 12% (fonte: suposição)") / 100
+    aj["comissao"] = slider_br(b, "Despesa de comercialização (sobre o prêmio)", 0.0, 40.0, 0.1, 100 * pb["comissao"],
+                               help="SES: 14,3% a 21,9%; base 17,1% (ramo 0775)") / 100
+    aj["despesa_administrativa"] = slider_br(c, "Despesa administrativa (sobre o prêmio)", 0.0, 30.0, 0.5,
+                                             100 * pb["despesa_administrativa"],
+                                             help="Faixa da semente: 5% a 12% (fonte: suposição)") / 100
 
 with st.expander("Premissas do passivo (art. 5º do Prov. 227)"):
     a, b, c = st.columns(3)
-    aj["fap"] = a.slider("FAP (multiplicador do RAT)", 0.5, 2.0, float(pb["fap"]), 0.1,
-                         help="Decreto 3.048, art. 202-A: entre 0,5 e 2,0")
-    aj["fracao_ferias_vencidas_pendentes"] = a.slider("Férias vencidas ainda não gozadas (períodos)", 0.0, 1.0,
-                                                      float(pb["fracao_ferias_vencidas_pendentes"]), 0.1)
+    aj["fap"] = slider_br(a, "FAP (multiplicador do RAT)", 0.5, 2.0, 0.1, float(pb["fap"]), casas=2, sufixo="",
+                          help="Decreto 3.048, art. 202-A: entre 0,5 e 2,0")
+    aj["fracao_ferias_vencidas_pendentes"] = slider_br(a, "Férias vencidas ainda não gozadas (períodos)", 0.0, 1.0, 0.1,
+                                                       float(pb["fracao_ferias_vencidas_pendentes"]), casas=2, sufixo="",
+                                                       help="Suposição aprovada na D-017: mín 0, base 0,5, máx 1")
     inss_aviso = b.checkbox("INSS sobre o aviso prévio indenizado", value=False,
                             help="Base: não incide (STJ, Tema 478). Marcado = cenário máximo.")
     aj["incidencias"] = {**pb["incidencias"],
@@ -147,14 +154,15 @@ def delta(atual: float, referencia: float, fmt=brl, minimo: float = 0.5) -> str 
 
 
 st.subheader("Resultado anual — MG")
-st.caption(md("As setas comparam com o cenário base do painel (premissas vigentes, regra mantida, Classe 1 até R$ 300 mil)."))
+st.caption(md_seguro("As setas comparam com o cenário base do painel (premissas vigentes, regra mantida, Classe 1 até R$ 300 mil)."))
 k1, k2, k3, k4 = st.columns(4)
-k1.metric("Serventias no universo", num(r["n_universo"]), delta=delta(r["n_universo"], ref["n_universo"], num),
+k1.metric("Obrigadas (universo)", aprox(r["n_universo"]), delta=delta(r["n_universo"], ref["n_universo"], num),
+          delta_color="off", help=universo_txt(r["n_universo"], r["n_indeterminadas_universo"]))
+k2.metric("Passivo dos obrigados", brl(r["passivo_universo"]), delta=delta(r["passivo_universo"], ref["passivo_universo"]),
           delta_color="off")
-k2.metric("Passivo no universo", brl(r["passivo_universo"]), delta=delta(r["passivo_universo"], ref["passivo_universo"]),
-          delta_color="off")
-k3.metric("Serventias com déficit (esperado)", num(r["n_deficit"]), delta=delta(r["n_deficit"], ref["n_deficit"], num),
-          delta_color="off")
+k3.metric("Com déficit (esperado)", aprox(r["n_deficit"]),   # rótulo curto: o longo era cortado em 1280 px
+          delta=delta(r["n_deficit"], ref["n_deficit"], num), delta_color="off",
+          help="Serventias com déficit, valor esperado: soma das probabilidades de déficit das serventias do universo (suposição, D-016).")
 k4.metric("Déficit de cobertura", brl(r["valor_descoberto"]), delta=delta(r["valor_descoberto"], ref["valor_descoberto"]),
           delta_color="off")
 
@@ -162,7 +170,9 @@ k4.metric("Déficit de cobertura", brl(r["valor_descoberto"]), delta=delta(r["va
 LINHAS = [("importancia_segurada", "Importância segurada", "normal"), ("premio_emitido", "Prêmio emitido", "normal"),
           ("sinistro_esperado", "Sinistro esperado", "inverse"), ("comissao", "Despesa de comercialização", "inverse"),
           ("despesa_administrativa", "Despesa administrativa", "inverse"),
-          ("resultado_tecnico", "Resultado técnico", "normal")]
+          ("resultado_tecnico", ROTULO_RESULTADO, "normal")]
+st.write("")   # espaço entre o bloco de cima e os títulos das duas colunas (1.5)
+st.divider()
 m, s = st.columns(2)
 for coluna, prefixo, titulo in ((m, "mercado", "Mercado total"),
                                 (s, "seguradora", f"Seguradora hipotética ({pct(p['market_share_hipotetico'])} de share)")):
@@ -171,18 +181,29 @@ for coluna, prefixo, titulo in ((m, "mercado", "Mercado total"),
         for chave, rot, cor in LINHAS:
             st.metric(rot, brl(r[f"{prefixo}_{chave}"]), delta=delta(r[f"{prefixo}_{chave}"], ref[f"{prefixo}_{chave}"]),
                       delta_color=cor)
+        premio = r[f"{prefixo}_premio_emitido"]
+        if premio > 0:
+            st.caption(f"Margem de {pct(r[f'{prefixo}_resultado_tecnico'] / premio, 0)} não é lucro esperado: ver "
+                       "limitações do modelo de sinistro (Etapa 2).")
+
+teto = r["passivo_universo"] * p["taxa_seguro_anual"]
+st.metric("Teto teórico do mercado (prêmio anual)", brl(teto),
+          help="Não depende das suposições de déficit nem da escolha da garantia.")
+st.caption(md_seguro(f"**Teto teórico = passivo dos obrigados × taxa** = {brl(r['passivo_universo'])} × "
+              f"{pct(p['taxa_seguro_anual'])} = {brl(teto)} por ano. Supõe que todos os obrigados têm déficit igual ao "
+              "passivo e todos escolhem seguro."))
 
 with st.expander("Tabela por UF"):
-    st.dataframe(pd.DataFrame([{"UF": "MG", "Serventias no universo": round(r["n_universo"], 1),
-                                "Déficit (R$)": round(r["valor_descoberto"]),
-                                "IS mercado (R$)": round(r["mercado_importancia_segurada"]),
-                                "Prêmio mercado (R$)": round(r["mercado_premio_emitido"]),
-                                "Prêmio seguradora (R$)": round(r["seguradora_premio_emitido"]),
-                                "Resultado técnico seguradora (R$)": round(r["seguradora_resultado_tecnico"])}]),
+    st.dataframe(pd.DataFrame([{"UF": "MG", "Obrigadas (≈, valor esperado)": num(r["n_universo"]),
+                                "Déficit": brl(r["valor_descoberto"]),
+                                "IS do mercado": brl(r["mercado_importancia_segurada"]),
+                                "Prêmio do mercado": brl(r["mercado_premio_emitido"]),
+                                "Prêmio da seguradora": brl(r["seguradora_premio_emitido"]),
+                                f"{ROTULO_RESULTADO} da seguradora": brl(r["seguradora_resultado_tecnico"])}]),
                  hide_index=True, width="stretch")
     st.caption("Fase 1: só MG. As demais UFs entram na Fase 2.")
-rodape(["cnj_serventias", "cnj_colaboradores", "cnj_arrecadacao", "rais_vinculos", "ibge_inpc", "susep_ses_garantia"],
-       f"Cenário: {ROT_CEN[cenario]}; regra {regra}; rateio {ROT_MET[metodo]}.")
+rodape(["cnj_serventias", "cnj_colaboradores", "cnj_arrecadacao", "rais_vinculos", "susep_ses_garantia"],
+       f"Cenário: {ROT_CEN[cenario]}; regra {regra}; rateio {ROT_MET[metodo]}.", taxa=True)
 
 # ------------------------------------------------------------------ salvar
 st.subheader("Salvar cenário")

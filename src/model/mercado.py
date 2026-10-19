@@ -9,21 +9,33 @@ import pandas as pd
 from src.model.premissas import validar_escolha_garantia
 
 
+FAIXA_POR_CLASSE = {
+    "2": "classe_2",
+    "3": "classe_3",
+    "indeterminada": "classe_2",   # D-011
+    "1": "classe_2",               # D-019: na sensibilidade v1, serventias Classe 1 pela v2 recebem a faixa da Classe 2
+}
+
+
 def _faixa(classe: str) -> str:
-    """Faixa de prob_deficit e pct_descoberto: Classes 2 e 3; a indeterminada usa a Classe 2 (D-011)."""
-    return "classe_3" if classe == "3" else "classe_2"
+    """Faixa de prob_deficit e pct_descoberto a partir da classe pela regra BASE (coluna classe_faixa; D-011, D-019)."""
+    if classe not in FAIXA_POR_CLASSE:
+        raise ValueError(f"classe sem faixa de déficit: {classe!r}")
+    return FAIXA_POR_CLASSE[classe]
 
 
 def deficit(serventias: pd.DataFrame, p: dict) -> pd.DataFrame:
-    """Valor esperado do déficit por serventia. `serventias`: passivo, classe, peso_universo.
+    """Valor esperado do déficit por serventia. `serventias`: passivo, peso_universo e classe_faixa (classe pela regra
+    base, D-019; se ausente, usa `classe`).
 
-    n_deficit = peso_universo × prob_deficit; valor_descoberto = n_deficit × pct_descoberto × passivo.
+    n_deficit = peso_universo × prob_deficit × [passivo > 0]; valor_descoberto = n_deficit × pct_descoberto × passivo.
+    Serventia sem passivo (sem empregado CLT) não tem déficit nem conta como "com déficit" (D-021).
     """
     s = serventias.copy()
-    faixa = s["classe"].map(_faixa)
+    faixa = s["classe_faixa" if "classe_faixa" in s else "classe"].map(_faixa)
     prob = faixa.map(lambda f: p["prob_deficit"][f])
     pct = faixa.map(lambda f: p["pct_descoberto"][f])
-    s["n_deficit"] = s["peso_universo"] * prob
+    s["n_deficit"] = s["peso_universo"] * prob * (s["passivo"] > 0)
     s["valor_descoberto"] = s["n_deficit"] * pct * s["passivo"]
     return s
 

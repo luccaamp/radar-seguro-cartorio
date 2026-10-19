@@ -248,3 +248,70 @@ Formato:
 - **Data:** 2026-10-18
 - **Contexto:** B1. A SES (0775/0776) é carteira de obras e contratos; o produto tem seleção adversa e o risco é o fim da delegação sem pagamento.
 - **Proposta:** sinistro = P(fim da delegação no ano) × P(não paga | déficit) × parte paga da IS − recuperação; a SES fica como comparação. Para a P(fim), o cadastro do Justiça Aberta só tem a data da decisão da **situação atual** (VAGO por ano da decisão em MG: 2019 66; 2020 13; 2021 37; 2022 34; 2023 36; 2024 250; 2025 133), o que não basta para uma taxa (falta o histórico de quem voltou a ser provido). O cadastro do BI tem as datas; decisão do autor.
+
+---
+
+> Decisões finais sobre as propostas D-019 a D-025, conforme `docs/aprovacao_etapa1_fase1.md` (2026-10-18). O texto de cada proposta continua acima, sem alteração.
+
+### D-019 — decisão final: APROVADA COM AJUSTE (2026-10-18)
+- A classe usada nas faixas de déficit é sempre a da regra base (`versao_base` de `config/regras_classificacao.yaml`, hoje v2): coluna `classe_faixa` em `universo()`, usada por `deficit()`.
+- **O peso da indeterminada continua recalculado por regra** (v1 0,932 × v2 0,678): ele mede a chance de uma serventia sem dado passar no corte de cada regra. A proposta de unificar o peso foi rejeitada pelo autor, com razão.
+- **Suposição: na sensibilidade v1, serventias Classe 1 pela v2 recebem a faixa da Classe 2** (`FAIXA_POR_CLASSE` em `src/model/mercado.py`). Antes, isso acontecia por um padrão implícito da função `_faixa`; agora está explícito e testado.
+- Monotonicidade testada em min, base e max (teste sintético e contrato no gold). Resultado com o peso por regra, base: prêmio v1 R$ 451,4 mil ≥ v2 R$ 404,4 mil (antes da A2 e da C2).
+
+### D-020 — decisão final: APROVADA (2026-10-18)
+- Texto literal do Prov. CNJ 227/2026 (cópia oficial em `data/bronze/normas/2026-10-17/prov_227_2026_pagina.txt`):
+  - art. 4º: "A declaração do passivo trabalhista será apresentada até o dia 31 de março de cada ano, com base na posição de 31 de dezembro do exercício anterior, abrangendo todos os prepostos em atividade na serventia."
+  - art. 18: "Excepcionalmente, no primeiro ano de vigência deste Provimento, as declarações de passivo trabalhista e de solvência trabalhista, previstas, respectivamente, nos arts. 4º e 8º, deverão ser apresentadas no prazo de 30 (trinta) dias contados da data de sua entrada em vigor."
+- Data-base única **31/12/2025** em `config/premissas/premissas_v002.yaml` (a v001 fica no lugar). O INPC sai dos três níveis (min, base e max) e vira a linha "se a data-base fosse a da 1ª declaração" na tabela de sensibilidade (+4,01%).
+- Escolha da IA a conferir pelo autor: o INPC também saiu do **máximo**, para que todos os níveis tenham a mesma data-base.
+- Limitação: os empregados por serventia são a declaração ao CNJ de out/2026; servem só como peso do rateio.
+
+### D-021 — decisão final: APROVADA (2026-10-18)
+- `n_deficit = peso × prob × [passivo > 0]`. Base: 489,9 → 486,0 (arredondamento; esperado 486,1). Valores em R$ inalterados.
+
+### D-022 — decisão final: APROVADA (2026-10-18)
+- Reserva da distribuição: município (≥ 20 vínculos) → região imediata do IBGE (≥ 20) → estado. Medido depois da D-020: passivo de todas as ativas R$ 330,1 → 311,9 mi (−5,5%); **passivo dos obrigados R$ 246,6 → 238,1 mi (−3,4%)**; prêmio R$ 388,8 → 368,7 mil (−5,2%). A versão anterior (reserva direto no estado) fica como linha da tabela de sensibilidade.
+
+### D-023 — decisão final: APROVADA COM AJUSTE (2026-10-18)
+- **A leitura principal continua a atual** (média dos semestres com valor > 0, `src/model/universo.py:24-30`); o código do universo não foi alterado.
+- Justificativa do autor: o texto mede a receita bruta real do exercício anterior, e o dado é a declaração ao CNJ, em que zero muitas vezes significa "não declarou" (168 CNS de MG ausentes do BI no 2º sem/2025; prazo prorrogado até 15/04/2026; ~50% enviado no fim de março, IRIB, 01/04/2026). Contar esse zero como receita erra para baixo e tira do universo serventias provavelmente obrigadas. Ignorar o semestre zerado e fazer a média dos semestres com valor é a melhor estimativa da receita real.
+- Texto literal (Prov. 213, art. 16, § 1º, com a redação do Prov. 243): "O enquadramento da serventia será reavaliado anualmente, com base na média das receitas brutas semestrais do exercício imediatamente anterior, produzindo efeitos para o período subsequente, observados os prazos de adaptação previstos neste Provimento."
+- As leituras alternativas ("zero conta como zero", "nos dois semestres", "em algum semestre") entram na tabela de sensibilidade (`src/model/leituras.py`). Limitação: 14 providos com 1º semestre > R$ 300 mil e 2º semestre zerado entram no universo pelo 1º semestre.
+
+### D-024 — decisão final: APROVADA COM AJUSTE (2026-10-18)
+- Contrato 1 (erro): o total de MG por semestre no silver não pode cair mais de 0,5% em relação ao registrado em `config/qualidade.yaml` (1º sem/2025 R$ 2.379.639.987,32; 2º sem/2025 R$ 3.133.904.766,00).
+- Contrato 2 (aviso): silver × BI do CNJ (1º sem R$ 2.373.919.679,17, tolerância 1%; 2º sem R$ 3.067.663.494,52, tolerância 3%, porque o BI estava incompleto: 168 CNS de MG ausentes em 18/10/2026). Valores do BI no YAML com fonte, arquivo do bronze e data.
+
+### D-025 — nota (2026-10-18): continua PROPOSTA (Etapa 2)
+- O cadastro do BI **não** será trazido: as datas são de recadastramento (1.066 dos 1.654 providos de MG com ingresso em 2024; 250 vagas "decididas" em 2024) e o arquivo tem dados pessoais.
+- A frequência de término da delegação será suposição com faixa. As 133 serventias de MG com decisão de vacância em 2025 (≈ 7% dos providos) entram só como indicador fraco de teto, não como estimativa.
+
+## D-026 — Visões do Mercado com filtro e grupos do mapa (decisão do autor, revisao_painel_filtros.md)
+- **Data:** 2026-10-18
+- **Contexto:** a página Mercado lia `gold.interno_serventia` para os filtros, e a revisão achou vazamento por subtração entre visões (E1: BH 34 serventias × BH Classe 3 33 isolava 1 cartório).
+- **Decisão (opção B, aprovada):**
+  - sem filtro: municípios com 3+ serventias e grupos de municípios pequenos;
+  - com filtro (um por vez): nível da região imediata, pré-agregado no gold, com supressão primária (recorte >= 3 **e** complemento 0 ou >= 3), hierárquica (região intermediária -> "outras regiões") e secundária (auditor de ataque por diferença, em ciclo até zerar; a carga falha se não zerar);
+  - filtro de município: destaque com contexto (U1); município com menos de 3 mostra a área agregada a que pertence; município + filtro mostra só o nível regional;
+  - o painel só lê tabelas públicas (exceção do Mercado removida do teste).
+- **Grupos pequenos demais (2.2):** os 4 grupos de região imediata com menos de 3 serventias sobem para a região intermediária, somando-se ao menor grupo de pequenos de outra região imediata da mesma intermediária; não se juntam a município nomeado. O último caso ("Município X + N municípios pequenos") está implementado, mas não acontece em MG.
+- **Ajuste da IA, achado pelo auditor:** RTD e RCPJ viram um só valor do filtro ("Títulos e Documentos / Pessoa Jurídica"). Em separado, a diferença entre os totais de MG isolava 2 serventias que têm RCPJ sem RTD.
+- **Fonte:** `docs/revisao_painel_filtros.md`, seções 2.1 e 2.2; `src/model/supressao.py`, `src/transform/visoes.py`, `src/transform/geo.py`.
+
+## D-027 — PROPOSTA: regra v1 e mínimo/máximo só nos totais de MG (vazamento E1-b)
+- **Data:** 2026-10-18
+- **Contexto:** a auditoria própria (seção 5) achou um segundo vetor do mesmo ataque: trocar a regra (v1 × v2) ou o nível (mínimo × base × máximo) muda QUEM entra no universo. A mesma área nas duas regras, subtraída, isola as serventias entre R$ 100 mil e R$ 300 mil; máximo − base isola as de intervenção/diligência; base − mínimo, as indeterminadas.
+- **Decisão aplicada (aguarda confirmação do autor):** mapa, ranking e tabelas por área usam só o nível base e a regra base. A regra v1 e o mínimo/máximo aparecem só nos totais de MG (sem filtro e por filtro), e só onde o auditor aprovou. Suprimidos pelo auditor: Registro de Imóveis (v1 base, v2 mínimo, v2 máximo), Conversão em diligência (v2 máximo), indeterminada (v1 base, v1 máximo, v2 máximo). `gold.fato_mercado_municipio_publico` passou a ter só base e regra base.
+- **Consequência:** a classe do filtro é sempre a da regra base (D-019); com a regra v1 escolhida, o painel avisa quando o filtro não pode mostrá-la.
+
+### D-027 — decisão final: APROVADA (2026-10-18)
+- Aprovada pelo autor como está (`docs/correcoes_e_qa_visual.md`, seção 1): por área, só nível base e regra v2; regra v1, mínimo e máximo só nos totais de MG, onde o auditor aprovar.
+
+## D-028 — Partições internas de uma mesma visão não são suprimidas
+- **Data:** 2026-10-18
+- **Contexto:** numa mesma área, "passivo (todas)" − "passivo (obrigados)" dá o passivo das não obrigadas; outras partições internas da mesma visão permitem contas parecidas.
+- **Decisão (do autor):** essas partições internas não serão suprimidas. O auditor de ataque por diferença continua como está (pares de visões e resto das partições dos filtros), sem ampliar.
+- **Justificativa:** os insumos são públicos (contagens, empregados declarados e arrecadação do CNJ), e a limitação D2 já declara que a estimativa de cada cartório é recalculável a partir deles. A defesa do projeto é tratar-se de estimativa de mercado com premissas públicas.
+- **Consequência:** frase acrescentada à limitação D2 na página Qualidade.
+- **Fonte:** `docs/correcoes_e_qa_visual.md`, seção 1.2.

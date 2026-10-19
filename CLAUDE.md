@@ -21,6 +21,7 @@ Projeto de portfólio, 100% gratuito e rodando localmente, com um painel de cart
 - Quando algo no SPEC estiver ambíguo ou se mostrar errado na prática, **pergunte** ou proponha a alteração no SPEC. Não decida em silêncio.
 - Se uma fonte falhar, proponha o plano B e registre no diário.
 - Explique o que vai fazer em linguagem simples. O autor está aprendendo e quer entender cada passo.
+- Edite código só com a ferramenta de edição de arquivos, nunca por script de substituição de texto (uma edição por script já falhou sem aviso; ver docs/erros_ia.md).
 - Registre cada erro da IA no docs/erros_ia.md e cada descoberta importante no docs/diario.md no momento em que acontecerem, não no fim da fase. Inclua a correção, inclusive quando ela vier do autor.
 
 ## Regras inegociáveis
@@ -31,6 +32,7 @@ Projeto de portfólio, 100% gratuito e rodando localmente, com um painel de cart
 - Nenhum número fixo no código. Premissas ficam em `config/`, versionadas e com fonte.
 - Nenhum nome ou CPF de titular em painel, resposta do chat ou log de saída.
 - Arquivos grandes (bronze, banco DuckDB) nunca vão para o git.
+- Painel e chat só leem tabelas públicas; `gold.interno_*` (e qualquer `interno_*`) é proibido fora do pipeline (testado em `tests/test_app_codigo.py`).
 
 ## Padrões de código
 - Python 3.12, dependências gerenciadas com `uv`.

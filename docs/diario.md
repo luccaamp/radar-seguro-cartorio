@@ -255,3 +255,74 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
   - **E4 (teto):** passivo do universo × taxa = R$ 5,13 mi/ano no base (2%) e R$ 10,56 mi/ano no máximo (3,5%), conferindo as contas do autor;
   - **B3:** 245 apólices no base (seguradora 12,7), IS média R$ 82,6 mil e prêmio médio R$ 1.651.
 - **Próximo passo:** aprovação do autor, item a item, do plano da verificação final. Nada foi implementado.
+
+## 2026-10-18 (noite) — Etapa 1 dos ajustes finais da Fase 1 executada
+- **O que foi feito:** os 11 passos de `docs/aprovacao_etapa1_fase1.md`, na ordem, com a suíte rodada ao fim de cada um.
+  - **Passo 1 (item 5):** o painel lê o banco pela variável `RADAR_BANCO`; os testes usam uma cópia temporária, refazem o gold nela e conferem no fim que o banco real não mudou. Banco real antes e depois da suíte: 2026-10-18T09:52:40, 11.022.336 bytes (iguais). A "versão 2 espúria" já não existia: tinha sido apagada à mão às 09:51 e o banco foi refeito às 09:52, então nada foi removido.
+  - **Passos 2 a 6:** D-021 (passivo zero), D-019 (faixas pela classe da regra base, peso por regra), D-020 (`premissas_v002.yaml`, data-base 31/12/2025), D-022 (reserva pela região imediata), D-023 (leituras alternativas só na sensibilidade, `src/model/leituras.py`) e D-024 (dois contratos de total de controle).
+  - **Passo 7 (D1, D2):** `qualidade.rec_municipio` e `gold.fato_passivo_municipio` passaram a ser públicas e agregadas; as versões completas viraram `interno_*`. Teste que varre todas as colunas de texto das tabelas públicas, e as tabelas e gráficos das 4 páginas, procurando nomes dos municípios com menos de 3 serventias.
+  - **Passo 8:** C1 (3 checagens novas), C5 (metadados dos colaboradores no bronze, URL e coleta da SUSEP herdadas do pacote, malha do IBGE = 2022 conferida por hash) e C6 (limitações).
+  - **Passos 9 e 10:** texto da decisão parcial, rótulo da sinistralidade e painel (A5, E1 a E4).
+  - **Passo 11:** pipeline a partir do bronze em 9 s, 0 erros; 99 testes; banco real antes e depois da suíte: 2026-10-18T15:18:30, 28.061.696 bytes (iguais).
+- **Descobertas:**
+  - a malha municipal servida sem `periodo` pela API v3 do IBGE é a de **2022** (mesmo SHA-256; 2023 a 2025 dão erro 500);
+  - com o peso por regra, a sensibilidade v1 no base dá prêmio de R$ 404,7 mil contra R$ 368,7 mil da v2 (monotonicidade vale em min, base e max);
+  - leituras da regra dos R$ 300 mil no silver (providos acima do limite): principal 1.103; zero conta como zero 1.087; dois semestres 967 (BI 928); algum semestre 1.170 (BI 1.161). Efeito no prêmio: −0,8%, −3,9% e +0,2%;
+  - C1: correlação em log 0,965, erro mediano 13,2% e 69,1% dos municípios dentro de ±20%; esta última fica abaixo da tolerância proposta (75%) e acusa aviso;
+  - cadastro do BI **não** mede vacância: as datas são de recadastramento (decisão do autor; D-025 continua proposta).
+- **Totais de controle Brasil (BI do CNJ, 2025), guardados para a Fase 2:** arrecadação R$ 36,23 bi; repasse R$ 12,34 bi; custeio R$ 13,26 bi; 11.866 ativos no BI contra 12.121 no Justiça Aberta.
+- **Ponte com o estudo externo (material de slide, fora do painel):** 461,7 → 281,2 (método −180,5) → 234,5 (premissas −46,7) → 256,5 (universo +22,0), em R$ mi, com os números de antes da Etapa 1.
+- **Próximos passos aprovados em princípio (Etapa 2), por ordem:**
+  1. B6 + F6: probabilidade de déficit por faixa de passivo ÷ saldo anual, lado a lado com a versão por classe; exige coletor do CSV e silver de custeio e repasse, com contrato para o custeio repetido por atribuição;
+  2. B3: apólices, prêmio médio, prêmio mínimo e custo fixo por apólice;
+  3. B2: índice combinado, resultado técnico antes de impostos e capital, PIS/COFINS com alíquota conferida na lei;
+  4. B4: tornado e cenários coerentes "otimista" e "pessimista para a seguradora";
+  5. opcional: B1 completo e Monte Carlo.
+- **Próximo passo:** conferência do painel pelo autor.
+
+## 2026-10-18 (noite) — Bloco 1 do plano de qualidade (tela e engenharia, sem mudar número)
+- **O que foi feito:** itens 1.1 a 1.7 de `docs/plano_qualidade_e_correcoes.md`.
+  - 1.1 `md_seguro` e dois testes; 1.2 mapa com geometria dissolvida no gold (`geopandas`, gratuito); 1.3 rótulo "Resultado técnico (antes de impostos, resseguro e capital)" e a linha da margem; 1.4 "≈" nos valores esperados; 1.5 rótulos curtos, espaço no Simulador e detalhe do contrato de conflitos; 1.6 fontes; 1.7 carga atômica, regra do `interno_*`, teste de reprodutibilidade.
+- **Números:** nenhum número do modelo mudou (cascata "Bloco 1 final" = Etapa 1: passivo R$ 311,9 / 238,1 mi; déficit R$ 36,87 mi; prêmio R$ 368,7 mil).
+- **Descobertas:**
+  - **IPCA:** coletado e carregado no silver, mas não entra em nenhuma conta (só o INPC, na sensibilidade). Saiu dos rodapés; na tabela de fontes aparece "coletado, não usado";
+  - **unidade da SES:** o dicionário que vem no pacote (`Ses_campos.csv`) não informa unidade e não há outro dicionário no ZIP. Continua inferida (R$). Nenhum valor absoluto da SES aparece na tela (só razões e fatias de mercado);
+  - **carga atômica:** o banco caiu de 28,1 MB para 13,4 MB e não cresce mais entre cargas; as versões de premissas e os cenários salvos são copiados do banco anterior;
+  - **mapa:** 4 regiões imediatas tinham municípios pequenos somando menos de 3 serventias; nesses casos o grupo foi dissolvido junto com o menor município da região que já tinha 3 ou mais;
+  - **ano de enquadramento** (2025) saiu do código e foi para `config/escopo.yaml`.
+- **Pendente de decisão do autor:** a página Mercado ainda lê `gold.interno_serventia` para os filtros (atribuição, situação, classe). Exceção temporária e explícita no teste `test_painel_nao_le_tabelas_internas`.
+- **Próximo passo:** Parada 1 (conferência do painel e commit da Fase 1 pelo autor); depois, o diagnóstico do Bloco 2.
+
+## 2026-10-18 (noite) — Revisão do painel com filtros (revisao_painel_filtros.md)
+- **O que foi feito:**
+  - D-026 aplicada (opção B e grupos pela intermediária) e D-027 proposta;
+  - E1 a E10, U1 e U2;
+  - auditoria própria (`tests/test_auditoria_painel.py`, 44 estados e checagens).
+- **Contagem do mapa (2.3):**
+  - das 70 regiões imediatas, todas têm municípios pequenos; 62 mantêm o próprio grupo (498 municípios);
+  - 8 viraram 4 grupos de região intermediária (34 municípios: as 4 com menos de 3 serventias somadas ao menor grupo de outra região da mesma intermediária);
+  - 319 municípios com 3+ serventias + 66 grupos = 385 áreas; 319 + 498 + 34 = 851 municípios com serventia, mais 2 sem serventia = 853.
+- **Visões com filtro:** convergem em 3 iterações do auditor (973 células publicadas); a troca de filtro leva ~0,3 s no AppTest.
+- **E9 (Campo Azul):** a serventia "…de Campo Azul" está cadastrada no CNJ com o município de Ubaí, provavelmente o de origem antes da emancipação. A correção do dado é o Q5 do Bloco 2.
+- **E10 (Mutum):** 6 serventias indeterminadas, todas zeradas em 2025. Improvável ser acaso (declaração ou coleta). Verificar se há dado em 2024 no Q1 do Bloco 2.
+- **Leituras de seguros (só registro, revisao_painel_filtros.md §6):**
+  1. a Classe 2 pesa por causa da suposição: 26% do passivo dos obrigados e 42% do déficit (fator suposto 25% × 12% da Classe 3); argumento central para o B6;
+  2. prêmio por apólice muito baixo: déficit médio de quem tem déficit ≈ R$ 41,5 mil (Classe 2) e ≈ R$ 197 mil (Classe 3); a 2%, ≈ R$ 830 e ≈ R$ 3,9 mil por ano. O B3 tende a mostrar que o mercado real é quase só a Classe 3 (~100 cartórios em MG);
+  3. concentração: BH ≈ 17% do déficit e ≈ 22% do passivo dos obrigados; pede limite por risco e resseguro;
+  4. Classe 1: 46% das serventias, 13% dos empregados e 9% do passivo; por isso v1 × v2 muda pouco;
+  5. o leste escuro em "Serventias ativas" é real (muitos distritos com registro civil), não efeito da agregação.
+- **Números de referência:** inalterados (2.525; 12.134; ≈ 1.121; R$ 311,9 / 238,1 mi; ≈ 486; R$ 36,9 mi; IS R$ 18,4 mi; prêmio R$ 368,7 mil; teto R$ 4,76 mi).
+- **Próximo passo:** conferência do painel pelo autor; aprovação da D-027 e da captura de telas com o Playwright.
+
+## 2026-10-18/19 — Correções C1–C4 e QA visual (correcoes_e_qa_visual.md)
+- **Aprovações registradas:** D-027 aprovada e D-028 (partições internas de uma visão não são suprimidas) em `docs/decisoes.md`; frases novas em Limitações (D2 e auditoria de diferenças); SPEC Fase 2 (medir o auditor com 27 UFs) e Fase 3 (chat só devolve visões públicas auditadas). Pacotes de dev: `playwright` (só Chromium) e `axe-playwright-python`.
+- **Ferramentas de QA (novas):** `scripts/qa_painel.py` (sobe o próprio Streamlit numa porta livre com cópia temporária do banco, 25 estados fixos, checagens pelo DOM), `scripts/prints_painel.py` (galeria em 1280 × 800 e 1920 × 1080), `tests/test_visual.py` (`uv run pytest -m visual`, fora da suíte padrão) e `scripts/acessibilidade.py` (axe → `docs/qa/acessibilidade.md`). `docs/qa/` fica fora do git.
+- **Descobertas da galeria "antes" (182 falhas, das quais 100 eram ruído):**
+  - 84 eram 404 internos do Streamlit em `/<Página>/_stcore/health` e `/host-config` (o front tenta o caminho relativo antes do da raiz ao abrir uma página por endereço profundo; não vem do nosso código). A checagem agora ignora erros de console vindos de `/_stcore/`;
+  - 24 eram erro da própria checagem (contava barras em `gd.data`, que no Plotly 6 vem codificado em binário); agora usa `gd.calcdata`.
+- **Defeitos reais achados além do C1–C4:** KPIs do Início cortados em 1280 (5 colunas); rótulo "Serventias com déficit (esperado)" cortado no Simulador; botão "Limpar filtros" cortado; **mapa do município sem o destaque no enquadramento** (Almenara e município pequeno: o zoom aproximava demais e não incluía a geometria do destaque). Corrigidos (ver relatório).
+- **C4:** o "Juíz de Fora" vem errado da API do IBGE (só a região intermediária 3106); corrigido no silver via `config/correcoes_nomes.yaml`, com a coluna `nome_regiao_corrigido_por`. O bronze não foi tocado.
+- **Pipeline rodado** para o C4: 58/58 contratos ok; foto de linhas e somas numéricas de 37 tabelas silver/gold/qualidade antes × depois: 0 diferenças.
+- **Acessibilidade:** 6 regras violadas. Todo contraste vem de cores do tema padrão do Streamlit (legenda `st.caption` #83858c, widget desabilitado, cor primária no slider) e `heading-order` vem de `st.subheader` após `st.title`. Nada de contraste ou rótulo em cor ou texto nosso; ficam como sugestões.
+- **Pendente de decisão do autor:** 8 tabelas largas na página Qualidade dos dados (fontes, conferência, divergências, sensibilidade, contratos) passam da largura em 1280 (e 2 delas em 1920). Fora do escopo C1–C4; `pytest -m visual` falha só nelas.
+- **Próximo passo:** conferência da galeria pelo autor e decisão sobre as tabelas da Qualidade; depois, o Bloco 2.

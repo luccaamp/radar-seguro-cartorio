@@ -13,7 +13,7 @@ import duckdb
 import yaml
 
 RAIZ = Path(__file__).resolve().parents[1]
-SEMENTE = RAIZ / "config" / "premissas" / "premissas_v001.yaml"
+SEMENTE = RAIZ / "config" / "premissas" / "premissas_v002.yaml"   # v001 continua no lugar para comparação (D-020)
 DECISOES = RAIZ / "docs" / "decisoes.md"
 
 
@@ -33,7 +33,11 @@ def ler_semente() -> dict:
     return yaml.safe_load(SEMENTE.read_text(encoding="utf-8"))
 
 
-def garantir_tabelas(con: duckdb.DuckDBPyConnection) -> None:
+TABELAS_ESTADO = ("premissas_versoes", "cenarios_salvos")   # estado do usuário: preservado entre cargas (1.7)
+
+
+def criar_tabelas(con: duckdb.DuckDBPyConnection) -> None:
+    """Só a estrutura das tabelas de estado (com as chaves), sem registrar a semente."""
     con.execute("CREATE SCHEMA IF NOT EXISTS estado")
     con.execute("""CREATE TABLE IF NOT EXISTS estado.premissas_versoes (
         versao INTEGER PRIMARY KEY, criada_em TIMESTAMP, autor VARCHAR, origem VARCHAR,
@@ -42,10 +46,19 @@ def garantir_tabelas(con: duckdb.DuckDBPyConnection) -> None:
         id INTEGER PRIMARY KEY, nome VARCHAR, criado_em TIMESTAMP, versao_premissas INTEGER,
         cenario_stf VARCHAR, regra_classe VARCHAR, metodo_rateio VARCHAR, nivel VARCHAR,
         ajustes_json VARCHAR, resultado_json VARCHAR)""")
-    if con.execute("SELECT count(*) FROM estado.premissas_versoes").fetchone()[0] == 0:
-        s = ler_semente()
+
+
+def garantir_tabelas(con: duckdb.DuckDBPyConnection) -> None:
+    criar_tabelas(con)
+    # a semente atual entra como versão própria se ainda não estiver no banco (ex.: v002 depois da v001)
+    s = ler_semente()
+    origem = f"config/premissas/{SEMENTE.name}"
+    if con.execute("SELECT count(*) FROM estado.premissas_versoes WHERE origem = ?", [origem]).fetchone()[0] == 0:
+        ocupada = con.execute("SELECT origem FROM estado.premissas_versoes WHERE versao = ?", [int(s["versao"])]).fetchone()
+        if ocupada:
+            raise RuntimeError(f"versão {s['versao']} já usada por '{ocupada[0]}'; renumere a semente {SEMENTE.name}")
         con.execute("INSERT INTO estado.premissas_versoes VALUES (?, now(), 'semente', ?, '{}', ?)",
-                    [int(s["versao"]), f"config/premissas/{SEMENTE.name}", _json(s)])
+                    [int(s["versao"]), origem, _json(s)])
 
 
 def premissas_vigentes(con: duckdb.DuckDBPyConnection) -> tuple[dict, int]:

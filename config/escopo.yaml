@@ -2,6 +2,8 @@
 ufs: [MG]
 cod_uf_ibge:
   MG: 31
+# exercício cuja média semestral define a classe (art. 16, § 1º, do Prov. 213: "exercício imediatamente anterior"; D-010)
+ano_enquadramento: 2025
 # snapshots do bronze usados pelo pipeline ("do zero" = a partir destes, sem coletar de novo)
 snapshots:
   cnj_justica_aberta: "2026-10-17"   # listagem e colaboradores
@@ -10,3 +12,7 @@ snapshots:
   cnpj: "2026-10"
   susep_ses: "2026-10-17"
   ibge: "2026-10-18"
+# versão do DADO (não a data do download) quando a fonte não a informa no arquivo (C5)
+versoes_dado:
+  ibge_malha: "2022"   # malha municipal 2022: o arquivo do bronze tem o mesmo SHA-256 da API v3 com periodo=2022 (conferido em 2026-10-18)
+  ibge_municipios: "lista vigente na data da coleta (a API de localidades não informa a versão da DTB)"

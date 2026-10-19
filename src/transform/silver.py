@@ -58,7 +58,12 @@ def _meta(arquivo: Path) -> dict:
     Para arquivos filtrados (RAIS, CNPJ, SUSEP), usa os metadados do pacote de origem."""
     for cand in (arquivo.with_name(arquivo.name + ".meta.json"), arquivo.with_name(arquivo.stem + ".meta.json")):
         if cand.exists():
-            return json.loads(cand.read_text(encoding="utf-8"))
+            meta = json.loads(cand.read_text(encoding="utf-8"))
+            origem = BRONZE / str(meta.get("origem", "")).replace("\\", "/")
+            if not meta.get("url") and meta.get("origem") and origem.is_file():
+                # arquivo filtrado: URL e hora de COLETA vêm do pacote baixado (C5); o resto fica do filtrado
+                meta = {**meta, **{k: v for k, v in _meta(origem).items() if k in ("url", "coletado_em")}}
+            return meta
     for pasta in (arquivo.parent, arquivo.parent.parent):
         m = pasta / "_metadados.json"
         if m.exists():
@@ -91,11 +96,24 @@ def ler_municipios(snap: str, uf: str, fontes: list) -> pd.DataFrame:
         "cod_ibge": m["id"], "cod_ibge6": m["id"] // 10, "uf": uf, "nome": m["nome"],
         "nome_norm": normalizar_nome(m["nome"]),
         "microrregiao": m["microrregiao"]["nome"], "mesorregiao": m["microrregiao"]["mesorregiao"]["nome"],
-        "regiao_imediata": m["regiao-imediata"]["nome"], "populacao": pop_por_cod.get(m["id"]),
+        "regiao_imediata": m["regiao-imediata"]["nome"],
+        "regiao_intermediaria": m["regiao-imediata"]["regiao-intermediaria"]["nome"],
+        "populacao": pop_por_cod.get(m["id"]),
         "ano_populacao": int(ano_pop)} for m in mun])
-    _registrar(fontes, "ibge_municipios", d / f"municipios_{uf}.json", snap)
+    # nomes de região com erro de grafia na fonte (C4): corrigidos pela tabela versionada, com marcação
+    correcoes = _yaml("correcoes_nomes.yaml")
+    df["nome_regiao_corrigido_por"] = None
+    for coluna in ("regiao_imediata", "regiao_intermediaria"):
+        for errado, c in (correcoes.get(coluna) or {}).items():
+            alvo = df[coluna] == errado
+            df.loc[alvo, coluna] = c["corrigido"]
+            df.loc[alvo, "nome_regiao_corrigido_por"] = f"config/correcoes_nomes.yaml ({coluna}: {errado!r})"
+    versoes = _yaml("escopo.yaml").get("versoes_dado", {})
+    _registrar(fontes, "ibge_municipios", d / f"municipios_{uf}.json", f"vigente em {snap}",
+               versoes.get("ibge_municipios", ""))
     _registrar(fontes, "ibge_populacao", d / f"populacao_{uf}.json", ano_pop, "SIDRA tabela 6579, variável 9324")
-    _registrar(fontes, "ibge_malha", d / f"malha_{uf}.geojson", snap)
+    _registrar(fontes, "ibge_malha", d / f"malha_{uf}.geojson", versoes.get("ibge_malha", snap),
+               "malha municipal do IBGE (API v3); versão conferida por hash (config/escopo.yaml)")
     return df
 
 
@@ -207,7 +225,9 @@ def ler_arrecadacoes(snap: str, uf: str, fontes: list) -> pd.DataFrame:
     df["conflito_fonte"] = df["versoes_fonte"] > 1
     df["versao"] = df.groupby(chave).cumcount() + 1
     ult = df.loc[df["informado"], "periodo_fim"].max()
-    _registrar(fontes, "cnj_arrecadacao", arq, str(ult), f"{len(regs)} serventias com série íntegra")
+    ano_classe = _yaml("escopo.yaml")["ano_enquadramento"]
+    _registrar(fontes, "cnj_arrecadacao", arq, f"classe: exercício {ano_classe}; série coletada até {ult}",
+               f"{len(regs)} serventias com série íntegra")
     return df
 
 

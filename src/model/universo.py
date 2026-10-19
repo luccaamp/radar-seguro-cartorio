@@ -48,8 +48,11 @@ def fracao_fora_classe_1(serventias: pd.DataFrame) -> float:
     return float((conhecidas["classe"] != "1").mean()) if len(conhecidas) else 0.0
 
 
-def universo(serventias: pd.DataFrame, limites: dict, p: dict) -> pd.DataFrame:
-    """Marca cada serventia com `peso_universo` (0 a 1) e `motivo`.
+def universo(serventias: pd.DataFrame, limites: dict, p: dict, limites_faixa: dict | None = None) -> pd.DataFrame:
+    """Marca cada serventia com `peso_universo` (0 a 1), `motivo` e `classe_faixa`.
+
+    `limites` (regra escolhida) decide quem entra. `limites_faixa` (regra base) dá a classe usada nas faixas de
+    déficit (`classe_faixa`, D-019); se omitido, é a própria regra escolhida.
 
     `serventias`: cns, situacao_juridica, receita_ref (+ demais colunas, mantidas). `p`: premissas resolvidas num nível,
     com `situacoes_especiais_dentro` (bool) e `peso_classe_indeterminada_base` (número).
@@ -60,6 +63,7 @@ def universo(serventias: pd.DataFrame, limites: dict, p: dict) -> pd.DataFrame:
     """
     s = serventias.copy()
     s["classe"] = [classificar(r, limites) for r in s["receita_ref"]]
+    s["classe_faixa"] = s["classe"] if limites_faixa is None else [classificar(r, limites_faixa) for r in s["receita_ref"]]
     s["classificacao_aproximada"] = True
     peso, motivo = [], []
     for sit, classe in zip(s["situacao_juridica"], s["classe"]):

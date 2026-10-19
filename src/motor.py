@@ -21,6 +21,7 @@ class Insumos:
     serventias: pd.DataFrame  # ativas: cns, cod_ibge, situacao_juridica, atribuicoes, clt, receita_ref, origem_receita
     fator_inpc: float
     mes_inpc: int
+    regioes: dict[int, str] | None = None  # cod_ibge -> região imediata do IBGE (reserva da distribuição, D-022)
 
 
 def pesos_por_atribuicao(serventias: pd.DataFrame) -> dict[str, float]:
@@ -39,18 +40,22 @@ def premissas_nivel(semente: dict, nivel: str, peso_indet_base: float, ajustes: 
     return resolver(semente, nivel, {"peso_classe_indeterminada_base": peso, **(ajustes or {})})
 
 
-def calcular_serventias(ins: Insumos, p: dict, limites: dict, metodo: str | None = None
-                        ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Passivo, universo e déficit por serventia (uso interno; nunca exibido por serventia) e passivo médio por município."""
+def calcular_serventias(ins: Insumos, p: dict, limites: dict, metodo: str | None = None,
+                        limites_faixa: dict | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Passivo, universo e déficit por serventia (uso interno; nunca exibido por serventia) e passivo médio por município.
+
+    `limites`: regra que decide o universo. `limites_faixa`: regra base, cuja classe define as faixas de déficit (D-019).
+    """
     fator = 1.0 if p["correcao_salarial_rais"] == "sem_correcao" else ins.fator_inpc
     # a contagem de pessoas vem do CNJ (D-005), por isso o fator_cobertura_rais (D-006) não entra aqui
     vinc = preparar_vinculos(ins.rais, p["base_remuneracao_rais"], fator)
     municipios = ins.serventias["cod_ibge"].dropna().astype(int).unique().tolist()
-    medio = passivo_medio_por_municipio(vinc, municipios, p, int(p["limiar_vinculos_distribuicao_municipal"]))
+    medio = passivo_medio_por_municipio(vinc, municipios, p, int(p["limiar_vinculos_distribuicao_municipal"]),
+                                        ins.regioes)
     metodo = metodo or p["metodo_rateio_padrao"]
     pesos = pesos_por_atribuicao(ins.serventias) if metodo == "peso_por_atribuicao" else None
     rat = ratear_passivo(ins.serventias, medio, metodo, pesos)
-    return deficit(universo(rat, limites, p), p), medio
+    return deficit(universo(rat, limites, p, limites_faixa), p), medio
 
 
 def resumo_mercado(serv: pd.DataFrame, p: dict, cenarios: dict, cenario: str, ajustes_cenario: dict | None = None
@@ -64,6 +69,7 @@ def resumo_mercado(serv: pd.DataFrame, p: dict, cenarios: dict, cenario: str, aj
         "clt": float(serv["clt"].fillna(0).sum()),
         "passivo_todas": float(serv["passivo"].sum()),
         "n_universo": float(serv["peso_universo"].sum()),
+        "n_indeterminadas_universo": int(((serv["classe"] == "indeterminada") & (serv["peso_universo"] > 0)).sum()),
         "passivo_universo": float((serv["passivo"] * serv["peso_universo"]).sum()),
         "n_deficit": float(serv["n_deficit"].sum()),
         "valor_descoberto": float(serv["valor_descoberto"].sum()),

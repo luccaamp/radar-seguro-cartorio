@@ -55,6 +55,14 @@ def test_deficit_por_faixa(p_base):
     assert d["valor_descoberto"].tolist() == pytest.approx([0.5 * 0.5 * 100_000, 0.3 * 0.4 * 200_000, 0.0])
 
 
+def test_passivo_zero_nao_conta_como_deficit(p_base):
+    """D-021: serventia do universo sem empregado CLT (passivo 0) não entra em 'com déficit'."""
+    s = pd.DataFrame({"passivo": [0.0, 100_000.0], "classe": ["2", "2"], "peso_universo": [1.0, 1.0]})
+    d = deficit(s, p_base)
+    assert d["n_deficit"].tolist() == pytest.approx([0.0, 0.50])
+    assert d["valor_descoberto"].tolist() == pytest.approx([0.0, 0.5 * 0.5 * 100_000])
+
+
 def test_cenario_suspende_8_17_zera_demanda(p_base, cenarios):
     p = aplicar_cenario_stf(p_base, cenarios, "suspende_8_17")
     assert demanda_seguro(1_000_000.0, p).importancia_segurada == 0

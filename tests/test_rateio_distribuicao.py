@@ -65,3 +65,22 @@ def test_por_empregados_cnj_usa_clt_da_serventia():
 def test_metodo_desconhecido():
     with pytest.raises(ValueError):
         ratear_passivo(_serventias(), MEDIO, "chute")
+
+
+def test_municipio_pequeno_usa_a_regiao_imediata(p_base):
+    """D-022: município abaixo do limiar usa a distribuição da sua região imediata (se ela alcança o limiar),
+    e não a do estado; região também pequena cai no estado. Vínculos SINTÉTICOS."""
+    v = pd.DataFrame({
+        "cod_ibge": [1] * 25 + [2] * 3 + [3] * 18 + [4] * 2 + [5] * 2,
+        "salario": [9000.0] * 25 + [2000.0] * 3 + [2000.0] * 18 + [1500.0] * 2 + [1500.0] * 2,
+        "meses_servico": [120.0] * 25 + [24.0] * 3 + [24.0] * 18 + [12.0] * 2 + [12.0] * 2})
+    regioes = {1: "capital", 2: "interior", 3: "interior", 4: "pequena", 5: "pequena"}
+    m = passivo_medio_por_municipio(v, [1, 2, 4], p_base, 20, regioes).set_index("cod_ibge")
+    assert m.at[1, "origem_distribuicao"] == "municipio"
+    assert m.at[2, "origem_distribuicao"] == "regiao"     # interior: 3 + 18 = 21 vínculos >= 20
+    assert m.at[4, "origem_distribuicao"] == "estado"     # pequena: 4 vínculos < 20
+    medio_interior = passivo_medio_por_municipio(v[v.cod_ibge.isin([2, 3])].assign(cod_ibge=0), [0], p_base, 1)
+    assert m.at[2, "passivo_medio_vinculo"] == pytest.approx(medio_interior["passivo_medio_vinculo"].iloc[0])
+    sem_regiao = passivo_medio_por_municipio(v, [2], p_base, 20).set_index("cod_ibge")
+    assert sem_regiao.at[2, "origem_distribuicao"] == "estado"
+    assert m.at[2, "passivo_medio_vinculo"] < sem_regiao.at[2, "passivo_medio_vinculo"]   # o estado inclui a "capital"

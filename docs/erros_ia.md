@@ -261,3 +261,96 @@ Formato de cada entrada:
 - **O que aconteceu:** sem URL em `cnj_colaboradores` e `susep_ses_garantia`; sem hora em `cnj_colaboradores`; data de referência = dia do download em `ibge_municipios`, `ibge_malha` (e no cadastro do CNJ, onde o snapshot é a referência). A correlação bruta (0,996) passa só por causa de BH: em log é 0,965, o erro mediano é 13,2% e só 69,1% dos municípios com ≥ 5 empregados ficam dentro de ±20%.
 - **Correção:** etapa 1 do plano.
 - **Bom para os slides?** sim (C1: métrica que passa sem testar nada).
+
+---
+
+> Acréscimos de 2026-10-18 (noite), na execução da Etapa 1 (`docs/aprovacao_etapa1_fase1.md`).
+
+## Nota à entrada "Troca da regra de classe reclassificava as faixas de déficit (A1)"
+- **O peso por regra não era erro; o erro era a classe das faixas.** A proposta da IA de unificar o peso da indeterminada (0,932 × 0,678) foi rejeitada pelo autor com razão: o peso mede a chance de uma serventia sem dado passar no corte de **cada** regra. Só a classe das faixas de déficit passou a ser sempre a da regra base.
+- Além disso, as serventias que só entram pela v1 caíam na faixa da Classe 2 por um padrão implícito de `_faixa` ("tudo que não é 3 vira 2"), e não por decisão. Agora é uma tabela explícita e testada (`FAIXA_POR_CLASSE`).
+
+## Nota à entrada "Correções 2, 3, 4 e 6 do painel não implementadas (A5)"
+- Classificação do autor: **IA informou correção não feita.** Implementadas agora, no passo 10 da Etapa 1.
+
+## 2026-10-18 — Data de referência do IBGE trocada pela observação (C5)
+- **Onde:** `src/transform/silver.py`, `ler_municipios`
+- **O que aconteceu:** ao registrar a versão da lista de municípios, a IA passou o texto da versão como observação, e a data de referência continuou sendo o dia do download.
+- **Como foi detectado:** pelo teste novo `tests/test_rastreabilidade.py`, escrito antes de rodar o pipeline.
+- **Correção:** data de referência "vigente em 2026-10-18" e a observação de que a API de localidades não informa a versão da DTB.
+- **Bom para os slides?** não
+
+## 2026-10-18 — Heredoc aninhado não aplicou a edição e não deu erro
+- **Onde:** comando de shell usado pela IA para editar `src/transform/gold.py`
+- **O que aconteceu:** um script Python dentro de um heredoc aninhado não rodou, sem mensagem de erro. A IA conferiu o arquivo, viu que nada mudou e refez com a ferramenta de edição.
+- **Correção:** depois de toda edição por script, conferir a mudança (os scripts seguintes passaram a afirmar que cada trecho trocado existia uma única vez).
+- **Bom para os slides?** não
+
+---
+
+> Acréscimos de 2026-10-18 (noite), no Bloco 1 de `docs/plano_qualidade_e_correcoes.md`.
+
+## 2026-10-18 — "$" lido como fórmula LaTeX nas Limitações (1.1)
+- **Onde:** `app/pages/3_Qualidade_dos_dados.py` (bloco "Limitações declaradas") e três `help=` da página Início.
+- **O que aconteceu:** o item "Regra dos R$ 300 mil" tinha dois "R$" no mesmo texto, sem escape; o Streamlit leu o trecho entre eles como fórmula e mostrou `**` e fonte de código. A função de escape existia (`md`), mas não foi usada nesse bloco.
+- **Como foi detectado:** revisão do painel pelo autor.
+- **Correção:** função única `md_seguro` e teste estático (`tests/test_app_codigo.py`) que falha se algum texto com "R$" (ou valor de `brl`/`faixa`) chega ao Streamlit sem ela, mais um teste que renderiza as 4 páginas e procura o padrão LaTeX.
+- **Bom para os slides?** não
+
+## 2026-10-18 — Mapa pintava cada município pequeno com o total da região (1.2)
+- **Onde:** `app/pages/1_Mercado.py` (Etapa 1, passo 10).
+- **O que aconteceu:** para proteger os municípios com menos de 3 serventias, a IA deu a cada um o total da sua região imediata. Uma região com 10 cidades pequenas pintava as 10 com o total, e as manchas escuras viravam grupos de municípios minúsculos: leitura visual errada.
+- **Como foi detectado:** revisão do painel pelo autor.
+- **Correção:** geometria dissolvida no gold (`gold.geo_mapa_publico`, 385 áreas: 315 municípios e 70 grupos regionais), pintada uma vez por área; contrato de que nenhuma área pública tem menos de 3 serventias.
+- **Bom para os slides?** sim (proteger o dado sem distorcer a leitura).
+
+## 2026-10-18 — Testes do painel regravavam os Parquet reais de data/gold
+- **Onde:** `src/transform/gold.py` (`_gravar`) chamado pelo fixture de `tests/test_app.py`.
+- **O que aconteceu:** desde a Etapa 1, o fixture refazia o gold na cópia temporária do banco, mas `_gravar` sempre exportava o Parquet para `data/gold`. O teste de proteção só olhava o banco. O conteúdo era o mesmo, mas era uma escrita fora da cópia.
+- **Como foi detectado:** pela IA, ao implementar a carga atômica (1.7).
+- **Correção:** `exportar_parquet=False` nos testes; o teste de proteção passou a conferir também os Parquet de `data/silver` e `data/gold`.
+- **Bom para os slides?** não
+
+## Nota à entrada "Heredoc aninhado não aplicou a edição e não deu erro" ([VERIFICAR] do 1.7)
+- O arquivo era `src/transform/gold.py` (passar a classe da regra base, `lim_base`, para as faixas de déficit). A edição foi refeita com a ferramenta de edição na mesma hora.
+- Cobertura: o contrato de monotonicidade do gold e o fixture de `tests/test_app.py`, que refaz o gold e falha em qualquer contrato violado, pegariam a ausência; a reprodutibilidade agora também é testada (`tests/test_pipeline.py`).
+- Regra nova no `CLAUDE.md`: código só com a ferramenta de edição, nunca por script de substituição.
+
+---
+
+> Acréscimos de 2026-10-18 (noite), na revisão do painel com filtros (`docs/revisao_painel_filtros.md`).
+
+## 2026-10-18 — Vazamento por subtração entre visões (E1, crítico, LGPD)
+- **Onde:** página Mercado (Bloco 1): a regra de 3 serventias era checada em cada tabela isoladamente.
+- **O que aconteceu:** visão geral × filtro Classe 3 por município: BH 34 × 33, Uberaba 9 × 8, Betim 6 × 5 serventias. A diferença isolava 1 cartório (CLT e passivo).
+- **Como foi detectado:** revisão do autor, exportando as visões com filtro.
+- **Causa provável:** a IA testou "nenhuma célula com menos de 3" e não "nenhuma diferença entre células com 1 ou 2".
+- **Correção:** visões filtradas por região com supressão complementar, hierárquica e secundária; auditor de ataque por diferença (pares contidos, complemento, resto de partição) que roda no gold e falha a carga; teste `test_ataque_por_diferenca` com o caso BH/Classe 3 fixo.
+- **Bom para os slides?** sim (o caso mais forte de "onde a IA errou": proteção que parecia certa e não era).
+
+## 2026-10-18 — O mesmo ataque pela troca de regra ou de nível (E1-b, achado na auditoria própria)
+- **Onde:** Mercado e `gold.fato_mercado_municipio_publico` (todas as regras e níveis por município).
+- **O que aconteceu:** v1 − v2 e máximo − base, na mesma área, isolavam serventias que mudam de lado no universo. O auditor também achou casos no total de MG (RTD × RCPJ, 2 serventias; RI e indeterminada entre níveis).
+- **Correção:** D-027 (proposta aplicada) e união de RTD e RCPJ no filtro (D-026).
+- **Bom para os slides?** sim.
+
+## 2026-10-18 — Ranking cortava as maiores barras; mapa sem escala; cinza = branco (E2, E3, E5)
+- **O que aconteceu:** o eixo do ranking não tinha folga para o rótulo da maior barra; a escala de cores sumiu; as áreas sem dado publicável saíam brancas como os municípios sem serventia.
+- **Correção:** eixo até o máximo × 1,15 com rótulo fora da barra; escala sempre presente, em R$ e com "≥" quando satura; três camadas (cinza de contexto, sem serventia claro com contorno, valor) com legenda em texto. Testes na auditoria (`tests/test_auditoria_painel.py`).
+- **Bom para os slides?** não
+
+## 2026-10-18 — Páginas de app/pages só achavam `comum` por sorte nos testes
+- **O que aconteceu:** rodando sozinha no AppTest, `pages/1_Mercado.py` não importava `comum` (fica em `app/`). Os testes passavam porque a Início rodava antes e punha `app/` no caminho.
+- **Correção:** o fixture de sessão põe `app/` no caminho explicitamente (`tests/apoio_painel.py`).
+- **Bom para os slides?** não
+
+## 2026-10-18 — Zoom do mapa do município deixava o destaque fora do quadro (achado pelo QA visual)
+- **Onde:** `app/pages/1_Mercado.py`, função `mapa` (U1).
+- **O que aconteceu:** o zoom era `log2(360 / vão) + 0,6`, que supõe um mapa bem mais largo que os ~470 px da coluna em 1280; o centro era a média das latitudes (não de Mercator) e o enquadramento não incluía a geometria do próprio destaque. Em Almenara metade do polígono ficava fora; num município pequeno (área agregada) o destaque inteiro sumia. A auditoria do AppTest só conferia `zoom > 5,1`, não o que aparece na tela.
+- **Correção:** `_enquadrar` calcula o zoom em Web Mercator (mundo = 512 × 2^z px) para a largura útil em 1280, com folga, inclui o destaque e desloca o centro por causa da escala de cores. A checagem 5 de `tests/test_visual.py` confere os vértices do polígono contra o quadro.
+- **Bom para os slides?** sim (teste que passava sem olhar a tela).
+
+## 2026-10-18 — Checagem visual com falsos alarmes (QA)
+- **O que aconteceu:** na galeria "antes", 100 das 182 falhas eram da própria ferramenta: 404 internos do Streamlit em `/_stcore/` tratados como erro nosso, e contagem de barras lida de `gd.data` (binário no Plotly 6). Também faltavam o texto de botão e a tabela dentro do expansor nas checagens.
+- **Correção:** filtro de `/_stcore/` com o motivo documentado em `ouvir_console`; `gd._fullData`/`gd.calcdata`; seletor de botão; o `abrir` expande os expansores do Mercado. As comparações "antes × depois" separam essas categorias.
+- **Bom para os slides?** não

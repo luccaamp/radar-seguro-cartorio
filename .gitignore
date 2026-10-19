@@ -24,3 +24,6 @@ __pycache__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# QA visual (prints, galeria e relatório de acessibilidade gerados por scripts)
+docs/qa/

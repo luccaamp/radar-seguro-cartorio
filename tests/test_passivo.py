@@ -96,3 +96,29 @@ def test_passivo_municipio_agrega_por_vinculo(p_base):
     assert g.at[1, "n_vinculos"] == 2
     assert g.at[1, "passivo_total"] == pytest.approx(2 * 16161.17, abs=0.02)
     assert g.at[2, "passivo_medio_vinculo"] == pytest.approx(passivo_por_vinculo(1500.0, 10, p_base).total)
+
+
+def test_data_base_unica_31_12_2025(semente):
+    """D-020: em todos os níveis a posição é 31/12/2025 e o salário da RAIS NÃO é corrigido pelo INPC."""
+    from src.model.premissas import resolver
+    for nivel in ("min", "base", "max"):
+        p = resolver(semente, nivel)
+        assert p["data_posicao"] == date(2025, 12, 31)
+        assert p["correcao_salarial_rais"] == "sem_correcao"
+
+
+def test_exemplo_feito_a_mao_pelo_motor(semente):
+    """O vínculo da conta à mão (R$ 3.000 em dez/2025, 64 meses), passando pelo motor inteiro com dados SINTÉTICOS:
+    base = R$ 16.161,17 mesmo com INPC de 1,04 nos insumos; a sensibilidade 'INPC' multiplica tudo por 1,04."""
+    import pandas as pd
+    from src.motor import Insumos, calcular_serventias, premissas_nivel
+    rais = pd.DataFrame({"cod_ibge": [3100000] * 20, "ativo_31_12": True, "tipo_vinculo": 15,
+                         "rem_dezembro": 3000.0, "rem_media": 3000.0, "tempo_emprego_meses": 64.0})
+    serv = pd.DataFrame({"cns": ["x"], "cod_ibge": [3100000], "clt": [1.0], "situacao_juridica": ["PROVIDO"],
+                         "atribuicoes": ["Notas"], "receita_ref": [900_000.0]})
+    ins = Insumos(rais=rais, serventias=serv, fator_inpc=1.04, mes_inpc=202609)
+    lim = {"classe_1_max": 300_000.0, "classe_2_max": 1_500_000.0}
+    base, _ = calcular_serventias(ins, premissas_nivel(semente, "base", 0.5), lim)
+    assert base["passivo"].iloc[0] == pytest.approx(16161.17, abs=0.01)
+    inpc, _ = calcular_serventias(ins, premissas_nivel(semente, "base", 0.5, {"correcao_salarial_rais": "inpc"}), lim)
+    assert inpc["passivo"].iloc[0] == pytest.approx(16161.17 * 1.04, abs=0.01)

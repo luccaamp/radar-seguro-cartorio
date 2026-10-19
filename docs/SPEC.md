@@ -408,11 +408,14 @@ Gabarito de 40 a 60 documentos reais, com pelo menos 10 relevantes. Métricas: p
 ### Fase 2: Brasil inteiro e qualidade
 
 - Expandir para todas as UFs disponíveis, com contratos e reconciliações (§4).
+- Medir o tempo do auditor com as 27 UFs (acrescentado em 2026-10-18).
 - **Aceite**: página Qualidade dos dados completa e divergências documentadas no diário.
 
 ### Fase 3: Chat
 
 - Ordem: gabarito (rotulado pelo autor) → ferramentas → integração com o Ollama → página Chat → eval das versões.
+- **Regra (acrescentada em 2026-10-18):** painel e chat só leem tabelas públicas; `gold.interno_*` é proibido fora do pipeline. As ferramentas do chat e o `sql_readonly` (§5.2) entram na varredura de `tests/test_app_codigo.py`.
+- **Regra (acrescentada em 2026-10-18):** as ferramentas do chat devolvem só as visões públicas já auditadas, nunca SQL livre; v1, mínimo e máximo só nos totais de MG.
 - **Aceite**: o chat responde o gabarito com as métricas do §7.2 e o gráfico de comparação das versões.
 
 ### Fase 4: Radar (opcional)

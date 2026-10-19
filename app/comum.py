@@ -1,4 +1,5 @@
 """Peças comuns do painel: conexão, formatação pt-BR, rodapé de fonte e paleta. Todo número exibido leva rodapé."""
+import os
 import sys
 from pathlib import Path
 
@@ -12,7 +13,8 @@ if str(RAIZ) not in sys.path:
 
 from src import estado  # noqa: E402
 
-BANCO = RAIZ / "data" / "radar.duckdb"
+# RADAR_BANCO aponta o painel para outro arquivo (os testes usam uma cópia temporária; nunca o banco real)
+BANCO = Path(os.environ.get("RADAR_BANCO") or RAIZ / "data" / "radar.duckdb")
 
 # paleta (skill de visualização, instância de referência): sequencial azul, série única azul, superfícies
 AZUL_SEQUENCIAL = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
@@ -32,6 +34,7 @@ NOMES_FONTE = {
     "ibge_inpc": "IBGE (INPC)",
     "ibge_ipca": "IBGE (IPCA)",
 }
+FONTES_NAO_USADAS = {"ibge_ipca"}   # coletadas, mas fora de qualquer conta: só na tabela de fontes, não nos rodapés
 SITUACOES = {"PROVIDO": "Provida (titular)", "VAGO": "Vaga (interino)", "SOB INTERVENÇÃO": "Sob intervenção",
              "CONVERSÃO EM DILIGÊNCIA": "Conversão em diligência"}
 ATRIBUICOES = {"notas": "Notas", "rcpn": "Registro Civil (PN)", "ri": "Registro de Imóveis",
@@ -65,6 +68,8 @@ def brl(v: float) -> str:
     """R$ em escala legível: mil, mi, bi."""
     if v is None or pd.isna(v):
         return "—"
+    if abs(v) < 0.005:
+        return "R$ 0"   # zero sem centavos (E8)
     a = abs(v)
     if a >= 1e9:
         return f"R$ {_br(v / 1e9, 2)} bi"
@@ -75,12 +80,20 @@ def brl(v: float) -> str:
     return f"R$ {_br(v, 2)}"
 
 
+def aprox(v: float) -> str:
+    """Contagem esperada (valor esperado, fracionário): '≈ 0,4' abaixo de 10 e '≈ 486' a partir de 10 (E7, E8)."""
+    if v is None or pd.isna(v):
+        return "—"
+    return f"≈ {_br(v, 1 if abs(v) < 10 else 0)}"
+
+
 def pct(v: float, casas: int = 1) -> str:
     return "—" if v is None or pd.isna(v) else f"{_br(100 * v, casas)}%"
 
 
-def md(texto: str) -> str:
-    """Escapa o cifrão para st.markdown/st.caption, que leem $...$ como fórmula (LaTeX)."""
+def md_seguro(texto: str) -> str:
+    """Escapa o cifrão para st.markdown/st.caption/help, que leem $...$ como fórmula (LaTeX). Todo texto com "R$"
+    exibido pelo Streamlit passa por aqui (testado em tests/test_app_codigo.py)."""
     return texto.replace("$", r"\$")
 
 
@@ -92,13 +105,56 @@ def execucao() -> pd.Series:
     return consulta("SELECT * FROM gold.execucao WHERE regra_classe = 'v2'").iloc[0]
 
 
-def rodape(fontes: list[str], extra: str = "") -> None:
-    """Fonte, data de referência e versão das premissas de tudo que está acima (SPEC §0, restrição 6)."""
+EXPLICA_NIVEIS = ("**Mínimo, base e máximo:** cada cenário põe todas as suposições no extremo ao mesmo tempo; "
+                  "é um limite, não uma previsão.")
+
+
+def data_base_passivo() -> str:
+    """Data-base do passivo nas premissas vigentes (D-020), no formato dd/mm/aaaa."""
+    p = estado.premissas_vigentes(conexao())[0]["premissas"]["data_posicao"]["valor"]
+    return pd.Timestamp(p).strftime("%d/%m/%Y")
+
+
+def rodape(fontes: list[str], extra: str = "", passivo: bool = True, taxa: bool = False) -> None:
+    """Fonte, data de referência e versão das premissas de tudo que está acima (SPEC §0, restrição 6).
+
+    `passivo`: acrescenta a data-base do passivo (D-020). `taxa`: diz que a taxa do seguro é suposição (E2)."""
     f = consulta("SELECT fonte, data_referencia FROM silver.fonte_metadados WHERE fonte IN (SELECT unnest(?))", [fontes])
     partes = [f"{NOMES_FONTE.get(r.fonte, r.fonte)} (ref. {r.data_referencia})" for r in f.itertuples()]
     e = execucao()
-    st.caption(f"**Fontes:** {'; '.join(partes)}. **Premissas:** versão {int(e.versao_premissas)} · "
-               f"carga de {e.executado_em:%d/%m/%Y %H:%M}." + (f" {extra}" if extra else ""))
+    v = int(e.versao_premissas)
+    texto = (f"**Fontes:** {'; '.join(partes)}. **Premissas:** versão {v} · carga de {e.executado_em:%d/%m/%Y %H:%M}.")
+    if passivo:
+        texto += f" **Data-base do passivo:** {data_base_passivo()} (art. 4º do Prov. CNJ 227/2026)."
+    if taxa:
+        texto += f" **Taxa do seguro:** suposição (premissas v{v})."
+    st.caption(md_seguro(texto + (f" {extra}" if extra else "")))
+
+
+def universo_txt(valor: float, n_indeterminadas: int) -> str:
+    """Universo do Prov. 227 como valor esperado (C6): '≈ 1.121 (valor esperado; inclui peso das 27 indeterminadas)'."""
+    return f"{aprox(valor)} (valor esperado; inclui peso das {num(n_indeterminadas)} indeterminadas)"
+
+
+def n_indeterminadas_no_universo(regra: str = "v2", nivel: str = "base") -> int:
+    return int(consulta("SELECT n_indeterminadas_universo FROM gold.fato_mercado_uf WHERE regra_classe = ? "
+                        "AND nivel = ? AND cenario_stf = 'mantem'", [regra, nivel]).iloc[0, 0])
+
+
+def ticks_brl(vmax: float, n: int = 5) -> tuple[list[float], list[str]]:
+    """Marcas de legenda de mapa em R$ com notação brasileira ('R$ 350 mil'), de 0 a `vmax`."""
+    vals = [vmax * i / (n - 1) for i in range(n)]
+    return vals, ["R$ 0" if v == 0 else brl(v) for v in vals]
+
+
+def slider_br(col, rotulo: str, vmin: float, vmax: float, passo: float, valor: float, casas: int = 1,
+              sufixo: str = "%", **kw) -> float:
+    """Controle deslizante com vírgula decimal ('2,0%', '1,00'). O st.slider só formata com ponto, então usa
+    select_slider com as opções já formatadas. Devolve o número escolhido (na mesma escala dos limites)."""
+    n = int(round((vmax - vmin) / passo))
+    opcoes = [round(vmin + i * passo, 10) for i in range(n + 1)]
+    inicial = min(opcoes, key=lambda o: abs(o - valor))
+    return col.select_slider(rotulo, options=opcoes, value=inicial, format_func=lambda o: f"{_br(o, casas)}{sufixo}", **kw)
 
 
 def aviso_estimativa() -> None:

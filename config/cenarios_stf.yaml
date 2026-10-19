@@ -12,7 +12,8 @@ cenarios:
       fracao_exigencia_garantia: 0.0
   parcial:
     descricao: >-
-      Decisão intermediária (ex.: suspende só as penalidades do art. 17, ou modula prazos).
-      Parte dos delegatários com déficit continua contratando garantia. Fração ajustável no simulador.
+      Cenário hipotético: o STF suspende parte da obrigação, e só uma fração do valor hoje exigido
+      (déficit × fração) continua exigida; a fração é suposição sem base em decisão real (até 17/10/2026 não havia
+      liminar). Ajustável no simulador.
     ajustes:
       fracao_exigencia_garantia: 0.5   # fonte: suposição (valor inicial do controle no simulador)

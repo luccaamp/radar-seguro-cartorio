@@ -25,18 +25,25 @@ def preparar_vinculos(rais: pd.DataFrame, base_remuneracao: str, fator_correcao:
                          "meses_servico": v["tempo_emprego_meses"].fillna(0).to_numpy()})
 
 
-def passivo_medio_por_municipio(vinculos: pd.DataFrame, municipios: list[int], p: dict, limiar: int) -> pd.DataFrame:
-    """Passivo médio por vínculo para cada município: o do próprio município se tiver `limiar` vínculos ou mais,
-    senão o do estado inteiro (D-008). Coluna `origem_distribuicao` = 'municipio' ou 'estado'."""
-    por_mun = passivo_municipio(vinculos, p)
+def passivo_medio_por_municipio(vinculos: pd.DataFrame, municipios: list[int], p: dict, limiar: int,
+                                regioes: dict[int, str] | None = None) -> pd.DataFrame:
+    """Passivo médio por vínculo para cada município, pela primeira distribuição com `limiar` vínculos ou mais:
+    o próprio município (D-008), a região imediata do IBGE (`regioes`: cod_ibge -> região; D-022) ou o estado inteiro.
+    Coluna `origem_distribuicao` = 'municipio', 'regiao' ou 'estado'."""
+    por_mun = passivo_municipio(vinculos, p).set_index("cod_ibge")
     estado = passivo_municipio(vinculos.assign(_uf=0), p, chave="_uf")
     medio_estado = float(estado["passivo_medio_vinculo"].iloc[0]) if len(estado) else 0.0
-    proprio = por_mun.set_index("cod_ibge")
+    regioes = regioes or {}
+    por_reg = (passivo_municipio(vinculos.assign(_reg=vinculos["cod_ibge"].map(regioes)).dropna(subset=["_reg"]), p,
+                                 chave="_reg").set_index("_reg") if regioes else pd.DataFrame())
     linhas = []
     for cod in municipios:
-        n = int(proprio["n_vinculos"].get(cod, 0))
+        n = int(por_mun["n_vinculos"].get(cod, 0))
+        reg = regioes.get(cod)
         if n >= limiar:
-            linhas.append((cod, "municipio", n, float(proprio.at[cod, "passivo_medio_vinculo"])))
+            linhas.append((cod, "municipio", n, float(por_mun.at[cod, "passivo_medio_vinculo"])))
+        elif reg is not None and reg in por_reg.index and int(por_reg.at[reg, "n_vinculos"]) >= limiar:
+            linhas.append((cod, "regiao", n, float(por_reg.at[reg, "passivo_medio_vinculo"])))
         else:
             linhas.append((cod, "estado", n, medio_estado))
     return pd.DataFrame(linhas, columns=["cod_ibge", "origem_distribuicao", "n_vinculos_rais", "passivo_medio_vinculo"])
