@@ -315,3 +315,45 @@ Formato:
 - **Justificativa:** os insumos são públicos (contagens, empregados declarados e arrecadação do CNJ), e a limitação D2 já declara que a estimativa de cada cartório é recalculável a partir deles. A defesa do projeto é tratar-se de estimativa de mercado com premissas públicas.
 - **Consequência:** frase acrescentada à limitação D2 na página Qualidade.
 - **Fonte:** `docs/correcoes_e_qa_visual.md`, seção 1.2.
+
+## D-029 — Conjunto público versionado e modo demonstração
+- **Data:** 2026-10-19
+- **Contexto:** quem clona o repositório público precisa ver o painel com os mesmos números da carga oficial, sem rodar a coleta (docs/repositorio_reproduzivel.md, 2.1 a 2.3).
+- **Opções:** (a) versionar a própria `data/gold/`, com `interno_*` e `.duckdb` no `.gitignore`; (b) uma pasta `data/publico/`, atualizada de propósito por script.
+- **Decisão (da IA, pela regra "a mais simples"):** opção (b).
+  - Abaixo, (2) e (3) são os motivos de escolher (b) e não (a).
+  - (1) Simplicidade: o painel também lê tabelas fora do gold (`silver.fonte_metadados`, `silver.municipio_ibge`, `qualidade.*` e a versão vigente das premissas), que a opção (a) não cobriria.
+  - (2) Atualizar o conjunto público vira um ato explícito: o `scripts/gerar_publico.py` roda o auditor de ataque por diferença, os contratos de "sem dado pessoal" e de limiar e o limite de 20 MB. Ele procura os códigos CNS e os nomes do cadastro e grava o manifesto (carga, fontes, premissas, commit, SHA-256 do arquivo e do conteúdo).
+  - (3) Os binários não mudam no git a cada carga de desenvolvimento.
+- **Hash de conteúdo:** linhas ordenadas, sem os carimbos de execução. É diferente do hash do arquivo: compara números entre bancos gravados em horas diferentes. O `tests/test_publico.py` avisa "dados públicos desatualizados: rode scripts/gerar_publico.py" se o gold local mudar.
+- **Ajustes exigidos pelo próprio gerador:**
+  - `gold.dim_municipio` vai sem a coluna `clt`;
+  - `qualidade.rec_municipio` deixou de publicar grupos de região imediata com 1 ou 2 serventias (4 grupos viraram uma linha "Outras regiões");
+  - **exceção ao limiar** `gold.dim_municipio.n_serventias` (contagem do cadastro público, sem valor): **aprovada pelo autor** em 2026-10-19.
+- **Modo demonstração:**
+  - sem banco local, o painel monta um DuckDB temporário a partir de `data/publico`, com faixa e rodapé "demonstração";
+  - "Salvar cenário" fica desativado.
+- **Simulador sem dados internos:**
+  - seguro, déficit e STF são recalculados exatamente a partir de totais por faixa (`gold.simulador_base_classe`, `src/model/simulador.py`);
+  - o passivo usa uma grade de 80 variantes: regra × rateio × uma premissa do passivo por vez (`gold.simulador_variantes`, pontos em `config/simulador_demo.yaml`, fonte: suposição);
+  - as células novas entram no auditor (0 vazamentos).
+- **Pipeline:**
+  - a malha do IBGE passou para o silver (`silver.malha_municipio`), para o gold se recalcular só com o silver;
+  - `pipeline.py --a-partir-de bronze|silver`, com `--help` de verdade.
+- **Fonte:** `docs/repositorio_reproduzivel.md` (2.1 a 2.4); `config/publico.yaml`; `src/publico.py`.
+
+## D-030 — Dados da equipe e dados públicos em Releases; regra de LGPD do público corrigida
+- **Data:** 2026-10-19
+- **Desenho (decidido pelo autor):**
+  - Release público `dados-AAAA-MM-DD` em `luccaamp/radar-seguro-cartorio`, com o silver e o manifesto;
+  - Release privado `carga-AAAA-MM-DD` em `luccaamp/radar-seguro-cartorio-dados`, com o pacote completo: bronze por fonte, silver, gold com `interno_*` e banco, em partes abaixo de 2 GiB, com hashes.
+- **Conflito achado:** a regra 0 do documento proibia "dado no nível de serventia" no público, mas o silver (arrecadação e CLT por CNS, vínculos da RAIS por município) ia no Release público.
+- **Decisão do autor:** publicar o silver como está. A regra passa a ser: "no repositório e no Release públicos, nenhuma ESTIMATIVA do modelo no nível de serventia (passivo, déficit, probabilidade, IS, prêmio); dados de origem já publicados pelas fontes oficiais (CNJ, RAIS/PDET, Receita, IBGE, SUSEP) podem ir, desde que sem dado pessoal". Corrigida no documento e no `CLAUDE.md`.
+- **Conferência pedida pelo autor:**
+  - **sem dado pessoal:** 0 problemas, com 3.840 nomes do cadastro procurados;
+  - **campos derivados do modelo:** nenhum no silver. Os mais próximos são bandeiras de limpeza, não estimativas, e ficam: `prazo_indeterminado` (do tipo de vínculo, D-009), `conflito_fonte`, `n_atribuicoes`. O empacotador retira automaticamente do pacote público qualquer coluna que case com `estimativas_do_modelo` (`config/publico.yaml`) e registra no manifesto.
+- **Pacote da equipe:**
+  - os `.COMT` extraídos da RAIS (6,2 GB) ficam fora, porque são deriváveis do `.7z`, que vai no pacote;
+  - é gerado fora do OneDrive (cota gratuita).
+- **Licença do código:** MIT (escolha do autor).
+- **Fonte:** `docs/repositorio_reproduzivel.md` (2.5); `config/pacotes.yaml`; `scripts/empacotar_dados.py`; `scripts/baixar_dados.py`; `docs/publicacao.md`.

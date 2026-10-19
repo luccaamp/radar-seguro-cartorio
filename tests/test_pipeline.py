@@ -14,7 +14,8 @@ import pipeline
 
 RAIZ = Path(__file__).resolve().parents[1]
 BANCO_REAL = RAIZ / "data" / "radar.duckdb"
-pytestmark = pytest.mark.skipif(not BANCO_REAL.exists(), reason="rode uv run pipeline.py antes")
+# dados_reais: recarrega o banco completo numa cópia; fora da suíte padrão
+pytestmark = [pytest.mark.dados_reais, pytest.mark.skipif(not BANCO_REAL.exists(), reason="rode uv run pipeline.py antes")]
 COLUNAS_DE_HORARIO = {"executado_em"}   # mudam a cada carga por definição; fora da comparação
 
 
@@ -55,6 +56,19 @@ def test_carga_preserva_estado_nao_cresce_e_e_reprodutivel(copia):
     assert abs(tamanho_2 - tamanho_1) <= 0.05 * tamanho_1     # o arquivo não cresce de uma carga para outra
     assert hash_1 == hash_2 and len(hash_1) >= 10              # mesmo silver -> mesmo gold público
     assert not copia.with_name(copia.name + ".novo").exists()
+
+
+def test_a_partir_do_silver_parquet_reproduz_o_conjunto_publico(tmp_path):
+    """D-029/2.4: gold recalculado só com data/silver/*.parquet (sem banco antigo, sem bronze) tem o mesmo conteúdo do
+    conjunto público versionado (hash de conteúdo do manifesto)."""
+    from src import publico
+    banco = tmp_path / "radar.duckdb"
+    pipeline.main("gold_de_parquet", banco=banco, exportar_parquet=False)
+    man = publico.ler_manifesto()
+    with duckdb.connect(str(banco), read_only=True) as con:
+        diferentes = [a["tabela"] for a in man["arquivos"] if a["comparar"]
+                      and publico.hash_conteudo_tabela(con, a["tabela"]) != a["sha256_conteudo"]]
+    assert not diferentes, diferentes
 
 
 def test_carga_que_falha_nao_altera_o_banco(copia, monkeypatch):

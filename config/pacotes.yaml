@@ -1,0 +1,19 @@
+# Pacotes de dados em Releases do GitHub (D-030). Usado por scripts/empacotar_dados.py e scripts/baixar_dados.py.
+repositorios:
+  publico: luccaamp/radar-seguro-cartorio          # público: qualquer pessoa baixa sem login
+  equipe: luccaamp/radar-seguro-cartorio-dados     # privado: só colaboradores convidados (gh autenticado)
+tag:
+  publico: dados-{carga}
+  equipe: carga-{carga}
+# limite do GitHub: cada arquivo de Release abaixo de 2 GiB; as partes ficam com folga
+tamanho_parte_bytes: 1992294400   # 1.900 MiB
+camadas:
+  publico: [silver]                    # o gold público já está no repositório (data/publico)
+  equipe: [bronze, silver, gold, banco]
+# arquivos do bronze que NÃO vão para o pacote da equipe, com o motivo
+bronze_excluir:
+  - padrao: "rais/*/extraido/*.COMT"
+    motivo: extração do .7z da RAIS (o .7z vai no pacote; a coleta extrai de novo quando falta)
+# arquivos já comprimidos: vão para o zip como estão, sem comprimir de novo
+ja_comprimidos: [".zip", ".7z", ".gz", ".xlsx", ".pdf", ".parquet"]
+manter_ultimas_cargas: 3

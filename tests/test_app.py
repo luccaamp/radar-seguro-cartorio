@@ -1,8 +1,9 @@
-"""Fumaça do painel: cada página roda sem exceção e mostra fonte e versão.
+"""Fumaça do painel no MODO COMPLETO: cada página roda sem exceção e mostra fonte e versão.
 
 Os testes rodam sobre uma CÓPIA TEMPORÁRIA do banco gerado pelo pipeline (variável RADAR_BANCO, lida por app/comum.py).
 O banco real (data/radar.duckdb) nunca é aberto para escrita aqui; o último teste confere que ele não mudou.
-São pulados se o pipeline ainda não rodou.
+dados_reais (fora da suíte padrão): precisam do banco completo, com silver e interno_*. O modo demonstração, que roda
+em qualquer clone, está em test_app_demo.py.
 """
 from pathlib import Path
 
@@ -12,7 +13,7 @@ import pytest
 from apoio_painel import BANCO_REAL, PAGINAS, RAIZ, assinatura_real as _assinatura
 
 # a cópia temporária do banco (fixture `banco_temporario`, em conftest.py) vale para todos os testes deste módulo
-pytestmark = [pytest.mark.skipif(not BANCO_REAL.exists(), reason="rode uv run pipeline.py antes"),
+pytestmark = [pytest.mark.dados_reais, pytest.mark.skipif(not BANCO_REAL.exists(), reason="rode uv run pipeline.py antes"),
               pytest.mark.usefixtures("banco_temporario")]
 
 
@@ -29,7 +30,7 @@ def test_app_usa_a_copia(banco_temporario):
     from streamlit.testing.v1 import AppTest
     AppTest.from_file(str(RAIZ / "app/Inicio.py"), default_timeout=120).run()
     import comum  # importado pelo app durante o AppTest
-    assert Path(comum.BANCO) == banco_temporario["copia"]
+    assert comum.caminho_banco() == banco_temporario["copia"] and comum.modo() == "completo"
 
 
 def test_simulador_suspende_zera_premio():

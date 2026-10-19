@@ -10,7 +10,9 @@ import yaml
 from src.transform import silver
 
 ESC = yaml.safe_load((silver.CONFIG / "escopo.yaml").read_text(encoding="utf-8"))
-pytestmark = pytest.mark.skipif(not (silver.BRONZE / "ibge" / ESC["snapshots"]["ibge"]).exists(), reason="bronze ausente")
+# dados_reais: lê o bronze do IBGE; fora da suíte padrão
+pytestmark = [pytest.mark.dados_reais,
+              pytest.mark.skipif(not (silver.BRONZE / "ibge" / ESC["snapshots"]["ibge"]).exists(), reason="bronze ausente")]
 
 
 def _sem_acento(s: str) -> str:

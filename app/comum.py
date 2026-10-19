@@ -1,4 +1,5 @@
 """Peças comuns do painel: conexão, formatação pt-BR, rodapé de fonte e paleta. Todo número exibido leva rodapé."""
+import json
 import os
 import sys
 from pathlib import Path
@@ -11,10 +12,34 @@ RAIZ = Path(__file__).resolve().parents[1]
 if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 
-from src import estado  # noqa: E402
+from src import estado, publico  # noqa: E402
 
-# RADAR_BANCO aponta o painel para outro arquivo (os testes usam uma cópia temporária; nunca o banco real)
-BANCO = Path(os.environ.get("RADAR_BANCO") or RAIZ / "data" / "radar.duckdb")
+CARGA_ATUAL = RAIZ / "data" / "carga_atual.json"   # gravado por scripts/baixar_dados.py (2.5.3)
+
+
+def caminho_banco() -> Path:
+    """RADAR_BANCO aponta o painel para outro arquivo (os testes usam uma cópia temporária; nunca o banco real).
+    Lido a cada chamada: os testes trocam de modo no mesmo processo."""
+    return Path(os.environ.get("RADAR_BANCO") or RAIZ / "data" / "radar.duckdb")
+
+
+def pasta_publico() -> Path:
+    """RADAR_PUBLICO aponta para outro conjunto público (testes); padrão: data/publico, versionado no repositório."""
+    return Path(os.environ.get("RADAR_PUBLICO") or publico.PASTA)
+
+
+BANCO = caminho_banco()   # caminho no momento da importação (compatibilidade)
+
+
+def modo() -> str:
+    """'completo' com o banco do pipeline; 'demonstracao' só com o conjunto público (D-029); 'sem_dados' sem nenhum."""
+    if caminho_banco().exists():
+        return "completo"
+    return "demonstracao" if (pasta_publico() / publico.MANIFESTO).exists() else "sem_dados"
+
+
+def demonstracao() -> bool:
+    return modo() == "demonstracao"
 
 # paleta (skill de visualização, instância de referência): sequencial azul, série única azul, superfícies
 AZUL_SEQUENCIAL = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
@@ -43,13 +68,41 @@ NIVEIS = {"min": "mínimo", "base": "base", "max": "máximo"}
 
 
 @st.cache_resource
-def conexao() -> duckdb.DuckDBPyConnection:
-    if not BANCO.exists():
-        st.error("Banco não encontrado. Rode `uv run pipeline.py` antes de abrir o painel.")
-        st.stop()
-    con = duckdb.connect(str(BANCO))
+def _abrir(caminho: str) -> duckdb.DuckDBPyConnection:
+    con = duckdb.connect(caminho)
     estado.garantir_tabelas(con)
     return con
+
+
+def conexao() -> duckdb.DuckDBPyConnection:
+    m = modo()
+    if m == "sem_dados":
+        st.error("Sem dados: nem o banco (data/radar.duckdb) nem o conjunto público (data/publico/). "
+                 "Veja 'Como rodar' no README.")
+        st.stop()
+    # modo demonstração: banco temporário montado a partir do conjunto público (fora do repositório)
+    return _abrir(str(caminho_banco() if m == "completo" else publico.banco_demonstracao(pasta_publico())))
+
+
+def carga_em_uso() -> str:
+    """Rodapé (2.5.3): 'Carga 2026-10-18 · dados completos' ou '· demonstração'."""
+    if demonstracao():
+        return f"Carga {publico.ler_manifesto(pasta_publico())['carga']} · demonstração"
+    nivel = {"equipe": "dados completos", "publico": "recalculada com os dados públicos"}
+    try:
+        info = json.loads(CARGA_ATUAL.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        info = {}
+    carga = info.get("carga") or f"{execucao().executado_em:%Y-%m-%d}"
+    return f"Carga {carga} · {nivel.get(info.get('nivel'), 'dados completos')}"
+
+
+def aviso_modo() -> None:
+    """Faixa discreta do modo demonstração (2.2), no topo de cada página."""
+    if demonstracao():
+        data = pd.Timestamp(publico.ler_manifesto(pasta_publico())["carga"]).strftime("%d/%m/%Y")
+        st.caption(f":material/info: **Modo demonstração:** dados da carga de {data}. Para recalcular, veja "
+                   "'Como rodar' no README.")
 
 
 def consulta(sql: str, params: list | None = None) -> pd.DataFrame:
@@ -123,7 +176,8 @@ def rodape(fontes: list[str], extra: str = "", passivo: bool = True, taxa: bool 
     partes = [f"{NOMES_FONTE.get(r.fonte, r.fonte)} (ref. {r.data_referencia})" for r in f.itertuples()]
     e = execucao()
     v = int(e.versao_premissas)
-    texto = (f"**Fontes:** {'; '.join(partes)}. **Premissas:** versão {v} · carga de {e.executado_em:%d/%m/%Y %H:%M}.")
+    texto = (f"**Fontes:** {'; '.join(partes)}. **Premissas:** versão {v} · carga de {e.executado_em:%d/%m/%Y %H:%M}"
+             f" ({carga_em_uso()}).")
     if passivo:
         texto += f" **Data-base do passivo:** {data_base_passivo()} (art. 4º do Prov. CNJ 227/2026)."
     if taxa:
@@ -158,6 +212,7 @@ def slider_br(col, rotulo: str, vmin: float, vmax: float, passo: float, valor: f
 
 
 def aviso_estimativa() -> None:
+    aviso_modo()
     st.info("Estimativas de mercado com premissas públicas, **não** avaliação de nenhum cartório. "
             "O market share é de uma **seguradora hipotética**. Classificação de classe sempre aproximada (D-002).",
             icon="ℹ️")

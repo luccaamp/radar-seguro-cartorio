@@ -33,18 +33,35 @@ def preparar_copia(destino_dir: Path) -> Path:
     return copia
 
 
-def apontar_painel(copia: Path) -> str | None:
+VARIAVEIS = ("RADAR_BANCO", "RADAR_PUBLICO")
+
+
+def _limpar_caches() -> None:
+    """Os caches do Streamlit vivem no processo: ao trocar de banco entre módulos de teste, começam vazios."""
+    import streamlit as st
+    st.cache_data.clear()
+    st.cache_resource.clear()
+
+
+def apontar_painel(copia: Path, publico: Path | None = None) -> dict:
+    """Aponta o painel para `copia` (modo completo) ou, se `copia` não existir e `publico` for dado, para o conjunto
+    público (modo demonstração). Devolve as variáveis anteriores para restaurar()."""
     # as páginas importam `comum`, que fica em app/: no `streamlit run` app/ entra no caminho pela página inicial;
     # nos testes, uma página de app/pages/ pode rodar primeiro
     if str(RAIZ / "app") not in sys.path:
         sys.path.insert(0, str(RAIZ / "app"))
-    anterior = os.environ.get("RADAR_BANCO")
+    anterior = {v: os.environ.get(v) for v in VARIAVEIS}
     os.environ["RADAR_BANCO"] = str(copia)
+    if publico is not None:
+        os.environ["RADAR_PUBLICO"] = str(publico)
+    _limpar_caches()
     return anterior
 
 
-def restaurar(anterior: str | None) -> None:
-    if anterior is None:
-        os.environ.pop("RADAR_BANCO", None)
-    else:
-        os.environ["RADAR_BANCO"] = anterior
+def restaurar(anterior: dict) -> None:
+    for v, valor in anterior.items():
+        if valor is None:
+            os.environ.pop(v, None)
+        else:
+            os.environ[v] = valor
+    _limpar_caches()

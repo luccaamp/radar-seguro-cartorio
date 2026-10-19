@@ -11,7 +11,8 @@ import pytest
 
 from apoio_painel import RAIZ
 
-pytestmark = pytest.mark.usefixtures("banco_temporario")
+# dados_reais: lê silver.serventia e interno_celulas_publicadas (banco completo); fora da suíte padrão
+pytestmark = [pytest.mark.dados_reais, pytest.mark.usefixtures("banco_temporario")]
 MERCADO = str(RAIZ / "app/pages/1_Mercado.py")
 FILTROS = {"atribuicao": ["notas", "rcpn", "ri", "rtd_rcpj", "protesto"],
            "situacao": ["PROVIDO", "VAGO", "SOB INTERVENÇÃO", "CONVERSÃO EM DILIGÊNCIA"],
@@ -223,8 +224,18 @@ def test_tabelas_publicas_batem_com_as_celulas_auditadas(db):
     pub = db.execute("SELECT visao, area_id, n_serventias FROM gold.mercado_filtro_area").fetchall()
     cel = dict(((v, a.split("@")[0]), n) for v, a, n in db.execute(
         "SELECT visao, area_id, count(*) FROM gold.interno_celulas_publicadas WHERE conjunto = 'todos' "
-        "AND visao NOT LIKE 'uf:%' AND visao <> 'geral' GROUP BY ALL").fetchall())
-    assert {(v, a): n for v, a, n in pub} == cel
+        "AND visao NOT LIKE 'uf:%' AND visao NOT LIKE 'sim:%' AND visao <> 'geral' GROUP BY ALL").fetchall())
+    assert {(v, a): n for v, a, n in pub} == cel   # as células 'sim:' são do Simulador (test_simulador_totais.py)
+
+
+def test_celulas_do_simulador_batem_com_as_tabelas_publicas(db):
+    """Cada célula 'sim:' auditada corresponde a uma faixa de uma variante de gold.simulador_*: só totais de MG."""
+    sim = db.execute("""SELECT visao, count(*) FROM gold.interno_celulas_publicadas WHERE visao LIKE 'sim:%'
+                        AND conjunto = 'universo' GROUP BY ALL""").fetchall()
+    assert sim and all(v.split(":")[1] in ("v1", "v2") and v.split(":")[3] in ("classe_2", "classe_3") for v, _ in sim)
+    vids = {int(v.split(":")[4]) for v, _ in sim}
+    assert vids <= {r[0] for r in db.execute("SELECT variante_id FROM gold.simulador_variantes").fetchall()}
+    assert all(n >= 3 for _, n in sim)
 
 
 # ------------------------------------------------------------------ consistência numérica

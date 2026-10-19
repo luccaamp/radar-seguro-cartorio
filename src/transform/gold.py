@@ -15,7 +15,9 @@ import yaml
 
 from src import estado
 from src.model.distribuicao import fator_correcao_inpc
+from src.model import simulador
 from src.model.lgpd import agregar_lgpd
+from src.model.supressao import Celula
 from src.model.premissas import NIVEIS, validar
 from src.model.rateio import METODOS
 from src.model.leituras import LEITURAS, receita_referencia_alternativa
@@ -23,7 +25,7 @@ from src.model.universo import classificar, receita_referencia
 from src.motor import Insumos, calcular_serventias, peso_indeterminada, premissas_nivel, resumo_mercado
 from src.transform import visoes
 from src.transform.geo import areas_do_mapa, dissolver, geometria_publica
-from src.transform.silver import CONFIG, RAIZ
+from src.transform.silver import CONFIG, RAIZ, malha_do_silver
 
 GOLD = RAIZ / "data" / "gold"
 # média dos semestres do exercício anterior (D-010); valor em config/escopo.yaml
@@ -155,6 +157,58 @@ def construir_visoes_mercado(con, interno: pd.DataFrame, reg: pd.DataFrame, area
     return cont
 
 
+def construir_simulador(con, ins: Insumos, semente: dict, regras: dict, execucao: list[dict], lim_base: dict,
+                        limiar: int, reg: pd.DataFrame) -> dict[str, int]:
+    """Tabelas públicas do Simulador no modo demonstração (D-029):
+    - gold.simulador_variantes: uma linha por variante (regra × método de rateio × uma premissa do passivo por vez,
+      pontos em config/simulador_demo.yaml), com os totais de MG que não dependem das premissas de seguro;
+    - gold.simulador_base_classe: por variante e faixa de déficit (classe_2, classe_3), os totais A_f e B_f de
+      src/model/simulador.py. Só totais de MG.
+    As células de cada faixa entram no auditor de ataque por diferença com as do Mercado; vazamento falha a carga."""
+    pontos = yaml.safe_load((CONFIG / "simulador_demo.yaml").read_text(encoding="utf-8"))["pontos"]
+    peso_regra = {x["regra_classe"]: x["peso_classe_indeterminada_base"] for x in execucao}
+    p_padrao = premissas_nivel(semente, "base", peso_regra[REGRAS[0]])
+    variantes, faixas, novas, vistas = [], [], [], set()
+    vid = 0
+    for regra in REGRAS:
+        limites = regras["versoes"][regra]["limites"]
+        for metodo in METODOS:
+            for variou, valores in simulador.grade(p_padrao, pontos):
+                vid += 1
+                p = premissas_nivel(semente, "base", peso_regra[regra], simulador.ajustes_passivo(p_padrao, valores))
+                serv = calcular_serventias(ins, p, limites, metodo, limites_faixa=lim_base)[0]
+                t = simulador.totais(serv)
+                variantes.append({"variante_id": vid, "regra_classe": regra, "metodo_rateio": metodo,
+                                  "premissa_variada": variou, **valores,
+                                  **{k: v for k, v in t.items() if not k.startswith(("peso_com", "passivo_pond"))}})
+                faixa = serv["classe_faixa"].map(simulador.FAIXA_POR_CLASSE)
+                for f in simulador.FAIXAS:
+                    faixas.append({"variante_id": vid, "faixa": f, "peso_com_passivo": t[f"peso_com_passivo_{f}"],
+                                   "passivo_ponderado": t[f"passivo_ponderado_{f}"]})
+                    conj = visoes._universo(serv[faixa == f])
+                    if (regra, metodo, f, conj) not in vistas:   # mesma faixa e mesmo conjunto: célula repetida
+                        vistas.add((regra, metodo, f, conj))
+                        novas.append(Celula(f"sim:{regra}:{metodo}:{f}:{vid}", "MG", conj, conj))
+    cont = {"simulador_variantes": _gravar(con, "simulador_variantes", pd.DataFrame(variantes)),
+            "simulador_base_classe": _gravar(con, "simulador_base_classe", pd.DataFrame(faixas))}
+
+    # auditor sobre todas as células publicadas (Mercado + Simulador)
+    cel = con.sql("SELECT visao, area_id, conjunto, cns FROM gold.interno_celulas_publicadas").df()
+    existentes = [Celula(v, a, frozenset(g.loc[g["conjunto"] == "todos", "cns"]),
+                         frozenset(g.loc[g["conjunto"] == "universo", "cns"]))
+                  for (v, a), g in cel.groupby(["visao", "area_id"])]
+    base = ins.serventias[["cns", "cod_ibge"]].merge(reg[["cod_ibge", "regiao_imediata"]], on="cod_ibge")
+    achados = visoes.auditar(existentes + novas, base, limiar)
+    if achados:
+        raise RuntimeError(f"Simulador: vazamento por diferença nas tabelas do modo demonstração: {achados[:5]}")
+    linhas = [{"visao": c.visao, "area_id": c.area_id, "conjunto": conj, "cns": cns}
+              for c in novas for conj in ("todos", "universo") for cns in getattr(c, conj)]
+    con.register("_df", pd.DataFrame(linhas))
+    con.execute("INSERT INTO gold.interno_celulas_publicadas SELECT visao, area_id, conjunto, cns FROM _df")
+    con.unregister("_df")
+    return cont
+
+
 def construir(con: duckdb.DuckDBPyConnection, exportar_parquet: bool = True) -> dict[str, int]:
     """Silver -> gold. `exportar_parquet=False` só grava no banco da conexão (usado pelos testes, numa cópia)."""
     global _EXPORTAR_PARQUET
@@ -272,8 +326,7 @@ def construir(con: duckdb.DuckDBPyConnection, exportar_parquet: bool = True) -> 
     reg = con.sql("SELECT cod_ibge, nome, regiao_imediata, regiao_intermediaria FROM silver.municipio_ibge").df()
     reg = reg.merge(dim_mun[["cod_ibge", "n_serventias"]], on="cod_ibge", how="left").fillna({"n_serventias": 0})
     areas = areas_do_mapa(reg, limiar)
-    arq_malha = con.sql("SELECT arquivo FROM silver.fonte_metadados WHERE fonte = 'ibge_malha'").fetchone()[0]
-    malha = json.loads((RAIZ / "data" / "bronze" / arq_malha).read_text(encoding="utf-8"))
+    malha = malha_do_silver(con)   # do silver, não do bronze: o gold se recalcula só com o silver (D-029)
     cont["geo_area_municipio"] = _gravar(con, "geo_area_municipio", areas[["cod_ibge", "area_id"]])
     cont["geo_mapa_publico"] = _gravar(con, "geo_mapa_publico",
                                        geometria_publica(malha, areas, reg.set_index("cod_ibge")["n_serventias"]))
@@ -286,6 +339,9 @@ def construir(con: duckdb.DuckDBPyConnection, exportar_parquet: bool = True) -> 
     ps = {(r, n): premissas_nivel(semente, n, next(x["peso_classe_indeterminada_base"] for x in execucao
                                                    if x["regra_classe"] == r)) for r in REGRAS for n in NIVEIS}
     cont |= construir_visoes_mercado(con, interno, reg, areas, malha, limiar, regra_base, ps, cenarios)
+
+    # Simulador sem dados internos (modo demonstração, D-029): totais por faixa e grade de variantes do passivo
+    cont |= construir_simulador(con, ins, semente, regras, execucao, lim_base, limiar, reg)
 
     exe = pd.DataFrame(execucao).assign(
         versao_premissas=versao, executado_em=dt.datetime.now().replace(microsecond=0),

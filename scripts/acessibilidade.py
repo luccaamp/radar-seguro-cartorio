@@ -68,12 +68,11 @@ def rodar(saida: Path) -> list[dict]:
         md += [f"| {a['pagina']} | `{a['regra']}` | {a['descricao']} | {a['n']} | "
                f"{'nosso' if a['nossa'] else 'terceiros'} | {a['causa']} |" for a in grupos[g]]
         md.append("")
-    md += ["## Sugestões (não aplicadas)", "",
-           "- Contraste das legendas: definir no `.streamlit/config.toml` um tema com texto secundário mais escuro "
-           "(ex.: `[theme]` com cores próprias), ou trocar `st.caption` por texto normal nos trechos importantes.",
-           "- Valor do slider em vermelho claro: escolher uma `primaryColor` mais escura no tema.",
-           "- Rótulo \"Valor\" desabilitado no Mercado: esconder o seletor quando não há filtro, em vez de desabilitá-lo.",
-           "- Ordem dos títulos: usar `st.header` (h2) nas seções, em vez de `st.subheader` (h3).", ""]
+    md += ["## Limitação conhecida (decisão do autor, 2026-10-19)", "",
+           "- O contraste das cores padrão do Streamlit (legenda `st.caption`, cor primária no valor do slider) fica "
+           "como está. Caminho possível no futuro: um tema próprio no `.streamlit/config.toml`.",
+           "- Já corrigidos em 2026-10-19: ordem dos títulos (`st.header` nas seções) e o seletor \"Valor\" do Mercado "
+           "(escondido quando o filtro é \"Nenhum\", em vez de desabilitado).", ""]
     saida.parent.mkdir(parents=True, exist_ok=True)
     saida.write_text("\n".join(md) + "\n", encoding="utf-8")
     return achados

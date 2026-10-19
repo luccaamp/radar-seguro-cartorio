@@ -40,6 +40,21 @@ def rec_municipio_publico(rec: pd.DataFrame, limiar: int) -> pd.DataFrame:
     peq["area_completa"] = [f"Região imediata de {r} ({n} municípios com menos de {limiar} serventias, somados)"
                             for r, n in zip(peq["regiao_imediata"], peq["n_municipios"])]
     peq["tipo"] = "regiao_agregada"
+    # grupo de região imediata que soma só 1 ou 2 serventias mostraria o CLT delas: vai para uma linha única de
+    # "outras regiões" (achado do gerar_publico, 2026-10-19; mesma ideia da hierarquia do Mercado, D-026)
+    poucas = (peq["n_cnj"] > 0) & (peq["n_cnj"] < limiar)
+    if poucas.any() and peq.loc[poucas, "n_cnj"].sum() < limiar:   # a soma também seria pequena: leva junto o menor
+        resto = peq.loc[~poucas & (peq["n_cnj"] > 0), "n_cnj"]       # dos demais grupos
+        if len(resto):
+            poucas |= peq.index == resto.idxmin()
+    if poucas.any():
+        o = peq[poucas]
+        outras = {c: o[c].sum() for c in cols} | {
+            "n_municipios": int(o["n_municipios"].sum()), "regiao_imediata": None, "tipo": "outras",
+            "area": f"Outras regiões ({len(o)} RI)",
+            "area_completa": (f"Outras regiões imediatas ({len(o)} regiões cujos municípios com menos de {limiar} "
+                              f"serventias somam menos de {limiar} serventias, somadas)")}
+        peq = pd.concat([peq[~poucas], pd.DataFrame([outras])], ignore_index=True)
     campos = ["area", "area_completa", "tipo", "regiao_imediata", "n_municipios"] + cols
     out = pd.concat([grandes[campos], peq[campos]], ignore_index=True)
     out["dif_serventias"] = out["n_cnpj"] - out["n_cnj"]
@@ -84,7 +99,8 @@ def reconciliar(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
     resumo = [("municipios_rais_zero_cnj_positivo", zero_rais, "municípios com RAIS = 0 e CNJ > 0"),
               ("municipios_cnj_zero_rais_positivo", zero_cnj, "municípios com CNJ = 0 e RAIS > 0")]
     for origem_d, n, v in con.execute("""SELECT origem_distribuicao, count(*), sum(n_vinculos_rais)
-                                         FROM gold.interno_passivo_municipio WHERE nivel = 'base' GROUP BY 1""").fetchall():
+                                         FROM gold.interno_passivo_municipio WHERE nivel = 'base' GROUP BY 1
+                                         ORDER BY 1""").fetchall():
         resumo += [(f"distribuicao_{origem_d}_municipios", n, f"municípios com distribuição salarial: {origem_d}"),
                    (f"distribuicao_{origem_d}_vinculos", v, f"vínculos próprios desses municípios: {origem_d}")]
     df_resumo = pd.DataFrame(resumo, columns=["chave", "valor", "descricao"])
@@ -92,7 +108,8 @@ def reconciliar(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
     con.execute("CREATE OR REPLACE TABLE qualidade.resumo_publico AS SELECT * FROM _df")
     con.unregister("_df")
     n_iguais = int((rec_mun.n_cnj == rec_mun.n_cnpj).sum())
-    origem = con.sql("SELECT origem_receita, count(*) n FROM gold.interno_dim_serventia GROUP BY 1").df()
+    # ORDER BY: sem ele a ordem do texto do detalhe muda entre cargas (achado na prova de reprodutibilidade, D-029)
+    origem = con.sql("SELECT origem_receita, count(*) n FROM gold.interno_dim_serventia GROUP BY 1 ORDER BY 1").df()
     validas = origem.loc[origem.origem_receita.isin(["media_2_semestres", "um_semestre"]), "n"].sum() / origem.n.sum()
     colab = con.sql("SELECT avg(informado::INT) FROM silver.serventia_colaboradores").fetchone()[0]
     dist = con.sql("""SELECT sum(n_vinculos_rais) FILTER (WHERE origem_distribuicao = 'municipio') / sum(n_vinculos_rais),

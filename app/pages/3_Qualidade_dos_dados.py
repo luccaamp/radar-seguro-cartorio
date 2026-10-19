@@ -3,16 +3,17 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from comum import (AZUL_SERIE, FONTES_NAO_USADAS, NOMES_FONTE, aprox, brl, consulta, execucao, md_seguro, num, pct,
-                   rodape)
+from comum import (AZUL_SERIE, FONTES_NAO_USADAS, NOMES_FONTE, aprox, aviso_modo, brl, consulta, execucao, md_seguro,
+                   num, pct, rodape)
 
 st.set_page_config(page_title="Qualidade dos dados", page_icon="✅", layout="wide")
 st.title("Qualidade dos dados")
+aviso_modo()
 st.markdown("O quanto os números deste painel são confiáveis: de onde vem cada dado, quando foi coletado, "
             "o que bate e o que não bate entre fontes independentes.")
 
 # ---- fontes
-st.subheader("Fontes e datas de referência")
+st.header("Fontes e datas de referência")
 f = consulta("SELECT * FROM silver.fonte_metadados ORDER BY fonte")
 f["Fonte"] = f["fonte"].map(lambda x: NOMES_FONTE.get(x, x))
 f["SHA-256"] = f["sha256"].str[:12] + "…"
@@ -25,7 +26,7 @@ st.dataframe(f[["Fonte", "data_referencia", "coletado_em", "arquivo", "SHA-256",
     column_config={"Data de referência": st.column_config.TextColumn(width="large")})
 
 # ---- reconciliações
-st.subheader("Conferência entre fontes")
+st.header("Conferência entre fontes")
 ICONE = {"ok": "✅ ok", "aviso": "⚠️ aviso"}
 r = consulta("SELECT * FROM qualidade.reconciliacoes")
 r["Situação"] = r["status"].map(ICONE)
@@ -84,7 +85,7 @@ with b:
     st.caption("Municípios com menos de 3 serventias aparecem somados na sua região imediata do IBGE (LGPD).")
 
 # ---- regra de classe e rateio
-st.subheader("Sensibilidade das escolhas de modelagem")
+st.header("Sensibilidade das escolhas de modelagem")
 a, b = st.columns(2)
 with a:
     st.markdown(md_seguro("**Regra da Classe 1: R$ 300 mil (v2, base) × R$ 100 mil (v1)** — cenário regra mantida"))
@@ -133,7 +134,7 @@ st.markdown(f"**Distribuição de salário × tempo de emprego** (limiar de 20 v
             f"D-008 e D-022): {txt}.")
 
 # ---- contratos
-st.subheader("Contratos das tabelas")
+st.header("Contratos das tabelas")
 c = consulta("SELECT * FROM qualidade.checagens ORDER BY camada DESC, violacoes DESC")
 ok = int((c.violacoes == 0).sum())
 st.markdown(f"**{ok} de {len(c)}** checagens sem violação. Erro interrompe o pipeline; aviso fica registrado aqui.")
@@ -143,7 +144,7 @@ st.dataframe(c[["Situação", "camada", "tabela", "checagem", "severidade", "vio
     "violacoes": "Violações", "detalhe": "Detalhe"}), hide_index=True, width="stretch")
 
 # ---- limitações
-st.subheader("Limitações declaradas")
+st.header("Limitações declaradas")
 st.markdown(md_seguro("""
 - **Classe aproximada:** a arrecadação do Justiça Aberta não é igual à receita bruta do art. 2º, XXIV, do Prov. 213 (D-002).
 - **Arrecadação:** 76 serventias com R$ 0 nos dois semestres de 2025 e 2 com valores conflitantes na fonte ficam com classe indeterminada (D-013, D-014). Elas são menores que as demais (3,5 empregados CLT em média, contra 5,9 nas não vagas com classe conhecida; 48 das 78 são vagas): dar a elas a proporção média tende a superestimar o universo; por isso o peso é 0 no mínimo.

@@ -1,0 +1,58 @@
+# Conjunto público (D-029): o que scripts/gerar_publico.py copia do banco para data/publico/ (versionado no
+# repositório público). Só tabelas que o painel lê, já agregadas e auditadas. Nunca interno_*, nunca dado por
+# serventia, nunca nome, CPF ou e-mail de pessoa.
+pasta: data/publico
+limite_mb: 20
+
+# schema.tabela -> opções: remover (colunas que não vão), sql (consulta no lugar da tabela inteira),
+# sem_hash (colunas fora do hash de conteúdo: carimbos de execução), comparar (entra na prova "hash idêntico"
+# depois de recalcular a partir do silver; padrão: sim)
+tabelas:
+  gold.fato_mercado_uf: {}
+  gold.mercado_area_publico: {}
+  gold.mercado_filtro_area: {}
+  gold.mercado_filtro_uf: {}
+  gold.mercado_filtro_regiao: {}
+  gold.ranking_municipio_publico: {}
+  gold.dim_municipio:
+    remover: [clt]          # CLT por município aparece também nos municípios com 1 ou 2 serventias
+  gold.geo_area_municipio: {}
+  gold.geo_mapa_publico: {}
+  gold.geo_mapa_filtro: {}
+  gold.geo_regiao_imediata: {}
+  gold.geo_sem_serventia: {}
+  gold.execucao:
+    sem_hash: [executado_em]
+  gold.diferenca_regra_classe: {}
+  gold.sensibilidade_rateio: {}
+  gold.sensibilidade_premissas: {}
+  gold.simulador_variantes: {}
+  gold.simulador_base_classe: {}
+  silver.fonte_metadados: {}
+  silver.municipio_ibge: {}
+  qualidade.reconciliacoes: {}
+  qualidade.resumo_publico: {}
+  qualidade.rec_municipio: {}
+  qualidade.checagens: {}
+  estado.premissas_vigente:   # só a versão vigente das premissas (conteúdo público de config/premissas)
+    sql: SELECT * FROM estado.premissas_versoes ORDER BY versao DESC LIMIT 1
+    sem_hash: [criada_em]
+    comparar: false          # o estado não é recalculado pelo pipeline (cada banco tem o seu histórico)
+
+# colunas que contam serventias de uma célula publicada: valor entre 1 e limiar - 1 bloqueia a publicação,
+# salvo exceção abaixo
+contagem_de_serventias: [n_serventias, n_serventias_ativas, n_cnj]
+excecoes_limiar:
+  gold.dim_municipio.n_serventias:
+    motivo: >-
+      Contagem de serventias por município, do cadastro público do CNJ, sem nenhum valor por serventia (o CLT foi
+      removido). O painel usa para dizer que um município pequeno aparece somado à sua região (D1, D-026).
+    status: aprovada pelo autor em 2026-10-19 (D-029)
+
+# D-030 (regra corrigida pelo autor, 2026-10-19): no público, nenhuma ESTIMATIVA do modelo por serventia. Colunas do
+# silver com estes nomes saem do pacote público (o empacotador avisa qual). Os prêmios e sinistros da SUSEP
+# (susep_garantia) são dado de origem, não estimativa do modelo, e não casam com a expressão.
+estimativas_do_modelo: '(^|_)(passivo|deficit|descoberto|peso_universo|prob_deficit|pct_descoberto|importancia_segurada|receita_ref|classe(_v\d)?|n_deficit|valor_descoberto|mercado_premio\w*|seguradora_\w+)($|_)'
+
+# nomes de coluna proibidos no público (expressão regular, sem diferenciar maiúsculas)
+colunas_proibidas: '(^|_)(cns|cpf|email|e_mail|telefone|responsavel|substitutos?|titular|delegatario|endereco|cep)($|_)'

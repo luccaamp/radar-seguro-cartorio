@@ -6,9 +6,18 @@ data/silver/
 data/gold/
 *.duckdb
 *.duckdb.wal
+*.duckdb.novo
+# data/publico/ É versionado (conjunto público, D-029); as pastas de troca do gerar_publico, não
+data/publico.novo/
+data/publico.antigo/
+data/carga_atual.json
+# pacotes de dados para os Releases (D-030): gerados por scripts/empacotar_dados.py, publicados pelo autor
+pacotes/
 
 # Transcrições das conversas com a IA (uso pessoal do autor)
 conversas/
+# configurações locais do Claude Code (permissões e caminhos desta máquina; o repositório é público)
+.claude/settings.local.json
 
 # Python
 __pycache__/

@@ -1,11 +1,14 @@
 """Orquestrador único do projeto.
 
 Uso:
-  uv run pipeline.py            # do zero a partir dos snapshots do bronze: silver -> contratos -> gold -> qualidade (sem internet)
-  uv run pipeline.py silver     # só bronze -> silver (+ contratos do silver)
-  uv run pipeline.py gold       # só silver -> gold (+ contratos e reconciliações)
-  uv run pipeline.py ingest     # coleta (precisa de internet; idempotente, só baixa o que falta)
+  uv run pipeline.py                         # bronze -> silver -> contratos -> gold -> qualidade (sem internet)
+  uv run pipeline.py --a-partir-de bronze    # o mesmo
+  uv run pipeline.py --a-partir-de silver    # recalcula o gold a partir de data/silver/*.parquet (sem bronze)
+  uv run pipeline.py silver                  # só bronze -> silver (+ contratos do silver)
+  uv run pipeline.py gold                    # só silver -> gold, com o silver do banco atual
+  uv run pipeline.py ingest                  # coleta (precisa de internet; idempotente, só baixa o que falta)
 """
+import argparse
 import os
 import sys
 from pathlib import Path
@@ -17,7 +20,9 @@ import yaml
 from src import estado
 from src.quality import contratos, reconciliacao
 from src.transform import gold, silver
-from src.transform.silver import BANCO, CONFIG
+from src.transform.silver import BANCO, CONFIG, SILVER
+
+ETAPAS = ("all", "silver", "gold", "gold_de_parquet", "ingest")
 
 
 def etapa_ingest() -> None:
@@ -66,6 +71,21 @@ def etapa_gold(con, exportar_parquet: bool = True) -> None:
         print(f"  [{r.status.upper()}] {r.checagem}: {ind} (tolerância {r.tolerancia}) {r.detalhe}")
 
 
+def _silver_de_parquet(con, pasta: Path = SILVER) -> None:
+    """Carrega o silver a partir dos Parquet de data/silver (camada instalada por scripts/baixar_dados.py) e roda os
+    contratos do silver de novo sobre ele."""
+    arquivos = sorted(pasta.glob("*.parquet"))
+    if not arquivos:
+        raise SystemExit(f"Nenhum Parquet em {pasta}. Instale o silver antes: uv run python scripts/baixar_dados.py "
+                         "--nivel publico --camadas silver (ver README, 'Como rodar').")
+    print(f"silver a partir de {pasta} ({len(arquivos)} tabelas)")
+    con.execute("CREATE SCHEMA IF NOT EXISTS silver")
+    for arq in arquivos:
+        con.execute(f"CREATE OR REPLACE TABLE silver.{arq.stem} AS SELECT * FROM read_parquet('{arq.as_posix()}')")
+    print("contratos do silver")
+    _relatar(contratos.gravar(con, contratos.contratos_silver(con), "silver"))
+
+
 def _trazer_do_banco_antigo(con, antigo: Path, etapa: str) -> None:
     """Copia para o banco novo o que a etapa não recria: o estado do usuário sempre; o silver (e as checagens do
     silver) quando a etapa é só o gold."""
@@ -94,7 +114,10 @@ def _trazer_do_banco_antigo(con, antigo: Path, etapa: str) -> None:
 def main(etapa: str = "all", banco: Path = BANCO, exportar_parquet: bool = True) -> None:
     """Carga atômica (1.7): grava num arquivo temporário e só troca o banco no fim. Se a carga falhar, o banco
     anterior fica como estava; o arquivo não cresce de uma carga para outra.
-    `exportar_parquet=False` (testes) só vale para a etapa gold; a etapa silver sempre exporta."""
+    `exportar_parquet=False` (testes) só vale para a etapa gold; a etapa silver sempre exporta.
+    `gold_de_parquet` (= --a-partir-de silver): o silver vem de data/silver/*.parquet, não do banco antigo."""
+    if etapa not in ETAPAS:
+        raise SystemExit(f"Etapa desconhecida: {etapa!r}. Use uv run pipeline.py --help.")
     if etapa == "ingest":
         etapa_ingest()
         return
@@ -107,7 +130,9 @@ def main(etapa: str = "all", banco: Path = BANCO, exportar_parquet: bool = True)
             _trazer_do_banco_antigo(con, banco, etapa)
             if etapa in ("all", "silver"):
                 etapa_silver(con)
-            if etapa in ("all", "gold"):
+            if etapa == "gold_de_parquet":
+                _silver_de_parquet(con)
+            if etapa in ("all", "gold", "gold_de_parquet"):
                 etapa_gold(con, exportar_parquet)
             con.execute("CHECKPOINT")
     except BaseException:
@@ -121,5 +146,27 @@ def main(etapa: str = "all", banco: Path = BANCO, exportar_parquet: bool = True)
                          "(feche o painel e rode de novo). O banco anterior não foi alterado.") from e
 
 
+def argumentos(argv: list[str] | None = None) -> str:
+    """Lê a linha de comando e devolve a etapa. Argumento desconhecido = erro, sem tocar no banco."""
+    a = argparse.ArgumentParser(
+        prog="uv run pipeline.py",
+        description="Carga do Radar: bronze -> silver -> gold, com contratos e auditoria LGPD. Grava data/radar.duckdb "
+                    "de forma atômica (o banco anterior só é trocado se a carga terminar).",
+        epilog="Exemplos: 'uv run pipeline.py' (tudo a partir do bronze); 'uv run pipeline.py --a-partir-de silver' "
+               "(gold a partir de data/silver, sem bronze); 'uv run pipeline.py ingest' (coleta; precisa de internet).")
+    a.add_argument("etapa", nargs="?", choices=["all", "silver", "gold", "ingest"], default=None,
+                   help="etapa isolada (modo antigo): silver = só bronze -> silver; gold = só silver -> gold com o "
+                        "silver do banco atual; ingest = coleta")
+    a.add_argument("--a-partir-de", choices=["bronze", "silver"], dest="a_partir_de",
+                   help="bronze: recalcula silver e gold; silver: recalcula o gold a partir de data/silver/*.parquet, "
+                        "sem coletar nem ler o bronze")
+    args = a.parse_args(argv)
+    if args.etapa and args.a_partir_de:
+        a.error("use a etapa ou --a-partir-de, não os dois")
+    if args.a_partir_de:
+        return {"bronze": "all", "silver": "gold_de_parquet"}[args.a_partir_de]
+    return args.etapa or "all"
+
+
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "all")
+    main(argumentos(sys.argv[1:]))

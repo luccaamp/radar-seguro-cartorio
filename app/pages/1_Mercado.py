@@ -101,8 +101,7 @@ if tipo != "nenhum":
     if st.session_state["f_valor"] not in opcoes:
         st.session_state["f_valor"] = opcoes[0]
     valor = c4.selectbox("Valor", opcoes, format_func=VALORES[tipo].get, key="f_valor")
-else:
-    c4.selectbox("Valor", ["—"], disabled=True)
+# sem filtro, o seletor "Valor" fica escondido (o desabilitado tinha rótulo de contraste baixo; acessibilidade)
 c5.button("Limpar", on_click=limpar, width="stretch", help="Limpar filtros")   # rótulo curto: cabia cortado em 1280 px
 
 visao = f"{tipo}={valor}" if tipo != "nenhum" else None

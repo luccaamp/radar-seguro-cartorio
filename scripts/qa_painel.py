@@ -172,6 +172,9 @@ def altura_conteudo(page) -> int:
 
 
 # ------------------------------------------------------------------ checagens (DOM / gráfico renderizado)
+# Páginas onde a rolagem horizontal das tabelas é aceita (sem a checagem de "última coluna visível"):
+# a Qualidade dos dados é técnica, de auditoria, e as tabelas são largas por natureza (decisão do autor, 2026-10-19).
+PAGINAS_COM_ROLAGEM = {"Qualidade_dos_dados"}
 JS_CHECAGENS = r"""
 (opcoes) => {
   const falhas = [];
@@ -185,16 +188,18 @@ JS_CHECAGENS = r"""
     if (vis(el) && el.scrollWidth > el.clientWidth + 1)
       falhas.push(['texto cortado', (el.innerText || '').slice(0, 60)]);
   }
-  // 2) tabelas: a última coluna dentro da área visível do contêiner (sem rolagem horizontal)
+  // 2) tabelas: a última coluna dentro da área visível do contêiner (sem rolagem horizontal).
+  //    Não vale na página Qualidade dos dados (opcoes.rolagem_ok): página técnica de auditoria, com tabelas largas
+  //    por natureza; a rolagem horizontal ali foi aceita pelo autor (diário, 2026-10-19).
   for (const df of document.querySelectorAll('[data-testid="stDataFrame"]')) {
-    if (!vis(df)) continue;
+    if (!vis(df) || opcoes.rolagem_ok) continue;
     const sc = df.querySelector('.dvn-scroller');
     if (sc && sc.scrollWidth > sc.clientWidth + 2)
       falhas.push(['tabela com coluna fora da área visível', `largura ${sc.scrollWidth} > ${sc.clientWidth}`]);
   }
   for (const tb of document.querySelectorAll('[data-testid="stTable"]')) {
     const t = tb.querySelector('table');
-    if (t && vis(tb) && t.getBoundingClientRect().right > tb.getBoundingClientRect().right + 2)
+    if (t && vis(tb) && !opcoes.rolagem_ok && t.getBoundingClientRect().right > tb.getBoundingClientRect().right + 2)
       falhas.push(['tabela com coluna fora da área visível', (t.querySelector('th:last-child') || {}).innerText || '']);
   }
   // gráficos Plotly já desenhados
@@ -266,7 +271,8 @@ def ouvir_console(page, erros: list) -> None:
 
 def checar(page, estado: Estado, largura: int, erros_console: list) -> list[tuple[str, int, str, str]]:
     """Falhas de layout do estado aberto: (estado, largura, elemento/motivo, detalhe)."""
-    falhas = page.evaluate(JS_CHECAGENS, {"municipio": estado.municipio})
+    falhas = page.evaluate(JS_CHECAGENS, {"municipio": estado.municipio,
+                                          "rolagem_ok": estado.pagina in PAGINAS_COM_ROLAGEM})
     out = [(estado.nome, largura, motivo, detalhe) for motivo, detalhe in falhas]
     out += [(estado.nome, largura, "erro no console do navegador", e[:120]) for e in erros_console]
     return out

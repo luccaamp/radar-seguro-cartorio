@@ -25,5 +25,8 @@ dev = [
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
-markers = ["visual: QA visual no navegador (Playwright); fora da suíte padrão, rodar com `uv run pytest -m visual`"]
-addopts = "-m 'not visual'"
+markers = [
+    "visual: QA visual no navegador (Playwright); fora da suíte padrão, rodar com `uv run pytest -m visual`",
+    "dados_reais: precisa do banco completo, do silver ou do bronze (dados da equipe); fora da suíte padrão, rodar com `uv run pytest -m dados_reais`",
+]
+addopts = "-m 'not visual and not dados_reais'"

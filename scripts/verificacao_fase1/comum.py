@@ -20,7 +20,13 @@ def _num(col: str) -> str:
 
 
 def conectar() -> duckdb.DuckDBPyConnection:
-    """DuckDB em memória com as views: bi (CSV tipado), cad_br (cadastro Justiça Aberta, todas as UFs) e o silver/gold."""
+    """DuckDB em memória com as views: bi (CSV tipado), cad_br (cadastro Justiça Aberta, todas as UFs) e o silver/gold.
+    Sem o CSV do BI (exportado à mão; só no pacote da equipe), avisa "arquivo ausente" e encerra sem erro."""
+    if not CSV_BI.exists():
+        print(f"Aviso: arquivo ausente ({CSV_BI.relative_to(RAIZ).as_posix()}). Esta conferência com o BI do CNJ é "
+              "opcional; o pipeline e os totais de controle de config/qualidade.yaml não dependem dele. Ver README, "
+              "'Reproduzir do zero'.")
+        raise SystemExit(0)
     con = duckdb.connect()
     con.execute(f"""
         CREATE VIEW bi_bruto AS SELECT * FROM read_csv('{CSV_BI.as_posix()}', delim='\t', header=true,

@@ -326,3 +326,54 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Acessibilidade:** 6 regras violadas. Todo contraste vem de cores do tema padrão do Streamlit (legenda `st.caption` #83858c, widget desabilitado, cor primária no slider) e `heading-order` vem de `st.subheader` após `st.title`. Nada de contraste ou rótulo em cor ou texto nosso; ficam como sugestões.
 - **Pendente de decisão do autor:** 8 tabelas largas na página Qualidade dos dados (fontes, conferência, divergências, sensibilidade, contratos) passam da largura em 1280 (e 2 delas em 1920). Fora do escopo C1–C4; `pytest -m visual` falha só nelas.
 - **Próximo passo:** conferência da galeria pelo autor e decisão sobre as tabelas da Qualidade; depois, o Bloco 2.
+
+## 2026-10-19 — Pendências do QA visual e diagnóstico do repositório reproduzível
+- **Tabelas largas da Qualidade (decisão do autor):** rolagem horizontal aceita nessa página. `scripts/qa_painel.py` tira a página da checagem de "última coluna visível" (`PAGINAS_COM_ROLAGEM`, com o motivo no código: página técnica de auditoria, tabelas largas por natureza).
+- **Acessibilidade (decisão do autor):** corrigidos a ordem dos títulos (`st.header` nas seções; o `####` do Simulador virou `###`) e o seletor "Valor" do Mercado (escondido quando o filtro é "Nenhum"). **Limitação conhecida:** o contraste das cores padrão do Streamlit (legenda `st.caption` e valor do slider) fica como está.
+- **Resultado:** galeria e checagens com 0 falhas de layout nas duas larguras; `uv run pytest -m visual`: 2 passed; axe: só as 2 regras de contraste do tema.
+- **Auditoria do histórico (8 commits, 174 blobs), antes de qualquer mudança:**
+  - sem segredos (o `.env.example` só tem o endereço local do Ollama);
+  - sem bronze, silver, gold, banco ou CSV do BI; maior arquivo 150 KB;
+  - a amostra `data/samples/cnj_justica_aberta/lista_serventias_MG_amostra20.json` tem os campos responsável, substitutos, e-mail e telefone, mas todos com `<OCULTO>` (mascarados na Fase 0);
+  - os metadados dos commits mostram o e-mail do autor;
+  - `docs/prompts.md` mostra o nome do usuário do Windows num caminho.
+  - Nada de gravidade (c).
+- **Descoberta:** `luccaamp/radar-seguro-cartorio` **já está público** (consulta `gh repo view`, só leitura); o repositório de dados está privado.
+- **Clone limpo (antes):**
+  - o painel abre, mas as 4 páginas mostram "Banco não encontrado";
+  - `uv run pytest`: 93 passed, 67 skipped (sem banco nem bronze);
+  - `pipeline.py --help` trocava o banco por um vazio (registrado em erros_ia.md);
+  - na máquina do autor, o `uv sync` num clone fora do OneDrive falha com hardlink (erro 396 do OneDrive no cache do uv); `UV_LINK_MODE=copy` resolve.
+- **Descobertas para o desenho:**
+  - o gold lê a malha do IBGE direto do bronze (não dá para recalcular só com o silver);
+  - `gold.execucao.executado_em` muda a cada carga, então "hash idêntico" precisa de um hash de conteúdo, separado do hash do arquivo;
+  - uma rodada do motor leva 0,22 s.
+
+## 2026-10-19 — Repositório reproduzível (docs/repositorio_reproduzivel.md), seções 2.1 a 2.7
+- **Feito:** D-029 e D-030 (`docs/decisoes.md`).
+  - **Conjunto público:** `data/publico/`, 25 Parquet, 0,61 MB, mais o manifesto. Gerado por `scripts/gerar_publico.py`: auditor com 989 células e 0 vazamentos; LGPD com 3.213 CNS e 3.840 nomes do cadastro procurados, 0 achados.
+  - **Modo demonstração** no painel.
+  - **Simulador sem dados internos:** totais por faixa, mais a grade de 80 variantes do passivo.
+  - **Pipeline:** `--a-partir-de bronze|silver` e malha no silver.
+  - **Pacotes e instalação:** `scripts/empacotar_dados.py` e `scripts/baixar_dados.py`.
+  - **Documentação:** README ("Como rodar", fontes, licença), `CONTRIBUTING.md`, `docs/publicacao.md`, LICENSE MIT.
+- **Testes:**
+  - a suíte padrão roda sem dados reais (painel no modo demonstração e conjunto público);
+  - o que precisa do banco, do silver ou do bronze virou `dados_reais` (`uv run pytest -m dados_reais`), fora da suíte padrão.
+  - Equivalência do Simulador por totais com o motor completo: dados sintéticos (padrão) e dados reais (`dados_reais`), nas premissas padrão e em 5 combinações aleatórias, tolerância relativa de 1e-9.
+- **Decisões do autor nesta rodada:**
+  - licença MIT;
+  - silver no Release público, com a regra de LGPD corrigida (nenhuma *estimativa* do modelo por serventia; dados de origem sem dado pessoal), no documento e no CLAUDE.md;
+  - exceção `gold.dim_municipio.n_serventias` aprovada.
+- **Conferência pedida pelo autor:** o silver não tem campo derivado do modelo; nada foi retirado do pacote público. O empacotador retiraria automaticamente qualquer coluna que casasse com `estimativas_do_modelo`.
+- **LGPD corrigida no caminho:** `qualidade.rec_municipio` (já publicada no painel) tinha 4 grupos de região imediata com 1 ou 2 serventias, que mostravam o CLT delas. Agora viram uma linha "Outras regiões". Os números de referência não mudam.
+- **Achado na prova de reprodutibilidade:** o texto de um detalhe da reconciliação mudava de ordem entre cargas (`GROUP BY` sem `ORDER BY`). Corrigido; os números já eram iguais.
+- **Tamanhos:**
+  - gold público versionado: 0,61 MB;
+  - pacote público: silver com 2,8 MB;
+  - pacote da equipe: 8,4 GB em 15 arquivos. Bronze 8.435 MB (CNPJ 6,8 GB em 4 partes; RAIS 0,9 GB; SUSEP 0,58 GB; os `.COMT` extraídos, 6,2 GB, ficam fora); silver 2,8 MB; gold completo 1,2 MB; banco 17,8 MB, 2,8 MB no zip.
+- **Limitação do ambiente:** o projeto está no OneDrive.
+  - O pacote da equipe é gerado fora dele (`--saida`).
+  - Trocar pastas exigiu substituir arquivo por arquivo.
+  - Num clone fora do OneDrive, o `uv sync` desta máquina precisa de `UV_LINK_MODE=copy`. O motivo é o cache do uv, e um estranho não tem isso.
+- **Próximo passo:** o autor publica (passo a passo em `docs/publicacao.md`). Depois, Bloco 2.

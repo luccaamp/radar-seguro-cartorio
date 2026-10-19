@@ -10,19 +10,52 @@ CONFIG = Path(__file__).resolve().parents[1] / "config"
 PESO_INDETERMINADA_TESTE = 0.656  # valor fixo para teste (no pipeline é calculado a cada carga)
 
 
+def pytest_collection_modifyitems(config, items):
+    """Testes `dados_reais` (precisam do banco completo, do silver ou do bronze) ficam fora da suíte padrão (addopts
+    em pyproject.toml); se forem pedidos (-m dados_reais) numa máquina sem os dados, são pulados com o motivo."""
+    from apoio_painel import BANCO_REAL
+    if BANCO_REAL.exists():
+        return
+    pular = pytest.mark.skip(reason="dados reais ausentes (data/radar.duckdb); ver CONTRIBUTING.md, 'Dados da equipe'")
+    for item in items:
+        if "dados_reais" in item.keywords:
+            item.add_marker(pular)
+
+
 @pytest.fixture(scope="session")
-def banco_temporario(tmp_path_factory):
-    """Cópia do banco real, com o gold refeito pelo código atual, para os testes do painel e da auditoria (uma vez por
-    sessão). Confere no fim que o banco real e os Parquet de data/ não mudaram."""
-    from apoio_painel import BANCO_REAL, apontar_painel, assinatura_real, preparar_copia, restaurar
+def _copia_real(tmp_path_factory):
+    """Cópia do banco real com o gold refeito pelo código atual (uma vez por sessão). Confere no fim que o banco real
+    e os Parquet de data/ não mudaram."""
+    from apoio_painel import BANCO_REAL, assinatura_real, preparar_copia
     if not BANCO_REAL.exists():
         pytest.skip("rode uv run pipeline.py antes")
     antes = assinatura_real()
     copia = preparar_copia(tmp_path_factory.mktemp("banco"))
-    anterior = apontar_painel(copia)
     yield {"copia": copia, "real_antes": antes}
-    restaurar(anterior)
     assert assinatura_real() == antes, "o banco real ou os Parquet de data/ mudaram durante os testes"
+
+
+@pytest.fixture(scope="module")
+def banco_temporario(_copia_real):
+    """Modo completo: o painel aponta para a cópia do banco real durante o módulo de teste (testes dados_reais)."""
+    from apoio_painel import apontar_painel, restaurar
+    anterior = apontar_painel(_copia_real["copia"])
+    yield _copia_real
+    restaurar(anterior)
+
+
+@pytest.fixture(scope="module")
+def painel_demo(tmp_path_factory):
+    """Modo demonstração: sem banco, o painel monta o seu a partir do conjunto público versionado (data/publico).
+    Roda em qualquer clone, sem dados reais. Devolve o caminho do banco de demonstração (só leitura nos testes)."""
+    from apoio_painel import apontar_painel, restaurar
+    from src import publico
+    if not (publico.PASTA / publico.MANIFESTO).exists():
+        pytest.fail("data/publico/manifesto.json ausente: rode uv run python scripts/gerar_publico.py")
+    inexistente = tmp_path_factory.mktemp("sem_banco") / "nao_existe.duckdb"
+    anterior = apontar_painel(inexistente, publico.PASTA)
+    yield {"banco": publico.banco_demonstracao(publico.PASTA)}
+    restaurar(anterior)
 
 
 @pytest.fixture(scope="session")

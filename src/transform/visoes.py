@@ -41,6 +41,18 @@ def _universo(df: pd.DataFrame) -> frozenset:
     return frozenset(df.loc[(df["peso_universo"] > 0) & (df["passivo"] > 0), "cns"])
 
 
+def totais_por_area(base: pd.DataFrame) -> dict[str, frozenset]:
+    """Todas as serventias de cada região imediata e de MG (para as checagens de complemento e de resto)."""
+    totais = {f"RI:{ri}": frozenset(g["cns"]) for ri, g in base.groupby("regiao_imediata")}
+    totais["MG"] = frozenset(base["cns"])
+    return totais
+
+
+def auditar(celulas: list[Celula], base: pd.DataFrame, limiar: int) -> list[tuple[str, str, str]]:
+    """Auditor de ataque por diferença sobre um conjunto qualquer de células publicadas (gold e gerar_publico)."""
+    return vazamentos(celulas, limiar, totais_por_area(base), PARTICOES)
+
+
 @dataclass
 class Resultado:
     destinos: dict[str, dict[str, str]]          # visão -> regiao_imediata -> area_id
@@ -54,8 +66,7 @@ def construir(base: pd.DataFrame, por_regra_nivel: dict[tuple[str, str], pd.Data
     """`base`: serventias na regra base e nível base (cns, regiao_imediata, regiao_intermediaria, filtros, passivo,
     peso_universo). `por_regra_nivel`: as mesmas serventias em cada (regra, nível), para os totais estaduais.
     `areas_gerais`: cns -> area_id da visão geral (mapa sem filtro)."""
-    totais = {f"RI:{ri}": frozenset(g["cns"]) for ri, g in base.groupby("regiao_imediata")}
-    totais["MG"] = frozenset(base["cns"])
+    totais = totais_por_area(base)
     nao_publicar: dict[str, set[str]] = {v: set() for _, _, v in filtros()}
     estaduais = {(v, r, n): True for _, _, v in filtros() for (r, n) in por_regra_nivel}
     for it in range(1, max_iter + 1):

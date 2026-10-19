@@ -8,13 +8,17 @@ import pandas as pd
 import streamlit as st
 import yaml
 
-from comum import (RAIZ, aviso_estimativa, brl, conexao, consulta, md_seguro, num, pct, rodape,
+from comum import (RAIZ, _br, aviso_estimativa, brl, conexao, consulta, demonstracao, md_seguro, num, pct, rodape,
                    slider_br, universo_txt, aprox)
 from src import estado
+from src.model import simulador
 from src.model.premissas import PremissaInvalida, com_novo_base
 from src.model.rateio import METODOS
 from src.motor import calcular_serventias, peso_indeterminada, premissas_nivel, resumo_mercado
 from src.transform.gold import carregar_insumos
+
+# modo demonstração (D-029): sem dados internos, recalcula a partir de gold.simulador_* (src/model/simulador.py)
+DEMO = demonstracao()
 
 st.set_page_config(page_title="Simulador", page_icon="🎛️", layout="wide")
 st.title("Simulador — seguro-garantia do Prov. 227 (MG)")
@@ -45,8 +49,25 @@ def calcular(regra: str, metodo: str, ajustes_json: str, versao: int) -> pd.Data
 LIM_BASE = REGRAS["versoes"][REGRAS["versao_base"]]["limites"]  # classe das faixas de déficit (D-019)
 semente, versao = estado.premissas_vigentes(conexao())
 lim_v2 = LIM_BASE
-pb = premissas_nivel(semente, "base", peso_indeterminada(insumos().serventias, lim_v2))
+
+
+def peso_indet(regra: str) -> float:
+    """Peso da classe indeterminada no nível base: calculado das serventias (completo) ou lido do gold (demonstração,
+    mesmo valor, gravado pela carga em gold.execucao)."""
+    if DEMO:
+        return float(consulta("SELECT peso_classe_indeterminada_base FROM gold.execucao WHERE regra_classe = ?",
+                              [regra]).iloc[0, 0])
+    return peso_indeterminada(insumos().serventias, REGRAS["versoes"][regra]["limites"])
+
+
+pb = premissas_nivel(semente, "base", peso_indet(REGRAS["versao_base"]))
 P = semente["premissas"]
+VARIANTES = consulta("SELECT * FROM gold.simulador_variantes") if DEMO else None
+
+
+def grade(coluna: str) -> list:
+    """Pontos da grade de um controle do passivo (modo demonstração)."""
+    return sorted(VARIANTES[coluna].unique().tolist())
 
 
 def faixa_de(nome, chave=None):
@@ -55,7 +76,7 @@ def faixa_de(nome, chave=None):
 
 
 # ------------------------------------------------------------------ controles
-st.subheader("Cenário")
+st.header("Cenário")
 c1, c2, c3 = st.columns([2, 1.3, 2])
 cenario = c1.radio("Cenário do STF (ADI 8015)", list(CENARIOS["cenarios"]), format_func=ROT_CEN.get, horizontal=True,
                    help="\n\n".join(f"**{ROT_CEN[k]}**: {v['descricao']}" for k, v in CENARIOS["cenarios"].items()))
@@ -115,31 +136,76 @@ with st.expander("Premissas da receita do seguro", expanded=True):
                                              100 * pb["despesa_administrativa"],
                                              help="Faixa da semente: 5% a 12% (fonte: suposição)") / 100
 
-with st.expander("Premissas do passivo (art. 5º do Prov. 227)"):
+with st.expander("Premissas do passivo (art. 5º do Prov. 227)", expanded=DEMO):
+    if DEMO:
+        st.caption("Modo demonstração: o passivo vem de uma grade pré-calculada. Cada controle oferece só os pontos "
+                   "da grade, e só **uma** premissa do passivo pode sair do valor base por vez (regra e rateio "
+                   "combinam com qualquer uma). O resto fica disponível com os dados completos.")
     a, b, c = st.columns(3)
-    aj["fap"] = slider_br(a, "FAP (multiplicador do RAT)", 0.5, 2.0, 0.1, float(pb["fap"]), casas=2, sufixo="",
-                          help="Decreto 3.048, art. 202-A: entre 0,5 e 2,0")
-    aj["fracao_ferias_vencidas_pendentes"] = slider_br(a, "Férias vencidas ainda não gozadas (períodos)", 0.0, 1.0, 0.1,
-                                                       float(pb["fracao_ferias_vencidas_pendentes"]), casas=2, sufixo="",
-                                                       help="Suposição aprovada na D-017: mín 0, base 0,5, máx 1")
+    if DEMO:
+        aj["fap"] = a.select_slider("FAP (multiplicador do RAT)", grade("fap"), value=float(pb["fap"]),
+                                    format_func=lambda v: _br(v, 2), help="Decreto 3.048, art. 202-A: entre 0,5 e 2,0")
+        aj["fracao_ferias_vencidas_pendentes"] = a.select_slider(
+            "Férias vencidas ainda não gozadas (períodos)", grade("fracao_ferias_vencidas_pendentes"),
+            value=float(pb["fracao_ferias_vencidas_pendentes"]), format_func=lambda v: _br(v, 2),
+            help="Suposição aprovada na D-017: mín 0, base 0,5, máx 1")
+    else:
+        aj["fap"] = slider_br(a, "FAP (multiplicador do RAT)", 0.5, 2.0, 0.1, float(pb["fap"]), casas=2, sufixo="",
+                              help="Decreto 3.048, art. 202-A: entre 0,5 e 2,0")
+        aj["fracao_ferias_vencidas_pendentes"] = slider_br(a, "Férias vencidas ainda não gozadas (períodos)", 0.0, 1.0,
+                                                           0.1, float(pb["fracao_ferias_vencidas_pendentes"]), casas=2,
+                                                           sufixo="",
+                                                           help="Suposição aprovada na D-017: mín 0, base 0,5, máx 1")
     inss_aviso = b.checkbox("INSS sobre o aviso prévio indenizado", value=False,
                             help="Base: não incide (STJ, Tema 478). Marcado = cenário máximo.")
     aj["incidencias"] = {**pb["incidencias"],
                          "aviso_previo_indenizado": {"fgts": True, "inss": inss_aviso}}
     aj["limiar_vinculos_distribuicao_municipal"] = b.select_slider(
-        "Vínculos mínimos para usar a distribuição do município", [10, 20, 30],
+        "Vínculos mínimos para usar a distribuição do município",
+        grade("limiar_vinculos_distribuicao_municipal") if DEMO else [10, 20, 30],
         value=int(pb["limiar_vinculos_distribuicao_municipal"]))
     aj["base_remuneracao_rais"] = c.radio("Base de remuneração (art. 6º)", ["dezembro", "media_anual"],
                                           format_func={"dezembro": "Remuneração de dezembro",
                                                        "media_anual": "Média anual"}.get)
 
 # ------------------------------------------------------------------ cálculo
+def totais_demo(regra: str, metodo: str) -> dict | None:
+    """Totais da variante pré-calculada que corresponde aos controles do passivo; None se a combinação não está na
+    grade (mais de uma premissa do passivo fora do valor base)."""
+    valores = {"fap": aj["fap"], "fracao_ferias_vencidas_pendentes": aj["fracao_ferias_vencidas_pendentes"],
+               "inss_aviso_previo": inss_aviso,
+               "limiar_vinculos_distribuicao_municipal": aj["limiar_vinculos_distribuicao_municipal"],
+               "base_remuneracao_rais": aj["base_remuneracao_rais"]}
+    v = VARIANTES[(VARIANTES["regra_classe"] == regra) & (VARIANTES["metodo_rateio"] == metodo)]
+    for k, x in valores.items():
+        v = v[v[k] == x]
+    if v.empty:
+        return None
+    linha = v.iloc[0]
+    t = {k: linha[k] for k in ("n_serventias_ativas", "clt", "passivo_todas", "n_universo", "n_indeterminadas_universo",
+                               "passivo_universo")}
+    faixas = consulta("SELECT faixa, peso_com_passivo, passivo_ponderado FROM gold.simulador_base_classe "
+                      "WHERE variante_id = ?", [int(linha["variante_id"])])
+    for f in faixas.itertuples():
+        t[f"peso_com_passivo_{f.faixa}"] = f.peso_com_passivo
+        t[f"passivo_ponderado_{f.faixa}"] = f.passivo_ponderado
+    return t
+
+
 try:
-    serv = calcular(regra, metodo, json.dumps(aj, sort_keys=True), versao)
-    lim = REGRAS["versoes"][regra]["limites"]
-    p = premissas_nivel(semente, "base", peso_indeterminada(insumos().serventias, lim), aj)
+    p = premissas_nivel(semente, "base", peso_indet(regra), aj)
     extra = {"fracao_exigencia_garantia": fracao_parcial} if fracao_parcial is not None else None
-    r = resumo_mercado(serv, p, CENARIOS, cenario, extra)
+    if DEMO:
+        t = totais_demo(regra, metodo)
+        if t is None:
+            st.warning("Esta combinação muda mais de uma premissa do passivo ao mesmo tempo: no modo demonstração, só "
+                       "uma por vez (a grade pré-calculada). Volte as outras ao valor base. A combinação livre fica "
+                       "disponível com os dados completos (veja 'Como rodar' no README).")
+            st.stop()
+        r = simulador.resumo_por_totais(t, p, CENARIOS, cenario, extra)
+    else:
+        serv = calcular(regra, metodo, json.dumps(aj, sort_keys=True), versao)
+        r = resumo_mercado(serv, p, CENARIOS, cenario, extra)
 except PremissaInvalida as e:
     st.error(f"Premissa inválida: {e}")
     st.stop()
@@ -153,7 +219,7 @@ def delta(atual: float, referencia: float, fmt=brl, minimo: float = 0.5) -> str 
     return None if abs(d) < minimo else ("+" if d > 0 else "") + fmt(d)
 
 
-st.subheader("Resultado anual — MG")
+st.header("Resultado anual — MG")
 st.caption(md_seguro("As setas comparam com o cenário base do painel (premissas vigentes, regra mantida, Classe 1 até R$ 300 mil)."))
 k1, k2, k3, k4 = st.columns(4)
 k1.metric("Obrigadas (universo)", aprox(r["n_universo"]), delta=delta(r["n_universo"], ref["n_universo"], num),
@@ -177,7 +243,7 @@ m, s = st.columns(2)
 for coluna, prefixo, titulo in ((m, "mercado", "Mercado total"),
                                 (s, "seguradora", f"Seguradora hipotética ({pct(p['market_share_hipotetico'])} de share)")):
     with coluna:
-        st.markdown(f"#### {titulo}")
+        st.markdown(f"### {titulo}")   # h3 sob o h2 da seção (ordem dos títulos, acessibilidade)
         for chave, rot, cor in LINHAS:
             st.metric(rot, brl(r[f"{prefixo}_{chave}"]), delta=delta(r[f"{prefixo}_{chave}"], ref[f"{prefixo}_{chave}"]),
                       delta_color=cor)
@@ -206,9 +272,12 @@ rodape(["cnj_serventias", "cnj_colaboradores", "cnj_arrecadacao", "rais_vinculos
        f"Cenário: {ROT_CEN[cenario]}; regra {regra}; rateio {ROT_MET[metodo]}.", taxa=True)
 
 # ------------------------------------------------------------------ salvar
-st.subheader("Salvar cenário")
-nome = st.text_input("Nome do cenário", placeholder="ex.: taxa 2,5% e share 10%")
-if st.button("Salvar", type="primary", disabled=not nome):
+st.header("Salvar cenário")
+if DEMO:
+    st.caption("Desativado no modo demonstração: o banco é temporário e seria apagado. Com os dados completos "
+               "(ou recalculando com os dados públicos), os cenários ficam salvos no seu banco local.")
+nome = st.text_input("Nome do cenário", placeholder="ex.: taxa 2,5% e share 10%", disabled=DEMO)
+if st.button("Salvar", type="primary", disabled=DEMO or not nome):
     con = conexao()
     novo, diff = com_novo_base(semente, aj)
     v = estado.salvar_versao(con, novo, diff, "autor (simulador)", f"simulador: {nome}") if diff else versao

@@ -43,12 +43,12 @@ st.caption(md_seguro(EXPLICA_NIVEIS))
 # nada nesta página usa a SUSEP SES: a taxa do seguro é suposição (1.6)
 rodape(["cnj_serventias", "cnj_colaboradores", "cnj_arrecadacao", "rais_vinculos"], taxa=True)
 
-st.subheader("Páginas")
+st.header("Páginas")
 st.markdown(
     "- **Mercado**: serventias, empregados, passivo e déficit por município, com mapa, ranking e filtros.\n"
     "- **Simulador**: ajuste as premissas e o cenário do STF e compare o mercado total com a seguradora hipotética.\n"
     "- **Qualidade dos dados**: data de referência de cada fonte, cobertura, divergências, sensibilidade e contratos.")
-st.subheader("Situação regulatória")
+st.header("Situação regulatória")
 st.markdown(
     "ADI 8015 (ANOREG/BR contra os arts. 8º a 17 do Prov. 227), relator Min. Flávio Dino: rito do art. 12 da "
     "Lei 9.868/1999, **sem liminar**; informações do CNJ e da AGU prestadas, vista à PGR. *Conferido em 17/10/2026 "

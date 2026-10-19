@@ -1,0 +1,11 @@
+# Grade de variantes do passivo para o Simulador no modo demonstração (sem dados internos; D-029, docs/repositorio_reproduzivel.md 2.3).
+# Não são premissas: são os pontos que o modo demonstração oferece nos controles do passivo. Cada variante muda
+# UMA premissa do passivo (as outras ficam no valor base das premissas vigentes), cruzada com as duas regras de
+# classe e os quatro métodos de rateio. O valor base de cada premissa entra sempre, mesmo que não esteja na lista.
+# fonte: suposição (pontos escolhidos dentro das faixas dos controles do Simulador; conferido em 2026-10-19)
+pontos:
+  fap: [0.5, 1.0, 1.5, 2.0]                          # Decreto 3.048, art. 202-A: entre 0,5 e 2,0
+  fracao_ferias_vencidas_pendentes: [0.0, 0.5, 1.0]  # D-017: mín 0, base 0,5, máx 1
+  inss_aviso_previo: [false, true]                   # STJ, Tema 478 (base: não incide)
+  limiar_vinculos_distribuicao_municipal: [10, 20, 30]
+  base_remuneracao_rais: [dezembro, media_anual]

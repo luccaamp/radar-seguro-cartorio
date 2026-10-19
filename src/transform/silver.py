@@ -117,6 +117,21 @@ def ler_municipios(snap: str, uf: str, fontes: list) -> pd.DataFrame:
     return df
 
 
+def ler_malha(snap: str, uf: str) -> pd.DataFrame:
+    """Malha municipal do IBGE, um polígono por linha (GeoJSON do feature, na ordem do arquivo). Fica no silver para o
+    gold poder ser recalculado só a partir do silver, sem o bronze (D-029). A fonte já é registrada em ler_municipios."""
+    malha = json.loads((BRONZE / "ibge" / snap / f"malha_{uf}.geojson").read_text(encoding="utf-8"))
+    return pd.DataFrame([{"uf": uf, "ordem": i, "cod_ibge": int(f["properties"]["codarea"]),
+                          "feature_json": json.dumps(f, ensure_ascii=False)} for i, f in enumerate(malha["features"])])
+
+
+def malha_do_silver(con, uf: str | None = None) -> dict:
+    """Remonta o GeoJSON da malha a partir de silver.malha_municipio (mesma ordem e mesmos números do arquivo)."""
+    filtro, params = ("WHERE uf = ?", [uf]) if uf else ("", [])
+    linhas = con.execute(f"SELECT feature_json FROM silver.malha_municipio {filtro} ORDER BY uf, ordem", params).fetchall()
+    return {"type": "FeatureCollection", "features": [json.loads(x) for (x,) in linhas]}
+
+
 def ler_indices(snap: str, fontes: list) -> pd.DataFrame:
     linhas = []
     for indice in ("ipca", "inpc"):
@@ -294,10 +309,12 @@ def construir(con: duckdb.DuckDBPyConnection | None = None) -> dict[str, int]:
     tabelas: dict[str, pd.DataFrame] = {"indice_preco": ler_indices(snaps["ibge"], fontes),
                                         "susep_garantia": ler_susep(snaps["susep_ses"], fontes)}
     partes: dict[str, list] = {k: [] for k in ("municipio_ibge", "serventia", "serventia_colaboradores",
-                                               "serventia_arrecadacao", "rais_vinculo", "cnpj_estabelecimento")}
+                                               "serventia_arrecadacao", "rais_vinculo", "cnpj_estabelecimento",
+                                               "malha_municipio")}
     for uf in esc["ufs"]:
         mun = ler_municipios(snaps["ibge"], uf, fontes)
         partes["municipio_ibge"].append(mun)
+        partes["malha_municipio"].append(ler_malha(snaps["ibge"], uf))
         partes["serventia"].append(ler_serventias(snaps["cnj_justica_aberta"], uf, mun, fontes))
         partes["serventia_colaboradores"].append(ler_colaboradores(snaps["cnj_justica_aberta"], uf, fontes))
         partes["serventia_arrecadacao"].append(ler_arrecadacoes(snaps["cnj_arrecadacoes"], uf, fontes))

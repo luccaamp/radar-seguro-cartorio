@@ -1,0 +1,348 @@
+{
+ "descricao": "Conjunto público do Radar Seguro-Garantia Cartórios (D-029): tabelas agregadas e auditadas que o painel lê. Sem dado por serventia e sem dado pessoal.",
+ "carga": "2026-10-19",
+ "executado_em": "2026-10-19T18:41:39",
+ "versao_premissas": 2,
+ "limiar_lgpd": 3,
+ "commit": "8ed35380818127b7e9ccbdc90c0bcfa1c4ff00e0",
+ "alteracoes_sem_commit": true,
+ "gerado_em": "2026-10-19T18:41:47",
+ "fontes": [
+  {
+   "fonte": "cnj_arrecadacao",
+   "data_referencia": "classe: exercício 2025; série coletada até 2026-06-30",
+   "coletado_em": "2026-10-18T01:55:43-03:00",
+   "sha256_bronze": "11e8cc3f2b13350f73401999671514f9b082ebbda0fcedf109da11ec95b73892",
+   "url": "https://justicaabertaapi.cnj.jus.br/v1/api/serventias/{cns}/arrecadacoes"
+  },
+  {
+   "fonte": "cnj_colaboradores",
+   "data_referencia": "2026-10-17",
+   "coletado_em": "2026-10-17T23:10:35-03:00",
+   "sha256_bronze": "84f3dce5fe88071a39c1df359744cce4bc91c3fd21e071760f5805c5b3d1b8eb",
+   "url": "https://justicaabertaapi.cnj.jus.br/v1/api/serventias/{cns}/dados-complementares"
+  },
+  {
+   "fonte": "cnj_serventias",
+   "data_referencia": "2026-10-17",
+   "coletado_em": "2026-10-17T22:04:08-03:00",
+   "sha256_bronze": "788d06451ce40cc968b48846f5f1e8b2dc418faed3eaa33d59a373ba525b7d02",
+   "url": "https://justicaabertaapi.cnj.jus.br/v1/api/serventias"
+  },
+  {
+   "fonte": "cnpj_estabelecimentos",
+   "data_referencia": "2026-10",
+   "coletado_em": "2026-10-17T22:29:41-03:00",
+   "sha256_bronze": "759496ee179f13e0b221a06041a740c59030f13b83ae6577ef6986752552e03a",
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Estabelecimentos0.zip"
+  },
+  {
+   "fonte": "ibge_inpc",
+   "data_referencia": "202609",
+   "coletado_em": "2026-10-18T01:02:13-03:00",
+   "sha256_bronze": "f4e2974aba3c300b10b1c6ff1edb9e40404212970ce22f5d659f5ebea0e953a2",
+   "url": "https://apisidra.ibge.gov.br/values/t/1736/n1/all/v/2289/p/201901-209912"
+  },
+  {
+   "fonte": "ibge_ipca",
+   "data_referencia": "202609",
+   "coletado_em": "2026-10-18T01:02:12-03:00",
+   "sha256_bronze": "5ed9a60012889ac91e2ea5121d2945f834fe1f7c20c54b04d171b3afd8f14ea4",
+   "url": "https://apisidra.ibge.gov.br/values/t/1737/n1/all/v/2266/p/201901-209912"
+  },
+  {
+   "fonte": "ibge_malha",
+   "data_referencia": "2022",
+   "coletado_em": "2026-10-18T01:02:11-03:00",
+   "sha256_bronze": "b7befa63a1dfac3386535468c6213ea69e05cdd858a805babcc632d59c121b79",
+   "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/31?formato=application/vnd.geo+json&intrarregiao=municipio&qualidade=minima"
+  },
+  {
+   "fonte": "ibge_municipios",
+   "data_referencia": "vigente em 2026-10-18",
+   "coletado_em": "2026-10-18T01:02:09-03:00",
+   "sha256_bronze": "2547984d1767a3687fcf31b21f60422af8cc1bb9dc5e18748916519976b4721d",
+   "url": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/31/municipios"
+  },
+  {
+   "fonte": "ibge_populacao",
+   "data_referencia": "2026",
+   "coletado_em": "2026-10-18T01:02:10-03:00",
+   "sha256_bronze": "f646b1c7111d894fd73702134d46e38c8d22c5df585db2caa2621aa34e611441",
+   "url": "https://apisidra.ibge.gov.br/values/t/6579/n6/in%20n3%2031/v/9324/p/last%201"
+  },
+  {
+   "fonte": "rais_vinculos",
+   "data_referencia": "2025-12-31",
+   "coletado_em": "2026-10-17T22:20:27-03:00",
+   "sha256_bronze": "0b9053a6bd7d5baaa151adcccfc203203e809a0b44fa61b19f0571b6819f142b",
+   "url": "ftp://ftp.mtps.gov.br/pdet/microdados/RAIS/2025/RAIS_VINC_PUB_MG_ES_RJ.7z"
+  },
+  {
+   "fonte": "susep_ses_garantia",
+   "data_referencia": "202608",
+   "coletado_em": "2026-10-17T22:17:05-03:00",
+   "sha256_bronze": "55a83ee0487bc0fb04b58b886fb0ee3c6c909a7dbb6a6daa9636fac8527c2307",
+   "url": "https://www2.susep.gov.br/redarq.asp?arq=BaseCompleta%2ezip"
+  }
+ ],
+ "excecoes_limiar": {
+  "gold.dim_municipio.n_serventias": "gold.dim_municipio.n_serventias: 532 linhas entre 1 e 2 (aprovada pelo autor em 2026-10-19 (D-029))"
+ },
+ "arquivos": [
+  {
+   "tabela": "gold.fato_mercado_uf",
+   "arquivo": "gold.fato_mercado_uf.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 18,
+   "sha256_conteudo": "6d614cf49a684b71f8826570f8dd606276becba67d78f06f5fba43da13a4811c",
+   "bytes": 6141,
+   "sha256_arquivo": "ae2867e370dfab3298517159a12571b293d572d3ac54d9131d033a40d13970c2"
+  },
+  {
+   "tabela": "gold.mercado_area_publico",
+   "arquivo": "gold.mercado_area_publico.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 385,
+   "sha256_conteudo": "5d70e732d5dfee179cbe19ad08a4aa6bfdb11805ddc816fe094dafa400a7c9ba",
+   "bytes": 19958,
+   "sha256_arquivo": "edc385afbddbec0da68aca2809a333759f4038c8cdf02e316a0273ca3af19ea7"
+  },
+  {
+   "tabela": "gold.mercado_filtro_area",
+   "arquivo": "gold.mercado_filtro_area.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 511,
+   "sha256_conteudo": "b51ee57e6ababdf416847e0f6b9174992bad131ad2460505d5a8280a51fa5d44",
+   "bytes": 23167,
+   "sha256_arquivo": "ea58db078027487989037e2634a4c2055af907eb7c0a0928a03144b7b58f8016"
+  },
+  {
+   "tabela": "gold.mercado_filtro_uf",
+   "arquivo": "gold.mercado_filtro_uf.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 78,
+   "sha256_conteudo": "98b3f08f1d1f97b39e1ac2b46656e459febf37cefcc7f47e472a2146ede605f4",
+   "bytes": 13626,
+   "sha256_arquivo": "68daaef0d070040f26590dbaa8cb4705765d9b06955a6f1a80945d0331dd9bb2"
+  },
+  {
+   "tabela": "gold.mercado_filtro_regiao",
+   "arquivo": "gold.mercado_filtro_regiao.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 768,
+   "sha256_conteudo": "c750bd4f8e23227ae008f768bc062c03f1dcbfdc1f7d5bd8caa80ea7c2eed77c",
+   "bytes": 4422,
+   "sha256_arquivo": "06baa1cb11b93402d1ca9fc550726f215b0027643a23bd4b594d1634bce0bd83"
+  },
+  {
+   "tabela": "gold.ranking_municipio_publico",
+   "arquivo": "gold.ranking_municipio_publico.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 1276,
+   "sha256_conteudo": "8e0c513c9496491560f165765dbfb3ffa3ef78841a5f2930f4299db3e9d0e785",
+   "bytes": 24465,
+   "sha256_arquivo": "9c28ab8ced893cb9de924dfbd3f3c5aedf6344b3c612dd6bf7ef09bd85142ef1"
+  },
+  {
+   "tabela": "gold.dim_municipio",
+   "arquivo": "gold.dim_municipio.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 853,
+   "sha256_conteudo": "9bf571b19b496291bd84959c910d6487a7d3a403b3c502926e2145784a398c42",
+   "bytes": 18268,
+   "sha256_arquivo": "32ebdcaa0f922ced147841151163f6d4e0543ced769432ccac6ed0321e5a7f29"
+  },
+  {
+   "tabela": "gold.geo_area_municipio",
+   "arquivo": "gold.geo_area_municipio.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 851,
+   "sha256_conteudo": "06bde0067f22f827b7d032e1aea12a5f0c01ec04d0c783a3cd4b5442f2dcc77d",
+   "bytes": 8718,
+   "sha256_arquivo": "75c915a5a51aa7d2ed8c95ac5d06b042b333a78abd96afd4160b1f231c8bfa33"
+  },
+  {
+   "tabela": "gold.geo_mapa_publico",
+   "arquivo": "gold.geo_mapa_publico.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 385,
+   "sha256_conteudo": "2e32caca5bfcc5e811da243c67ad1a64c063fc8774719e03d9921ecda32b3adf",
+   "bytes": 177840,
+   "sha256_arquivo": "287d02e844536beaa52f840aeb8b402f61076fa7db790449632bbef151363033"
+  },
+  {
+   "tabela": "gold.geo_mapa_filtro",
+   "arquivo": "gold.geo_mapa_filtro.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 85,
+   "sha256_conteudo": "21b1f2407f9a99e14f5f72f46aec2c69559159f2ca6ca7d4ce98d256f78f67ec",
+   "bytes": 152422,
+   "sha256_arquivo": "6076a4a6f1c03eddf428418620ff30679bfc13dc9592c495555b20067318781e"
+  },
+  {
+   "tabela": "gold.geo_regiao_imediata",
+   "arquivo": "gold.geo_regiao_imediata.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 70,
+   "sha256_conteudo": "dfebdff172fc8c06dc9f3428949da1917d9fb2828c3ccc35cef4f7ced5badcc0",
+   "bytes": 70109,
+   "sha256_arquivo": "c9342a49f5716c9ce973348f1f052c1208aac666f69f00899359b3a24f64b919"
+  },
+  {
+   "tabela": "gold.geo_sem_serventia",
+   "arquivo": "gold.geo_sem_serventia.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 2,
+   "sha256_conteudo": "b5ab64d71a662b7f62245f4982e0a080c2546de5b35c48d704aed8b7e5e36dec",
+   "bytes": 1637,
+   "sha256_arquivo": "ca64f84184b399ce99e17f4a51646d795b9597d58b835483234e4d2bda8d7ac5"
+  },
+  {
+   "tabela": "gold.execucao",
+   "arquivo": "gold.execucao.parquet",
+   "comparar": true,
+   "sem_hash": [
+    "executado_em"
+   ],
+   "linhas": 2,
+   "sha256_conteudo": "ec159ea17df1e4588c6edbe752b09363a8158e0990951c466512ba3ee7b267d8",
+   "bytes": 1499,
+   "sha256_arquivo": "3881d7ea65de3fef4ebf45d05d9fc2e1fe99596137a9753c6bfd17e2d5a322f2"
+  },
+  {
+   "tabela": "gold.diferenca_regra_classe",
+   "arquivo": "gold.diferenca_regra_classe.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 3,
+   "sha256_conteudo": "cf112d5099dba69149828bc948c34841408cead4df187e4b450e982f9f9cf722",
+   "bytes": 1601,
+   "sha256_arquivo": "08284582aebb5552e0c65a3c29d5d0ec162afa5df42a5272e2d2acad9a539a13"
+  },
+  {
+   "tabela": "gold.sensibilidade_rateio",
+   "arquivo": "gold.sensibilidade_rateio.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 4,
+   "sha256_conteudo": "111ec57b1af1d9464f06cb0481cc504bed4703c29837b238d226a44933e6e804",
+   "bytes": 4119,
+   "sha256_arquivo": "ba4b4927b778d173348885311fad4b04b080829525d7e4b8d7a941462d1d80dd"
+  },
+  {
+   "tabela": "gold.sensibilidade_premissas",
+   "arquivo": "gold.sensibilidade_premissas.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 6,
+   "sha256_conteudo": "7bdd45a879ac46aa54a73a9071ec13824f2de3739e8b19572dd7ae349ea74c2d",
+   "bytes": 5513,
+   "sha256_arquivo": "4acb959c20160b5a0a39ccc02f84d7636c2db0f85e616c57e735d2902ea3dafd"
+  },
+  {
+   "tabela": "gold.simulador_variantes",
+   "arquivo": "gold.simulador_variantes.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 80,
+   "sha256_conteudo": "8d9a104943644a49938278aad92c3c5d7f3c6a38e391e0fa57b24d682d7753db",
+   "bytes": 4991,
+   "sha256_arquivo": "457d3f9d8e7f6faa85b8530d3321ab86eb9c4eb027d3940e112b9755bc587c67"
+  },
+  {
+   "tabela": "gold.simulador_base_classe",
+   "arquivo": "gold.simulador_base_classe.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 160,
+   "sha256_conteudo": "cf91d4a02ed59474184edfd79f96223aecbd7e96d1fa73a998780eba851227d3",
+   "bytes": 2922,
+   "sha256_arquivo": "6e06f609cbc3db523fc5551d539186b7fb599ef31e312951eccdd5905a3a045d"
+  },
+  {
+   "tabela": "silver.fonte_metadados",
+   "arquivo": "silver.fonte_metadados.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 11,
+   "sha256_conteudo": "8976e1782bbd81214d1a1a7733f0b565152abbf6a4b1925a2d32835224f69152",
+   "bytes": 4679,
+   "sha256_arquivo": "7cea10ae57646fcb9b1708494109f22330eb0ea3ada1b15c0c3438581a4e8ab3"
+  },
+  {
+   "tabela": "silver.municipio_ibge",
+   "arquivo": "silver.municipio_ibge.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 853,
+   "sha256_conteudo": "3d9154aa43806c6e5dc09158036dff710952f2cf775e7f3e4dcb8f4ab4fe6b4d",
+   "bytes": 35590,
+   "sha256_arquivo": "481c8708e0f5e9fd49fa72c4f7231b69463540f9cc6a7b882bb53c51f3c0260f"
+  },
+  {
+   "tabela": "qualidade.reconciliacoes",
+   "arquivo": "qualidade.reconciliacoes.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 9,
+   "sha256_conteudo": "38ec512b81841f4c9a808f1652f32a85269c9f9a720e96ff6ca1ea9093b7a722",
+   "bytes": 2863,
+   "sha256_arquivo": "9db11ef34c68d8ae2b02cf491a4ba003563d64b9787e4abf2cdcfd57d452f58a"
+  },
+  {
+   "tabela": "qualidade.resumo_publico",
+   "arquivo": "qualidade.resumo_publico.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 6,
+   "sha256_conteudo": "69df868df85f2b8319e02ff835f8f37b98b1116958832f232242e8e32951a906",
+   "bytes": 1001,
+   "sha256_arquivo": "9f2ddf1327bbee71f44010f68185e43c74fd7ee1a6382b88337f92b49fbb9dfe"
+  },
+  {
+   "tabela": "qualidade.rec_municipio",
+   "arquivo": "qualidade.rec_municipio.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 386,
+   "sha256_conteudo": "2303bd22537b664cb773808dd592fbc7f35eb602ae84a5e509d71a5b53c8d048",
+   "bytes": 15525,
+   "sha256_arquivo": "2feba5333b064f8b9c68c9e24947e0b2620710701b5acddc06687578d159910e"
+  },
+  {
+   "tabela": "qualidade.checagens",
+   "arquivo": "qualidade.checagens.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 114,
+   "sha256_conteudo": "d38bf3d6c6e87f199156cd305837088ee03fb3e417f05111d5f5a909d93e829a",
+   "bytes": 3997,
+   "sha256_arquivo": "e661e970e602ed118cb8686838294ada55377dc80d03c4c3aec21c2aecf1e127"
+  },
+  {
+   "tabela": "estado.premissas_vigente",
+   "arquivo": "estado.premissas_vigente.parquet",
+   "comparar": false,
+   "sem_hash": [
+    "criada_em"
+   ],
+   "linhas": 1,
+   "sha256_conteudo": "acab2f369271e669984669abae56374301905de9a181b1b6e0d2f8e4edfc7a49",
+   "bytes": 8083,
+   "sha256_arquivo": "b2c52665816f9ac3cc6c8c0a0ae845adec78981c51f20217bc0203913afc3aad"
+  }
+ ]
+}

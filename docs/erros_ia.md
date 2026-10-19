@@ -354,3 +354,21 @@ Formato de cada entrada:
 - **O que aconteceu:** na galeria "antes", 100 das 182 falhas eram da própria ferramenta: 404 internos do Streamlit em `/_stcore/` tratados como erro nosso, e contagem de barras lida de `gd.data` (binário no Plotly 6). Também faltavam o texto de botão e a tabela dentro do expansor nas checagens.
 - **Correção:** filtro de `/_stcore/` com o motivo documentado em `ouvir_console`; `gd._fullData`/`gd.calcdata`; seletor de botão; o `abrir` expande os expansores do Mercado. As comparações "antes × depois" separam essas categorias.
 - **Bom para os slides?** não
+
+## 2026-10-19 — `pipeline.py --help` trocava o banco por um vazio (achado no clone limpo)
+- **Onde:** `pipeline.py` (`main(sys.argv[1])` sem validação dos argumentos).
+- **O que aconteceu:** qualquer argumento desconhecido (ex.: `--help`) era tratado como etapa; nenhuma etapa rodava, mas a carga atômica criava um banco quase vazio e fazia `os.replace` sobre `data/radar.duckdb`. Num clone limpo só criou um banco vazio; no ambiente do autor teria apagado a carga real. Nenhum teste chamava o pipeline pela linha de comando.
+- **Correção:** ver o registro da rodada "repositório reproduzível" no diário (argparse com `--help`, etapas válidas e `--a-partir-de`; teste de linha de comando).
+- **Bom para os slides?** sim (um `--help` inofensivo que destruía dados).
+
+## 2026-10-19 — Instalador de dados punha os arquivos numa subpasta (achado na prova final)
+- **Onde:** `scripts/baixar_dados.py`.
+- **O que aconteceu:** o script criava a pasta de destino e depois movia a pasta extraída para dentro dela (`shutil.move` numa pasta que já existe = mover para dentro). O silver ia para `data/silver/extr_silver/`, e o `pipeline.py --a-partir-de silver` dizia "Nenhum Parquet". A conferência de hashes tinha passado, porque era feita antes de mover.
+- **Correção:** move arquivo por arquivo para o caminho do manifesto. O `tests/test_pacotes.py`, com pacote sintético, confere a estrutura final, as partes, o arquivo corrompido e o `--substituir`.
+- **Bom para os slides?** sim (conferir o hash não basta: é preciso conferir onde o arquivo foi parar).
+
+## 2026-10-19 — Troca de pastas falhava no OneDrive
+- **Onde:** `scripts/gerar_publico.py` e `scripts/empacotar_dados.py`.
+- **O que aconteceu:** renomear e apagar pastas recém-alteradas falhou (WinError 183 e 5), porque o OneDrive segura a pasta enquanto sincroniza. O `data/publico` anterior ficou intacto; sobraram pastas vazias ignoradas pelo git.
+- **Correção:** troca arquivo por arquivo, com o manifesto por último (`publico.trocar_conteudo`), e remoção de pastas com novas tentativas.
+- **Bom para os slides?** não

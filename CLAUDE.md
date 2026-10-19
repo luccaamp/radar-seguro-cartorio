@@ -31,6 +31,7 @@ Projeto de portfólio, 100% gratuito e rodando localmente, com um painel de cart
 - Nunca invente valores de premissa, URLs, números de normas ou dados apresentados como reais. Onde não houver fonte, use `fonte: suposição` e me avise.
 - Nenhum número fixo no código. Premissas ficam em `config/`, versionadas e com fonte.
 - Nenhum nome ou CPF de titular em painel, resposta do chat ou log de saída.
+- **Público (repositório e Release públicos):** nenhuma ESTIMATIVA do modelo no nível de serventia (passivo, déficit, probabilidade, IS, prêmio); dados de origem já publicados pelas fontes oficiais (CNJ, RAIS/PDET, Receita, IBGE, SUSEP) podem ir, desde que sem dado pessoal (D-030).
 - Arquivos grandes (bronze, banco DuckDB) nunca vão para o git.
 - Painel e chat só leem tabelas públicas; `gold.interno_*` (e qualquer `interno_*`) é proibido fora do pipeline (testado em `tests/test_app_codigo.py`).
 
