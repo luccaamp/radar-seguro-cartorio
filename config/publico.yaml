@@ -54,5 +54,12 @@ excecoes_limiar:
 # (susep_garantia) são dado de origem, não estimativa do modelo, e não casam com a expressão.
 estimativas_do_modelo: '(^|_)(passivo|deficit|descoberto|peso_universo|prob_deficit|pct_descoberto|importancia_segurada|receita_ref|classe(_v\d)?|n_deficit|valor_descoberto|mercado_premio\w*|seguradora_\w+)($|_)'
 
+# D-031 (decisão do autor, 2026-10-19): os vínculos da RAIS vão no silver público só com as colunas que o pipeline
+# usa (id_vinculo, cod_ibge, ativo_31_12, tipo_vinculo, prazo_indeterminado, rem_dezembro, rem_media,
+# tempo_emprego_meses). Estas saem do pacote público (o silver interno fica igual): não entram em nenhuma conta e,
+# num município pequeno, ocupação e meses de admissão e desligamento ajudam a identificar a pessoa.
+silver_publico_remover:
+  rais_vinculo: [ano_base, tipo_estabelecimento, horas_contratadas, mes_admissao, mes_desligamento, cbo]
+
 # nomes de coluna proibidos no público (expressão regular, sem diferenciar maiúsculas)
 colunas_proibidas: '(^|_)(cns|cpf|email|e_mail|telefone|responsavel|substitutos?|titular|delegatario|endereco|cep)($|_)'

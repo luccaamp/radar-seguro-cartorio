@@ -62,15 +62,17 @@ def silver_sem_dado_pessoal(con) -> None:
 
 
 def silver_publico(pasta: Path) -> tuple[list[Path], list[str]]:
-    """Silver do pacote público (D-030): os Parquet do silver sem nenhuma coluna de estimativa do modelo
-    (config/publico.yaml, estimativas_do_modelo). Devolve os arquivos e as colunas retiradas (tabela.coluna)."""
+    """Silver do pacote público (D-030, D-031): os Parquet do silver sem nenhuma coluna de estimativa do modelo
+    (config/publico.yaml, estimativas_do_modelo) e sem as colunas de silver_publico_remover. Devolve os arquivos e as
+    colunas retiradas (tabela.coluna)."""
     padrao = re.compile(publico.CONFIG["estimativas_do_modelo"], re.IGNORECASE)
+    remover = publico.CONFIG.get("silver_publico_remover") or {}   # D-031: colunas que o pipeline não usa
     pasta.mkdir(parents=True)
     arquivos, retiradas = [], []
     with duckdb.connect() as con:
         for p in sorted(SILVER.glob("*.parquet")):
             cols = [c for (c,) in con.execute(f"SELECT name FROM parquet_schema('{p.as_posix()}') WHERE name <> 'duckdb_schema'").fetchall()]
-            fora = [c for c in cols if padrao.search(c)]
+            fora = [c for c in cols if padrao.search(c) or c in remover.get(p.stem, [])]
             retiradas += [f"silver.{p.stem}.{c}" for c in fora]
             destino = pasta / p.name
             if fora:
@@ -137,7 +139,7 @@ def main() -> None:
             with tempfile.TemporaryDirectory() as tmp:
                 pasta = Path(tmp) / "silver"
                 arquivos, retiradas = silver_publico(pasta)
-                print(f"  campos de estimativa do modelo no silver: {retiradas or 'nenhum'}")
+                print(f"  colunas retiradas do silver público (estimativas do modelo e D-031): {retiradas or 'nenhuma'}")
                 artefatos.append(artefato("silver", "silver", pasta, arquivos, "data/silver", saida, carga))
         elif "silver" in camadas:
             artefatos.append(artefato("silver", "silver", SILVER, sorted(SILVER.glob("*.parquet")), "data/silver",

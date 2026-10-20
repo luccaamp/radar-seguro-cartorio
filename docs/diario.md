@@ -377,3 +377,19 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
   - Trocar pastas exigiu substituir arquivo por arquivo.
   - Num clone fora do OneDrive, o `uv sync` desta máquina precisa de `UV_LINK_MODE=copy`. O motivo é o cache do uv, e um estranho não tem isso.
 - **Próximo passo:** o autor publica (passo a passo em `docs/publicacao.md`). Depois, Bloco 2.
+
+## 2026-10-19 — Limpeza do projeto (docs/limpeza_projeto.md): seção 2 e Etapa 1 (inventário)
+- **Seção 2 feita:**
+  - `CLAUDE.md` com 5 regras restauradas ou acrescentadas, mais as linhas do `ESTADO_ATUAL.md`;
+  - usuário do Windows trocado por `<usuario>` em `docs/prompts.md` (único arquivo versionado com o padrão);
+  - D-031: 6 colunas da RAIS fora do silver público; prova: 25/25 tabelas idênticas a partir do pacote público novo;
+  - registro completo da Fase 1: 8 erros novos em `erros_ia.md`, mais a seção "Erros do revisor"; status de D-028 a D-030; seção "Fase 1" no `prompts.md`;
+  - `docs/ESTADO_ATUAL.md` criado.
+- **Linha de base:** em `C:\radar_arquivo\baseline\`: hash de conteúdo das 25 tabelas do gold e das 25 públicas, 10 números de referência, listas de testes (125 / 70 / 2), cópia da galeria, tamanhos.
+- **Ferramentas de dev instaladas:** ruff, vulture, coverage, deptry.
+- **Testes de ausência:** numa cópia completa fora do OneDrive, 12 rodadas (item retirado → pipeline a partir do bronze → suíte padrão). Todas deram gold 25/25 e números iguais. P3 (`BaseCompleta.zip` da SUSEP) e a combinação da D-032 mudam só `silver.fonte_metadados`: a URL e a hora de coleta da SUSEP vêm hoje dos metadados do zip original.
+- **Teste de extração da D-032:** CNPJ e SUSEP regeneram o extrato com o mesmo SHA-256. A RAIS não: o coletor lê o original com o separador errado (registrado em `erros_ia.md`).
+- **Coverage** (pipeline do bronze + 3 suítes): nenhum módulo morto. O que não roda é coleta (precisa de internet), scripts de linha de comando chamados como subprocesso e callbacks de botão. Sobras pontuais: `CINZA_AGREGADO`, `lim_v2`, `import json` no gold, dois imports em testes, `passivo.como_dict` e `Checagem.ok`.
+- **deptry:** `pydantic` sem uso; `numpy` usado sem estar declarado.
+- **Dados reais:** intactos (assinatura igual antes e depois).
+- **Próximo passo:** aprovação do autor na Parada 1.

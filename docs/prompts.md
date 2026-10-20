@@ -75,15 +75,15 @@ O Markdown traz:
 - as ferramentas em uma linha cada, só com a ação, sem o resultado;
 - as notificações automáticas e os avisos do editor como notas de uma linha.
 
-Rode os comandos no terminal, dentro da pasta do projeto.
+Rode os comandos no terminal, dentro da pasta do projeto. O Claude Code guarda as sessões numa pasta cujo nome é o caminho do projeto com `\`, `:`, espaços e acentos trocados por `-`. No caso do autor, o caminho é `C:\Users\<usuario>\OneDrive\Área de Trabalho\Projeto_Nubank`, e a pasta fica como nos comandos abaixo. Troque `<usuario>` pelo seu usuário do Windows.
 
 1. Veja qual é o arquivo da conversa. O mais recente aparece primeiro:
    ```powershell
-   Get-ChildItem "$env:USERPROFILE\.claude\projects\c--Users-rafae-OneDrive--rea-de-Trabalho-Projeto-Nubank\*.jsonl" | Sort-Object LastWriteTime -Descending | Select-Object Name, LastWriteTime
+   Get-ChildItem "$env:USERPROFILE\.claude\projects\c--Users-<usuario>-OneDrive--rea-de-Trabalho-Projeto-Nubank\*.jsonl" | Sort-Object LastWriteTime -Descending | Select-Object Name, LastWriteTime
    ```
 2. Converta, trocando `<id>` pelo nome do arquivo e escolhendo o nome da saída e o título:
    ```powershell
-   uv run python scripts\jsonl_para_md.py "$env:USERPROFILE\.claude\projects\c--Users-rafae-OneDrive--rea-de-Trabalho-Projeto-Nubank\<id>.jsonl" "conversas\AAAA-MM-DD-nome.md" "Conversa — título"
+   uv run python scripts\jsonl_para_md.py "$env:USERPROFILE\.claude\projects\c--Users-<usuario>-OneDrive--rea-de-Trabalho-Projeto-Nubank\<id>.jsonl" "conversas\AAAA-MM-DD-nome.md" "Conversa — título"
    ```
 
 O comando recebe três argumentos, nesta ordem: o `.jsonl` de origem, o `.md` de saída e o título. No fim, ele mostra quantas mensagens, respostas, ferramentas e notificações converteu.
@@ -93,3 +93,29 @@ Observações:
 - Se o arquivo de saída já existir, ele é substituído.
 - O raciocínio interno da IA não fica gravado no `.jsonl`, então não aparece no Markdown.
 - Exemplos já gerados: `conversas/2026-10-17-sessao0.md` e `conversas/2026-10-18-fase0.md`.
+
+---
+
+## Fase 1 — documentos de pedido usados (registro, acrescentado em 2026-10-19)
+
+A Fase 1 foi conduzida por documentos de pedido escritos pelo autor (e um de resposta da IA), lidos inteiros pela IA a cada rodada. Caminho final: `docs/historico/`, depois da limpeza (`docs/limpeza_projeto.md`, Etapa 2; até lá, os arquivos estão em `docs/`). O `plano_qualidade_e_correcoes.md` continua em `docs/`, porque o Bloco 2 ainda será executado.
+
+| Ordem | Data | Documento (caminho final) | Objetivo |
+|---|---|---|---|
+| 1 | 2026-10-18 | `docs/historico/revisao_fase1.md` | Revisão crítica do painel aberto (carga das 09:52, premissas v1), blocos A a E. |
+| 2 | 2026-10-18 | `docs/historico/verificacao_final_fase1.md` | Verificação de fechamento: bloco F, conferência contra o CSV do BI do CNJ; só leitura, com [VERIFICAR]. |
+| 3 | 2026-10-18 | `docs/historico/resposta_verificacao_final_fase1.md` | Resposta da IA aos dois documentos acima (medições e propostas D-019 a D-025), sem implementar nada. |
+| 4 | 2026-10-18 | `docs/historico/aprovacao_etapa1_fase1.md` | Aprovação item a item das propostas e execução da Etapa 1 dos ajustes finais. |
+| 5 | 2026-10-18 | `docs/plano_qualidade_e_correcoes.md` (fica em `docs/`) | Plano de correções e qualidade; Bloco 1 executado (tela e engenharia, sem mudar número); Bloco 2 pendente. |
+| 6 | 2026-10-18 | `docs/historico/revisao_painel_filtros.md` | Revisão do painel com filtros: decisões D-026/D-027, erros E1 a E10, U1, auditoria própria. |
+| 7 | 2026-10-18 | (`auditoria_painel_v3.md`, substituído e não executado; não está no projeto) | — |
+| 8 | 2026-10-18/19 | `docs/historico/correcoes_e_qa_visual.md` | Aprovações (D-027, D-028), correções C1 a C4 e QA visual automático (Playwright e axe). |
+| 9 | 2026-10-19 | `docs/historico/repositorio_reproduzivel.md` | Repositório reproduzível: conjunto público, modo demonstração, pacotes de dados (D-029, D-030). |
+| 10 | 2026-10-19 | `docs/historico/limpeza_projeto.md` | Ajustes finais (D-031, registro da Fase 1, `ESTADO_ATUAL.md`) e limpeza do projeto em duas paradas. |
+
+### Mensagens curtas de envio mais usadas
+- "Leia @docs/X.md por inteiro. Execute somente o BLOCO 1 e pare na Parada 1 com o relatório pedido. Não comece o Bloco 2. Nada de commit ou push."
+- "Leia @docs/X.md por inteiro. Ele substitui o Y.md (não execute aquele). Siga a ordem: … → relatório da seção 6. Nada de commit ou push. Não comece o Bloco 2."
+- "Leia @docs/X.md por inteiro antes de começar. Comece respondendo ao [VERIFICAR] da seção N. Depois execute a etapa na ordem da seção M, respeitando os pontos de parada. Nada de commit ou push. No fim, entregue o relatório da seção K e PARE."
+- "Peça aprovação antes de instalar qualquer pacote." / "Peça minha aprovação antes de converter as conversas."
+- Pendências da rodada anterior no começo da mensagem, numeradas, antes do "Leia @docs/…" ("Antes de tudo, as pendências da rodada anterior: 1. … 2. … 3. …").

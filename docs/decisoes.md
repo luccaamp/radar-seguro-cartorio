@@ -357,3 +357,28 @@ Formato:
   - é gerado fora do OneDrive (cota gratuita).
 - **Licença do código:** MIT (escolha do autor).
 - **Fonte:** `docs/repositorio_reproduzivel.md` (2.5); `config/pacotes.yaml`; `scripts/empacotar_dados.py`; `scripts/baixar_dados.py`; `docs/publicacao.md`.
+
+> Status conferido em 2026-10-19 (`docs/limpeza_projeto.md` 2.4): D-019 a D-024 têm decisão final; D-025 continua PROPOSTA (Etapa 2); D-026 e D-027 APROVADAS. As notas abaixo deixam explícito o status das três últimas, que não tinham linha própria.
+
+### D-028 — status: APROVADA (decisão do autor, 2026-10-18)
+- Decidida pelo autor em `docs/correcoes_e_qa_visual.md`, seção 1.2; texto da decisão acima.
+
+### D-029 — decisão final: APROVADA (2026-10-19)
+- Proposta e aplicada pela IA (opção b, `data/publico/`); aprovada pelo autor em `docs/limpeza_projeto.md`, seção 1, junto com os dois ajustes de LGPD (`rec_municipio` e `dim_municipio`) e a exceção do `dim_municipio.n_serventias`.
+
+### D-030 — status: APROVADA (decisão do autor, 2026-10-19)
+- Desenho decidido pelo autor em `docs/repositorio_reproduzivel.md` 2.5; regra de LGPD do público corrigida pelo autor; licença MIT aprovada (`docs/limpeza_projeto.md`, seção 1).
+
+## D-031 — Vínculos da RAIS no silver público, só com as colunas que o pipeline usa
+- **Data:** 2026-10-19
+- **Contexto:** o `silver.rais_vinculo` vai no pacote público (D-030). Não tem nome nem CPF, mas, num município com 1 cartório e 1 empregado, o vínculo revela o salário daquela pessoa.
+- **Decisão (do autor):** manter no público. O mesmo dado já está nos microdados públicos da RAIS (PDET), filtráveis por CNAE e município; redistribuir não acrescenta exposição (mesma lógica da D-028).
+- **Condição (do autor):** o pacote público leva só as colunas que o pipeline usa.
+- **Conferência da IA:**
+  - colunas do silver: `id_vinculo`, `ano_base`, `ativo_31_12`, `tipo_vinculo`, `tipo_estabelecimento`, `rem_dezembro`, `rem_media`, `tempo_emprego_meses`, `horas_contratadas`, `mes_admissao`, `mes_desligamento`, `cbo`, `prazo_indeterminado`, `cod_ibge`;
+  - não há CNPJ, CAEPF, data de nascimento, raça nem sexo (o filtro do silver já descartava esses campos do arquivo da RAIS);
+  - o pipeline usa 8: `id_vinculo` (contrato de chave), `cod_ibge`, `ativo_31_12`, `tipo_vinculo`, `prazo_indeterminado` (contrato), `rem_dezembro`, `rem_media` e `tempo_emprego_meses` (`src/model/distribuicao.py`, `src/quality/contratos.py`, `src/quality/reconciliacao.py`);
+  - saem do pacote público as outras 6: `ano_base`, `tipo_estabelecimento`, `horas_contratadas`, `mes_admissao`, `mes_desligamento` e `cbo`. Ocupação e meses de admissão e desligamento ajudam a identificar a pessoa num município pequeno e não entram em nenhuma conta.
+- **Onde:** `config/publico.yaml` (`silver_publico_remover`), aplicado por `scripts/empacotar_dados.py`. O silver interno, o do pacote da equipe e o banco ficam iguais.
+- **Prova:** pacote público novo → `pipeline.py --a-partir-de silver` num clone fora do OneDrive → 25 de 25 tabelas com o mesmo hash de conteúdo do conjunto público.
+- **Ajuste necessário:** a lista de contratos do silver não pode depender das colunas presentes (ver `docs/erros_ia.md`, 2026-10-19).

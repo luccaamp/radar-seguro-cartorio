@@ -54,8 +54,10 @@ def sem_dados_pessoais(con, schema: str) -> list[Checagem]:
         out.append(Checagem(f"{schema}.{tab}", "sem colunas de dados pessoais", "erro", len(proibidas),
                             ", ".join(proibidas)))
         textos = [c for t, c, tipo in cols if t == tab and tipo == "VARCHAR"]
-        if textos:
-            cond = " OR ".join(f"regexp_matches(\"{c}\", '{REGEX_CPF}')" for c in textos)
+        # no silver, sempre presente (0 se a tabela não tem texto): a lista de checagens não pode depender de quais
+        # colunas o silver traz (o silver público da D-031 tem menos colunas que o interno). No gold, como antes.
+        if textos or schema == "silver":
+            cond = " OR ".join(f"regexp_matches(\"{c}\", '{REGEX_CPF}')" for c in textos) or "false"
             out.append(condicao(con, f"{schema}.{tab}", "sem CPF em campos de texto", cond))
     return out
 

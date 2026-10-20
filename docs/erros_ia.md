@@ -372,3 +372,70 @@ Formato de cada entrada:
 - **O que aconteceu:** renomear e apagar pastas recém-alteradas falhou (WinError 183 e 5), porque o OneDrive segura a pasta enquanto sincroniza. O `data/publico` anterior ficou intacto; sobraram pastas vazias ignoradas pelo git.
 - **Correção:** troca arquivo por arquivo, com o manifesto por último (`publico.trocar_conteudo`), e remoção de pastas com novas tentativas.
 - **Bom para os slides?** não
+
+## Registro completo da Fase 1 (acrescentado em 2026-10-19, `docs/limpeza_projeto.md` 2.4)
+Os erros abaixo foram achados nas revisões da Fase 1 e ainda não tinham entrada própria aqui; os demais da lista do autor já estavam registrados acima (A1, A2, A4, A5, D1, E1, E1-b com RTD × RCPJ, testes gravando no banco e nos Parquet, "$" virando fórmula, zoom do município, `pipeline.py --help`, instalador em subpasta, edição por script).
+
+## 2026-10-19 — `qualidade.rec_municipio` publicava grupos com 1 ou 2 serventias
+- **Onde:** `src/quality/reconciliacao.py` (`rec_municipio_publico`), página Qualidade dos dados.
+- **O que aconteceu:** a versão pública (D1) somava os municípios pequenos por região imediata, mas não conferia o tamanho do grupo. 4 grupos tinham 1 ou 2 serventias e mostravam o CLT declarado e os vínculos da RAIS delas. O teste de LGPD do painel olhava só nomes de município, não contagens.
+- **Como foi achado:** pela checagem de limiar do `scripts/gerar_publico.py`, ao montar o conjunto público.
+- **Correção:** os grupos pequenos viram uma linha "Outras regiões" (com proteção para o caso de a soma também ficar pequena). Os números de referência não mudaram.
+- **Bom para os slides?** sim (a proteção existia, mas não era testada no lugar certo).
+
+## 2026-10-18 — C1 a C3 declarados corrigidos por teste estrutural, sem efeito na tela
+- **Onde:** página Mercado (ranking, escala do mapa, colunas das tabelas); `tests/test_auditoria_painel.py`.
+- **O que aconteceu:** na revisão dos filtros (E2, E3), a IA declarou corrigidos o rótulo cortado da maior barra e a escala de cores, porque o teste do AppTest conferia o JSON da figura (eixo até 1,15 × o máximo, `colorbar` presente). Na tela, o "R$ 6,3 mi" continuava cortado, a escala não tinha título e colunas sumiam em 1280 px.
+- **Como foi achado:** pelo autor, olhando o painel (C1 a C3 de `correcoes_e_qa_visual.md`); a galeria com Playwright confirmou (182 falhas no "antes").
+- **Correção:** QA visual com prints e checagens pelo DOM (`scripts/qa_painel.py`, `tests/test_visual.py`, `-m visual`); só conta como corrigido o que aparece certo no print "depois".
+- **Bom para os slides?** sim (teste verde que não olhava a tela).
+
+## 2026-10-18 — "Juíz de Fora" com acento no painel (C4)
+- **Onde:** nomes de região do IBGE no silver e no Mercado.
+- **O que aconteceu:** a API de localidades do IBGE grafa a região intermediária 3106 como "Juíz de Fora". A IA levou o nome adiante sem conferir contra o nome do município-sede.
+- **Como foi achado:** pelo autor, no painel.
+- **Correção:** `config/correcoes_nomes.yaml`, com a evidência, aplicado no silver (o bronze não muda), e o teste `tests/test_nomes.py`: nenhum nome de região difere do município do IBGE só por acento.
+- **Bom para os slides?** não
+
+## 2026-10-19 — `GROUP BY` sem `ORDER BY`: texto mudava de ordem entre cargas
+- **Onde:** `src/quality/reconciliacao.py` (detalhe da checagem "cobertura da arrecadação" e linhas do `resumo_publico`).
+- **O que aconteceu:** a ordem das partes do texto vinha de um `GROUP BY` sem `ORDER BY`, que o DuckDB não garante. Os números eram iguais, mas o hash de conteúdo da tabela mudava.
+- **Como foi achado:** na prova de reprodutibilidade (24 de 25 tabelas idênticas no caminho 3).
+- **Correção:** `ORDER BY 1` nas duas consultas; a prova passou a dar 25 de 25.
+- **Bom para os slides?** não
+
+## 2026-10-19 — Regra do mínimo de 3 serventias ausente do `CLAUDE.md`
+- **Onde:** `CLAUDE.md`, "Regras inegociáveis".
+- **O que aconteceu:** ao escrever a regra de LGPD do público (D-030), a IA não conferiu que a regra do mínimo de 3 serventias por área (SPEC, seção de LGPD; D-026, D-027) também estava no `CLAUDE.md`. Ela não estava: o histórico do git não mostra essa regra em nenhuma versão commitada do arquivo, então a lacuna vinha de antes e não foi notada.
+- **Como foi achado:** pelo autor, comparando o `CLAUDE.md` com as regras do projeto (`limpeza_projeto.md` 2.1).
+- **Correção:** regra restaurada em 2026-10-19, junto com as do pacote da equipe, do `gh`, do disco e do dado pessoal.
+- **Bom para os slides?** não
+
+## 2026-10-19 — Pacote de dados gravado dentro do OneDrive
+- **Onde:** `scripts/empacotar_dados.py` (saída padrão `pacotes/<nivel>/`, dentro do projeto).
+- **O que aconteceu:** a IA percebeu o risco no pacote da equipe (8,4 GB) e o gerou fora do OneDrive com `--saida`, mas deixou a saída padrão dentro do projeto, e o pacote público de teste ficou lá (`pacotes/publico`, 2,6 MB), sincronizado pelo OneDrive.
+- **Como foi achado:** pelo autor (pré-inventário da limpeza, P5).
+- **Correção:** proposta na limpeza (Etapa 2): saída padrão em `C:\radar_pacotes`, e a pasta do projeto removida.
+- **Bom para os slides?** não
+
+## 2026-10-19 — Lista de contratos do silver dependia de quais colunas existiam
+- **Onde:** `src/quality/contratos.py` (`sem_dados_pessoais`).
+- **O que aconteceu:** o contrato "sem CPF em campos de texto" só era criado para tabelas com colunas de texto. Ao tirar do silver público as colunas que o pipeline não usa (D-031), a `rais_vinculo` ficou sem texto, a checagem sumiu e `qualidade.checagens` deixou de bater com o conjunto público (gold 18 de 18 idêntico, mas 24 de 25 tabelas no total).
+- **Como foi achado:** no teste da D-031 (pacote público novo + `pipeline.py --a-partir-de silver` num clone).
+- **Correção:** no silver, a checagem sai sempre (0 se não há texto); no gold, como antes, para não mudar a carga real. O teste voltou a dar 25 de 25.
+- **Bom para os slides?** não
+
+## Erros do revisor (assistente no chat)
+O projeto registra erros de IA de qualquer origem, inclusive do assistente que revisa as rodadas no chat (informados pelo autor em 2026-10-19).
+- **Manchas escuras no mapa de serventias:** interpretadas como efeito da agregação; eram reais (municípios com muitos distritos de registro civil). Ver o diário, leitura 5 da revisão dos filtros.
+- **Almenara "cortada no mapa":** apontada como defeito; era um zoom manual do autor no momento da exportação do print.
+- **`config/apelidos_municipios.yaml` "vazio":** o "0 KB" do levantamento era arredondamento; o arquivo tem as grafias que diferem do IBGE e é usado na normalização.
+- **Partição "todas × obrigadas" (Almenara) como vazamento crítico:** o autor discordou e decidiu pela D-028 (partições internas da mesma visão não são suprimidas).
+- **Plano de repositório com um repositório só:** uma versão do plano contrariava a decisão do autor (dois repositórios: código público e dados privado; D-030).
+
+## 2026-10-19 — O coletor da RAIS não regera o extrato a partir do original (achado no inventário da limpeza)
+- **Onde:** `src/ingest/rais.py`, `filtrar()`.
+- **O que aconteceu:** o `.COMT` dos vínculos (extraído do `.7z`) vem separado por vírgula e entre aspas; o `filtrar()` lê com `;` e procura `"CNAE 2.0 Subclasse - Codigo"` num cabeçalho que vira uma coluna só (`ValueError`). O extrato do bronze (`RAIS_VINC_PUB_MG_ES_RJ_CNAE6912500_MG.csv`, separado por `;`) não pode ter saído desta versão do código; o pipeline funciona porque lê o extrato pronto. É a mesma causa da entrada de 2026-10-17 ("separador fixado como `;`, quando o arquivo usa `,`"), que voltou no coletor de vínculos.
+- **Como foi achado:** no teste de extração da D-032 (cópia fora do OneDrive): regenerar o extrato a partir do `.7z` guardado. CNPJ e SUSEP regeneraram com o mesmo SHA-256; a RAIS quebrou.
+- **Correção:** não feita (a limpeza não mistura correção; princípio 5 de `docs/limpeza_projeto.md`). Proposta na Parada 1: detectar o separador e conferir que o extrato regenerado tem o mesmo hash, antes de tirar os originais da RAIS do bronze oficial.
+- **Bom para os slides?** sim (o pipeline passava; só regenerar o dado do zero mostrou que a coleta não é reprodutível).
