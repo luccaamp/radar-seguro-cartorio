@@ -66,6 +66,8 @@ def notificacao(t):
     return uma_linha(txt or t, 240)
 
 
+sys.stdout.reconfigure(encoding="utf-8")   # também redirecionada (docs/erros_ia.md, 2026-10-20)
+sys.stderr.reconfigure(encoding="utf-8")
 arq, saida, titulo = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
 regs = []
 with open(arq, encoding="utf-8") as f:

@@ -13,8 +13,11 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito e local.
   - Limpeza do projeto (`docs/historico/limpeza_projeto.md`) commitada na `main` (`dc0496b`, `be8ad32`).
   - Releases publicados: `dados-2026-10-19` (público), `carga-2026-10-19` e `originais-2026` (privados). O download de verdade dos privados foi testado em 2026-10-20: 25/25 tabelas, os 10 números e os 25 originais por SHA-256.
   - `main` do repositório público protegida (ruleset `main protegida`; o dono está na Bypass list; `docs/publicacao.md`, seção 4).
-- **Pasta do projeto:** sai do OneDrive para **`C:\projetos\radar-seguro-cartorio`** (D-033). Até a mudança ser feita pelo autor, o projeto ainda está no caminho antigo.
-- **Próximo:** Bloco 2, começando pelo **Q4** (receita bruta).
+  - Fechamento commitado na `main` (`21303e2`).
+- **Pasta do projeto:** **`C:\projetos\radar-seguro-cartorio`** (D-033), clonada do GitHub em 2026-10-20, com os dados copiados da pasta antiga. A pasta antiga do OneDrive ficou só como cópia de segurança e não é mais usada.
+  - Verificação completa da pasta nova em 2026-10-20 (`docs/diario.md`): suítes 137 / 73 / 2, pipeline a partir do silver com 25/25 + 25/25 e os 10 números, galeria com 0 falhas, modo demonstração ok.
+  - Linha de base do "antes" do Bloco 2: `C:\radar_arquivo\baseline_2026-10-20\linha_de_base.json` (igual à de 19/10 e ao `manifesto.json`).
+- **Próximo:** Bloco 2, começando pelo **Q4** (receita bruta), que depende do **Q8** (repasse por serventia no silver).
 
 ## Ordem das etapas (decisão do autor, 2026-10-20; `docs/SPEC.md`, §8)
 1. **Bloco 2:** qualidade dos dados (`docs/plano_qualidade_e_correcoes.md`), começando pelo **Q4** (receita bruta do Prov. 213 × arrecadação × arrecadação menos repasse).
@@ -49,22 +52,24 @@ O conjunto público (`data/publico/manifesto.json`) traz o hash de cada tabela. 
 - **D-033:** projeto sai do OneDrive para `C:\projetos\radar-seguro-cartorio`; pacotes e originais continuam fora do projeto.
 
 ## Em andamento e próximos 5 passos
-1. Autor faz o commit do fechamento da Fase 1 (esta rodada).
-2. Autor muda o projeto para `C:\projetos\radar-seguro-cartorio` (D-033): clone novo, cópia do que não está no git com `robocopy` e `uv sync` (lista no relatório de 2026-10-20, `docs/diario.md`).
+1. Autor aprova o plano do Q4 (e do Q8, do qual ele depende).
+2. **Bloco 2, Q8 + Q4:** diagnóstico (só medir), parada, e implementação do que o autor aprovar.
 3. Autor faz a conferência de LGPD do zip do silver público e convida os colegas (depois de quarta, 21/10).
-4. Backup externo de `C:\radar_arquivo\`, que é a única cópia local dos originais.
-5. **Bloco 2, item Q4** (receita bruta), na pasta nova.
+4. Restante do diagnóstico do Bloco 2 (Q1 a Q11) e Parada 2.
+5. Bloco 3 (premissas do seguro).
 
 ## Pendências que dependem do autor
-- **Commit** desta rodada (fechamento da Fase 1).
-- **Mudança de pasta** para `C:\projetos\radar-seguro-cartorio` (D-033). Depois dela, conferir o nome novo da pasta de sessões do Claude Code (`docs/prompts.md`) e tirar de `.claude/settings.local.json` as duas permissões com o caminho antigo.
+- **Pasta de sessões do Claude Code:** conferir o nome novo (`docs/prompts.md`).
+- **`UV_LINK_MODE=copy`:** está gravada nas variáveis do usuário do Windows, mas o VS Code aberto antes dela não a enxerga; reabrir o VS Code para valer nos terminais novos.
 - **Conferência de LGPD do zip do silver público** (`dados-2026-10-19`, já publicado): abrir o zip baixado do Release e conferir que não há nome, CPF, e-mail nem telefone de pessoa física, nem estimativa do modelo por serventia (D-030, D-031).
 - **Convite aos colegas, depois de quarta (21/10/2026)** (`docs/publicacao.md`, seção 5; `CONTRIBUTING.md`).
-- **Backup externo** de `C:\radar_arquivo\` (originais do bronze e linha de base da limpeza).
-- **`nbstripout --install`** no seu clone (uma vez), antes do primeiro notebook com saída.
 - **Configurar o e-mail "noreply"** do GitHub nos próximos commits.
 - **Revisar as regras de estilo do ruff em outra rodada:** hoje o lint usa só as regras `F` (`pyproject.toml`); as regras padrão do ruff acusam cerca de 100 avisos de estilo.
-- **`docs/qa/depois/`** (18 MB, fora do git): galeria de QA de uma rodada anterior, com os mesmos 54 nomes de `docs/qa/atual/`, mas imagens diferentes. Decidir se ainda serve ou se vai para `C:\radar_arquivo` em vez de ser copiada para a pasta nova.
+- **`docs/qa/depois/`** (18 MB, fora do git): galeria de QA de uma rodada anterior, com os mesmos 54 nomes de `docs/qa/atual/`, mas imagens diferentes. Foi copiada para a pasta nova; decidir se ainda serve ou se vai para `C:\radar_arquivo`.
+
+## Feito pelo autor fora das sessões
+- Backup externo de `C:\radar_arquivo\` em `E:\radar_arquivo` (203 arquivos, 0 falhas), com as conversas (2026-10-20).
+- `nbstripout --install` neste clone (filtro conferido em 2026-10-20 no `.git/config` e no `.git/info/attributes`).
 
 ## Onde está cada coisa
 - [`docs/SPEC.md`](SPEC.md): especificação (escopo, arquitetura, fases).

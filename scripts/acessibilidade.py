@@ -79,6 +79,8 @@ def rodar(saida: Path) -> list[dict]:
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")   # também redirecionada (docs/erros_ia.md, 2026-10-20)
+    sys.stderr.reconfigure(encoding="utf-8")
     r = rodar(RAIZ / "docs" / "qa" / "acessibilidade.md")
     print(f"{len(r)} violações; nossas: {sum(a['nossa'] for a in r)} → docs/qa/acessibilidade.md")
     for a in r:

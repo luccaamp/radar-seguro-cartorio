@@ -169,4 +169,8 @@ def argumentos(argv: list[str] | None = None) -> str:
 
 
 if __name__ == "__main__":
+    # saída em UTF-8 também quando redirecionada para arquivo ou pipe: o cp1252 do Windows não tem "≥" nem "−"
+    # (docs/erros_ia.md, 2026-10-20)
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     main(argumentos(sys.argv[1:]))

@@ -79,6 +79,8 @@ def rodar(saida: Path, checar_layout: bool) -> list:
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")   # também redirecionada (docs/erros_ia.md, 2026-10-20)
+    sys.stderr.reconfigure(encoding="utf-8")
     a = argparse.ArgumentParser()
     a.add_argument("--saida", default=str(RAIZ / "docs" / "qa" / "atual"))
     a.add_argument("--checar", action="store_true", help="também roda as checagens de layout (checagens.md)")

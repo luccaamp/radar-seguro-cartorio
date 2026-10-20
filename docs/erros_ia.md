@@ -499,3 +499,13 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Como foi achado:** pela própria IA, ao conferir com `diff -rq` antes do relatório: as imagens são diferentes.
 - **Correção:** o texto passou a dizer que é uma galeria de outra rodada, com imagens diferentes, e a decisão de mantê-la ficou com o autor. Regra: mesmo nome e tamanho parecido não provam cópia; comparar o conteúdo (hash ou `diff`).
 - **Bom para os slides?** não
+
+## 2026-10-20 — Pipeline cai quando a saída é redirecionada (codificação cp1252)
+- **Onde:** código gerado (`pipeline.py`, `etapa_gold`, linha 71, impressão das reconciliações).
+- **O que aconteceu:** `pipeline.py --a-partir-de silver` com a saída num pipe parou com `UnicodeEncodeError: 'charmap' codec can't encode character '≥'`. O texto da checagem tem "≥", e, fora de um console, o Python no Windows grava a saída em cp1252, que não tem esse caractere. O banco não foi substituído (a carga é gravada num arquivo temporário e só troca no fim). Esperado: o pipeline rodar igual com a saída no terminal, num arquivo ou num pipe.
+- **Como foi detectado:** na verificação da pasta nova (2026-10-20), ao rodar o pipeline numa cópia com a saída redirecionada para um log.
+- **Causa provável:** a IA usou caracteres fora do cp1252 nas mensagens e só testou com a saída no console (UTF-8).
+- **Correção (aprovada pelo autor e aplicada em 2026-10-20):** `sys.stdout.reconfigure(encoding="utf-8")` (e o mesmo no `stderr`) na entrada do `pipeline.py` e dos 7 scripts que imprimem (`acessibilidade`, `baixar_dados`, `empacotar_dados`, `gerar_publico`, `jsonl_para_md`, `linha_de_base`, `prints_painel`). Testes em `tests/test_saida_utf8.py`:
+  - suíte padrão: varre o `pipeline.py` e os `scripts/` e falha se um arquivo que imprime não reconfigura a saída;
+  - `dados_reais`: roda `pipeline.py --a-partir-de silver` numa cópia temporária do projeto e do banco, com `PYTHONIOENCODING=cp1252` e a saída num arquivo. Com o `pipeline.py` antigo, falha com o mesmo `UnicodeEncodeError`; com o novo, passa.
+- **Bom para os slides?** não

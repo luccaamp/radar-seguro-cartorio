@@ -2,7 +2,7 @@
 
 > Documento de referência para a IA de código (Claude Code) que constrói o projeto.
 > Leia tudo antes de escrever código. Siga as fases em ordem e não pule os critérios de aceite.
-> Última revisão: 2026-10-18 (início da Fase 1: rateio `por_empregados_cnj` como padrão, D-005). Revisão anterior: 2026-10-17 (fatos normativos conferidos no texto oficial). Esta versão torna o projeto **100% gratuito** e muda a prioridade para **painel e chat**. Histórico no `docs/diario.md`; decisões com opções e justificativa em `docs/decisoes.md`.
+> Última revisão: 2026-10-20 (fechamento da Fase 1: nova ordem das etapas no §8 e risco do OneDrive resolvido no §10, D-033). Revisão anterior: 2026-10-18 (início da Fase 1: rateio `por_empregados_cnj` como padrão, D-005). Antes: 2026-10-17 (fatos normativos conferidos no texto oficial). Esta versão torna o projeto **100% gratuito** e muda a prioridade para **painel e chat**. Histórico no `docs/diario.md`; decisões com opções e justificativa em `docs/decisoes.md`.
 
 ## 0. Contexto e objetivo
 

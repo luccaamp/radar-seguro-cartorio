@@ -1,6 +1,6 @@
 # Diário do projeto
 
-Registro cronológico de decisões, suposições, limitações e descobertas. Entrada mais recente no topo.
+Registro cronológico de decisões, suposições, limitações e descobertas. Cada entrada nova é acrescentada **no fim** do arquivo (as primeiras entradas, de 17 e 18/10, ficaram em ordem decrescente no começo).
 
 Formato de cada entrada:
 
@@ -456,3 +456,22 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Caminhos absolutos:** nenhum caminho com "OneDrive" ou "Área de Trabalho" em `src/`, `app/`, `tests/`, `scripts/`, `config/` nem no `pipeline.py`; só comentários dizendo "fora do OneDrive". O único caminho absoluto antigo está em `.claude/settings.local.json` (duas permissões de `git -C`), que não quebra nada, só deixa de valer.
 - **Nova ordem das etapas** (decisão do autor) no `docs/SPEC.md` (§8) e no `docs/ESTADO_ATUAL.md`: Bloco 2 (começando pelo Q4), Bloco 3, mineração de MG em notebooks, redesenho do painel de MG, chat com a UF como parâmetro, estudo da ordem dos estados e expansão estado por estado.
 - **Próximo passo:** commit do autor, mudança de pasta e Bloco 2, item Q4.
+
+## 2026-10-20 — Verificação completa da pasta nova (C:\projetos\radar-seguro-cartorio)
+- **Contexto:** primeira sessão na pasta nova (D-033). Pendências feitas pelo autor fora da sessão: backup externo de `C:\radar_arquivo` em `E:\radar_arquivo` (203 arquivos, 0 falhas) e `nbstripout --install` neste clone.
+- **Ambiente:** `git status` limpo, `origin` = `luccaamp/radar-seguro-cartorio`, ramo `main`, último commit `21303e2`. Filtro do `nbstripout` configurado (`.git/config` aponta para o `.venv` da pasta nova; `.git/info/attributes` com `*.ipynb filter=nbstripout`). `UV_LINK_MODE=copy` gravada nas variáveis do usuário, mas ausente nos processos desta sessão (VS Code aberto antes); passada à mão em cada comando.
+- **Dados:** 191 arquivos em `data/` (bronze 144,2 MB, silver 2,8 MB, gold 0,6 MB, público 0,6 MB, banco 17,8 MB de 19/10 23:10, amostras 0,1 MB); nenhum `carga_atual.json`. Bate com o registrado em 2026-10-20 (191 arquivos, só o banco solto na raiz).
+- **Linha de base nova** (pedido do autor): `C:\radar_arquivo\baseline_2026-10-20\linha_de_base.json`, gerada com `scripts/linha_de_base.py`. Os 10 números e os hashes de conteúdo (gold 25/25, público 25/25) são iguais aos da linha de base de 19/10; o `data/publico/manifesto.json` bate em conteúdo (25/25) e em arquivo (25/25). É a referência do "antes" do Bloco 2.
+- **Caminhos antigos:** nenhum caminho absoluto antigo no código, na configuração nem nos testes; só comentários "fora do OneDrive" (ainda verdadeiros) e um exemplo de plano B em `scripts/baixar_dados.py`. O que precisa mudar: a linha do `ESTADO_ATUAL.md` (corrigida) e as duas permissões de `.claude/settings.local.json` (decisão do autor). Histórico (diário, erros, decisões, `docs/historico/`, conversas) fica.
+- **Testes (numa cópia completa do projeto, fora do projeto real):** padrão 137 passed; `dados_reais` 73 passed; visual 2 passed. A assinatura do projeto real (191 arquivos com SHA-256 e data) ficou igual antes e depois.
+- **Reprodução (na cópia):** `pipeline.py --a-partir-de silver`: contratos do gold 62/62, gold 25/25 e público 25/25 iguais à linha de base, os 10 números iguais, `data/publico` 26/26 arquivos iguais.
+- **Achado:** com a saída redirecionada (pipe), o pipeline caiu com `UnicodeEncodeError` (cp1252 não tem "≥"). Com `PYTHONIOENCODING=utf-8`, rodou sem erro. Registrado em `erros_ia.md`.
+- **Galeria (na cópia, `--checar`):** 52 prints, 0 falhas de layout e 0 erros de console. Contra `docs/qa/atual`: 4 prints idênticos; nos outros 48, a diferença é só o carimbo "carga de 20/10/2026 12:33" (o pipeline da cópia regravou o banco) e um ponto de 3 × 4 px na borda do mapa do Mercado.
+- **Modo demonstração (cópia sem banco, bronze, silver nem gold):** as 4 páginas abrem sem exceção, com a faixa "Modo demonstração" e "Carga 2026-10-19", e mostram os números de referência. Os únicos 404 são os `/_stcore/health` e `/_stcore/host-config` do próprio Streamlit ao abrir a página pelo endereço direto (os mesmos que o `qa_painel.py` ignora).
+- **Observação:** o painel abre o banco para gravação (cria as tabelas de estado; "Salvar cenário" grava). Para conferir sem mexer no banco real, abrir com `RADAR_BANCO` apontando para uma cópia.
+- **Docs:** `ESTADO_ATUAL.md` (pasta nova, commit `21303e2`, pendências), data de revisão do `SPEC.md` e cabeçalho do diário (entradas novas no fim).
+- **Depois da verificação (aprovado pelo autor):**
+  - saída em UTF-8 no `pipeline.py` e nos 7 scripts que imprimem, com `tests/test_saida_utf8.py`: 9 testes de varredura na suíte padrão e 1 `dados_reais`, que roda o pipeline numa cópia com `PYTHONIOENCODING=cp1252`. Ele falha com o código antigo e passa com o novo;
+  - suíte padrão 146 passed (137 + 9); lint ok;
+  - retiradas do `.claude/settings.local.json` as duas permissões com o caminho do OneDrive (ficaram `python --version` e `uv --version`).
+- **Próximo passo:** plano do Q4 (e do Q8, do qual depende), para aprovação do autor.

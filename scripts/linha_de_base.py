@@ -78,6 +78,8 @@ def main(saida: Path) -> None:
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")   # também redirecionada (docs/erros_ia.md, 2026-10-20)
+    sys.stderr.reconfigure(encoding="utf-8")
     if len(sys.argv) != 2:
         raise SystemExit("Uso: uv run python scripts/linha_de_base.py <pasta de saída, fora do OneDrive>")
     main(Path(sys.argv[1]))

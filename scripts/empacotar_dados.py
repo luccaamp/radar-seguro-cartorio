@@ -233,4 +233,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")   # também redirecionada (docs/erros_ia.md, 2026-10-20)
+    sys.stderr.reconfigure(encoding="utf-8")
     main()
