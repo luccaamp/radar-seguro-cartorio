@@ -7,7 +7,6 @@ Tabelas públicas (o painel lê só estas):
 Tabelas internas (nunca exibidas por serventia, SPEC §6): gold.interno_serventia, gold.interno_insumo_*.
 """
 import datetime as dt
-import json
 
 import duckdb
 import pandas as pd

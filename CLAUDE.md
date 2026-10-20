@@ -44,6 +44,8 @@ Projeto de portfólio, 100% gratuito e rodando localmente, com um painel de cart
 - Python 3.12, dependências gerenciadas com `uv`.
 - Funções de cálculo em `src/model` são puras (sem I/O) e têm teste em `tests/`.
 - O LLM é acessado só por `src/llm.py` (Ollama local).
+- **Notebooks** (`notebooks/`): leem e não escrevem (dados só por `src/notebooks.py`, somente leitura; nunca gravar em bronze, silver ou gold); saídas sempre limpas antes do commit (`nbstripout`; `tests/test_notebooks.py`); notebook que usa `interno_*` só em `notebooks/privado/` (fora do git); código reutilizável vai para `src/` com teste.
+- Lint padrão: `uv run ruff check src app tests scripts pipeline.py --exclude scripts/arquivo`.
 - Rode `pytest` antes de declarar uma fase concluída.
 
 ## Ao terminar cada sessão

@@ -44,7 +44,6 @@ def demonstracao() -> bool:
 # paleta (skill de visualização, instância de referência): sequencial azul, série única azul, superfícies
 AZUL_SEQUENCIAL = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
 AZUL_SERIE = "#2a78d6"
-CINZA_AGREGADO = "#d9d8d4"
 
 NOMES_FONTE = {
     "cnj_serventias": "CNJ / Justiça Aberta (cadastro)",

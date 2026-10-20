@@ -6,8 +6,6 @@
 import ast
 from pathlib import Path
 
-import pytest
-
 RAIZ = Path(__file__).resolve().parents[1]
 ARQUIVOS_APP = sorted((RAIZ / "app").rglob("*.py"))
 FUNCOES_MARKDOWN = {"markdown", "caption", "write", "info", "warning", "error", "success", "subheader", "title"}

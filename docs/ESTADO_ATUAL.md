@@ -10,9 +10,9 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito e local.
 
 ## Onde estamos
 - **Fase 1 (painel de MG): concluída**, com o repositório reproduzível publicado na `main` (`be27786`).
-- **Agora:** limpeza do projeto (`docs/limpeza_projeto.md`), branch **`limpeza-fase1`**.
-  - Feitos: os ajustes rápidos (seção 2) e o inventário (Etapa 1).
-  - Aguarda a aprovação do autor na **Parada 1**.
+- **Agora:** limpeza do projeto (`docs/historico/limpeza_projeto.md`), branch **`limpeza-fase1`**.
+  - Feitos: a Etapa 2 inteira (docs, scripts, código, dependências, notebooks, dados locais e o bronze enxuto da D-032).
+  - Aguarda a revisão do autor na **Parada 2** e o commit.
 - **Depois:** Bloco 2 do `docs/plano_qualidade_e_correcoes.md` e, em seguida, a Fase 2 do SPEC (Brasil inteiro).
 
 ## Números de referência
@@ -35,25 +35,29 @@ O conjunto público (`data/publico/manifesto.json`) traz o hash de cada tabela. 
 - **D-029:** conjunto público versionado (`data/publico/`), modo demonstração e Simulador por totais.
 - **D-030:** dados em Releases (público com silver; privado com tudo); no público, nenhuma *estimativa* do modelo por serventia; licença MIT.
 - **D-031:** vínculos da RAIS no silver público, só com as colunas que o pipeline usa.
-- **D-032 (proposta, aguarda o autor):** bronze enxuto, com extrato e registro do original.
+- **D-032:** bronze enxuto (extrato + `original.json`). Os originais ficam fora do OneDrive, em `C:\radar_arquivo\bronze_originais`. O coletor da RAIS foi corrigido.
 
 ## Em andamento e próximos 5 passos
-1. Autor revisa o inventário da limpeza (Parada 1) e aprova item a item. Também decide a conversão das conversas da Fase 1 e a D-032.
-2. Etapa 2 da limpeza: mover docs de rodada para `docs/historico/`, arquivar scripts de uso único, criar `notebooks/` e mover dados não usados para `C:\radar_arquivo\`. Provas ao final: 25/25 tabelas, números iguais e as três suítes.
-3. Autor faz o commit da limpeza, regera os pacotes em `C:\radar_pacotes\` e publica os Releases (`docs/publicacao.md`).
-4. Autor protege a `main` e convida a equipe (`CONTRIBUTING.md`).
-5. Bloco 2 do plano de qualidade.
+1. Autor revisa a Parada 2 da limpeza e faz o commit na `limpeza-fase1` (e o merge na `main`).
+2. Autor publica os Releases a partir de `C:\radar_pacotes\`: o público (2,7 MB) e o da equipe com originais (≈ 9,8 GB) ou enxuto (≈ 85 MB). Ver `docs/publicacao.md`.
+3. Autor protege a `main` e convida a equipe (`CONTRIBUTING.md`).
+4. Backup externo de `C:\radar_arquivo\`, que é a única cópia local dos originais.
+5. Bloco 2 do plano de qualidade (`docs/plano_qualidade_e_correcoes.md`).
 
 ## Pendências que dependem do autor
-- **Parada 1 da limpeza:** aprovar os itens, a D-032 e a pasta `notebooks/`.
-- **Conversas:** aprovar a conversão das sessões da Fase 1 para `conversas/`.
+- **Commit da limpeza** e conversão desta sessão (`784e4eca`) para `conversas/`, ao fim dela.
 - **Releases** público e privado, proteção da `main` e convites (`docs/publicacao.md`).
-- **Backup externo** de `C:\radar_arquivo\` depois que os originais do bronze forem movidos (se a D-032 for aprovada).
+- **Backup externo** de `C:\radar_arquivo\` (originais do bronze e linha de base da limpeza).
+- **`nbstripout --install`** no seu clone (uma vez), antes do primeiro notebook com saída.
 - **Configurar o e-mail "noreply"** do GitHub nos próximos commits.
+- **Revisar as regras de estilo do ruff em outra rodada:** hoje o lint usa só as regras `F` (`pyproject.toml`); as regras padrão do ruff acusam cerca de 100 avisos de estilo.
+- **Pastas vazias** que o OneDrive não deixou apagar (ignoradas pelo git): `pacotes/`, `docs/qa/antes/`, `data/publico.antigo/`, `data/publico.novo/`.
 
 ## Onde está cada coisa
 - [`docs/SPEC.md`](SPEC.md): especificação (escopo, arquitetura, fases).
-- [`docs/decisoes.md`](decisoes.md): decisões D-001 a D-031.
+- [`docs/decisoes.md`](decisoes.md): decisões D-001 a D-032.
+- [`docs/historico/INDICE.md`](historico/INDICE.md): documentos de rodada da Fase 1.
+- [`notebooks/README.md`](../notebooks/README.md): regras dos notebooks.
 - [`docs/diario.md`](diario.md): o que foi feito e descoberto, com data.
 - [`docs/erros_ia.md`](erros_ia.md): erros da IA e do revisor, e as correções.
 - [`docs/publicacao.md`](publicacao.md): passo a passo de Releases, `main` protegida e equipe.

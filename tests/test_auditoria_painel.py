@@ -1,4 +1,4 @@
-"""Auditoria do painel (revisao_painel_filtros.md, seção 5): percorre os estados do Mercado (métricas, cada valor de
+"""Auditoria do painel (docs/historico/revisao_painel_filtros.md, seção 5): percorre os estados do Mercado (métricas, cada valor de
 cada filtro, municípios de exemplo, as duas regras) e do Simulador (3 cenários) com o AppTest e checa mapa, ranking,
 tabelas, LGPD, consistência numérica e formato. Roda na cópia temporária do banco (fixture banco_temporario).
 """

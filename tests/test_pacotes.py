@@ -64,6 +64,24 @@ def test_nao_sobrescreve_sem_substituir(tmp_path):
     assert not (raiz / "data/silver/meu.parquet").exists() and (raiz / "data/silver/a.parquet").exists()
 
 
+@pytest.mark.parametrize("carga", ["banco", "gold"])
+def test_nao_grava_carga_atual_onde_ha_banco_ou_gold(tmp_path, carga):
+    """SINTÉTICO: onde já há banco ou gold, instalar recusaria trocar o data/carga_atual.json da carga em uso (achado
+    de 2026-10-19: instalação feita da pasta errada criou o arquivo no projeto real). Só com --substituir."""
+    pac = pacote_sintetico(tmp_path)
+    raiz = tmp_path / "projeto"
+    (raiz / "data" / "gold").mkdir(parents=True)
+    existente = raiz / "data" / ("radar.duckdb" if carga == "banco" else "gold/fato.parquet")
+    existente.write_bytes(b"carga em uso")
+    r = instalar(pac, raiz)
+    assert r.returncode != 0 and "--substituir" in r.stdout + r.stderr and "carga_atual" in r.stdout + r.stderr
+    assert not (raiz / "data" / "carga_atual.json").exists() and not (raiz / "data" / "silver").exists()
+    r = instalar(pac, raiz, "--substituir")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (raiz / "data" / "carga_atual.json").exists() and (raiz / "data" / "silver" / "a.parquet").exists()
+    assert existente.read_bytes() == b"carga em uso"   # instalar o silver não mexe no banco nem no gold
+
+
 def test_arquivo_corrompido_falha(tmp_path):
     pac = pacote_sintetico(tmp_path)
     z = next(pac.glob("*.zip"))

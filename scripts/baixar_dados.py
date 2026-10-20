@@ -9,7 +9,7 @@
 
 Junta as partes, confere o hash de cada parte, do zip e de cada arquivo, e só então instala em data/<camada>/.
 Nunca sobrescreve dados locais sem --substituir. Grava data/carga_atual.json (carga e nível em uso; o painel mostra
-no rodapé).
+no rodapé); onde já há banco ou gold, recusa (antes de baixar qualquer coisa), salvo com --substituir.
 """
 import argparse
 import datetime as dt
@@ -70,11 +70,21 @@ def tem_dados(p: Path) -> bool:
     return p.is_file() or (p.is_dir() and any(p.iterdir()))
 
 
+def carga_em_uso(raiz: Path) -> str | None:
+    """O que indica uma carga em uso em `raiz`: banco (data/radar.duckdb) ou gold (data/gold/ com arquivos)."""
+    if (raiz / "data" / "radar.duckdb").exists():
+        return "banco (data/radar.duckdb)"
+    if tem_dados(raiz / "data" / "gold"):
+        return "gold (data/gold/)"
+    return None
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--nivel", choices=["publico", "equipe"], help="padrão: o do manifesto de --origem, ou publico")
     ap.add_argument("--carga", help="AAAA-MM-DD (a tag do Release)")
-    ap.add_argument("--camadas", required=True, help="lista separada por vírgula: bronze,silver,gold,banco")
+    ap.add_argument("--camadas", required=True, help="lista separada por vírgula: bronze,silver,gold,banco "
+                                                     "(equipe com --com-originais: também originais)")
     ap.add_argument("--origem", type=Path, help="pasta local com manifesto.json e os arquivos do pacote (plano B)")
     ap.add_argument("--substituir", action="store_true", help="substitui dados locais que já existem")
     ap.add_argument("--raiz", type=Path, default=RAIZ, help=argparse.SUPPRESS)   # testes: instalar noutra pasta
@@ -96,11 +106,18 @@ def main() -> None:
                              "completo e banco são dos dados da equipe (CONTRIBUTING.md).")
         artefatos = [a for a in man["artefatos"] if a["camada"] in camadas]
         # nada é baixado se algum destino já tiver dados e não houver --substituir
-        ocupados = [a["destino"] for a in artefatos if a["camada"] != "banco" and tem_dados(args.raiz / a["destino"])]
+        local = {a["nome"]: pacotes.destino_local(a["destino"], args.raiz) for a in artefatos}   # originais: fora
+        ocupados = [str(local[a["nome"]]) for a in artefatos if a["camada"] != "banco" and tem_dados(local[a["nome"]])]
         ocupados += [f"{a['destino']}/{f['caminho']}" for a in artefatos if a["camada"] == "banco"
-                     for f in a["arquivos"] if (args.raiz / a["destino"] / f["caminho"]).exists()]
+                     for f in a["arquivos"] if (local[a["nome"]] / f["caminho"]).exists()]
         if ocupados and not args.substituir:
             raise SystemExit(f"Já há dados locais em {ocupados}. Nada foi alterado. Use --substituir para trocar.")
+        # o data/carga_atual.json diz qual carga o painel mostra: onde já há banco ou gold, gravá-lo trocaria essa
+        # informação de um projeto em uso (achado de 2026-10-19: uma instalação feita da pasta errada o criou no
+        # projeto real). Só com --substituir.
+        if not args.substituir and (motivo := carga_em_uso(args.raiz)):
+            raise SystemExit(f"Este projeto já tem {motivo}: instalar aqui gravaria data/carga_atual.json por cima da "
+                             "carga em uso. Nada foi alterado. Confira a pasta (--raiz) ou use --substituir.")
 
         total = sum(p["bytes"] for a in artefatos for p in pacotes.arquivos_publicados(a))
         print(f"carga {man['carga']} · nível {nivel} · {len(artefatos)} artefatos · {total / 1e6:,.1f} MB")
@@ -112,14 +129,14 @@ def main() -> None:
             extr = tmp / f"extr_{a['nome']}"
             pacotes.extrair_conferindo(a, zip_, extr)
             zip_.unlink()
-            destino = args.raiz / a["destino"]
+            destino = local[a["nome"]]
             if a["camada"] != "banco" and tem_dados(destino):   # só chega aqui com --substituir
                 shutil.rmtree(destino)
             for f in a["arquivos"]:   # arquivo por arquivo: os já conferidos, na mesma estrutura de pastas
                 alvo = destino / f["caminho"]
                 alvo.parent.mkdir(parents=True, exist_ok=True)
                 shutil.move(str(extr / f["caminho"]), str(alvo))
-            print(f"     ok: {len(a['arquivos'])} arquivos conferidos em {a['destino']}")
+            print(f"     ok: {len(a['arquivos'])} arquivos conferidos em {destino}")
 
     info = {"carga": man["carga"], "nivel": nivel, "camadas": camadas, "versao_premissas": man["versao_premissas"],
             "commit_da_carga": man.get("commit"), "instalado_em": dt.datetime.now().replace(microsecond=0).isoformat()}

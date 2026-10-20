@@ -1,4 +1,4 @@
-# Grade de variantes do passivo para o Simulador no modo demonstração (sem dados internos; D-029, docs/repositorio_reproduzivel.md 2.3).
+# Grade de variantes do passivo para o Simulador no modo demonstração (sem dados internos; D-029, docs/historico/repositorio_reproduzivel.md 2.3).
 # Não são premissas: são os pontos que o modo demonstração oferece nos controles do passivo. Cada variante muda
 # UMA premissa do passivo (as outras ficam no valor base das premissas vigentes), cruzada com as duas regras de
 # classe e os quatro métodos de rateio. O valor base de cada premissa entra sempre, mesmo que não esteja na lista.

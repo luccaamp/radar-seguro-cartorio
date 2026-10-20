@@ -65,16 +65,39 @@ uv run pipeline.py --a-partir-de bronze
 ```
 
 - **O que é baixado:** o `ingest` baixa das fontes oficiais cerca de 8,4 GB, a maior parte do pacote mensal de CNPJ da Receita (6,8 GB) e dos microdados da RAIS (0,9 GB). Ele também extrai cerca de 6 GB da RAIS. Reserve cerca de 16 GB de disco.
+- **Onde ficam os originais (D-032):**
+  - os originais grandes vão para uma pasta **fora do projeto**: `C:\radar_arquivo\bronze_originais` no Windows, `~/radar_arquivo/bronze_originais` no Linux/macOS;
+  - a pasta se configura em `config/pacotes.yaml` ou na variável `RADAR_ORIGINAIS`;
+  - o bronze do projeto (`data/bronze`, ≈ 144 MB) guarda só os extratos que o silver lê e um `original.json` por fonte, com URL oficial, SHA-256, tamanho e hora de coleta de cada original.
 - **Tempo:** depende da conexão. A 30 Mbit/s, só o download leva cerca de 40 minutos. O pipeline leva cerca de 1 minuto.
 - **Snapshots:** o `ingest` avisa quando há snapshots novos. Para usá-los, atualize as datas em `config/escopo.yaml`.
 
 **As fontes se atualizam: os números podem diferir dos da carga oficial.** Para comparar, use os hashes do manifesto: `uv run pytest tests/test_publico.py` mostra quais tabelas mudaram. O `data/publico/manifesto.json` traz a data de referência e o SHA-256 do arquivo bruto de cada fonte.
 
-**Opcional (BI do CNJ):** as conferências de `scripts/verificacao_fase1/` usam um CSV exportado manualmente do painel de BI do CNJ (`atos_arrecadacoes_custeio_e_repasse.csv`; ver `docs/verificacao_final_fase1.md`). Sem ele, essas conferências avisam "arquivo ausente"; o pipeline e os totais de controle de `config/qualidade.yaml` não dependem dele. O CSV está no pacote de dados da equipe.
+**Opcional (BI do CNJ):** as conferências arquivadas da Fase 1 (`scripts/arquivo/verificacao_fase1/`) usam um CSV exportado manualmente do painel de BI do CNJ (`atos_arrecadacoes_custeio_e_repasse.csv`; ver `docs/historico/verificacao_final_fase1.md`). Sem ele, essas conferências avisam "arquivo ausente"; o pipeline e os totais de controle de `config/qualidade.yaml` não dependem dele. O CSV está no pacote de dados da equipe.
 
 ### 4. Equipe
 
 Colaboradores convidados baixam qualquer camada (bronze, silver, gold completo, banco) da mesma carga pelo repositório privado de dados. Veja [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+## Estrutura do projeto
+
+```
+app/                 painel Streamlit (Início, Mercado, Simulador, Qualidade dos dados)
+config/              premissas e regras versionadas, com fonte
+data/publico/        conjunto público versionado (tabelas agregadas e auditadas que o painel lê)
+data/samples/        amostras mascaradas das fontes (Fase 0)
+docs/                SPEC, estado atual, diário, decisões, erros da IA, publicação, plano do Bloco 2
+docs/historico/      documentos de rodada da Fase 1 (com INDICE.md)
+notebooks/           exploração e modelos (só leitura; ver notebooks/README.md)
+scripts/             conjunto público, pacotes de dados, QA visual e acessibilidade, conversas
+scripts/arquivo/     scripts de uso único da Fase 1
+src/                 coleta, bronze→silver→gold, modelo, qualidade, conjunto público, pacotes
+tests/               suíte padrão, dados_reais e visual
+pipeline.py          orquestrador: uv run pipeline.py --a-partir-de bronze|silver
+```
+
+Fora do git, só local: `data/bronze`, `data/silver`, `data/gold`, `data/radar.duckdb`, `conversas/` e `docs/qa/`. Também ficam fora, e fora do OneDrive, os pacotes de dados (`C:\radar_pacotes`) e os originais grandes do bronze (`C:\radar_arquivo\bronze_originais`, D-032).
 
 ## Fontes
 

@@ -1,6 +1,6 @@
 # Publicação: Releases de dados, repositório público e equipe
 
-Passo a passo para o autor. Os scripts só geram arquivos locais. **Commit, push, Releases e configurações do GitHub são feitos por você**, com os comandos abaixo. Comandos em PowerShell; no Linux/macOS, troque `$env:TEMP` por `/tmp`.
+Passo a passo para o autor. Os scripts só geram arquivos locais. **Commit, push, Releases e configurações do GitHub são feitos por você**, com os comandos abaixo. Comandos em PowerShell; no Linux/macOS, troque `C:\radar_pacotes` por `~/radar_pacotes` (padrões em `config/pacotes.yaml`).
 
 Carga de referência neste documento: `2026-10-19`.
 
@@ -9,6 +9,7 @@ Carga de referência neste documento: `2026-10-19`.
 - **Visibilidade do repositório de código:** `luccaamp/radar-seguro-cartorio` **já está público** (conferido com `gh repo view` em 2026-10-19). Se precisar mudar: *Settings → General → Danger Zone → Change repository visibility*.
 - **Repositório de dados:** `luccaamp/radar-seguro-cartorio-dados` deve continuar **privado**.
 - **Auditoria do histórico** (2026-10-19, 8 commits): nada exige reescrever o histórico (ver `docs/diario.md`).
+- **Backup externo de `C:\radar_arquivo\`:** depois da D-032, é a única cópia local dos originais grandes (14,8 GB) e da linha de base da limpeza. As fontes podem trocar o arquivo publicado. Publicar o pacote `--com-originais` no Release privado já serve de cópia externa; um disco externo é a segunda.
 - **Silver no Release público:** aprovado (D-030), com a regra corrigida: nenhuma estimativa do modelo por serventia, dados de origem sem dado pessoal.
 
 ## 1. Gerar o conjunto público e os dois pacotes
@@ -18,11 +19,14 @@ uv run pipeline.py                                   # carga nova (ou --a-partir
 uv run python scripts/gerar_publico.py               # data/publico/ (versionado): auditor + LGPD + manifesto
 uv run pytest                                        # suíte padrão (inclui coerência do conjunto público)
 uv run pytest -m dados_reais                         # testes com os dados completos
-uv run python scripts/empacotar_dados.py --nivel publico                                    # pacotes/publico (≈ 3 MB)
-uv run python scripts/empacotar_dados.py --nivel equipe --saida "$env:TEMP\radar_pacotes\equipe"   # ≈ 8,4 GB
+uv run python scripts/empacotar_dados.py --nivel publico                     # C:\radar_pacotes\publico (≈ 3 MB)
+uv run python scripts/empacotar_dados.py --nivel equipe                      # C:\radar_pacotes\equipe (≈ 85 MB)
+uv run python scripts/empacotar_dados.py --nivel equipe --com-originais --saida C:\radar_pacotes\equipe_com_originais   # ≈ 9,8 GB
 ```
 
-**Por que `--saida` fora do projeto no pacote da equipe:** o projeto fica no OneDrive. Gerar 8,4 GB dentro dele faria o OneDrive sincronizar tudo, o que pode estourar a cota gratuita. O pacote público é pequeno e pode ficar em `pacotes/publico` (ignorado pelo git).
+**Onde ficam os pacotes:**
+- por padrão em `C:\radar_pacotes\<nivel>`, fora do OneDrive (`config/pacotes.yaml`, `pastas.pacotes`, ou a variável `RADAR_PACOTES`). O projeto fica no OneDrive, e gerar pacotes grandes dentro dele faria o OneDrive sincronizar tudo, o que pode estourar a cota gratuita;
+- desde a D-032, o bronze oficial tem 144 MB, então o pacote da equipe caiu de 8,4 GB para ≈ 85 MB. Os originais grandes (14,8 GB, ≈ 9,7 GB comprimidos) entram só com `--com-originais`.
 
 Cada script imprime os tamanhos por camada e o total. O `manifesto.json` de cada pacote tem a carga, a data de referência de cada fonte, a versão das premissas, o commit e o SHA-256 e o tamanho de cada arquivo e de cada parte.
 
@@ -34,21 +38,26 @@ Faça o commit (inclui `data/publico/`) e o push para a `main` (ou PR, depois da
 
 **Público** (qualquer pessoa baixa sem login):
 ```powershell
-gh release create dados-2026-10-19 pacotes/publico/silver-2026-10-19.zip pacotes/publico/manifesto.json `
+gh release create dados-2026-10-19 C:\radar_pacotes\publico\silver-2026-10-19.zip C:\radar_pacotes\publico\manifesto.json `
   --repo luccaamp/radar-seguro-cartorio --target main `
   --title "Dados públicos — carga 2026-10-19" `
   --notes "Silver da carga 2026-10-19 (dados de origem das fontes oficiais, sem dado pessoal; D-030). Instalar: uv run python scripts/baixar_dados.py --nivel publico --camadas silver --carga 2026-10-19"
 ```
 
-**Equipe** (privado; arquivos em partes abaixo de 2 GiB):
+**Equipe** (privado; arquivos em partes abaixo de 2 GiB). Escolha **um** dos dois pacotes para o Release `carga-<data>`, porque cada Release tem um `manifesto.json` só:
+- **com originais (recomendado):** `C:\radar_pacotes\equipe_com_originais`, 19 arquivos, ≈ 9,8 GB. Tem tudo do pacote enxuto, mais a camada `originais`. Serve também como **cópia externa** dos originais, que hoje só existem em `C:\radar_arquivo\` (D-032);
+- **enxuto:** `C:\radar_pacotes\equipe`, 12 arquivos, ≈ 85 MB. Use se não quiser subir os originais.
+
 ```powershell
-$arquivos = (Get-ChildItem "$env:TEMP\radar_pacotes\equipe" -File).FullName
+$arquivos = (Get-ChildItem C:\radar_pacotes\equipe_com_originais -File).FullName
 gh release create carga-2026-10-19 $arquivos --repo luccaamp/radar-seguro-cartorio-dados `
   --title "Carga 2026-10-19 (completa)" `
-  --notes "Bronze, silver, gold completo (com interno_*) e banco. Uso interno (CONTRIBUTING.md, LGPD da equipe)."
+  --notes "Bronze oficial (extratos + original.json), silver, gold completo (com interno_*), banco e originais grandes (camada originais). Uso interno (CONTRIBUTING.md, LGPD da equipe)."
 ```
 
-- **O que vai para cada Release:** o público leva 1 zip e o manifesto. O da equipe leva 15 arquivos e o manifesto; o CNPJ vai em 4 partes `.part001`…`.part004`.
+- **O que vai para cada Release:**
+  - **o público** leva 1 zip e o manifesto;
+  - **o da equipe com originais** leva 19 arquivos e o manifesto. O CNPJ original vai em partes `.partNNN`, cada uma abaixo de 2 GiB.
 - **Upload que falhar no meio:** use `gh release upload carga-2026-10-19 <arquivo> --repo ... --clobber` só para o arquivo que faltou.
 - **Pelo site** (arquivos pequenos, como o Release público): *Releases → Draft a new release → Choose a tag* (digite `dados-2026-10-19`, "Create new tag") → arraste o zip e o `manifesto.json` → *Publish release*.
 
@@ -82,7 +91,7 @@ Nos **dois** repositórios: *Settings → Collaborators → Add people* (nome de
 
 ## 6. Checklist de "nova carga"
 
-1. `uv run pipeline.py ingest` (precisa de internet). Atualize os snapshots em `config/escopo.yaml`.
+1. `uv run pipeline.py ingest` (precisa de internet). Os originais grandes vão para `C:\radar_arquivo\bronze_originais`; o bronze recebe os extratos e o `original.json` (D-032). Atualize os snapshots em `config/escopo.yaml`. Rode `uv run pytest -m dados_reais tests/test_coletores.py`: regerar cada extrato a partir do original dá o mesmo SHA-256.
 2. `uv run pipeline.py`. Contratos sem erro; leia os avisos das reconciliações.
 3. Confira os números de referência na página Início e explique no `docs/diario.md` o que mudou e por quê, com a cascata.
 4. `uv run python scripts/gerar_publico.py`. Precisa sair com "0 vazamentos" e "ok"; senão, não publique.

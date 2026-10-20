@@ -4,7 +4,7 @@ Posição de cálculo: 31/12 (art. 4º). Hipótese do art. 5º: despedida de tod
 com aviso prévio indenizado. A projeção do aviso integra o tempo de serviço (CLT art. 487, § 1º), por isso
 gera 13º e férias proporcionais adicionais.
 """
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import date, timedelta
 
 import pandas as pd
@@ -40,9 +40,6 @@ class Passivo:
     @property
     def total(self) -> float:
         return self.verbas + self.encargos
-
-    def como_dict(self) -> dict:
-        return asdict(self) | {"verbas": self.verbas, "encargos": self.encargos, "total": self.total}
 
 
 def avos(dias: float, dias_fracao: int) -> int:

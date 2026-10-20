@@ -21,10 +21,6 @@ class Checagem:
     violacoes: int
     detalhe: str = ""
 
-    @property
-    def ok(self) -> bool:
-        return self.violacoes == 0
-
 
 def _conta(con, sql: str) -> int:
     return con.execute(sql).fetchone()[0]

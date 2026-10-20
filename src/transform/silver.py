@@ -53,18 +53,41 @@ def _yaml(nome: str) -> dict:
     return yaml.safe_load((CONFIG / nome).read_text(encoding="utf-8"))
 
 
+def _do_original(origem_rel: str) -> dict | None:
+    """Registro do arquivo original em <bronze>/<fonte>/<snapshot>/original.json (D-032: o original fica fora do
+    bronze oficial). `origem_rel` é um arquivo (ex.: susep_ses/2026-10-17/BaseCompleta.zip) ou a pasta (cnpj/2026-10,
+    caso em que vale o primeiro original registrado, como no _metadados.json)."""
+    p = BRONZE / origem_rel
+    pasta, nome = (p.parent, p.name) if p.suffix else (p, None)
+    reg = pasta / "original.json"
+    if not reg.exists():
+        return None
+    arqs = json.loads(reg.read_text(encoding="utf-8"))["arquivos"]
+    return arqs.get(nome) if nome else next(iter(arqs.values()), None)
+
+
 def _meta(arquivo: Path) -> dict:
-    """Metadados de coleta do arquivo. Padrões: <arq>.meta.json (Fase 1), <stem>.meta.json e _metadados.json (Fase 0).
-    Para arquivos filtrados (RAIS, CNPJ, SUSEP), usa os metadados do pacote de origem."""
+    """Metadados de coleta do arquivo. Padrões: <arq>.meta.json (Fase 1), <stem>.meta.json, original.json (D-032) e
+    _metadados.json (Fase 0). Para arquivos filtrados (RAIS, CNPJ, SUSEP), URL e hora de coleta vêm do original:
+    do próprio arquivo, se ainda estiver no bronze; senão, do original.json."""
     for cand in (arquivo.with_name(arquivo.name + ".meta.json"), arquivo.with_name(arquivo.stem + ".meta.json")):
         if cand.exists():
             meta = json.loads(cand.read_text(encoding="utf-8"))
-            origem = BRONZE / str(meta.get("origem", "")).replace("\\", "/")
-            if not meta.get("url") and meta.get("origem") and origem.is_file():
+            origem_rel = str(meta.get("origem", "")).replace("\\", "/")
+            origem = BRONZE / origem_rel
+            if not meta.get("url") and meta.get("origem"):
                 # arquivo filtrado: URL e hora de COLETA vêm do pacote baixado (C5); o resto fica do filtrado
-                meta = {**meta, **{k: v for k, v in _meta(origem).items() if k in ("url", "coletado_em")}}
+                if origem.is_file():
+                    meta = {**meta, **{k: v for k, v in _meta(origem).items() if k in ("url", "coletado_em")}}
+                elif (o := _do_original(origem_rel)) is not None:
+                    meta = {**meta, **{k: o[k] for k in ("url", "coletado_em") if k in o}}
             return meta
     for pasta in (arquivo.parent, arquivo.parent.parent):
+        reg = pasta / "original.json"
+        if reg.exists():
+            d = json.loads(reg.read_text(encoding="utf-8"))["arquivos"]
+            origem = [k for k in d if arquivo.stem.startswith(Path(k).stem)]  # filtrado -> pacote de origem
+            return d.get(arquivo.name) or (d[origem[0]] if origem else next(iter(d.values())))
         m = pasta / "_metadados.json"
         if m.exists():
             d = json.loads(m.read_text(encoding="utf-8"))

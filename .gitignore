@@ -18,6 +18,15 @@ pacotes/
 conversas/
 # configurações locais do Claude Code (permissões e caminhos desta máquina; o repositório é público)
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
+# links simbólicos para o guia de Streamlit dentro do .venv (refeitos em cada máquina)
+.agents/
+.claude/skills/
+
+# Notebooks (docs/historico/limpeza_projeto.md 3.5): interno_* só em privado/; saídas e modelos nunca no git
+notebooks/privado/
+notebooks/saidas/
+modelos/
 
 # Python
 __pycache__/

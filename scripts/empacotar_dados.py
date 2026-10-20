@@ -1,5 +1,5 @@
-"""Empacota os dados de uma carga para os Releases do GitHub (D-030). Só gera arquivos locais em pacotes/<nivel>/;
-quem publica é o autor (docs/publicacao.md).
+"""Empacota os dados de uma carga para os Releases do GitHub (D-030). Só gera arquivos locais em
+C:\\radar_pacotes\\<nivel>\\ (fora do OneDrive; config/pacotes.yaml); quem publica é o autor (docs/publicacao.md).
 
   uv run python scripts/empacotar_dados.py --nivel publico   # silver + manifesto (Release público dados-<carga>)
   uv run python scripts/empacotar_dados.py --nivel equipe    # bronze por fonte, silver, gold completo e banco
@@ -101,11 +101,14 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--nivel", choices=["publico", "equipe"], required=True)
     ap.add_argument("--carga", help="AAAA-MM-DD (padrão: a carga do banco atual)")
-    ap.add_argument("--saida", type=Path, help="pasta de saída (padrão: pacotes/<nivel>)")
+    ap.add_argument("--com-originais", action="store_true", dest="com_originais",
+                    help="só no nível equipe: inclui os originais grandes da pasta de originais (D-032), em partes")
+    ap.add_argument("--saida", type=Path, help="pasta de saída (padrão: C:\\radar_pacotes\\<nivel>, fora do OneDrive; "
+                                               "config/pacotes.yaml)")
     args = ap.parse_args()
     if not BANCO.exists():
         raise SystemExit("Banco completo não encontrado (data/radar.duckdb).")
-    saida = args.saida or RAIZ / "pacotes" / args.nivel
+    saida = args.saida or pacotes.pasta("pacotes") / args.nivel   # fora do OneDrive (config/pacotes.yaml)
     with duckdb.connect(str(BANCO), read_only=True) as con:
         exe = con.sql("SELECT * FROM gold.execucao").df()
         carga_banco = f"{exe['executado_em'].iloc[0]:%Y-%m-%d}"
@@ -150,6 +153,18 @@ def main() -> None:
                 artefatos.append(artefato("gold", "gold", pasta, gold_completo(con, pasta), "data/gold", saida, carga))
     if "banco" in camadas:   # depois de fechar a conexão de leitura
         artefatos.append(artefato("banco", "banco", DATA, [BANCO], "data", saida, carga))
+    if args.com_originais:   # D-032: originais grandes, fora do bronze oficial
+        if args.nivel != "equipe":
+            raise SystemExit("--com-originais só existe no nível equipe")
+        camadas = [*camadas, "originais"]
+        orig = pacotes.pasta("originais")
+        regras = pacotes.CONFIG.get("originais_excluir") or []
+        for fonte in sorted(p for p in orig.iterdir() if p.is_dir()):
+            todos = sorted(p for p in fonte.rglob("*") if p.is_file())
+            fica = [p for p in todos if not pacotes.excluido(p.relative_to(orig).as_posix(), regras)]
+            if fica:
+                artefatos.append(artefato("originais", f"originais-{fonte.name}", fonte, fica,
+                                          f"{pacotes.DESTINO_ORIGINAIS}/{fonte.name}", saida, carga))
 
     man = {"nivel": args.nivel, "carga": carga, "tag": pacotes.tag(args.nivel, carga),
            "repositorio": pacotes.CONFIG["repositorios"][args.nivel],

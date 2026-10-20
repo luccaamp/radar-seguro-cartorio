@@ -439,3 +439,56 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Como foi achado:** no teste de extração da D-032 (cópia fora do OneDrive): regenerar o extrato a partir do `.7z` guardado. CNPJ e SUSEP regeneraram com o mesmo SHA-256; a RAIS quebrou.
 - **Correção:** não feita (a limpeza não mistura correção; princípio 5 de `docs/limpeza_projeto.md`). Proposta na Parada 1: detectar o separador e conferir que o extrato regenerado tem o mesmo hash, antes de tirar os originais da RAIS do bronze oficial.
 - **Bom para os slides?** sim (o pipeline passava; só regenerar o dado do zero mostrou que a coleta não é reprodutível).
+
+## 2026-10-19 — Correção do coletor da RAIS (D-032 a; exceção aprovada ao princípio 5)
+- **Correção da entrada "O coletor da RAIS não regera o extrato a partir do original":** o `filtrar()` agora detecta o separador pelo cabeçalho (`rais.separador`; `;` ou `,` entre aspas). O teste `tests/test_coletores.py::test_rais_extrato_regenerado_igual` (`dados_reais`) regera o extrato a partir do `.7z` guardado e confere o mesmo SHA-256 do extrato do bronze; há também um teste sintético na suíte padrão.
+- **Bom para os slides?** sim (junto com a entrada anterior).
+
+## 2026-10-19 — Testes novos dependiam de haver um repositório git
+- **Onde:** `tests/test_links_docs.py` e `tests/test_notebooks.py` (listavam arquivos com `git ls-files`).
+- **O que aconteceu:** numa pasta sem `.git` (a cópia de teste, ou um zip baixado do GitHub), a lista vinha vazia e os dois testes falhavam.
+- **Como foi achado:** na suíte da cópia de teste da D-032 (2 failed).
+- **Correção:** `tests/apoio_painel.py::arquivos_versionaveis()` usa o git quando há repositório e, senão, varre o disco pulando as pastas ignoradas.
+- **Bom para os slides?** não
+
+## 2026-10-19 — Remoção do pydantic deixou pacotes pela metade no .venv
+- **Onde:** `.venv` (ambiente local; não versionado).
+- **O que aconteceu:** o `uv remove pydantic` não conseguiu apagar pastas `licenses` do `.venv`, porque o OneDrive negou acesso. Ao apagá-las à mão, a IA deixou os metadados do `pydantic`, `pydantic_core`, `annotated_types` e `typing_inspection` incompletos, e a suíte passou a mostrar 72 avisos de metadado.
+- **Correção:** conferido que os 4 pacotes saíram do `uv.lock`, as sobras foram removidas do `.venv` e o `uv sync` foi feito; a suíte voltou sem avisos.
+- **Bom para os slides?** não
+
+## 2026-10-19 — Originais movidos ficaram dentro de uma pasta com o próprio nome
+- **Onde:** script de movimentação para `C:\radar_arquivo` (scratch da limpeza; não versionado).
+- **O que aconteceu:** para um arquivo isolado, o destino já incluía o nome do arquivo e o script acrescentou o nome de novo: `…\BaseCompleta.zip\BaseCompleta.zip`. O SHA-256 conferido depois de mover batia (o conteúdo estava certo), mas o caminho não, e o `MANIFESTO.md` registrou o destino errado.
+- **Como foi achado:** os 3 testes de regeneração (`dados_reais`) falharam com "Permission denied" ao abrir o que era uma pasta.
+- **Correção:** cada um dos 27 arquivos subiu um nível, com o SHA-256 conferido de novo contra o manifesto; uma nota de correção foi acrescentada ao `MANIFESTO.md` (nada apagado). Os testes de regeneração passaram.
+- **Bom para os slides?** sim (conferir o hash depois de mover não basta: é preciso conferir também onde o arquivo foi parar; mesmo padrão do instalador em subpasta).
+
+## 2026-10-19 — Script da prova do clone rodou comandos no projeto real (codificação do caminho)
+- **Onde:** script PowerShell da prova final da limpeza (scratch, não versionado).
+- **O que aconteceu:** o `.ps1` foi gravado em UTF-8 sem BOM; o PowerShell 5.1 leu o "Á" de "Área de Trabalho" errado, o caminho do projeto saiu corrompido, o clone não foi montado e os `Set-Location` falharam. Os comandos seguintes rodaram na pasta atual, que era o **projeto real**:
+  - `baixar_dados.py` recusou instalar silver e bronze ("Já há dados locais… Nada foi alterado"; a proteção funcionou);
+  - `pipeline.py --a-partir-de silver` e `--a-partir-de bronze` rodaram sobre os dados reais, recalculando a partir dos mesmos dados;
+  - a instalação da camada `originais` foi para a pasta do clone, mas gravou um `data/carga_atual.json` no projeto.
+- **Como foi achado:** na leitura da saída da prova.
+- **Verificação:** gold 25/25 e público 25/25 idênticos à linha de base, 10 números iguais, `data/publico` 26/26 arquivos intactos, originais (27) e bronze oficial intactos. O banco e os Parquet foram regravados com o mesmo conteúdo.
+- **Correção:** o `data/carga_atual.json` criado por engano foi apagado (antes não existia). A prova foi refeita com o caminho passado como parâmetro e com parada imediata se o `Set-Location` falhar.
+- **Lição:** script que muda de pasta tem de parar se a mudança falhar (`$ErrorActionPreference = "Stop"`), e nunca deve depender de caminho com acento escrito no próprio arquivo.
+- **Bom para os slides?** sim (a proteção "nunca sobrescreve sem --substituir" segurou o pior).
+
+## 2026-10-20 — Linha de base da limpeza não listava os arquivos soltos de data/
+- **Onde:** script da linha de base da limpeza (`C:\radar_arquivo\baseline\linha_de_base.json`, gravado em 2026-10-19 19:59).
+- **O que aconteceu:** a linha de base registrava arquivo por arquivo só `data/gold`, `data/silver`, `data/publico` e o banco; do resto de `data/` guardava apenas o tamanho de cada subpasta. Um arquivo solto na raiz de `data/` (como o `carga_atual.json`) não ficava registrado. Por isso, quando o script da prova criou esse arquivo por engano (entrada anterior), a linha de base não servia de prova de que ele não existia antes. A evidência foi indireta: o `git status --ignored` do inventário, o conteúdo do arquivo (instalado às 23:12, camada `originais`) e o fato de só o `baixar_dados.py` criá-lo.
+- **Como foi achado:** pelo autor, ao pedir que a IA mostrasse na linha de base que o arquivo não existia.
+- **Correção:** `scripts/linha_de_base.py` (versionado) registra todos os arquivos de `data/` (caminho, tamanho, data de modificação e SHA-256), inclusive os soltos na raiz, além dos hashes de conteúdo e dos números de referência. Também: o `baixar_dados.py` passou a recusar gravar o `carga_atual.json` onde já há banco ou gold, salvo com `--substituir` (ver o diário).
+- **Bom para os slides?** sim (uma linha de base só prova o que ela registra).
+
+## 2026-10-20 — Comando de lint "padrão" documentado sem ter sido rodado como documentado
+- **Onde:** `CLAUDE.md` e `CONTRIBUTING.md` (`uv run ruff check src app tests scripts pipeline.py --exclude scripts/arquivo`).
+- **O que aconteceu:** na limpeza, a IA documentou esse comando como o padrão do projeto, mas só tinha rodado o ruff com `--select F401,F841,F821`. Com as regras padrão do ruff 0.17, o comando acusa 103 avisos de estilo (ordem de imports, `noqa` sem uso, `dict()` em vez de `{}`, `subprocess.run` sem `check`, etc.), nenhum de erro real. Só com as regras do pyflakes (`--select F`), passa.
+- **Como foi achado:** ao rodar o comando completo depois da mudança no `baixar_dados.py` (2026-10-20).
+- **Correção:** pendente de decisão do autor. Proposta: fixar `[tool.ruff.lint] select = ["F"]` no `pyproject.toml` (erros reais: imports e variáveis sem uso, nomes indefinidos), para o comando documentado passar, e tratar as regras de estilo depois, se o autor quiser.
+- **Bom para os slides?** não
+
+## Nota à entrada "Comando de lint 'padrão' documentado sem ter sido rodado como documentado" (2026-10-20)
+- **Correção aplicada, com a aprovação do autor:** `[tool.ruff.lint] select = ["F"]` no `pyproject.toml`. O comando documentado passa sem avisos (`All checks passed!`) e a suíte padrão segue com 135 passed. As regras de estilo ficaram como pendência no `docs/ESTADO_ATUAL.md`.

@@ -48,7 +48,6 @@ def calcular(regra: str, metodo: str, ajustes_json: str, versao: int) -> pd.Data
 
 LIM_BASE = REGRAS["versoes"][REGRAS["versao_base"]]["limites"]  # classe das faixas de déficit (D-019)
 semente, versao = estado.premissas_vigentes(conexao())
-lim_v2 = LIM_BASE
 
 
 def peso_indet(regra: str) -> float:

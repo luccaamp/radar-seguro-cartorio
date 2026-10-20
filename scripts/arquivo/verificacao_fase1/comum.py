@@ -9,7 +9,7 @@ from pathlib import Path
 
 import duckdb
 
-RAIZ = Path(__file__).resolve().parents[2]
+RAIZ = Path(__file__).resolve().parents[3]   # scripts/arquivo/verificacao_fase1/ -> raiz do projeto
 CSV_BI = RAIZ / "data/bronze/cnj_bi_painel/2026-10-18/atos_arrecadacoes_custeio_e_repasse.csv"
 SILVER = RAIZ / "data/silver"
 GOLD = RAIZ / "data/gold"

@@ -5,8 +5,6 @@ O banco real (data/radar.duckdb) nunca é aberto para escrita aqui; o último te
 dados_reais (fora da suíte padrão): precisam do banco completo, com silver e interno_*. O modo demonstração, que roda
 em qualquer clone, está em test_app_demo.py.
 """
-from pathlib import Path
-
 import duckdb
 import pytest
 

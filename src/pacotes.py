@@ -1,6 +1,6 @@
 """Pacotes de dados para Releases do GitHub (D-030): zip por camada, partes abaixo de 2 GiB, manifesto com hashes.
 
-Formato do manifesto (pacotes/<nivel>/manifesto.json):
+Formato do manifesto (<pasta de pacotes>/<nivel>/manifesto.json; pasta em config/pacotes.yaml, fora do OneDrive):
   nivel, carga, executado_em, versao_premissas, commit, fontes (data de referência de cada fonte), artefatos: lista de
   {camada, nome, zip, bytes_zip, sha256_zip, partes: [{arquivo, bytes, sha256}], destino, arquivos: [{caminho, bytes,
   sha256}], excluidos: [{padrao, motivo, n, bytes}]}.
@@ -18,6 +18,26 @@ import yaml
 RAIZ = Path(__file__).resolve().parents[1]
 CONFIG = yaml.safe_load((RAIZ / "config" / "pacotes.yaml").read_text(encoding="utf-8"))
 MANIFESTO = "manifesto.json"
+DESTINO_ORIGINAIS = "@originais"   # destino de artefato: a pasta de originais (fora do repositório; D-032)
+
+
+def destino_local(destino: str, raiz: Path) -> Path:
+    """Caminho local de instalação de um artefato: relativo à raiz do projeto, ou na pasta de originais."""
+    if destino.startswith(DESTINO_ORIGINAIS):
+        return pasta("originais") / destino[len(DESTINO_ORIGINAIS):].lstrip("/")
+    return raiz / destino
+
+
+def pasta(nome: str) -> Path:
+    """Pasta fora do OneDrive (config/pacotes.yaml, `pastas`): 'pacotes' ou 'originais'. A variável de ambiente
+    RADAR_PACOTES ou RADAR_ORIGINAIS, se existir, tem prioridade."""
+    import os
+    import sys
+    var = os.environ.get(f"RADAR_{nome.upper()}")
+    if var:
+        return Path(var)
+    p = CONFIG["pastas"][nome]["windows" if sys.platform == "win32" else "outros"]
+    return Path(p).expanduser()
 
 
 def sha256(p: Path) -> str:

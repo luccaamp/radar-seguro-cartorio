@@ -160,6 +160,7 @@ radar-seguro-cartorio/
 │   ├── radar/                 # opcional
 │   └── eval/
 ├── app/                       # Streamlit
+├── notebooks/                 # exploração e modelos; só leitura (src/notebooks.py), saídas limpas, interno_* em privado/ (fora do git)
 ├── tests/
 ├── eval/
 │   ├── gabarito_chat.csv

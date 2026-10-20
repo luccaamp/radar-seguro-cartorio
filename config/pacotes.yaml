@@ -14,6 +14,20 @@ camadas:
 bronze_excluir:
   - padrao: "rais/*/extraido/*.COMT"
     motivo: extração do .7z da RAIS (o .7z vai no pacote; a coleta extrai de novo quando falta)
+# --com-originais (D-032): originais grandes da pasta de originais (fora do OneDrive), em partes < 2 GiB.
+# Vazio = todos (inclusive os .COMT extraídos da RAIS, como aprovado). Para deixá-los de fora (são deriváveis do .7z):
+#   originais_excluir: [{padrao: "rais/*/extraido/*.COMT", motivo: "extração do .7z"}]
+originais_excluir: []
 # arquivos já comprimidos: vão para o zip como estão, sem comprimir de novo
 ja_comprimidos: [".zip", ".7z", ".gz", ".xlsx", ".pdf", ".parquet"]
+# só documentação: nenhum script lê esta chave; é a regra do passo 7 de docs/publicacao.md (o autor apaga à mão)
 manter_ultimas_cargas: 3
+# pastas FORA do OneDrive (CLAUDE.md, "Disco e OneDrive"); "~" é a pasta do usuário. Podem ser trocadas pelas
+# variáveis de ambiente RADAR_PACOTES e RADAR_ORIGINAIS.
+pastas:
+  pacotes:            # saída padrão de scripts/empacotar_dados.py (pacotes/<nivel>)
+    windows: 'C:\radar_pacotes'
+    outros: '~/radar_pacotes'
+  originais:          # originais grandes do bronze (D-032): baixados aqui pelo coletor, fora do bronze oficial
+    windows: 'C:\radar_arquivo\bronze_originais'
+    outros: '~/radar_arquivo/bronze_originais'

@@ -34,6 +34,20 @@ def preparar_copia(destino_dir: Path) -> Path:
 
 
 VARIAVEIS = ("RADAR_BANCO", "RADAR_PUBLICO")
+PASTAS_FORA_DO_GIT = {".git", ".venv", "data", "conversas", "qa", "privado", "saidas", "modelos", "__pycache__",
+                      ".pytest_cache", ".ruff_cache", ".agents", ".claude", ".ipynb_checkpoints"}
+
+
+def arquivos_versionaveis(padrao: str) -> list[Path]:
+    """Arquivos que o git versionaria (`git ls-files`); sem repositório git (cópia ou zip do GitHub), varre o disco
+    pulando as pastas ignoradas pelo .gitignore."""
+    import subprocess
+    r = subprocess.run(["git", "-C", str(RAIZ), "ls-files", "-co", "--exclude-standard", padrao],
+                       capture_output=True, text=True, encoding="utf-8")
+    if r.returncode == 0 and r.stdout.strip():
+        return [RAIZ / a for a in r.stdout.splitlines() if (RAIZ / a).is_file()]
+    return sorted(p for p in RAIZ.rglob(padrao) if p.is_file()
+                  and not PASTAS_FORA_DO_GIT & set(p.relative_to(RAIZ).parts[:-1]))
 
 
 def _limpar_caches() -> None:

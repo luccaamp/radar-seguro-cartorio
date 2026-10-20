@@ -1,6 +1,6 @@
 """Cascata da Etapa 1: números principais de MG com o código ATUAL, em memória sobre o silver em Parquet (nada é gravado).
 
-Uso: uv run python scripts/verificacao_fase1/cascata.py "<rótulo do passo>"
+Uso: uv run python scripts/arquivo/verificacao_fase1/cascata.py "<rótulo do passo>"
 Imprime uma linha por nível (base v2, mantém) e a sensibilidade v1, e acrescenta o resultado em cascata.csv (pasta deste script).
 """
 import csv

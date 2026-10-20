@@ -382,3 +382,19 @@ Formato:
 - **Onde:** `config/publico.yaml` (`silver_publico_remover`), aplicado por `scripts/empacotar_dados.py`. O silver interno, o do pacote da equipe e o banco ficam iguais.
 - **Prova:** pacote público novo → `pipeline.py --a-partir-de silver` num clone fora do OneDrive → 25 de 25 tabelas com o mesmo hash de conteúdo do conjunto público.
 - **Ajuste necessário:** a lista de contratos do silver não pode depender das colunas presentes (ver `docs/erros_ia.md`, 2026-10-19).
+
+## D-032 — Bronze enxuto: extrato + registro do original; originais fora do OneDrive
+- **Data:** 2026-10-19
+- **Contexto:** o bronze tinha 14,9 GB, dos quais 14,76 GB eram originais grandes (zips do CNPJ, `.7z` e `.COMT` da RAIS, `BaseCompleta.zip` da SUSEP). O silver lê só os extratos filtrados, e o pacote da equipe chegava a 8,4 GB.
+- **Decisão (aprovada pelo autor em 2026-10-19, `docs/historico/limpeza_projeto.md`, Parada 1):**
+  - **(a) Coletor da RAIS corrigido:** passa a detectar o separador, porque o `.COMT` de 2025 vem separado por vírgula. Exceção aprovada ao princípio 5 da limpeza.
+  - **(b) Originais fora do bronze oficial:** os coletores de RAIS, CNPJ e SUSEP baixam os originais para uma pasta fora do OneDrive, configurável (`config/pacotes.yaml`, `pastas.originais`; padrão `C:\radar_arquivo\bronze_originais\`; variável `RADAR_ORIGINAIS`). No bronze gravam só o extrato e o `original.json` (URL oficial, SHA-256, tamanho, data e hora de coleta, onde foi guardado). O silver lê a URL e a hora de coleta do `original.json` quando o original não está no bronze.
+  - **(c) Originais movidos, não apagados:** 27 arquivos (14.757,5 MB) foram para `C:\radar_arquivo\bronze_originais\`, com o `MANIFESTO.md`. O SHA-256 de cada um foi conferido depois de mover.
+  - **(d) Pacote com originais:** `empacotar_dados.py --com-originais` inclui os originais (camada `originais`, em partes abaixo de 2 GiB). O `baixar_dados.py` os instala na pasta de originais.
+  - **(e)** registro desta decisão.
+- **Provas:**
+  - regerar cada extrato a partir do original guardado dá o mesmo SHA-256 (RAIS, SUSEP e CNPJ; `tests/test_coletores.py`, `dados_reais`);
+  - pipeline do zero a partir do bronze enxuto: 25/25 tabelas do gold e 25/25 públicas idênticas à linha de base, os 10 números iguais e `data/publico` intacto (26/26 arquivos);
+  - ausência do P3 e a combinada da D-032, numa cópia: 25/25 e 25/25, com o `fonte_metadados` igual graças ao `original.json`.
+- **Tamanhos:** bronze oficial de 14,9 GB para 144 MB. Os originais (14,8 GB) passam a ter **uma única cópia local**, em `C:\radar_arquivo\`; as fontes podem trocar o arquivo publicado. **Backup externo a cargo do autor.**
+- **Mantidos no bronze:** ANOREG, normas, STF (fontes do chat, Fase 3), CSV do BI do CNJ (verificações), cadastros das outras 26 UFs (Fase 2), layouts da RAIS, os `_metadados.json` originais e o `ses_cias.csv`.

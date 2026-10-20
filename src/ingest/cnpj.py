@@ -1,7 +1,8 @@
 """Dados abertos do CNPJ (Receita Federal, compartilhamento público WebDAV do SERPRO+): baixa e filtra o CNAE 6912-5/00.
 
 Idempotente e retomável. O filtrado (`estabelecimentos_cnae6912500.json`) não guarda razão social, nome fantasia
-nem contatos; é o que o silver lê. Os ZIPs completos podem ser apagados depois (hash no _metadados.json).
+nem contatos; é o que o silver lê. D-032: os ZIPs completos (≈ 6,8 GB) ficam na pasta de originais, FORA do OneDrive
+(config/pacotes.yaml); o bronze oficial guarda o extrato e o original.json (URL, SHA-256, tamanho, data e hora).
 
 Uso: uv run python -m src.ingest.cnpj 2026-10
 """
@@ -16,7 +17,7 @@ from pathlib import Path
 
 import httpx
 
-from src.ingest.comum import BRONZE, USER_AGENT, VERSAO_COLETOR, agora, gravar_meta, sha256_arquivo
+from src.ingest.comum import BRONZE, USER_AGENT, bronze_de, gravar_meta, ler_original, originais, registrar_original
 
 TOKEN_PUBLICO = "gn672Ad4CF8N6TK"  # token do link público de compartilhamento (não é credencial pessoal)
 BASE = "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ"
@@ -28,14 +29,14 @@ CNPJB, MATFIL, SIT, DT_INI, CNAE1, CNAE2, UF, MUN = 0, 3, 5, 10, 11, 12, 19, 20
 
 
 def baixar(mes: str) -> Path:
-    dest = BRONZE / "cnpj" / mes
+    """Baixa os ZIPs para <originais>/cnpj/<mes>/ (fora do OneDrive) e devolve essa pasta."""
+    dest = originais() / "cnpj" / mes
     dest.mkdir(parents=True, exist_ok=True)
-    meta_path = dest / "_metadados.json"
-    meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
     with httpx.Client(headers={"User-Agent": USER_AGENT}, auth=(TOKEN_PUBLICO, ""),
                       timeout=httpx.Timeout(60, read=300), follow_redirects=True) as c:
         for n in ARQUIVOS:
-            if meta.get(n, {}).get("completo"):
+            reg = ler_original(BRONZE / "cnpj" / mes, n)
+            if reg and (dest / n).exists() and (dest / n).stat().st_size == reg["bytes"]:
                 continue
             url, alvo = f"{BASE}/{mes}/{n}", dest / n
             for tentativa in range(5):
@@ -52,9 +53,7 @@ def baixar(mes: str) -> Path:
                 except Exception as e:
                     print(f"{n}: erro {type(e).__name__} (tentativa {tentativa + 1})", flush=True)
                     time.sleep(15)
-            meta[n] = {"url": url, "bytes": alvo.stat().st_size, "sha256": sha256_arquivo(alvo), "completo": True,
-                       "coletado_em": agora(), "versao_coletor": VERSAO_COLETOR}
-            meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
+            registrar_original(alvo, url)
             print(f"{n}: baixado", flush=True)
     return dest
 
@@ -66,8 +65,11 @@ def _linhas(zpath: Path):
                 yield from csv.reader(io.TextIOWrapper(f, encoding="latin-1", newline=""), delimiter=";")
 
 
-def filtrar(dest: Path) -> Path:
-    out = dest / "estabelecimentos_cnae6912500.json"
+def filtrar(dest: Path, saida: Path | None = None) -> Path:
+    """Lê os ZIPs de `dest` (pasta dos originais) e grava o extrato no bronze oficial (ou em `saida`, no teste de
+    reprodutibilidade)."""
+    out = (saida or bronze_de(dest / "x")) / "estabelecimentos_cnae6912500.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
     if out.exists():
         print(f"{out.name}: já existe")
         return out
@@ -92,8 +94,9 @@ def filtrar(dest: Path) -> Path:
     for s in sel:
         s["natureza_juridica"] = natj.get(s["cnpj_basico"])
     out.write_text(json.dumps(sel, ensure_ascii=False), encoding="utf-8")
-    gravar_meta(out, origem=f"cnpj/{dest.name}", filtro=f"CNAE {CNAE} principal ou secundário",
-                campos_descartados="razão social, nome fantasia, endereço, telefone, e-mail")
+    if saida is None:
+        gravar_meta(out, origem=f"cnpj/{dest.name}", filtro=f"CNAE {CNAE} principal ou secundário",
+                    campos_descartados="razão social, nome fantasia, endereço, telefone, e-mail")
     return out
 
 

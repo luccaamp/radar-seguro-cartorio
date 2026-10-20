@@ -7,10 +7,10 @@ dependencies = [
     "duckdb>=1.5.6",
     "geopandas>=1.2.0",
     "httpx>=0.28.1",
+    "numpy>=2.5.4",
     "pandas>=3.0.6",
     "plotly>=7.1.0",
     "py7zr>=1.1.4",
-    "pydantic>=2.14.1",
     "pyyaml>=6.0.3",
     "streamlit>=1.66.0",
 ]
@@ -18,13 +18,18 @@ dependencies = [
 [dependency-groups]
 dev = [
     "axe-playwright-python>=0.1.8",
-    "coverage>=7.16.2",
-    "deptry>=0.25.1",
+    "ipykernel>=7.4.0",
+    "jupyterlab>=4.6.4",
+    "nbstripout>=0.9.1",
     "playwright>=1.64.0",
     "pytest>=9.1.1",
     "ruff>=0.17.1",
-    "vulture>=2.16",
 ]
+
+[tool.ruff.lint]
+# só erros reais (pyflakes: imports e variáveis sem uso, nomes indefinidos). As regras de estilo ficam para outra
+# rodada (docs/ESTADO_ATUAL.md, pendências; docs/erros_ia.md, 2026-10-20).
+select = ["F"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

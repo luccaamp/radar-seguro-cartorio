@@ -393,3 +393,41 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **deptry:** `pydantic` sem uso; `numpy` usado sem estar declarado.
 - **Dados reais:** intactos (assinatura igual antes e depois).
 - **Próximo passo:** aprovação do autor na Parada 1.
+
+## 2026-10-19 (noite) — Limpeza do projeto, Etapa 2 (execução aprovada) e D-032
+- **Feito, por área:**
+  - **docs:** 8 documentos de rodada para `docs/historico/` (`git mv`), com `INDICE.md`; atualizados os links vivos (README, `config/simulador_demo.yaml`, docstring do teste, `ESTADO_ATUAL.md`); teste novo de links quebrados nos `.md`.
+  - **scripts:** `scripts/verificacao_fase1/` para `scripts/arquivo/` (`git mv`), com README; a raiz do `comum.py` arquivado foi ajustada (`parents[3]`).
+  - **código:** removidas as 5 sobras e os imports sem uso dos testes.
+  - **dependências:** `pydantic` removido (o SPEC prevê para a Fase 3; volta quando o chat existir) e `numpy` declarado. Dev: + `jupyterlab`, `ipykernel`, `nbstripout`; − `vulture`, `deptry`, `coverage`; o `ruff` fica como padrão.
+  - **`.gitignore`:** links do guia de Streamlit, trava do Claude Code, `notebooks/privado`, `notebooks/saidas` e `modelos`.
+  - **notebooks:** `notebooks/` com README, `00_exemplo_leitura.ipynb` sem saída, `src/notebooks.py` somente leitura e `tests/test_notebooks.py`; regras no `CLAUDE.md`, no `CONTRIBUTING.md` e no SPEC; seção "Estrutura do projeto" no README.
+  - **dados locais:** `pacotes/` e `docs/qa/antes/` para `C:\radar_arquivo\` (com `MANIFESTO.md`); a saída padrão do empacotador passou para `C:\radar_pacotes`.
+- **D-032 (bronze enxuto):**
+  - coletor da RAIS corrigido (detecta o separador);
+  - coletores baixam os originais fora do OneDrive e gravam no bronze o extrato e o `original.json`; o silver lê o `original.json`;
+  - 27 originais (14,76 GB) movidos para `C:\radar_arquivo\bronze_originais\`;
+  - `--com-originais` no empacotador e camada `originais` no instalador;
+  - bronze oficial de 14,9 GB para 144 MB.
+- **Provas:**
+  - pipeline do zero a partir do bronze enxuto: gold 25/25 e público 25/25 idênticos à linha de base, os 10 números iguais, `data/publico` 26/26 intacto;
+  - ausência do P3 e a combinada da D-032 (na cópia): 25/25 e 25/25, suíte 133 passed;
+  - regerar os extratos de RAIS, SUSEP e CNPJ dá o mesmo SHA-256;
+  - auditor com 989 células e 0 vazamentos; LGPD com 0 problemas;
+  - galeria: 0 falhas de layout, e a diferença de pixels é só a hora da carga no rodapé;
+  - clone simulado, nos 5 caminhos: 25/25 a partir do silver público e do bronze enxuto;
+  - suítes: padrão 133 (125 + 8 novos), `dados_reais` 73 (70 + 3 novos), visual 2; nenhum teste removido.
+- **Pacotes em `C:\radar_pacotes`:** público 2,7 MB; equipe 84,6 MB (12 arquivos; antes 8,4 GB); equipe com originais 9,76 GB (19 arquivos).
+- **Erros da IA nesta etapa** (registrados em `erros_ia.md`):
+  - originais movidos para dentro de pastas com o próprio nome;
+  - testes novos dependentes de repositório git;
+  - remoção do `pydantic` que deixou pacotes pela metade no `.venv`;
+  - script da prova que rodou comandos no projeto real, com os dados verificados intactos.
+- **Conversas:** `e12eda2b` convertida para `conversas/2026-10-18-fase1-parte1.md`; esta sessão (`784e4eca`) será convertida ao fim.
+- **Próximo passo:** revisão do autor na Parada 2, commit e publicação.
+
+## 2026-10-20 — Ajustes depois da Parada 2 (pedido do autor)
+- **Falha da linha de base registrada** em `erros_ia.md`: a de 2026-10-19 não listava os arquivos soltos de `data/` e não provava a ausência do `carga_atual.json`.
+- **Linha de base versionada:** `scripts/linha_de_base.py` registra todos os arquivos de `data/` (caminho, tamanho, data, SHA-256), os hashes de conteúdo e os 10 números. Testado só com leitura: 191 arquivos, e o único solto na raiz é o `radar.duckdb`.
+- **Proteção no `baixar_dados.py`:** recusa gravar o `data/carga_atual.json` onde já há banco ou gold, antes de baixar qualquer coisa, salvo com `--substituir`. Teste: `tests/test_pacotes.py::test_nao_grava_carga_atual_onde_ha_banco_ou_gold` (banco e gold). Suíte padrão: 135 passed.
+- **Achado:** o comando de lint documentado como padrão falha com as regras padrão do ruff (103 avisos de estilo). Registrado em `erros_ia.md`, com proposta, aguardando o autor.

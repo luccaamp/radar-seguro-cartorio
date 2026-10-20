@@ -26,13 +26,16 @@ Qual camada baixar para cada tarefa:
 
 | Tarefa | Camada | Depois de baixar |
 |---|---|---|
-| Coletor novo ou mudança num coletor | `bronze` | `uv run pipeline.py --a-partir-de bronze` |
+| Coletor novo ou mudança num coletor | `bronze` (e `originais`, para regerar um extrato) | `uv run pipeline.py --a-partir-de bronze`; `uv run pytest -m dados_reais tests/test_coletores.py` |
 | Limpeza (bronze → silver) | `bronze` | `uv run pipeline.py --a-partir-de bronze` |
 | Modelo, premissas, gold | `silver` | `uv run pipeline.py --a-partir-de silver` |
 | Painel e chat | `banco` (ou `silver` e recalcular) | `uv run streamlit run app/Inicio.py` |
 
 Observações:
-- O pacote de bronze tem cerca de 8,4 GB. Os outros são pequenos: silver ≈ 3 MB, gold completo ≈ 1 MB, banco ≈ 3 MB comprimido.
+- **Tamanhos:** o bronze oficial tem ≈ 78 MB comprimido (só os extratos e o `original.json` de cada fonte, D-032). Os demais: silver ≈ 3 MB, gold completo ≈ 1 MB, banco ≈ 3 MB comprimido. Pacote inteiro: ≈ 85 MB.
+- **Originais grandes** (zips do CNPJ, `.7z` e `.COMT` da RAIS, `BaseCompleta.zip` da SUSEP; ≈ 9,7 GB comprimidos), só se a tarefa exigir regerar um extrato:
+  - baixe com `--camadas originais`, se a carga tiver sido publicada com eles (`empacotar_dados.py --com-originais`);
+  - eles vão para a pasta de originais, fora do projeto (`C:\radar_arquivo\bronze_originais`; `config/pacotes.yaml` ou `RADAR_ORIGINAIS`).
 - O script nunca sobrescreve dados locais. Para trocar, use `--substituir`.
 - **Plano B:** se o GitHub estiver fora do ar, o autor pode passar o pacote numa pasta (OneDrive, pendrive). Instale com `--origem <pasta> --camadas ...`.
 - Sem acesso ou sem login, o script explica como pedir.
@@ -49,8 +52,19 @@ Observações:
 2. **Pull request** para a `main`. A `main` é protegida: não aceita push direto nem force-push, e o merge é feito pelo autor depois da revisão.
 3. **Antes de abrir o PR:**
    - `uv run pytest` passando (e `uv run pytest -m dados_reais`, se você tem os dados da equipe);
+   - `uv run ruff check src app tests scripts pipeline.py --exclude scripts/arquivo` sem erro (o padrão do projeto);
    - se mexeu no painel: `uv run python scripts/prints_painel.py --saida docs/qa/atual --checar`, com os prints e o `checagens.md` anexados ao PR (0 falhas de layout);
    - se mudou algum número: explique a cascata no PR (o que mudou, por quê, quanto) e regere o gold público com `uv run python scripts/gerar_publico.py`. O `tests/test_publico.py` avisa quando ele está desatualizado.
+
+## Notebooks
+
+Análise exploratória, mineração de dados e modelos preditivos ficam em `notebooks/` (detalhes em [`notebooks/README.md`](notebooks/README.md)):
+- **Uma vez no seu clone:** `uv run nbstripout --install`. O git passa a limpar as saídas dos notebooks no commit; o `tests/test_notebooks.py` falha se algum notebook versionado tiver saída.
+- **Notebook lê, não escreve:** dados só por `src/notebooks.py` (`conectar()` e `ler()`, somente leitura); nunca gravar em bronze, silver ou gold.
+- **`interno_*` só em `notebooks/privado/`** (fora do git). Saídas grandes vão em `notebooks/saidas/` e modelos em `modelos/`, também fora do git.
+- **Código reutilizável** sai do notebook e vai para `src/`, com teste.
+- **Nova biblioteca de modelagem** (ex.: `scikit-learn`) só com aprovação do autor.
+- **Abrir:** `uv run jupyter lab`.
 
 ## Regras do projeto, em resumo
 
