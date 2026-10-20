@@ -4,12 +4,15 @@
   uv run python scripts/baixar_dados.py --nivel publico --camadas silver --carga 2026-10-19
   # dados da equipe (colaboradores convidados; gh autenticado): qualquer camada
   uv run python scripts/baixar_dados.py --nivel equipe --camadas bronze,silver,gold,banco --carga 2026-10-19
+  # originais grandes (equipe; Release próprio originais-<ano>, D-032): vão para a pasta de originais, fora do projeto
+  uv run python scripts/baixar_dados.py --nivel originais --ano 2026
   # plano B: de uma pasta local (OneDrive, pendrive) com o manifesto e os arquivos do pacote
   uv run python scripts/baixar_dados.py --origem D:/pacotes/equipe --camadas bronze
 
-Junta as partes, confere o hash de cada parte, do zip e de cada arquivo, e só então instala em data/<camada>/.
-Nunca sobrescreve dados locais sem --substituir. Grava data/carga_atual.json (carga e nível em uso; o painel mostra
-no rodapé); onde já há banco ou gold, recusa (antes de baixar qualquer coisa), salvo com --substituir.
+Junta as partes, confere o hash de cada parte, do zip e de cada arquivo, e só então instala em data/<camada>/
+(originais: na pasta de originais, config/pacotes.yaml). Nunca sobrescreve dados locais sem --substituir.
+Grava data/carga_atual.json (carga e nível em uso; o painel mostra no rodapé); onde já há banco ou gold, recusa
+(antes de baixar qualquer coisa), salvo com --substituir. Os originais não são uma carga: não gravam esse arquivo.
 """
 import argparse
 import datetime as dt
@@ -38,8 +41,8 @@ class Fonte:
         self.nivel, self.carga, self.origem = nivel, carga, origem
         self.repo = pacotes.CONFIG["repositorios"][nivel]
         if not origem and not carga:
-            raise SystemExit("Informe --carga AAAA-MM-DD (ou --origem <pasta>).")
-        if nivel == "equipe" and not origem:
+            raise SystemExit("Informe --carga AAAA-MM-DD (originais: --ano AAAA), ou --origem <pasta>.")
+        if nivel in ("equipe", "originais") and not origem:
             r = subprocess.run(["gh", "release", "view", pacotes.tag(nivel, carga), "--repo", self.repo],
                                capture_output=True, text=True)
             if r.returncode != 0:
@@ -59,7 +62,7 @@ class Fonte:
                     for bloco in r.iter_bytes(1 << 20):
                         f.write(bloco)
         else:
-            r = subprocess.run(["gh", "release", "download", pacotes.tag("equipe", self.carga), "--repo", self.repo,
+            r = subprocess.run(["gh", "release", "download", pacotes.tag(self.nivel, self.carga), "--repo", self.repo,
                                 "--pattern", nome, "--dir", str(pasta), "--clobber"], capture_output=True, text=True)
             if r.returncode != 0:
                 raise SystemExit(ACESSO.format(repo=self.repo, erro=(r.stderr or r.stdout).strip()[:300]))
@@ -81,10 +84,12 @@ def carga_em_uso(raiz: Path) -> str | None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--nivel", choices=["publico", "equipe"], help="padrão: o do manifesto de --origem, ou publico")
+    ap.add_argument("--nivel", choices=["publico", "equipe", "originais"],
+                    help="padrão: o do manifesto de --origem, ou publico")
     ap.add_argument("--carga", help="AAAA-MM-DD (a tag do Release)")
-    ap.add_argument("--camadas", required=True, help="lista separada por vírgula: bronze,silver,gold,banco "
-                                                     "(equipe com --com-originais: também originais)")
+    ap.add_argument("--ano", help="só no nível originais: o ano da tag originais-<ano>")
+    ap.add_argument("--camadas", help="lista separada por vírgula: bronze,silver,gold,banco (originais: originais; "
+                                      "padrão: todas as camadas do pacote)")
     ap.add_argument("--origem", type=Path, help="pasta local com manifesto.json e os arquivos do pacote (plano B)")
     ap.add_argument("--substituir", action="store_true", help="substitui dados locais que já existem")
     ap.add_argument("--raiz", type=Path, default=RAIZ, help=argparse.SUPPRESS)   # testes: instalar noutra pasta
@@ -93,11 +98,14 @@ def main() -> None:
     with tempfile.TemporaryDirectory(prefix="radar_baixar_") as tmp:
         tmp = Path(tmp)
         nivel = args.nivel or (pacotes.ler_manifesto(args.origem)["nivel"] if args.origem else "publico")
-        fonte = Fonte(nivel, args.carga, args.origem)
+        carga = args.ano if nivel == "originais" and args.ano else args.carga
+        fonte = Fonte(nivel, carga, args.origem)
         man = json.loads(fonte.baixar(pacotes.MANIFESTO, tmp).read_text(encoding="utf-8"))
-        if man["nivel"] != nivel or (args.carga and man["carga"] != args.carga):
-            raise SystemExit(f"O pacote é do nível {man['nivel']}, carga {man['carga']}: não bate com o pedido.")
-        camadas = [c.strip() for c in args.camadas.split(",") if c.strip()]
+        pedido_ok = (man["tag"] == pacotes.tag(nivel, carga)) if carga else True   # originais: compara pela tag
+        if man["nivel"] != nivel or not pedido_ok:
+            raise SystemExit(f"O pacote é do nível {man['nivel']}, Release {man['tag']}: não bate com o pedido.")
+        camadas = ([c.strip() for c in args.camadas.split(",") if c.strip()] if args.camadas
+                   else sorted({a["camada"] for a in man["artefatos"]}))
         possiveis = sorted({a["camada"] for a in man["artefatos"]})
         fora = [c for c in camadas if c not in possiveis]
         if fora:
@@ -115,7 +123,7 @@ def main() -> None:
         # o data/carga_atual.json diz qual carga o painel mostra: onde já há banco ou gold, gravá-lo trocaria essa
         # informação de um projeto em uso (achado de 2026-10-19: uma instalação feita da pasta errada o criou no
         # projeto real). Só com --substituir.
-        if not args.substituir and (motivo := carga_em_uso(args.raiz)):
+        if nivel != "originais" and not args.substituir and (motivo := carga_em_uso(args.raiz)):
             raise SystemExit(f"Este projeto já tem {motivo}: instalar aqui gravaria data/carga_atual.json por cima da "
                              "carga em uso. Nada foi alterado. Confira a pasta (--raiz) ou use --substituir.")
 
@@ -138,6 +146,10 @@ def main() -> None:
                 shutil.move(str(extr / f["caminho"]), str(alvo))
             print(f"     ok: {len(a['arquivos'])} arquivos conferidos em {destino}")
 
+    if nivel == "originais":   # não é uma carga: não mexe no data/carga_atual.json
+        print(f"Originais instalados em {pacotes.pasta('originais')} (Release {man['tag']}). Para regerar um extrato, "
+              "ver tests/test_coletores.py (dados_reais).")
+        return
     info = {"carga": man["carga"], "nivel": nivel, "camadas": camadas, "versao_premissas": man["versao_premissas"],
             "commit_da_carga": man.get("commit"), "instalado_em": dt.datetime.now().replace(microsecond=0).isoformat()}
     (args.raiz / "data").mkdir(exist_ok=True)

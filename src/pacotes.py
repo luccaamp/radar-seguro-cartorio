@@ -49,7 +49,8 @@ def sha256(p: Path) -> str:
 
 
 def tag(nivel: str, carga: str) -> str:
-    return CONFIG["tag"][nivel].format(carga=carga)
+    """Tag do Release: dados-<carga>, carga-<carga> ou originais-<ano> (para originais, `carga` pode ser só o ano)."""
+    return CONFIG["tag"][nivel].format(carga=carga, ano=str(carga)[:4])
 
 
 def excluido(rel: str, regras: list[dict]) -> dict | None:

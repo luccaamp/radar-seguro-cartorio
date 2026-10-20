@@ -431,3 +431,19 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Linha de base versionada:** `scripts/linha_de_base.py` registra todos os arquivos de `data/` (caminho, tamanho, data, SHA-256), os hashes de conteúdo e os 10 números. Testado só com leitura: 191 arquivos, e o único solto na raiz é o `radar.duckdb`.
 - **Proteção no `baixar_dados.py`:** recusa gravar o `data/carga_atual.json` onde já há banco ou gold, antes de baixar qualquer coisa, salvo com `--substituir`. Teste: `tests/test_pacotes.py::test_nao_grava_carga_atual_onde_ha_banco_ou_gold` (banco e gold). Suíte padrão: 135 passed.
 - **Achado:** o comando de lint documentado como padrão falha com as regras padrão do ruff (103 avisos de estilo). Registrado em `erros_ia.md`, com proposta, aguardando o autor.
+
+## 2026-10-20 — Pacote de originais separado (Release originais-<ano>)
+- **Conferência pedida pelo autor ("19 arquivos, 9,76 GB × 27 originais, 14,07 GB"):** nenhum original ficava de fora. Os 27 estavam no pacote (CNPJ 22, RAIS 4, SUSEP 1). "19" contava os arquivos publicados (12 da carga mais 7 zips ou partes de originais), e a diferença de tamanho era compressão: os `.COMT` são texto e os 7,4 GB da RAIS viravam 2,3 GB.
+- **Decisão do autor:**
+  - excluir os `.COMT` da RAIS (`config/pacotes.yaml`, `originais_excluir`), porque saem do `.7z` e a regeneração foi provada;
+  - separar os originais num Release próprio, publicado uma vez (`originais-<ano>`), e deixar o `carga-<carga>` sempre enxuto.
+- **Feito:**
+  - `empacotar_dados.py --nivel originais` (o `--com-originais` saiu);
+  - `baixar_dados.py --nivel originais --ano AAAA`: instala na pasta de originais e não grava o `carga_atual.json` (não é uma carga) nem é bloqueado pela trava de banco ou gold;
+  - testes em `tests/test_pacotes.py` (instalação dos originais e tag por ano);
+  - `docs/publicacao.md` com os três Releases; `CONTRIBUTING.md` e `ESTADO_ATUAL.md` atualizados.
+- **Pacotes em `C:\radar_pacotes`:**
+  - público: 2,7 MB;
+  - carga (equipe): 84,6 MB, 12 arquivos;
+  - originais: 25 originais (8,29 GB) em 6 arquivos mais o manifesto; fora, os 2 `.COMT` (6,47 GB).
+- **Nota:** a IA escreveu "≈ 3,5 GB" para o pacote de originais no `publicacao.md` antes de medir; corrigido para ≈ 8,3 GB (os zips do CNPJ já são comprimidos).

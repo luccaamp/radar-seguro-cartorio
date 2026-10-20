@@ -26,16 +26,17 @@ Qual camada baixar para cada tarefa:
 
 | Tarefa | Camada | Depois de baixar |
 |---|---|---|
-| Coletor novo ou mudança num coletor | `bronze` (e `originais`, para regerar um extrato) | `uv run pipeline.py --a-partir-de bronze`; `uv run pytest -m dados_reais tests/test_coletores.py` |
+| Coletor novo ou mudança num coletor | `bronze` (e o Release `originais-<ano>`, para regerar um extrato) | `uv run pipeline.py --a-partir-de bronze`; `uv run pytest -m dados_reais tests/test_coletores.py` |
 | Limpeza (bronze → silver) | `bronze` | `uv run pipeline.py --a-partir-de bronze` |
 | Modelo, premissas, gold | `silver` | `uv run pipeline.py --a-partir-de silver` |
 | Painel e chat | `banco` (ou `silver` e recalcular) | `uv run streamlit run app/Inicio.py` |
 
 Observações:
 - **Tamanhos:** o bronze oficial tem ≈ 78 MB comprimido (só os extratos e o `original.json` de cada fonte, D-032). Os demais: silver ≈ 3 MB, gold completo ≈ 1 MB, banco ≈ 3 MB comprimido. Pacote inteiro: ≈ 85 MB.
-- **Originais grandes** (zips do CNPJ, `.7z` e `.COMT` da RAIS, `BaseCompleta.zip` da SUSEP; ≈ 9,7 GB comprimidos), só se a tarefa exigir regerar um extrato:
-  - baixe com `--camadas originais`, se a carga tiver sido publicada com eles (`empacotar_dados.py --com-originais`);
-  - eles vão para a pasta de originais, fora do projeto (`C:\radar_arquivo\bronze_originais`; `config/pacotes.yaml` ou `RADAR_ORIGINAIS`).
+- **Originais grandes** (zips do CNPJ, `.7z` da RAIS, `BaseCompleta.zip` da SUSEP), só se a tarefa exigir regerar um extrato:
+  - ficam num Release próprio, publicado uma vez (`originais-<ano>`, D-032): `uv run python scripts/baixar_dados.py --nivel originais --ano 2026`;
+  - vão para a pasta de originais, fora do projeto (`C:\radar_arquivo\bronze_originais`; `config/pacotes.yaml` ou `RADAR_ORIGINAIS`), e não mexem na carga instalada;
+  - os `.COMT` da RAIS não vêm no Release: o coletor os extrai do `.7z` quando faltam.
 - O script nunca sobrescreve dados locais. Para trocar, use `--substituir`.
 - **Plano B:** se o GitHub estiver fora do ar, o autor pode passar o pacote numa pasta (OneDrive, pendrive). Instale com `--origem <pasta> --camadas ...`.
 - Sem acesso ou sem login, o script explica como pedir.

@@ -82,6 +82,42 @@ def test_nao_grava_carga_atual_onde_ha_banco_ou_gold(tmp_path, carga):
     assert existente.read_bytes() == b"carga em uso"   # instalar o silver não mexe no banco nem no gold
 
 
+def test_originais_vao_para_a_pasta_de_originais_sem_tocar_na_carga(tmp_path):
+    """SINTÉTICO: o pacote de originais (Release originais-<ano>, D-032) instala na pasta de originais, confere os
+    hashes e não grava o data/carga_atual.json (originais não são uma carga), mesmo onde já há banco."""
+    origem = tmp_path / "orig_fonte" / "cnpj"
+    (origem / "2026-10").mkdir(parents=True)
+    (origem / "2026-10" / "Estabelecimentos0.zip").write_bytes(b"zip sintetico" * 300)
+    saida = tmp_path / "pacote"
+    saida.mkdir()
+    zip_ = saida / "originais-cnpj-2026.zip"
+    lista = pacotes.zipar(origem, [origem / "2026-10" / "Estabelecimentos0.zip"], zip_)
+    a = {"camada": "originais", "nome": "originais-cnpj", "zip": zip_.name, "bytes_zip": zip_.stat().st_size,
+         "sha256_zip": pacotes.sha256(zip_), "destino": f"{pacotes.DESTINO_ORIGINAIS}/cnpj", "arquivos": lista,
+         "excluidos": [], "partes": []}
+    (saida / pacotes.MANIFESTO).write_text(json.dumps(
+        {"nivel": "originais", "carga": "2026", "ano": "2026", "tag": "originais-2026", "artefatos": [a]}),
+        encoding="utf-8")
+    raiz = tmp_path / "projeto"
+    (raiz / "data").mkdir(parents=True)
+    (raiz / "data" / "radar.duckdb").write_bytes(b"carga em uso")
+    destino = tmp_path / "originais_instalados"
+    r = subprocess.run([sys.executable, str(RAIZ / "scripts" / "baixar_dados.py"), "--origem", str(saida),
+                        "--raiz", str(raiz)], capture_output=True, text=True, encoding="utf-8",
+                       env={**UTF8, "RADAR_ORIGINAIS": str(destino)})
+    assert r.returncode == 0, r.stdout + r.stderr
+    instalado = destino / "cnpj" / "2026-10" / "Estabelecimentos0.zip"
+    assert pacotes.sha256(instalado) == lista[0]["sha256"]
+    assert not (raiz / "data" / "carga_atual.json").exists()
+    assert (raiz / "data" / "radar.duckdb").read_bytes() == b"carga em uso"
+
+
+def test_tag_dos_originais_e_por_ano():
+    assert pacotes.tag("originais", "2026") == pacotes.tag("originais", "2026-10-19") == "originais-2026"
+    assert pacotes.tag("equipe", "2026-10-19") == "carga-2026-10-19"
+    assert any(r["padrao"].endswith(".COMT") for r in pacotes.CONFIG["originais_excluir"])
+
+
 def test_arquivo_corrompido_falha(tmp_path):
     pac = pacote_sintetico(tmp_path)
     z = next(pac.glob("*.zip"))

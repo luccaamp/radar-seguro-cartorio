@@ -39,7 +39,10 @@ O conjunto público (`data/publico/manifesto.json`) traz o hash de cada tabela. 
 
 ## Em andamento e próximos 5 passos
 1. Autor revisa a Parada 2 da limpeza e faz o commit na `limpeza-fase1` (e o merge na `main`).
-2. Autor publica os Releases a partir de `C:\radar_pacotes\`: o público (2,7 MB) e o da equipe com originais (≈ 9,8 GB) ou enxuto (≈ 85 MB). Ver `docs/publicacao.md`.
+2. Autor publica os Releases a partir de `C:\radar_pacotes\`, conforme `docs/publicacao.md`:
+   - `dados-2026-10-19`: público, 2,7 MB;
+   - `carga-2026-10-19`: equipe, sempre enxuto, ≈ 85 MB;
+   - `originais-2026`: originais grandes sem os `.COMT`, publicado uma vez.
 3. Autor protege a `main` e convida a equipe (`CONTRIBUTING.md`).
 4. Backup externo de `C:\radar_arquivo\`, que é a única cópia local dos originais.
 5. Bloco 2 do plano de qualidade (`docs/plano_qualidade_e_correcoes.md`).
