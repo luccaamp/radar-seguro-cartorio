@@ -447,3 +447,12 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
   - carga (equipe): 84,6 MB, 12 arquivos;
   - originais: 25 originais (8,29 GB) em 6 arquivos mais o manifesto; fora, os 2 `.COMT` (6,47 GB).
 - **Nota:** a IA escreveu "≈ 3,5 GB" para o pacote de originais no `publicacao.md` antes de medir; corrigido para ≈ 8,3 GB (os zips do CNPJ já são comprimidos).
+
+## 2026-10-20 — Fechamento da Fase 1 (antes do Bloco 2)
+- **Conversa:** a sessão `784e4eca` foi convertida para `conversas/2026-10-18-fase1-parte2.md` (45 mensagens do autor, 1.350 ferramentas, 445 KB). Ela começou como continuação da `e12eda2b`, então as 9 primeiras mensagens (18/10, 00:53 a 09:50) repetem o início da parte 1. Conferência: nenhum e-mail além do `noreply@anthropic.com` da assinatura de commit, nenhum CPF, telefone ou token; "rafae" só aparece em caminhos de pasta do Windows e "luccaamp" é o usuário público do GitHub.
+- **Releases conferidos (só leitura, `gh release list`):** `dados-2026-10-19` (público), `carga-2026-10-19` e `originais-2026` (privado), todos publicados.
+- **`main` protegida:** ruleset `main protegida` ativa (Restrict deletions, PR com 0 aprovações, Block force pushes), com o dono do repositório na Bypass list por escolha própria. `docs/publicacao.md`, seção 4, reescrita como situação atual.
+- **Mudança de pasta (D-033):** o projeto vai para `C:\projetos\radar-seguro-cartorio`, fora do OneDrive. Atualizados `CLAUDE.md` (regra "Disco e pastas"), `README.md`, `CONTRIBUTING.md`, `docs/publicacao.md`, `docs/SPEC.md` (riscos), `docs/prompts.md` (pasta de sessões do Claude Code) e o comentário de `config/pacotes.yaml`. O histórico (diário, erros, `docs/historico/`, conversas) ficou como estava.
+- **Caminhos absolutos:** nenhum caminho com "OneDrive" ou "Área de Trabalho" em `src/`, `app/`, `tests/`, `scripts/`, `config/` nem no `pipeline.py`; só comentários dizendo "fora do OneDrive". O único caminho absoluto antigo está em `.claude/settings.local.json` (duas permissões de `git -C`), que não quebra nada, só deixa de valer.
+- **Nova ordem das etapas** (decisão do autor) no `docs/SPEC.md` (§8) e no `docs/ESTADO_ATUAL.md`: Bloco 2 (começando pelo Q4), Bloco 3, mineração de MG em notebooks, redesenho do painel de MG, chat com a UF como parâmetro, estudo da ordem dos estados e expansão estado por estado.
+- **Próximo passo:** commit do autor, mudança de pasta e Bloco 2, item Q4.

@@ -75,15 +75,15 @@ O Markdown traz:
 - as ferramentas em uma linha cada, só com a ação, sem o resultado;
 - as notificações automáticas e os avisos do editor como notas de uma linha.
 
-Rode os comandos no terminal, dentro da pasta do projeto. O Claude Code guarda as sessões numa pasta cujo nome é o caminho do projeto com `\`, `:`, espaços e acentos trocados por `-`. No caso do autor, o caminho é `C:\Users\<usuario>\OneDrive\Área de Trabalho\Projeto_Nubank`, e a pasta fica como nos comandos abaixo. Troque `<usuario>` pelo seu usuário do Windows.
+Rode os comandos no terminal, dentro da pasta do projeto. O Claude Code guarda as sessões numa pasta cujo nome é o caminho do projeto com `\`, `:`, espaços e acentos trocados por `-`. No caso do autor, o caminho é `C:\projetos\radar-seguro-cartorio` (D-033), e a pasta fica como nos comandos abaixo (confira o nome exato com `Get-ChildItem "$env:USERPROFILE\.claude\projects"`; a letra do disco pode vir minúscula). As sessões até 2026-10-20 ficam na pasta do caminho antigo, `c--Users-<usuario>-OneDrive--rea-de-Trabalho-Projeto-Nubank`; troque `<usuario>` pelo seu usuário do Windows.
 
 1. Veja qual é o arquivo da conversa. O mais recente aparece primeiro:
    ```powershell
-   Get-ChildItem "$env:USERPROFILE\.claude\projects\c--Users-<usuario>-OneDrive--rea-de-Trabalho-Projeto-Nubank\*.jsonl" | Sort-Object LastWriteTime -Descending | Select-Object Name, LastWriteTime
+   Get-ChildItem "$env:USERPROFILE\.claude\projects\c--projetos-radar-seguro-cartorio\*.jsonl" | Sort-Object LastWriteTime -Descending | Select-Object Name, LastWriteTime
    ```
 2. Converta, trocando `<id>` pelo nome do arquivo e escolhendo o nome da saída e o título:
    ```powershell
-   uv run python scripts\jsonl_para_md.py "$env:USERPROFILE\.claude\projects\c--Users-<usuario>-OneDrive--rea-de-Trabalho-Projeto-Nubank\<id>.jsonl" "conversas\AAAA-MM-DD-nome.md" "Conversa — título"
+   uv run python scripts\jsonl_para_md.py "$env:USERPROFILE\.claude\projects\c--projetos-radar-seguro-cartorio\<id>.jsonl" "conversas\AAAA-MM-DD-nome.md" "Conversa — título"
    ```
 
 O comando recebe três argumentos, nesta ordem: o `.jsonl` de origem, o `.md` de saída e o título. No fim, ele mostra quantas mensagens, respostas, ferramentas e notificações converteu.

@@ -27,7 +27,7 @@ originais_excluir:
 ja_comprimidos: [".zip", ".7z", ".gz", ".xlsx", ".pdf", ".parquet"]
 # só documentação: nenhum script lê esta chave; é a regra do passo 7 de docs/publicacao.md (o autor apaga à mão)
 manter_ultimas_cargas: 3
-# pastas FORA do OneDrive (CLAUDE.md, "Disco e OneDrive"); "~" é a pasta do usuário. Podem ser trocadas pelas
+# pastas FORA do projeto e do OneDrive (CLAUDE.md, "Disco e pastas"; D-033); "~" é a pasta do usuário. Podem ser trocadas pelas
 # variáveis de ambiente RADAR_PACOTES e RADAR_ORIGINAIS.
 pastas:
   pacotes:            # saída padrão de scripts/empacotar_dados.py (pacotes/<nivel>)

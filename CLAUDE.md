@@ -37,7 +37,7 @@ Projeto de portfólio, 100% gratuito e rodando localmente, com um painel de cart
 - **Público (repositório e Release públicos):** nenhuma ESTIMATIVA do modelo no nível de serventia (passivo, déficit, probabilidade, IS, prêmio); dados de origem já publicados pelas fontes oficiais (CNJ, RAIS/PDET, Receita, IBGE, SUSEP) podem ir, desde que sem dado pessoal (D-030).
 - Arquivos grandes (bronze, banco DuckDB) nunca vão para o git.
 - **Pacote da equipe:** `interno_*`, banco `.duckdb` e o pacote da equipe só existem localmente ou no repositório privado `radar-seguro-cartorio-dados` (D-030). Nunca no repositório público, em issues, PRs, prints ou serviços externos (inclusive IAs online).
-- **Disco e OneDrive:** o projeto fica no OneDrive (decisão do autor). Arquivos grandes gerados (pacotes, cópias de bronze, arquivos de backup) vão para pastas **fora do OneDrive** (ex.: `C:\radar_pacotes`, `C:\radar_arquivo`). Nunca apagar dado do bronze, silver ou gold sem aprovação explícita; para retirar, **mover** para `C:\radar_arquivo`.
+- **Disco e pastas:** o projeto fica em `C:\projetos\radar-seguro-cartorio`, **fora do OneDrive** (D-033; antes ficava no OneDrive). Arquivos grandes gerados (pacotes, cópias de bronze, arquivos de backup) continuam em pastas **fora do projeto** (ex.: `C:\radar_pacotes`, `C:\radar_arquivo`), e nada do projeto volta para o OneDrive. Nunca apagar dado do bronze, silver ou gold sem aprovação explícita; para retirar, **mover** para `C:\radar_arquivo`.
 - Painel e chat só leem tabelas públicas; `gold.interno_*` (e qualquer `interno_*`) é proibido fora do pipeline (testado em `tests/test_app_codigo.py`).
 
 ## Padrões de código

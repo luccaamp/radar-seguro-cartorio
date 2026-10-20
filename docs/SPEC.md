@@ -406,13 +406,31 @@ Gabarito de 40 a 60 documentos reais, com pelo menos 10 relevantes. Métricas: p
 - Páginas Mercado, Simulador e Qualidade dos dados para MG.
 - **Aceite**: `uv run pipeline.py` gera tudo a partir dos snapshots do bronze, os testes passam e todo número na tela tem fonte, data de referência e versão.
 
+### Nova ordem das etapas depois da Fase 1 (decisão do autor, 2026-10-20)
+
+A Fase 1 foi concluída e fechada em 2026-10-20. A partir daí, a ordem é esta (substitui a ordem das Fases 2 e 3 abaixo, cujo conteúdo e critérios de aceite continuam valendo):
+
+1. **Bloco 2: qualidade dos dados** (`docs/plano_qualidade_e_correcoes.md`), começando pelo **Q4** (receita bruta do Prov. 213 × arrecadação × arrecadação menos repasse).
+2. **Bloco 3: premissas do seguro** (mesmo plano, S1 a S6).
+3. **Mineração dos dados de MG em notebooks** (`notebooks/`, regras do `CLAUDE.md`: só leitura, saídas limpas, `interno_*` só em `notebooks/privado/`).
+4. **Redesenho do painel de MG** com os achados da mineração.
+5. **Chat de IA** (antiga Fase 3): as ferramentas recebem a **UF como parâmetro** e respondem **só com visões públicas auditadas** (regras da Fase 3 abaixo).
+6. **Estudo da ordem dos estados**, em notebook: uma nota que combina tamanho, mercado, viabilidade dos dados e adoção, com teste de sensibilidade dos pesos e validação com MG. O resultado é registrado como decisão no `docs/decisoes.md`.
+7. **Expansão estado por estado** (antiga Fase 2), na ordem do estudo do passo 6, cada UF com contratos, reconciliações e o auditor (§4).
+
+As Fases 4 (Radar, opcional) e 5 (Entrega) vêm depois, sem mudança.
+
 ### Fase 2: Brasil inteiro e qualidade
+
+> A partir de 2026-10-20, a expansão é feita **estado por estado**, no passo 7 da nova ordem acima.
 
 - Expandir para todas as UFs disponíveis, com contratos e reconciliações (§4).
 - Medir o tempo do auditor com as 27 UFs (acrescentado em 2026-10-18).
 - **Aceite**: página Qualidade dos dados completa e divergências documentadas no diário.
 
 ### Fase 3: Chat
+
+> A partir de 2026-10-20, o chat é o passo 5 da nova ordem acima, antes da expansão. As ferramentas recebem a UF como parâmetro desde o início.
 
 - Ordem: gabarito (rotulado pelo autor) → ferramentas → integração com o Ollama → página Chat → eval das versões.
 - **Regra (acrescentada em 2026-10-18):** painel e chat só leem tabelas públicas; `gold.interno_*` é proibido fora do pipeline. As ferramentas do chat e o `sql_readonly` (§5.2) entram na varredura de `tests/test_app_codigo.py`.
@@ -468,5 +486,5 @@ Gabarito de 40 a 60 documentos reais, com pelo menos 10 relevantes. Métricas: p
 | Limites de classe mudam todo ano (art. 16, §2º, do 213) | Universo desatualizado | Nova versão em `regras_classificacao.yaml`; monitorado pelo radar |
 | Concorrência com regularização por bens próprios e com fiança | Demanda superestimada | Premissa `escolha_garantia` |
 | Liminar na ADI 8015 perto da entrevista | Muda a narrativa da demo | Cenário `suspende_8_17` pronto; conferir na véspera |
-| Projeto dentro do OneDrive (decisão do autor) | Sincronização pode travar `.venv` e DuckDB | Se ocorrer, mover o `.venv` para fora com `UV_PROJECT_ENVIRONMENT` e registrar no diário |
+| ~~Projeto dentro do OneDrive~~ (resolvido: D-033, projeto movido para `C:\projetos\radar-seguro-cartorio` em 2026-10-20) | A sincronização travou pastas, o `.venv` e trocas de pasta na Fase 1 | Pasta local sem sincronização; pacotes e originais fora do projeto (`config/pacotes.yaml`) |
 | Corte de conhecimento da IA anterior às normas | A IA pode inventar artigos | Confirmar todo artigo no texto oficial; registrar erros em `erros_ia.md` |

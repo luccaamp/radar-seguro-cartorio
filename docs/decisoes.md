@@ -398,3 +398,21 @@ Formato:
   - ausência do P3 e a combinada da D-032, numa cópia: 25/25 e 25/25, com o `fonte_metadados` igual graças ao `original.json`.
 - **Tamanhos:** bronze oficial de 14,9 GB para 144 MB. Os originais (14,8 GB) passam a ter **uma única cópia local**, em `C:\radar_arquivo\`; as fontes podem trocar o arquivo publicado. **Backup externo a cargo do autor.**
 - **Mantidos no bronze:** ANOREG, normas, STF (fontes do chat, Fase 3), CSV do BI do CNJ (verificações), cadastros das outras 26 UFs (Fase 2), layouts da RAIS, os `_metadados.json` originais e o `ses_cias.csv`.
+
+## D-033 — Projeto sai do OneDrive para `C:\projetos\radar-seguro-cartorio`
+- **Data:** 2026-10-20
+- **Contexto:** desde a Sessão 0, o projeto ficava em `C:\Users\<usuario>\OneDrive\Área de Trabalho\Projeto_Nubank` (decisão do autor; `docs/diario.md`, Fase 0). O OneDrive causou problemas repetidos na Fase 1 e na limpeza:
+  - segurou pastas recém-alteradas e impediu renomear e apagar (WinError 183 e 5; `docs/erros_ia.md`, 2026-10-19);
+  - negou acesso a pastas do `.venv` durante o `uv remove` (`docs/erros_ia.md`);
+  - o "Á" de "Área de Trabalho" quebrou um `.ps1` no PowerShell 5.1 (`docs/erros_ia.md`);
+  - deixou pastas vazias que não puderam ser apagadas (`pacotes/`, `docs/qa/antes/`, `data/publico.antigo/`, `data/publico.novo/`);
+  - obrigou a gerar pacotes e originais fora do projeto para não estourar a cota gratuita.
+- **Opções:** (a) manter no OneDrive e contornar caso a caso (risco já previsto no SPEC, §riscos); (b) mover o `.venv` para fora com `UV_PROJECT_ENVIRONMENT`; (c) mover o projeto inteiro para uma pasta local sem sincronização.
+- **Decisão (do autor):** (c). O projeto passa para `C:\projetos\radar-seguro-cartorio`: caminho curto, sem espaço, sem acento e fora do OneDrive.
+- **O que não muda:**
+  - pacotes em `C:\radar_pacotes` e originais em `C:\radar_arquivo\bronze_originais` (`config/pacotes.yaml`), fora da pasta do projeto, para o clone continuar leve e nada grande ser adicionado ao git por engano;
+  - a regra de nunca apagar dado do bronze, silver ou gold sem aprovação (retirar = mover para `C:\radar_arquivo`);
+  - o código: não há caminho absoluto do projeto em `src/`, `app/`, `tests/`, `scripts/` nem `config/` (conferido em 2026-10-20).
+- **Como mover:** clone novo do GitHub na pasta nova, mais a cópia, com `robocopy`, do que não está no git (dados, banco, notebooks privados, `docs/qa/`, `conversas/`, `.claude/settings.local.json`). O `.venv` não é copiado: é recriado com `uv sync` (se falhar com hardlink, `UV_LINK_MODE=copy`, `docs/diario.md`).
+- **Justificativa:** o OneDrive não faz parte da reprodutibilidade (o backup do código é o GitHub; o dos dados, os Releases e o backup externo de `C:\radar_arquivo\`), e os bloqueios de sincronização já custaram retrabalho e erros registrados.
+- **Histórico:** as menções a "fora do OneDrive" em `docs/diario.md`, `docs/erros_ia.md`, `docs/historico/` e nas conversas ficam como estão, porque descrevem o que aconteceu na época.

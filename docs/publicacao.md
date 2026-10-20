@@ -34,7 +34,7 @@ uv run python scripts/empacotar_dados.py --nivel originais    # C:\radar_pacotes
 
 Os `.COMT` (6,5 GB) ficam fora porque saem do `.7z`: o coletor extrai de novo quando faltam, e regerar o extrato a partir do `.7z` dá o mesmo SHA-256 (`tests/test_coletores.py`). A regra está em `config/pacotes.yaml` (`originais_excluir`).
 
-**Onde ficam os pacotes:** por padrão em `C:\radar_pacotes\<nivel>`, fora do OneDrive (`config/pacotes.yaml`, `pastas.pacotes`, ou a variável `RADAR_PACOTES`). O projeto fica no OneDrive, e gerar pacotes grandes dentro dele faria o OneDrive sincronizar tudo, o que pode estourar a cota gratuita.
+**Onde ficam os pacotes:** por padrão em `C:\radar_pacotes\<nivel>`, fora da pasta do projeto (`config/pacotes.yaml`, `pastas.pacotes`, ou a variável `RADAR_PACOTES`). O projeto fica em `C:\projetos\radar-seguro-cartorio`, fora do OneDrive (D-033); os pacotes continuam fora dele para o clone ficar leve e nada grande entrar no git por engano. Nunca gere pacotes dentro de uma pasta sincronizada (OneDrive): pode estourar a cota gratuita.
 
 Cada script imprime os tamanhos por camada e o total. O `manifesto.json` de cada pacote tem a carga, a data de referência de cada fonte, a versão das premissas, o commit e o SHA-256 e o tamanho de cada arquivo e de cada parte.
 
@@ -76,7 +76,7 @@ Se um snapshot novo de CNPJ, RAIS ou SUSEP for coletado, gere de novo com `--niv
 - **Upload que falhar no meio:** use `gh release upload <tag> <arquivo> --repo ... --clobber` só para o arquivo que faltou.
 - **Pelo site** (arquivos pequenos, como o Release público): *Releases → Draft a new release → Choose a tag* (digite `dados-2026-10-19`, "Create new tag") → arraste o zip e o `manifesto.json` → *Publish release*.
 
-**Conferir depois de publicar**, numa pasta fora do OneDrive:
+**Conferir depois de publicar**, num clone temporário fora da pasta do projeto (e fora do OneDrive):
 ```powershell
 uv run python scripts/baixar_dados.py --nivel publico --camadas silver --carga 2026-10-19
 uv run python scripts/baixar_dados.py --nivel equipe --camadas banco --carga 2026-10-19
@@ -85,18 +85,25 @@ uv run python scripts/baixar_dados.py --nivel originais --ano 2026   # vai para 
 
 ## 4. Proteger a `main` no repositório público
 
-*Settings → Rules → Rulesets → New ruleset → New branch ruleset*:
+**Situação atual (2026-10-20): feito.** A ruleset `main protegida` está **ativa** no repositório público, com:
+- ✅ *Restrict deletions*;
+- ✅ *Require a pull request before merging*, com **Required approvals = 0**;
+- ✅ *Block force pushes*;
+- **Bypass list:** o **dono do repositório** (o autor), por escolha própria.
+
+Na prática:
+- **o autor** pode dar push direto na `main` (está na Bypass list); mesmo assim, ninguém apaga a `main` nem força push nela;
+- **os colaboradores** não podem dar push direto: trabalham numa branch e abrem um PR, e o merge não exige aprovação de outra pessoa (0 aprovações).
+
+Como foi criada (para refazer em outro repositório): *Settings → Rules → Rulesets → New ruleset → New branch ruleset*:
 
 1. **Ruleset name:** `main protegida`. **Enforcement status:** *Active*.
 2. **Target branches:** *Add target → Include default branch*.
-3. **Branch rules:**
-   - ✅ *Restrict deletions*;
-   - ✅ *Require a pull request before merging*, com **Required approvals = 0**. Assim você, único revisor, faz merge dos próprios PRs; o push direto na `main` fica bloqueado para todos;
-   - ✅ *Block force pushes*.
-4. **Bypass list:** deixe vazia, para que nem você consiga dar push direto. Se um dia precisar de uma correção urgente sem PR, adicione temporariamente *Repository admin* com *Allow for pull requests only* ou *Always*, e retire depois.
+3. **Branch rules:** as três marcadas acima.
+4. **Bypass list:** *Add bypass* → o dono do repositório (ou deixe vazia, se quiser que nem o dono dê push direto).
 5. *Create*.
 
-Teste: `git push origin main` com um commit local deve ser recusado; um PR deve permitir o merge sem aprovação de outra pessoa.
+Teste: um colaborador que der `git push origin main` deve ser recusado; um PR dele deve permitir o merge sem aprovação de outra pessoa. O push direto do autor passa, por causa da Bypass list.
 
 ## 5. Convidar colaboradores
 

@@ -97,7 +97,7 @@ tests/               suíte padrão, dados_reais e visual
 pipeline.py          orquestrador: uv run pipeline.py --a-partir-de bronze|silver
 ```
 
-Fora do git, só local: `data/bronze`, `data/silver`, `data/gold`, `data/radar.duckdb`, `conversas/` e `docs/qa/`. Também ficam fora, e fora do OneDrive, os pacotes de dados (`C:\radar_pacotes`) e os originais grandes do bronze (`C:\radar_arquivo\bronze_originais`, D-032).
+Fora do git, só local: `data/bronze`, `data/silver`, `data/gold`, `data/radar.duckdb`, `conversas/` e `docs/qa/`. Também ficam fora, e fora da pasta do projeto, os pacotes de dados (`C:\radar_pacotes`) e os originais grandes do bronze (`C:\radar_arquivo\bronze_originais`, D-032).
 
 ## Fontes
 

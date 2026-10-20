@@ -492,3 +492,10 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 
 ## Nota à entrada "Comando de lint 'padrão' documentado sem ter sido rodado como documentado" (2026-10-20)
 - **Correção aplicada, com a aprovação do autor:** `[tool.ruff.lint] select = ["F"]` no `pyproject.toml`. O comando documentado passa sem avisos (`All checks passed!`) e a suíte padrão segue com 135 passed. As regras de estilo ficaram como pendência no `docs/ESTADO_ATUAL.md`.
+
+## 2026-10-20 — Pasta de QA dada como cópia sem comparar
+- **Onde:** `docs/ESTADO_ATUAL.md` (pendências), no fechamento da Fase 1.
+- **O que aconteceu:** a IA escreveu que `docs/qa/depois/` "repete a galeria de `docs/qa/atual/`" só porque as duas tinham os mesmos 54 nomes de arquivo e quase o mesmo tamanho.
+- **Como foi achado:** pela própria IA, ao conferir com `diff -rq` antes do relatório: as imagens são diferentes.
+- **Correção:** o texto passou a dizer que é uma galeria de outra rodada, com imagens diferentes, e a decisão de mantê-la ficou com o autor. Regra: mesmo nome e tamanho parecido não provam cópia; comparar o conteúdo (hash ou `diff`).
+- **Bom para os slides?** não

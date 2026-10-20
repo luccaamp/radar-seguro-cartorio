@@ -13,6 +13,7 @@ Guia para quem foi convidado a trabalhar no Radar Seguro-Garantia Cartórios. As
    gh auth login
    ```
 4. Instale o `uv` e as dependências (ver README, "Como rodar", passo 1).
+5. Clone numa pasta local **sem sincronização** (fora do OneDrive, do Dropbox etc.), de preferência com caminho curto, sem espaço e sem acento. O autor usa `C:\projetos\radar-seguro-cartorio` (D-033): o OneDrive trava pastas e o `.venv` durante a sincronização.
 
 ## Dados da equipe
 
@@ -38,7 +39,7 @@ Observações:
   - vão para a pasta de originais, fora do projeto (`C:\radar_arquivo\bronze_originais`; `config/pacotes.yaml` ou `RADAR_ORIGINAIS`), e não mexem na carga instalada;
   - os `.COMT` da RAIS não vêm no Release: o coletor os extrai do `.7z` quando faltam.
 - O script nunca sobrescreve dados locais. Para trocar, use `--substituir`.
-- **Plano B:** se o GitHub estiver fora do ar, o autor pode passar o pacote numa pasta (OneDrive, pendrive). Instale com `--origem <pasta> --camadas ...`.
+- **Plano B:** se o GitHub estiver fora do ar, o autor pode passar o pacote numa pasta (pendrive ou pasta compartilhada). Instale com `--origem <pasta> --camadas ...`.
 - Sem acesso ou sem login, o script explica como pedir.
 - Os testes que precisam desses dados são marcados `dados_reais` e ficam fora da suíte padrão. Rode com `uv run pytest -m dados_reais`.
 
