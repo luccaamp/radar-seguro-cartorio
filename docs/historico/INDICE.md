@@ -14,3 +14,10 @@ Pedidos do autor (e uma resposta da IA) que conduziram a Fase 1, na ordem em que
 | [limpeza_projeto.md](limpeza_projeto.md) | 2026-10-19 | Ajustes finais (D-031, registro da Fase 1, `ESTADO_ATUAL.md`), limpeza do projeto e D-032. |
 
 O plano do Bloco 2 (`docs/plano_qualidade_e_correcoes.md`) continua em `docs/`, porque ainda será executado.
+
+## Movidos para cá em 2026-10-21 (D-035)
+
+| Arquivo | Data | O que foi |
+|---|---|---|
+| [viabilidade.md](viabilidade.md) | 2026-10-17/18 | Resultado da Fase 0: fontes testadas, conferências entre fontes, escolha do universo e do modelo do Ollama. Continua como fonte para a E2, a E5, a E6 e a E7 do `docs/ROADMAP.md`. |
+| [prompts.md](prompts.md) | 2026-10-17 a 2026-10-20 | Pedidos por fase usados até a Fase 1. Superado pelo `docs/ROADMAP.md`; o procedimento de salvar conversas foi para o `CONTRIBUTING.md`. |

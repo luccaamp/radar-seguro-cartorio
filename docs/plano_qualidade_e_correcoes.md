@@ -1,5 +1,7 @@
 # Plano de correções, qualidade de dados e análises avançadas — fechamento da Fase 1 e Etapa 2
 
+> **Nota (2026-10-21, D-035):** Bloco 1 concluído na Fase 1; Bloco 2 = E1 e Bloco 3 = E2 do `docs/ROADMAP.md`; as decisões novas são numeradas a partir da D-036 (as citações a D-026, D-027 e D-028 neste plano são numeração antiga).
+
 > **Para o Claude Code.** Atue como **engenheiro de dados sênior, cientista de dados sênior e especialista em seguros**. Este documento junta tudo o que encontrei na revisão do painel (carga de 18/10/2026, 15:18) e propõe correções para os defeitos de tela, para as **limitações declaradas** e para a **qualidade dos dados**, além de análises novas.
 >
 > Os números marcados como **(BI)** foram calculados por mim **fora do projeto**, com o CSV do BI do CNJ (`data/bronze/cnj_bi_painel/2026-10-18/`) e o cadastro do BI que **não** está no projeto. Servem como **evidência e ordem de grandeza**. Recalcule tudo com o silver do projeto. Se der diferente, explique, sem ajustar para bater.

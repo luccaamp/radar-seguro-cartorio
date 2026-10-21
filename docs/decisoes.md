@@ -1,6 +1,6 @@
 # Registro de decisões
 
-Cada decisão de interpretação ou de modelagem que afeta números do painel ou do chat. Mais recente no topo.
+Cada decisão de interpretação ou de modelagem que afeta números do painel ou do chat. **Ordem:** a D-001 a D-018 ficaram com a mais recente no topo; da D-019 em diante, cada decisão nova entra **no fim** do arquivo (as notas de decisão final e de status ficam logo depois das propostas a que se referem). Nada é reordenado.
 O `docs/diario.md` conta o que aconteceu; este arquivo explica **por que** cada escolha foi feita.
 
 Formato:
@@ -452,3 +452,26 @@ Formato:
   - `tests/test_app_demo.py`: SHA-256 do banco de demonstração igual;
   - `tests/test_app.py` (`dados_reais`): SHA-256 igual depois de abrir as páginas e salvar, cenário presente depois de reiniciar, banco com atributo de somente leitura; `test_simulador_salva_cenario_sem_nova_versao` (Fase 1) mantido, com as verificações apontando para o arquivo de cenários;
   - `tests/test_pipeline.py::test_carga_preserva_estado_nao_cresce_e_e_reprodutivel` (`dados_reais`): mantido; em vez de um cenário na tabela antiga, confere que as versões de premissas são preservadas e que `estado.cenarios_salvos` não existe depois da carga.
+
+## D-035 — ROADMAP como fonte do plano; papéis e níveis dos documentos
+- **Data:** 2026-10-21
+- **Contexto:** o autor criou o `docs/ROADMAP.md`. A análise de contradições pedida pelo autor (C1 a C15, F1 a F8), revisada pelo revisor do autor, mostrou que o `CLAUDE.md`, o `SPEC.md` (§8), o `ESTADO_ATUAL.md` e o plano de qualidade ainda diziam outra coisa sobre a ordem e o papel de cada documento.
+- **Decisão (do autor):**
+  - **o ROADMAP é a fonte do plano** (etapas, ordem, entregáveis, critério de pronto, pendências); o SPEC é o desenho técnico; o ESTADO_ATUAL é a foto de agora e a fonte dos valores dos 10 números;
+  - **hierarquia em caso de conflito:** `CLAUDE.md` > `ROADMAP.md` > `SPEC.md`;
+  - **níveis dos documentos:**
+    1. núcleo, lido no início de toda sessão: `CLAUDE.md`, `docs/ESTADO_ATUAL.md`, `docs/ROADMAP.md`;
+    2. referência, consultada quando a etapa toca no assunto: `docs/SPEC.md`, `docs/decisoes.md`, `docs/dicionario_dados.md`, `docs/plano_qualidade_e_correcoes.md` (só na E1 e na E2; vira histórico depois);
+    3. registros, só acrescentam: `docs/diario.md`, `docs/erros_ia.md`;
+    4. pontuais: `docs/publicacao.md`, `CONTRIBUTING.md`, `README.md` (raiz), `notebooks/README.md`, `docs/README.md` (índice);
+    - históricos: `docs/historico/`;
+  - **ordem das etapas:** E1 → E2 → E3 → E3.5 → E3b → E4 → E5, com a E6 em paralelo com a E5, e depois a E7; substitui a "nova ordem" do SPEC §8 (2026-10-20);
+  - **Radar:** etapa **opcional** depois da E5, a primeira a cortar;
+  - **Entrega:** não é uma etapa só no fim; é um pacote por marco (mínimo no `v1.0`, atualizado no `v1.1` e a cada UF);
+  - **fluxo da E1:** diagnóstico de Q1 a Q11 (só leitura) → uma parada com a tabela de efeitos → aprovação item a item → implementação, com Q8 e Q4 primeiro;
+  - **normas:** no início de cada etapa, a IA confere a ADI 8015 e alterações nos Provimentos 213, 227 e 243; isso substitui o monitoramento que a D-001, a D-002 e o SPEC §10 atribuíam ao radar;
+  - **histórico:** `docs/prompts.md` (superado pelo ROADMAP; o procedimento de salvar conversas foi para o `CONTRIBUTING.md`) e `docs/viabilidade.md` (resultado da Fase 0) foram para `docs/historico/` (`git mv`);
+  - ao fechar cada etapa, antes do commit, verificação de contradições entre os documentos dos níveis 1 e 2.
+- **Justificativa:** um plano só, em um lugar, evita que a ordem e as pendências fiquem desatualizadas em vários documentos; cada documento passa a ter um papel e um nível de leitura.
+- **Consequências / onde aparece:** `CLAUDE.md`, `docs/ROADMAP.md`, `docs/ESTADO_ATUAL.md`, `docs/SPEC.md` (§8 resumido), `docs/README.md` (índice), `docs/plano_qualidade_e_correcoes.md` (nota no topo), `CONTRIBUTING.md`, `docs/historico/`. As decisões da E1 começam na **D-036**.
+- **Fonte:** pedido do autor em 2026-10-21 ("rodada de harmonização dos documentos").

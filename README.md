@@ -4,7 +4,7 @@ Painel de cartórios do Brasil com dados públicos reais, simulador do mercado d
 
 > Projeto em construção. A especificação está em [`docs/SPEC.md`](docs/SPEC.md).
 
-Este README será completado na Fase 5 com: problema, arquitetura, como rodar, resultados da avaliação e limitações.
+Este README será completado no marco `v1.0` do [roteiro](docs/ROADMAP.md) (e atualizado no `v1.1`) com: problema, arquitetura, como rodar, resultados da avaliação e limitações.
 
 ## Como rodar
 
@@ -98,8 +98,8 @@ app/                 painel Streamlit (Início, Mercado, Simulador, Qualidade do
 config/              premissas e regras versionadas, com fonte
 data/publico/        conjunto público versionado (tabelas agregadas e auditadas que o painel lê)
 data/samples/        amostras mascaradas das fontes (Fase 0)
-docs/                SPEC, estado atual, diário, decisões, erros da IA, publicação, plano do Bloco 2
-docs/historico/      documentos de rodada da Fase 1 (com INDICE.md)
+docs/                índice (README.md), ROADMAP, estado atual, SPEC, decisões, dicionário de dados, diário, erros da IA, publicação, plano de qualidade
+docs/historico/      documentos de épocas anteriores: rodadas da Fase 1, viabilidade (Fase 0) e pedidos por fase (com INDICE.md)
 notebooks/           exploração e modelos (só leitura; ver notebooks/README.md)
 scripts/             conjunto público, pacotes de dados, QA visual e acessibilidade, conversas
 scripts/arquivo/     scripts de uso único da Fase 1
@@ -108,7 +108,7 @@ tests/               suíte padrão, dados_reais e visual
 pipeline.py          orquestrador: uv run pipeline.py --a-partir-de bronze|silver
 ```
 
-Fora do git, só local: `data/bronze`, `data/silver`, `data/gold`, `data/radar.duckdb`, `conversas/` e `docs/qa/`. Também ficam fora, e fora da pasta do projeto, os pacotes de dados (`C:\radar_pacotes`) e os originais grandes do bronze (`C:\radar_arquivo\bronze_originais`, D-032).
+Fora do git, só local: `data/bronze`, `data/silver`, `data/gold`, `data/radar.duckdb`, `data/painel_estado.json` (cenários salvos no painel, D-034), `conversas/` e `docs/qa/`. Também ficam fora, e fora da pasta do projeto, os pacotes de dados (`C:\radar_pacotes`) e os originais grandes do bronze (`C:\radar_arquivo\bronze_originais`, D-032).
 
 ## Fontes
 

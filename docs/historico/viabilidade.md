@@ -1,5 +1,7 @@
 # Viabilidade (Fase 0)
 
+> **Histórico.** Resultado da Fase 0. O que mudou depois: D-032 (bronze enxuto), D-003 a D-008 (decisões pendentes da seção 5), D-015 (887 vínculos sem salário de dezembro). Continua como fonte para a E2, a E5, a E6 e a E7.
+
 > Resultado da Fase 0 do `docs/SPEC.md` (§8). Testes feitos em 2026-10-17 e 2026-10-18 no computador do autor.
 > Nenhuma fonte usada exige pagamento, cartão, conta em nuvem ou cadastro.
 > Brutos em `data/bronze/<fonte>/` (fora do git, 13,8 GB), com URL, data e SHA-256 em `_metadados.json` ou `*.meta.json`. Amostras pequenas, sem dados pessoais, em `data/samples/`.

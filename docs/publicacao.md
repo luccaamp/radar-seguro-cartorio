@@ -6,11 +6,9 @@ Carga de referência neste documento: `2026-10-19`.
 
 ## 0. Antes de tudo (uma vez)
 
-- **Visibilidade do repositório de código:** `luccaamp/radar-seguro-cartorio` **já está público** (conferido com `gh repo view` em 2026-10-19). Se precisar mudar: *Settings → General → Danger Zone → Change repository visibility*.
-- **Repositório de dados:** `luccaamp/radar-seguro-cartorio-dados` deve continuar **privado**.
-- **Auditoria do histórico** (2026-10-19, 8 commits): nada exige reescrever o histórico (ver `docs/diario.md`).
-- **Backup externo de `C:\radar_arquivo\`:** depois da D-032, é a única cópia local dos originais grandes (14,8 GB) e da linha de base da limpeza. As fontes podem trocar o arquivo publicado. O Release `originais-<ano>` (passo 3) já serve de cópia externa dos originais, menos os `.COMT`, que saem do `.7z`; um disco externo é a segunda.
-- **Silver no Release público:** aprovado (D-030), com a regra corrigida: nenhuma estimativa do modelo por serventia, dados de origem sem dado pessoal.
+- **Repositório de código** `luccaamp/radar-seguro-cartorio`: **público** (conferido em 2026-10-19; para mudar: *Settings → General → Danger Zone → Change repository visibility*). Histórico auditado, sem nada a reescrever (`docs/diario.md`); o silver vai no Release público (D-030).
+- **Repositório de dados** `luccaamp/radar-seguro-cartorio-dados`: **privado**, e continua assim.
+- **Backup de `C:\radar_arquivo\`** (originais grandes e linhas de base, D-032): feito em 2026-10-20 em `E:\radar_arquivo`; o Release `originais-<ano>` é a outra cópia externa dos originais (menos os `.COMT`).
 
 ## 1. Gerar o conjunto público e os pacotes
 
@@ -109,21 +107,30 @@ Teste: um colaborador que der `git push origin main` deve ser recusado; um PR de
 
 Nos **dois** repositórios: *Settings → Collaborators → Add people* (nome de usuário ou e-mail do GitHub).
 
-- Em repositório de conta pessoal, todo colaborador recebe permissão de escrita. No repositório de código, a proteção do passo 4 impede push direto na `main`. No de dados, a regra "ninguém apaga nem substitui Release" está no `CONTRIBUTING.md`.
+- Em repositório de conta pessoal, todo colaborador recebe permissão de escrita. No repositório de código, a proteção do passo 4 impede push direto na `main`.
+- **O repositório de dados é privado e, no plano gratuito, não tem ruleset:** qualquer colaborador com escrita pode apagar um Release. A proteção é:
+  - a regra escrita "nunca apague nem substitua um Release", no README do repositório de dados e no `CONTRIBUTING.md`;
+  - convidar só quem o autor confia;
+  - os backups (os pacotes em `C:\radar_pacotes`, os originais em `C:\radar_arquivo` e a cópia em `E:\radar_arquivo`).
 - Mande o link do `CONTRIBUTING.md`. Ele explica o `gh auth login` e o `baixar_dados.py --nivel equipe`.
 
 ## 6. Checklist de "nova carga"
 
 1. `uv run pipeline.py ingest` (precisa de internet). Os originais grandes vão para `C:\radar_arquivo\bronze_originais`; o bronze recebe os extratos e o `original.json` (D-032). Atualize os snapshots em `config/escopo.yaml`. Rode `uv run pytest -m dados_reais tests/test_coletores.py`: regerar cada extrato a partir do original dá o mesmo SHA-256.
-2. `uv run pipeline.py`. Contratos sem erro; leia os avisos das reconciliações.
-3. Confira os números de referência na página Início e explique no `docs/diario.md` o que mudou e por quê, com a cascata.
-4. `uv run python scripts/gerar_publico.py`. Precisa sair com "0 vazamentos" e "ok"; senão, não publique.
-5. `uv run pytest`, `uv run pytest -m dados_reais` e, se o painel mudou, `uv run pytest -m visual`.
-6. `uv run python scripts/prints_painel.py --saida docs/qa/atual --checar` e uma olhada na galeria.
-7. Commit e push (ou PR) com `data/publico/`.
-8. Os dois pacotes e os dois Releases (passos 1 e 3), com a data nova.
-9. Teste a instalação a partir dos Releases (fim do passo 3).
-10. Atualize a carga citada no README ("Como rodar", passo 2).
+2. **Feche o painel** antes do pipeline: com ele aberto, a carga para no início (D-034).
+3. `uv run pipeline.py`. Contratos sem erro; leia os avisos das reconciliações.
+4. Confira os números de referência na página Início; explique no `docs/diario.md` o que mudou e por quê e registre a **cascata** no `docs/ROADMAP.md`, §6.
+5. `uv run python scripts/gerar_publico.py`. Precisa sair com "0 vazamentos" e "ok"; senão, não publique.
+6. `uv run pytest`, `uv run pytest -m dados_reais` e, se o painel mudou, `uv run pytest -m visual`.
+7. `uv run python scripts/prints_painel.py --saida docs/qa/atual --checar` e uma olhada na galeria.
+8. Grave a **linha de base nova**: `uv run python scripts/linha_de_base.py C:\radar_arquivo\baseline_AAAA-MM-DD` (pasta nova; nunca sobrescreva uma linha de base antiga).
+9. Commit e push (ou PR) com `data/publico/`.
+10. Os pacotes (passo 1), com a data nova.
+11. **Antes de publicar:** abra o zip do pacote público e confira que não há nome, CPF, e-mail nem telefone de pessoa física, nem estimativa do modelo por serventia (D-030, D-031).
+12. Os Releases (passo 3).
+13. Teste a instalação a partir dos Releases (fim do passo 3).
+14. Atualize a carga citada no README ("Como rodar", passo 2).
+15. **No fim, backup no disco externo** (só copia; não apaga nada no destino): `robocopy C:\radar_arquivo E:\radar_arquivo /E`.
 
 ## 7. Manter as últimas 3 cargas
 

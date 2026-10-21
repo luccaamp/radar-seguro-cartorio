@@ -1,7 +1,7 @@
 # Tolerâncias das reconciliações entre fontes (SPEC §4). Acima da tolerância: aviso (não interrompe o pipeline).
 # fonte: suposição (escolhidas para separar ruído de divergência que merece revisão).
 tolerancias:
-  serventias_cnj_x_cnpj_pct: 0.05       # o CNPJ superestima (CNPJs não baixados); divergência esperada, ver viabilidade.md
+  serventias_cnj_x_cnpj_pct: 0.05       # o CNPJ superestima (CNPJs não baixados); divergência esperada, ver docs/historico/viabilidade.md
   empregados_cnj_x_rais_pct: 0.05       # na Fase 0: 1,8% de diferença em MG
   correlacao_minima_municipio: 0.95     # na Fase 0: 0,996 por município
   cobertura_arrecadacao_min: 0.95       # fração das ativas com receita de referência válida em 2025

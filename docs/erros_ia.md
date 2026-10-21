@@ -1,6 +1,8 @@
 # Erros da IA
 
-Registro dos erros cometidos pela IA (no código, nos agentes do radar ou do chat) e do que foi feito para corrigir. Daqui saem os 2 ou 3 casos para o slide "onde a IA errou e o que mudou".
+Registro dos erros cometidos pela IA e pelo revisor (o assistente que revisa as rodadas no chat), no código, nos documentos, nos agentes do radar ou do chat, e do que foi feito para corrigir. Daqui saem os 2 ou 3 casos para o slide "onde a IA errou e o que mudou".
+
+**Ordem:** as primeiras entradas ficaram fora da ordem das datas, e os erros do revisor têm uma seção própria no meio do arquivo; as entradas novas da IA vão sempre no fim. Nada é reordenado.
 
 Formato de cada entrada:
 
@@ -432,6 +434,19 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **`config/apelidos_municipios.yaml` "vazio":** o "0 KB" do levantamento era arredondamento; o arquivo tem as grafias que diferem do IBGE e é usado na normalização.
 - **Partição "todas × obrigadas" (Almenara) como vazamento crítico:** o autor discordou e decidiu pela D-028 (partições internas da mesma visão não são suprimidas).
 - **Plano de repositório com um repositório só:** uma versão do plano contrariava a decisão do autor (dois repositórios: código público e dados privado; D-030).
+
+### 2026-10-21 — ROADMAP.md entregue pelo revisor com fatos errados e lacunas
+- **Onde:** `docs/ROADMAP.md`, na versão entregue pelo revisor ao autor.
+- **O que aconteceu:**
+  - a E2 não trazia os itens S1 a S6 reais do plano de qualidade (falava de taxa, despesas, market share e escolha de garantia);
+  - o efeito da E2 nos números estava como "8 a 10"; o certo é 6 a 10 (o S2 muda a probabilidade de déficit);
+  - aparecia a palavra "calculadora", que não existe no projeto;
+  - a SES por UF foi tratada como existente, sem conferência;
+  - a avaliação do chat estava mais fraca que a do SPEC §7 (só "acerto mínimo", sem gabarito congelado, métricas e comparação das versões);
+  - o Radar e a Entrega (Fases 4 e 5 do SPEC) foram esquecidos.
+- **Como foi detectado:** pela análise de contradições que o autor pediu à IA antes de qualquer edição (2026-10-21).
+- **Correção:** a rodada de harmonização dos documentos (D-035): E2 reescrita, "calculadora" trocada, SES por UF marcada "a conferir", SPEC §7 incorporado na E5, Radar como etapa opcional e Entrega por marco.
+- **Bom para os slides?** sim (o revisor também erra; a conferência contra o projeto real pega).
 
 ## 2026-10-19 — O coletor da RAIS não regera o extrato a partir do original (achado no inventário da limpeza)
 - **Onde:** `src/ingest/rais.py`, `filtrar()`.

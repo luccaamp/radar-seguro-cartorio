@@ -1,8 +1,8 @@
 # Radar Seguro-Garantia Cartórios: Especificação do Projeto
 
 > Documento de referência para a IA de código (Claude Code) que constrói o projeto.
-> Leia tudo antes de escrever código. Siga as fases em ordem e não pule os critérios de aceite.
-> Última revisão: 2026-10-20 (fechamento da Fase 1: nova ordem das etapas no §8 e risco do OneDrive resolvido no §10, D-033). Revisão anterior: 2026-10-18 (início da Fase 1: rateio `por_empregados_cnj` como padrão, D-005). Antes: 2026-10-17 (fatos normativos conferidos no texto oficial). Esta versão torna o projeto **100% gratuito** e muda a prioridade para **painel e chat**. Histórico no `docs/diario.md`; decisões com opções e justificativa em `docs/decisoes.md`.
+> Leia a parte que for mexer; a ordem das etapas está no `docs/ROADMAP.md`.
+> Última revisão: 2026-10-21. Histórico de revisões no `docs/diario.md`.
 
 ## 0. Contexto e objetivo
 
@@ -90,9 +90,9 @@ O painel cruza várias fontes, porque nenhuma traz tudo sozinha. A qualidade dos
 
 | Entidade | Fonte primária | Conferência / plano B | Granularidade | Risco |
 |---|---|---|---|---|
-| Universo de serventias (CNS, UF, município, atribuição, titular/interino) | **Painel de Dados Estatísticos das Serventias Extrajudiciais do CNJ** (dados do Justiça Aberta, exportação em .csv/.xlsx) | **Dados abertos de CNPJ da Receita Federal** (download mensal, filtrar pelo CNAE 6912-5/00); listagens das corregedorias estaduais (TJs); painel de vacâncias da Corregedoria Nacional (serventias vagas, que indicam interinidade) | Serventia | **Alto**: o Justiça Aberta migrou de plataforma em 2026 e é preciso confirmar se o painel público continua disponível e com quais campos |
-| Arrecadação | Painel do CNJ / Justiça Aberta (pode vir **por faixa**) | Editais de concurso e sorteio dos TJs, que trazem a classe da serventia | Serventia (valor ou faixa) | **Alto** |
-| Vínculos, salários e tempo de emprego | **Microdados da RAIS no PDET** (Ministério do Trabalho), download direto, filtrar pelo CNAE 6912-5/00. Começar só por MG | Novo CAGED (também no PDET) para a tendência recente | Município × faixas | **Alto**: defasagem de 1 a 2 anos, não identifica a serventia e pode **não captar vínculos registrados no CPF/CEI do titular** (ver §10) |
+| Universo de serventias (CNS, UF, município, atribuição, titular/interino) | **API pública do Justiça Aberta** (CNJ), escolhida na Fase 0 (`docs/historico/viabilidade.md`, §3) | Conferência ou plano B: Painel de Dados Estatísticos das Serventias do CNJ (Qlik, exportação manual pelo autor); **dados abertos de CNPJ da Receita Federal** (CNAE 6912-5/00, conferência por município); listagens das corregedorias estaduais (TJs); painel de vacâncias da Corregedoria Nacional | Serventia | **Alto**: a API não tem documentação oficial e pode mudar sem aviso |
+| Arrecadação | **API pública do Justiça Aberta**: valores semestrais por serventia (não vem por faixa) | Conferência: CSV do BI do CNJ, exportado à mão (totais de controle, D-024); editais de concurso e sorteio dos TJs, que trazem a classe | Serventia × semestre | **Alto**: valor "não informado", zero declarado e conflito entre versões da fonte (D-004, D-013, D-014) |
+| Vínculos, salários e tempo de emprego | **Microdados da RAIS no PDET** (Ministério do Trabalho), download direto, filtrar pelo CNAE 6912-5/00. Começar só por MG | Novo CAGED (também no PDET) para a tendência recente | Município × faixas | **Alto**: defasagem de 1 a 2 anos, não identifica a serventia e vínculos no CPF/CEI do titular: resolvido em MG (D-006); conferir em cada UF na E7 |
 | Totais de controle do setor | Relatório **"Cartório em Números"** (ANOREG) | — | Brasil | Baixo. Serve só para conferir totais (serventias e empregados) |
 | Contexto | IBGE (população, PIB municipal) | — | Município | Baixo |
 | Seguro-garantia | SUSEP SES (consulta pública de prêmios e sinistros dos ramos de garantia) | Publicações setoriais com faixas de taxa | Ramo/mês | Médio: não traz importância segurada, então serve para sinistralidade, não para taxa |
@@ -104,7 +104,7 @@ O painel cruza várias fontes, porque nenhuma traz tudo sozinha. A qualidade dos
 ### 1.2 Regras para as fontes
 
 - Toda coleta grava o **bruto imutável** em `data/bronze/<fonte>/<data_coleta>/`, com metadados: URL, data, hash e versão do coletor.
-- Arquivos grandes (RAIS, CNPJ) são baixados uma vez, filtrados logo na leitura (só o CNAE 6912-5/00 e as UFs em uso) e gravados filtrados em Parquet. O arquivo bruto completo pode ser apagado depois, mantendo o hash e a URL de origem registrados.
+- Arquivos grandes (RAIS, CNPJ) são baixados uma vez, filtrados logo na leitura (só o CNAE 6912-5/00 e as UFs em uso) e gravados filtrados em Parquet. O original é movido para a pasta de originais (D-032), nunca apagado; no bronze ficam o extrato e o `original.json` (URL, hash, tamanho e data de coleta).
 - Respeitar o robots.txt e os termos de uso, com intervalo entre requisições e User-Agent identificável.
 - Quando uma fonte não puder ser coletada automaticamente, **aceitar download manual** feito pelo autor e registrar a origem. Isso é melhor que um coletor frágil.
 - Se o CNS não estiver disponível em alguma fonte, a junção usa UF, município (normalizado pelo código IBGE), atribuição e nome normalizado, com **score de match** e revisão manual dos casos ambíguos. Registrar a taxa de match.
@@ -116,7 +116,7 @@ O painel cruza várias fontes, porque nenhuma traz tudo sozinha. A qualidade dos
 
 - **Bronze**: o bruto como veio, particionado por data de coleta.
 - **Silver**: dados limpos e tipados, com chaves normalizadas (código IBGE do município, CNS) e uma tabela por entidade. **Nome e CPF de titular são descartados aqui** (ver §6).
-- **Gold**: tabelas de negócio e métricas, como `fato_mercado_uf`, `fato_passivo_municipio` e `dim_serventia`.
+- **Gold**: tabelas de negócio e métricas, como `fato_mercado_uf` e `fato_passivo_municipio`; a lista completa, com o que é público, está no `docs/dicionario_dados.md`.
 - **Estado do pipeline**: no mesmo arquivo DuckDB local, no esquema `estado`: `premissas_versoes` (as sementes) e `log_decisoes`. Só o pipeline grava nele.
 - **Estado do app** (D-034): o painel abre o banco **só para leitura**. O que ele guarda (cenários salvos e, se houver radar, as aprovações) fica num arquivo próprio, `data/painel_estado.json`, fora do git, dos pacotes e do conjunto público.
 
@@ -126,85 +126,28 @@ O painel cruza várias fontes, porque nenhuma traz tudo sozinha. A qualidade dos
 |---|---|---|
 | Linguagem | Python 3.12 | gerenciado com `uv`, sem alterar o Python do sistema (3.13.3) |
 | Banco | **DuckDB em arquivo local** (`data/radar.duckdb`) + Parquet | fora do git |
-| Transformações | SQL em arquivos versionados | dbt-duckdb opcional |
+| Transformações | Python (pandas) com SQL do DuckDB, nos módulos de `src/transform/` | sem arquivos `.sql` e sem dbt |
 | Orquestração | `uv run pipeline.py [etapa]` | substitui o `make` |
-| Validação de dados | Pandera ou testes SQL simples | contratos por tabela |
+| Validação de dados | contratos e reconciliações próprios em `src/quality/` (`contratos.py`, `reconciliacao.py`), com resultado em `qualidade.checagens` e `qualidade.reconciliacoes` | sem Pandera; erro faz o pipeline falhar, aviso só registra |
 | LLM do chat (e do radar, se houver) | **Ollama**, rodando no computador do autor, com um modelo aberto que suporte *tool calling* | escolhido na Fase 0 conforme a RAM e a GPU disponíveis. O código acessa o LLM por uma interface única (`src/llm.py`), para dar para trocar de modelo sem reescrever o chat |
-| Saída estruturada do LLM | Pydantic | |
+| Saída estruturada do LLM | Pydantic | removido na limpeza da Fase 1; a decisão de trazê-lo de volta fica para o plano da E5 (`docs/ROADMAP.md`) |
 | Interface | Streamlit, rodando localmente | |
 | Agendamento do radar (se houver) | execução manual (`uv run pipeline.py radar`); opcionalmente o Agendador de Tarefas do Windows | |
 | Testes | pytest | |
 
 ### 2.3 Estrutura de pastas
 
-```
-radar-seguro-cartorio/
-├── pipeline.py                # orquestrador único: uv run pipeline.py [etapa]
-├── data/
-│   ├── bronze/                # bruto (git-ignored; amostras pequenas em data/samples/)
-│   ├── silver/
-│   ├── gold/
-│   └── radar.duckdb           # banco local (git-ignored)
-├── config/
-│   ├── premissas/             # semente versionada: premissas_v001.yaml ...
-│   ├── regras_classificacao.yaml  # limites de Classe por norma e vigência
-│   ├── cenarios_stf.yaml      # definições fixas dos cenários do STF
-│   └── llm.yaml               # modelo do Ollama e parâmetros
-├── src/
-│   ├── llm.py                 # interface única para o LLM local
-│   ├── ingest/                # um coletor por fonte, todos idempotentes
-│   ├── transform/             # bronze→silver→gold
-│   ├── quality/               # contratos e checagens
-│   ├── model/                 # funções puras de cálculo
-│   ├── agent/                 # chat
-│   │   └── tools/             # camada semântica
-│   ├── radar/                 # opcional
-│   └── eval/
-├── app/                       # Streamlit
-├── notebooks/                 # exploração e modelos; só leitura (src/notebooks.py), saídas limpas, interno_* em privado/ (fora do git)
-├── tests/
-├── eval/
-│   ├── gabarito_chat.csv
-│   └── gabarito_radar.csv     # só se houver radar
-├── docs/
-│   ├── SPEC.md
-│   ├── diario.md
-│   ├── erros_ia.md
-│   ├── decisoes.md            # decisões com contexto, opções e justificativa
-│   ├── viabilidade.md         # criado na Fase 0
-│   └── dicionario_dados.md
-└── README.md
-```
+A estrutura atual está na seção "Estrutura do projeto" do `README.md` da raiz. Ainda não existem (entram na E5 e no Radar do `docs/ROADMAP.md`): `config/llm.yaml` (modelo do Ollama e parâmetros), `src/llm.py` (interface única para o LLM local), `src/agent/` (chat, com `tools/`, a camada semântica), `src/radar/`, `src/eval/` e `eval/` (`gabarito_chat.csv` e, se houver radar, `gabarito_radar.csv`).
 
 **"Do zero"** significa rodar o pipeline **a partir dos snapshots do bronze**, sem coletar de novo.
 
 ### 2.4 Premissas versionadas
 
 - **Semente**: o YAML em `config/premissas/` é a versão inicial, versionada no git.
-- **Versões salvas**: ficam na tabela `premissas_versoes` do DuckDB local. Cada versão guarda o número, o diff sobre a anterior, o autor, a data e a origem. Desde a D-034, só o pipeline cria versões, a partir das sementes (como um evento do radar entra numa versão fica para a Fase 4). O app lê a versão vigente do banco e cai para a semente se o banco estiver vazio.
+- **Versões salvas**: ficam na tabela `premissas_versoes` do DuckDB local. Cada versão guarda o número, o diff sobre a anterior, o autor, a data e a origem. Desde a D-034, só o pipeline cria versões, a partir das sementes (como um evento do radar entra numa versão fica para o Radar, no `docs/ROADMAP.md`). O app lê a versão vigente do banco e cai para a semente se o banco estiver vazio.
 - **Cenários**: `cenarios_stf.yaml` tem as definições fixas (`mantem`, `suspende_8_17`, `parcial`). As combinações que o usuário salva no simulador vão para `data/painel_estado.json` (`src/cenarios.py`), com a versão vigente das premissas e o diff das que ele alterou (D-034).
 
-Cada premissa tem `valor` (ou `min`/`base`/`max`), `unidade`, `fonte` (URL ou "suposição"), `data_referencia` e `justificativa`. Exemplo:
-
-```yaml
-versao: 1
-criada_em: 2026-10-17
-premissas:
-  prob_deficit:
-    fonte: suposição
-    justificativa: patrimônio do titular não é público
-    valores:
-      faixa_1: {min: 0.30, base: 0.50, max: 0.70}
-  pct_descoberto:
-    fonte: suposição
-    valores:
-      faixa_1: {min: ..., base: ..., max: ...}
-  taxa_seguro_anual:
-    fonte: <url da referência pública>
-    valores: {min: ..., base: ..., max: ...}
-```
-
-Os números acima são **placeholders**. A IA não deve inventar valores. Onde não houver fonte, marcar `fonte: suposição` e pedir validação ao autor.
+Cada premissa tem `valor` (ou `min`/`base`/`max`), `unidade`, `fonte` (URL ou "suposição"), `data_referencia` e `justificativa`. Exemplo real: `config/premissas/premissas_v002.yaml`. A IA não deve inventar valores; onde não houver fonte, marcar `fonte: suposição` e pedir validação ao autor.
 
 Premissas previstas, além dos parâmetros legais do passivo:
 
@@ -250,12 +193,12 @@ Funções puras, sem I/O, cada uma com teste. Todas recebem as premissas de form
 2. **`passivo_municipio(rais_distribuicao, premissas)`**
    Aplica a função anterior a **cada célula** (faixa salarial × faixa de tempo) e depois agrega. Nunca usar média de salário ou de tempo como entrada, porque o passivo não é linear no tempo de serviço.
 3. **`ratear_passivo(passivo_municipio, serventias, metodo)`**
-   Rateia o passivo entre **todas as serventias do município**, inclusive interinos e Classe 1, porque a RAIS conta os empregados delas também. `metodo ∈ {por_empregados_cnj, arrecadacao, uniforme, peso_por_atribuicao}`. O padrão é **`por_empregados_cnj`** (D-005): passivo da serventia = colaboradores CLT declarados no Justiça Aberta × passivo médio por vínculo da distribuição RAIS do município (ou do estado, abaixo do limiar de vínculos, D-008). Os demais métodos são sensibilidade, e o painel mostra o efeito da escolha.
+   Rateia o passivo entre **todas as serventias do município**, inclusive interinos e Classe 1, porque a RAIS conta os empregados delas também. `metodo ∈ {por_empregados_cnj, arrecadacao, uniforme, peso_por_atribuicao}`. O padrão é **`por_empregados_cnj`** (D-005): passivo da serventia = colaboradores CLT declarados no Justiça Aberta × passivo médio por vínculo da distribuição RAIS do município; abaixo do limiar de vínculos (D-008), a reserva é a região imediata do IBGE e, se ela também ficar abaixo, o estado (município → região imediata → estado, D-022). Os demais métodos são sensibilidade, e o painel mostra o efeito da escolha.
 4. **`universo(serventias_com_passivo, regras_classificacao, data_ref)`**
    Remove, **depois do rateio**, os interinos e as serventias da Classe 1, conforme a versão da regra vigente em `data_ref` ou a versão escolhida explicitamente. Retorna também os excluídos, o motivo e a marca `classificacao_aproximada`, porque a arrecadação das fontes públicas aproxima, mas não é igual, a receita bruta do art. 2º, XXIV do 213.
    O pipeline calcula **as duas versões** (`v2` base e `v1` sensibilidade) e registra a diferença de universo (nº de serventias e passivo) e de mercado (IS e prêmio). Essa diferença aparece no diário e na página Qualidade dos dados.
-   Se a arrecadação vier em faixa, a classificação pode ficar **indeterminada** quando a faixa cruza o limite:
-   - no `min`, a indeterminada fica **fora**;
+   A API traz valores (não faixas). A receita de referência é a média dos semestres de 2025 com valor maior que zero (D-010, D-023). A classe fica **indeterminada** quando não há valor válido no período: arrecadação "não informado" (D-004), zero nos dois semestres de 2025 (D-013) ou valores conflitantes na fonte (D-014). A indeterminada:
+   - no `min`, fica **fora**;
    - no `max`, fica **dentro**;
    - no `base`, entra com o peso `peso_classe_indeterminada_base`.
 5. **`deficit(passivo_serventia, premissas)`**
@@ -310,11 +253,12 @@ O pipeline **falha** quando há violação de chave ou tipo e **avisa** quando h
 
 Páginas:
 
+0. **Início**: apresentação do projeto e do Prov. 227; os números principais de MG (serventias, empregados, passivo de todas e dos obrigados, prêmio anual), o déficit em faixa e o teto teórico do mercado; a situação da ADI 8015.
 1. **Mercado**: mapa e ranking por UF; filtros por UF, município, atribuição e situação (titular/interino/Classe 1); total de serventias, empregados, passivo estimado e déficit (em faixa).
 2. **Simulador**: controles para cada premissa, seletor de cenário do STF, receita do mercado total e da seguradora hipotética lado a lado, por UF; botão para salvar o cenário.
 3. **Qualidade dos dados**: data de referência de cada fonte, cobertura e divergências entre fontes.
-4. **Chat**.
-5. **Radar** (só se for feito).
+4. **Chat**: dentro do painel (E5 do `docs/ROADMAP.md`); sem Ollama instalado, aparece desativado, com uma explicação.
+5. **Radar** (só se for feito; etapa opcional do ROADMAP).
 
 ### 5.2 Chat (`src/agent`)
 
@@ -329,7 +273,7 @@ Ferramentas:
 - `buscar_normas(pergunta)`: devolve trechos com norma, artigo e data
 - `consultar_qualidade(fonte?)`: data de referência e cobertura das fontes
 - `consultar_decisoes(tema)`: lê o log de decisões
-- `sql_readonly(query)`: só como fallback, com allowlist de views já agregadas (§6), LIMIT 1000 e timeout
+- **Sem SQL livre:** as ferramentas devolvem só as visões públicas já auditadas (regra da Fase 3, 2026-10-18). O antigo `sql_readonly(query)` saiu do desenho; se faltar uma pergunta, cria-se uma ferramenta nova sobre uma visão pública auditada.
 
 Regras do prompt do chat:
 
@@ -358,7 +302,10 @@ Taxonomia de `tipo_evento` (aprovada em 2026-10-17): `norma_nova`, `norma_altera
 ## 6. LGPD e ética
 
 - Nome e CPF de titulares são **descartados na passagem bronze → silver** e não aparecem no silver, no gold, no painel nem nas respostas do chat. O bronze fica fora do git.
-- Estimativas de déficit nunca saem em nível de serventia identificável. O menor nível exibido é o município, e municípios com **menos de 3 serventias** (`limiar_agregacao_lgpd`) entram agregados.
+- Estimativas do modelo nunca saem em nível de serventia identificável. Regra atual (o texto que vale é o do `CLAUDE.md`, "Regras inegociáveis"):
+  - toda estimativa por área (município ou região) só aparece com **3 ou mais serventias** (`limiar_agregacao_lgpd`) e depois do **auditor de ataque por diferença**; áreas menores são agregadas pela região imediata ou intermediária (D-026, D-027); partições internas da mesma visão seguem a D-028;
+  - no **público** (repositório e Release públicos), nenhuma estimativa do modelo por serventia (passivo, déficit, probabilidade, IS, prêmio); dados de origem já publicados pelas fontes oficiais podem ir, sem dado pessoal (D-030, D-031);
+  - painel e chat só leem tabelas públicas; `interno_*` só no pipeline.
 - O README declara que os números são estimativas de mercado com premissas públicas, e não avaliação de nenhum cartório, e que o market share é de uma seguradora hipotética.
 
 ## 7. Avaliação (`src/eval`)
@@ -387,105 +334,36 @@ Gabarito de 40 a 60 documentos reais, com pelo menos 10 relevantes. Métricas: p
 
 ## 8. Fases e critérios de aceite
 
-### Fase 0: Viabilidade (1 a 2 dias)
+- **Fase 0 (viabilidade):** concluída; critérios e resultado em `docs/historico/viabilidade.md` (§6) e no `docs/diario.md`.
+- **Fase 1 (painel de MG):** concluída; critérios e resultado no `docs/diario.md` ("Aceite da Fase 1", 2026-10-18).
 
-- Instalar o `uv` e o Python 3.12 por meio dele, sem alterar o Python do sistema.
-- Verificar a RAM e a GPU do computador e **propor o modelo do Ollama** (o autor instala o Ollama se ainda não tiver). Testar se o modelo faz *tool calling* com uma ferramenta de exemplo.
-- Baixar os Provimentos 227, 213 e 243 em atos.cnj.jus.br e confirmar: os arts. 8º a 17, a definição de passivo, o prazo do primeiro ano, os critérios da Classe I e quem é o segurado da garantia.
-- Conferir o andamento da ADI 8015.
-- Testar cada fonte do §1.1 e registrar formato, campos, cobertura, data de referência e se há download em massa. Em especial:
-  - se o painel do CNJ está acessível e quais campos exporta (titular/interino, arrecadação, empregados);
-  - o tamanho do download da RAIS de MG no PDET e se o filtro pelo CNAE funciona;
-  - o download do CNPJ da Receita e quantos estabelecimentos com o CNAE 6912-5/00 existem por UF.
-- Comparar os totais entre as fontes (serventias e empregados) e com o "Cartório em Números".
-- **Aceite**: `docs/viabilidade.md` com uma linha por fonte (ok / parcial / bloqueada + plano B), a fonte escolhida para o universo e o modelo do Ollama escolhido. Nenhuma fonte usada pode exigir pagamento ou cadastro.
-
-### Fase 1: Painel de MG
-
-- Ingestão, silver e gold só para MG.
-- Modelo completo (§3), com testes.
-- Páginas Mercado, Simulador e Qualidade dos dados para MG.
-- **Aceite**: `uv run pipeline.py` gera tudo a partir dos snapshots do bronze, os testes passam e todo número na tela tem fonte, data de referência e versão.
-
-### Nova ordem das etapas depois da Fase 1 (decisão do autor, 2026-10-20)
-
-A Fase 1 foi concluída e fechada em 2026-10-20. A partir daí, a ordem é esta (substitui a ordem das Fases 2 e 3 abaixo, cujo conteúdo e critérios de aceite continuam valendo):
-
-1. **Bloco 2: qualidade dos dados** (`docs/plano_qualidade_e_correcoes.md`), começando pelo **Q4** (receita bruta do Prov. 213 × arrecadação × arrecadação menos repasse).
-2. **Bloco 3: premissas do seguro** (mesmo plano, S1 a S6).
-3. **Mineração dos dados de MG em notebooks** (`notebooks/`, regras do `CLAUDE.md`: só leitura, saídas limpas, `interno_*` só em `notebooks/privado/`).
-4. **Redesenho do painel de MG** com os achados da mineração.
-5. **Chat de IA** (antiga Fase 3): as ferramentas recebem a **UF como parâmetro** e respondem **só com visões públicas auditadas** (regras da Fase 3 abaixo).
-6. **Estudo da ordem dos estados**, em notebook: uma nota que combina tamanho, mercado, viabilidade dos dados e adoção, com teste de sensibilidade dos pesos e validação com MG. O resultado é registrado como decisão no `docs/decisoes.md`.
-7. **Expansão estado por estado** (antiga Fase 2), na ordem do estudo do passo 6, cada UF com contratos, reconciliações e o auditor (§4).
-
-As Fases 4 (Radar, opcional) e 5 (Entrega) vêm depois, sem mudança.
-
-### Fase 2: Brasil inteiro e qualidade
-
-> A partir de 2026-10-20, a expansão é feita **estado por estado**, no passo 7 da nova ordem acima.
-
-- Expandir para todas as UFs disponíveis, com contratos e reconciliações (§4).
-- Medir o tempo do auditor com as 27 UFs (acrescentado em 2026-10-18).
-- **Aceite**: página Qualidade dos dados completa e divergências documentadas no diário.
-
-### Fase 3: Chat
-
-> A partir de 2026-10-20, o chat é o passo 5 da nova ordem acima, antes da expansão. As ferramentas recebem a UF como parâmetro desde o início.
-
-- Ordem: gabarito (rotulado pelo autor) → ferramentas → integração com o Ollama → página Chat → eval das versões.
-- **Regra (acrescentada em 2026-10-18):** painel e chat só leem tabelas públicas; `gold.interno_*` é proibido fora do pipeline. As ferramentas do chat e o `sql_readonly` (§5.2) entram na varredura de `tests/test_app_codigo.py`.
-- **Regra (acrescentada em 2026-10-18):** as ferramentas do chat devolvem só as visões públicas já auditadas, nunca SQL livre; v1, mínimo e máximo só nos totais de MG.
-- **Aceite**: o chat responde o gabarito com as métricas do §7.2 e o gráfico de comparação das versões.
-
-### Fase 4: Radar (opcional)
-
-- Primeiro a versão simples sem IA. A versão com IA só se sobrar tempo.
-- **Aceite**: um evento real aparece na página Radar com link e trecho.
-
-### Fase 5: Entrega
-
-- README com o problema, a arquitetura em diagrama, como rodar, os resultados do eval, as limitações e a frase "custo zero: tudo roda localmente com dados públicos".
-- Medida de antes e depois: tempo da tarefa manual (linha de base no diário) vs. com o sistema.
-- Slides (5): problema, arquitetura, demo, onde a IA errou e o que mudou, resultados com o gráfico das versões.
-- Demo: painel de MG, simulador mudando de cenário do STF e o chat respondendo com a fonte.
-- **Robustez da demo**: o app roda sem internet (dados já no banco local e Ollama local). Gravar um vídeo de backup.
-- Na véspera: conferir o andamento da ADI 8015.
-
-**Se o tempo apertar, cortar nesta ordem**:
-
-1. o radar inteiro (Fase 4);
-2. o RAG;
-3. o Monte Carlo;
-4. a expansão para o Brasil inteiro (fica MG e as UFs que já estiverem prontas).
-
-**Nunca cortar**: a Fase 0, os testes do modelo, a página Qualidade dos dados, o eval do chat, o mínimo da demo (§0) e o diário de erros.
+Da E1 em diante, o plano está no **`docs/ROADMAP.md`** (D-035).
 
 ## 9. Como a IA deve trabalhar neste projeto
 
-- **Ritmo**: fase por fase, parando ao fim de cada uma para revisão do autor.
+- **Ritmo**: etapa por etapa, na ordem do `docs/ROADMAP.md`, parando ao fim de cada uma para revisão do autor.
 - **Coletores**: antes de escrever um, inspecionar uma amostra real da fonte e mostrar os campos encontrados.
 - **Nada inventado**: nunca inventar valores de premissa, URLs, números de normas ou dados apresentados como reais.
 - **Nada pago**: nunca sugerir, instalar ou configurar serviço pago, conta em nuvem ou chave de API com créditos.
 - **Diário**: registrar em `docs/diario.md` toda limitação, suposição e decisão, com data.
 - **Falhas de fonte**: quando uma fonte falhar, propor o plano B em vez de contornar em silêncio.
-- **Regulação atual**: no início do trabalho, conferir o status da ADI 8015 e se houve novas alterações nos Provimentos 213 e 227.
+- **Regulação atual**: no início do trabalho, conferir o status da ADI 8015 e se houve novas alterações nos Provimentos 213, 227 e 243.
 
 ## 10. Riscos conhecidos e mitigação
 
 | Risco | Impacto | Mitigação |
 |---|---|---|
-| Painel do CNJ indisponível ou incompleto após a migração do Justiça Aberta | Sem universo confiável | Plano B: CNPJ da Receita + listagens dos TJs + painel de vacâncias; download manual pelo autor se preciso |
-| RAIS não capta vínculos registrados no CPF/CEI do titular | Passivo subestimado | Comparar com o "Cartório em Números" na Fase 0 e usar `fator_cobertura_rais` |
 | Arquivos da RAIS e do CNPJ são grandes | Download lento e falta de espaço em disco | Baixar só as UFs em uso, filtrar na leitura e guardar só o filtrado |
 | Computador sem RAM suficiente para um bom modelo local | Chat lento ou ruim | Modelo menor; o chat depende das ferramentas para os números, não da força do modelo |
 | Modelo local erra a escolha da ferramenta | Respostas erradas | Ferramentas com nomes e descrições claros, poucos parâmetros, e o eval medindo isso |
-| Passivo concentrado em cartórios grandes | O rateio uniforme distorce o déficit | Rateio por arrecadação como padrão candidato e sensibilidade no painel |
-| **Segurado indefinido**: o art. 13 do 227 não diz quem é o beneficiário da garantia; o tomador é pessoa física (o delegatário) | Taxa e sinistralidade sem referência direta; o desenho do produto pode mudar por norma estadual | Premissa (`fonte: suposição`), limitação no README e prioridade no radar para normas estaduais que definam o beneficiário |
+| Passivo concentrado em cartórios grandes | O rateio uniforme distorce o déficit | Padrão atual `por_empregados_cnj` (D-005): o passivo vai para cada serventia pelos empregados CLT declarados; os rateios por arrecadação, uniforme e por atribuição ficam como sensibilidade no painel |
+| **Segurado indefinido**: o art. 13 do 227 não diz quem é o beneficiário da garantia; o tomador é pessoa física (o delegatário) | Taxa e sinistralidade sem referência direta; o desenho do produto pode mudar por norma estadual | Premissa (`fonte: suposição`), limitação no README e normas estaduais que definam o beneficiário conferidas no início de cada etapa (ROADMAP §3); o radar é opcional |
 | Classificação da Classe 1 aproximada (arrecadação pública ≠ receita bruta do art. 2º, XXIV) | Universo errado perto do limite | Marca `classificacao_aproximada`, classe indeterminada (§3.4) e sensibilidade `v1` × `v2` |
 | Base do art. 6º (maior remuneração fixa) não existe na RAIS | Passivo subestimado ou superestimado | `base_remuneracao_rais` (dezembro × média anual) e sensibilidade no painel |
-| Limites de classe mudam todo ano (art. 16, §2º, do 213) | Universo desatualizado | Nova versão em `regras_classificacao.yaml`; monitorado pelo radar |
+| Limites de classe mudam todo ano (art. 16, §2º, do 213) | Universo desatualizado | Nova versão em `regras_classificacao.yaml`; conferido no início de cada etapa (ROADMAP §3); o radar é opcional |
 | Concorrência com regularização por bens próprios e com fiança | Demanda superestimada | Premissa `escolha_garantia` |
 | Liminar na ADI 8015 perto da entrevista | Muda a narrativa da demo | Cenário `suspende_8_17` pronto; conferir na véspera |
-| ~~Projeto dentro do OneDrive~~ (resolvido: D-033, projeto movido para `C:\projetos\radar-seguro-cartorio` em 2026-10-20) | A sincronização travou pastas, o `.venv` e trocas de pasta na Fase 1 | Pasta local sem sincronização; pacotes e originais fora do projeto (`config/pacotes.yaml`) |
 | Corte de conhecimento da IA anterior às normas | A IA pode inventar artigos | Confirmar todo artigo no texto oficial; registrar erros em `erros_ia.md` |
+| ~~Painel do CNJ indisponível ou incompleto após a migração do Justiça Aberta~~ | **Resolvido:** o universo vem da API pública do Justiça Aberta (Fase 0; `docs/historico/viabilidade.md`, §3) | Plano B, se a API mudar: CNPJ da Receita, listagens dos TJs, painel de vacâncias, download manual |
+| ~~RAIS não capta vínculos registrados no CPF/CEI do titular~~ | **Resolvido em MG:** a RAIS capta pelo CAEPF (98%); `fator_cobertura_rais` = 1,0 (D-006) | Conferir em cada UF na E7 |
+| ~~Projeto dentro do OneDrive~~ | **Resolvido:** projeto em `C:\projetos\radar-seguro-cartorio` (D-033) | Pacotes e originais fora do projeto (`config/pacotes.yaml`) |

@@ -68,6 +68,38 @@ Análise exploratória, mineração de dados e modelos preditivos ficam em `note
 - **Nova biblioteca de modelagem** (ex.: `scikit-learn`) só com aprovação do autor.
 - **Abrir:** `uv run jupyter lab`.
 
+## Salvar a conversa com a IA
+
+As conversas ficam gravadas pelo Claude Code em arquivos `.jsonl`. O script `scripts/jsonl_para_md.py` converte um desses arquivos num Markdown legível em `conversas/`, pasta que fica fora do git.
+
+O Markdown traz:
+- todas as mensagens do autor e todas as respostas da IA, na ordem, com data e hora de Brasília;
+- as ferramentas em uma linha cada, só com a ação, sem o resultado;
+- as notificações automáticas e os avisos do editor como notas de uma linha.
+
+Rode os comandos no terminal, dentro da pasta do projeto. O Claude Code guarda as sessões numa pasta cujo nome é o caminho do projeto com `\`, `:`, espaços e acentos trocados por `-`. Para `C:\projetos\radar-seguro-cartorio` (D-033), a pasta é `c--projetos-radar-seguro-cartorio` (conferido em 2026-10-21; confira com `Get-ChildItem "$env:USERPROFILE\.claude\projects"`). As sessões até 2026-10-20 ficam na pasta do caminho antigo, `c--Users-<usuario>-OneDrive--rea-de-Trabalho-Projeto-Nubank`; troque `<usuario>` pelo seu usuário do Windows.
+
+1. Veja qual é o arquivo da conversa. O mais recente aparece primeiro:
+   ```powershell
+   Get-ChildItem "$env:USERPROFILE\.claude\projects\c--projetos-radar-seguro-cartorio\*.jsonl" | Sort-Object LastWriteTime -Descending | Select-Object Name, LastWriteTime
+   ```
+2. Converta, trocando `<id>` pelo nome do arquivo e escolhendo o nome da saída e o título:
+   ```powershell
+   uv run python scripts\jsonl_para_md.py "$env:USERPROFILE\.claude\projects\c--projetos-radar-seguro-cartorio\<id>.jsonl" "conversas\AAAA-MM-DD-nome.md" "Conversa — título"
+   ```
+3. Faça o backup no disco externo (só copia; não apaga nada no destino):
+   ```powershell
+   robocopy conversas E:\radar_arquivo\conversas
+   ```
+
+O comando de conversão recebe três argumentos, nesta ordem: o `.jsonl` de origem, o `.md` de saída e o título. No fim, ele mostra quantas mensagens, respostas, ferramentas e notificações converteu.
+
+Observações:
+- Converta **depois** que a conversa terminar. O `.jsonl` cresce durante a sessão, e uma conversão feita no meio sai incompleta; se acontecer, é só rodar de novo.
+- Se o arquivo de saída já existir, ele é substituído.
+- O raciocínio interno da IA não fica gravado no `.jsonl`, então não aparece no Markdown.
+- Exemplos já gerados: `conversas/2026-10-17-sessao0.md` e `conversas/2026-10-18-fase0.md`.
+
 ## Regras do projeto, em resumo
 
 - **Todo número tem fonte e data de referência.** Premissas ficam em `config/`, com fonte. O que não tem fonte leva `fonte: suposição`.

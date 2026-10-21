@@ -519,3 +519,31 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Pendências registradas** (`ESTADO_ATUAL.md` e D-034): Parquet numa pasta temporária, com troca no fim (Bloco 2); "Salvar" no modo demonstração (redesenho do painel).
 - **Suítes no projeto real:** padrão 155 passed; `dados_reais` 77 passed; lint ok; `data/` real igual (191 arquivos, SHA-256 e data).
 - **Próximo passo:** commit do autor e a Parte 2 (plano do Q4 e do Q8).
+
+## 2026-10-21 — ROADMAP e harmonização dos documentos (D-035)
+- **Rodadas anteriores do dia (registradas aqui):**
+  - análise de contradições entre o `docs/ROADMAP.md` (entregue pelo revisor do autor) e os demais documentos, só leitura: C1 a C15 e F1 a F8;
+  - E2 do ROADMAP reescrita (S1 a S6, premissas sem fonte, SES, regras do Prov. 227; premissas achadas no código: `fracao_exigencia_garantia`, faixa da indeterminada e da Classe 1 na v1, sinistralidade sobre o prêmio emitido, `comissao` = despesa de comercialização inteira, teto com IS = passivo, limites dos controles do Simulador);
+  - `docs/README.md` criado; linha no `CLAUDE.md`; teste do índice em `tests/test_links_docs.py` (provado com um índice sem o `viabilidade.md`).
+- **Achados conferidos no projeto (só leitura):**
+  - a `BaseCompleta.zip` da SES nos originais tem todos os ramos (`Ses_ramos.csv`), um `SES_UF2.csv` (471 MB, recorte por UF a conferir), o `Ses_campos.csv` (dicionário) e um `ses_contatos.csv` (não extrair);
+  - o CSV do BI do CNJ tem 11.866 CNS (sem coluna de UF);
+  - o extrato do CNPJ tem todas as UFs (20.006 linhas);
+  - empregados e arrecadação pela API do CNJ só existem para MG;
+  - o README do repositório de dados existe e já traz "nunca apague nem substitua um Release";
+  - a pasta de sessões do Claude Code na pasta nova é `c--projetos-radar-seguro-cartorio`.
+- **Harmonização (pedido do autor, lista fechada):**
+  - núcleo: `CLAUDE.md` (ordem de leitura, papéis, "etapa por vez, na ordem do ROADMAP", regra da cópia do banco, suítes, próximo passo pelo ROADMAP); `ROADMAP.md` (números só com nome, §3 com ramo pelo autor e conferência das normas, E1 com o fluxo e as regras do plano, E3 e E3b só interpretam o S5 e o S6, E3.5 com o que já existe, E5 com o SPEC §7 e §5.2, Radar opcional, entrega por marco, listas de corte, E6 com os dados por UF, pendências no §7, verificação de contradições no §8); `ESTADO_ATUAL.md` (etapa atual E1, sem a ordem das etapas, pendências só do autor);
+  - referência: `SPEC.md` (§1.2, §2.2, §2.3, §5.1, §5.2, §6, §8 resumido, §9, §10, data de revisão); `decisoes.md` (cabeçalho e D-035); `dicionario_dados.md` (malha, as 20 tabelas do gold com a marca de pública, `origem_distribuicao`, `execucao`, conjunto público); nota no topo do plano de qualidade;
+  - registros: cabeçalho e entrada do revisor no `erros_ia.md`; esta entrada;
+  - pontuais: `publicacao.md` (backup, repositório de dados sem ruleset, checklist de nova carga), `CONTRIBUTING.md` (salvar a conversa), `README.md` (marco), `docs/README.md` (níveis);
+  - histórico: `docs/prompts.md` e `docs/viabilidade.md` movidos com `git mv` para `docs/historico/`, com nota no topo; links atualizados.
+- **Conferido no banco (só leitura) para o dicionário:** o gold tem 25 tabelas (20 + 5 internas); 18 públicas; `fato_mercado_municipio_publico` e `fato_passivo_municipio` não estão no conjunto público; o `gold.execucao` ainda tem `fator_inpc` e `mes_inpc_final` (usados só na sensibilidade e no texto do Início); `origem_distribuicao` na carga atual só tem `municipio` e `regiao`.
+- **Não alterado (decisão do autor):** referências ao caminho antigo do `viabilidade.md` no texto do painel (`app/pages/3_Qualidade_dos_dados.py`), no campo `fonte` das sementes versionadas (`config/premissas/premissas_v001.yaml` e `v002.yaml`) e num comentário de `config/qualidade.yaml`.
+- **Testes:** links e índice 2 passed; suíte padrão 156 passed; lint ok.
+- **Próximo passo:** revisão do autor, commit e o plano da E1 (ROADMAP).
+
+## 2026-10-21 — Ajustes finais da D-035 e enxugamento dos documentos
+- **Ajustes finais (pedido do autor):** SPEC (cabeçalho, §1.1 com a fonte escolhida na Fase 0, §2.1, §2.3 como estrutura alvo, §3 com a reserva município → região imediata → estado, §9 com o Prov. 243, §10 sem "monitorado pelo radar"); CLAUDE.md (a carga oficial no banco real só com pedido explícito do autor; "fim da etapa"); ROADMAP (E5 e Radar com remissão ao SPEC §5.2, §5.3 e §7); `config/qualidade.yaml` com o caminho novo do `viabilidade.md`; o texto do painel virou pendência no ROADMAP §7; as sementes ficaram com o caminho antigo (registro do que foi gravado no banco).
+- **Enxugamento (sem perder informação):** a lista de documentos ficou só no `docs/README.md` (sem as colunas "quando consultar" e "quem atualiza"); o `ESTADO_ATUAL.md` ficou com o que é, etapa, ramo, próximo passo, os 10 números, a última decisão e o que depende do autor; o SPEC ficou com o cabeçalho curto, o §8 em duas linhas (critérios das Fases 0 e 1 no `historico/viabilidade.md`, §6, e na entrada "Aceite da Fase 1" deste diário) e os riscos resolvidos no fim do §10; a seção 0 do `publicacao.md` em 3 linhas.
+- **Registro que só estava no ESTADO_ATUAL:** em 2026-10-20, depois de o autor reabrir o VS Code, o `UV_LINK_MODE=copy` passou a valer nos terminais da sessão.

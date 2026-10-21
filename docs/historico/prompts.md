@@ -1,5 +1,7 @@
 # Pedidos por fase
 
+> **Histórico.** Superado pelo ROADMAP (D-035). Não usar os pedidos por fase: a ordem mudou. O procedimento de salvar conversas foi para o `CONTRIBUTING.md`.
+
 Pedidos prontos para usar com a IA. Abra uma conversa nova para cada fase: o SPEC, o CLAUDE.md e o diário carregam o contexto.
 
 ---
