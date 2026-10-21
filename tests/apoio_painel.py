@@ -33,7 +33,7 @@ def preparar_copia(destino_dir: Path) -> Path:
     return copia
 
 
-VARIAVEIS = ("RADAR_BANCO", "RADAR_PUBLICO")
+VARIAVEIS = ("RADAR_BANCO", "RADAR_PUBLICO", "RADAR_ESTADO")
 PASTAS_FORA_DO_GIT = {".git", ".venv", "data", "conversas", "qa", "privado", "saidas", "modelos", "__pycache__",
                       ".pytest_cache", ".ruff_cache", ".agents", ".claude", ".ipynb_checkpoints"}
 
@@ -66,6 +66,7 @@ def apontar_painel(copia: Path, publico: Path | None = None) -> dict:
         sys.path.insert(0, str(RAIZ / "app"))
     anterior = {v: os.environ.get(v) for v in VARIAVEIS}
     os.environ["RADAR_BANCO"] = str(copia)
+    os.environ["RADAR_ESTADO"] = str(copia.with_name("painel_estado.json"))   # cenários salvos ao lado da cópia (D-034)
     if publico is not None:
         os.environ["RADAR_PUBLICO"] = str(publico)
     _limpar_caches()

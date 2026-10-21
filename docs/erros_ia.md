@@ -509,3 +509,28 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
   - suíte padrão: varre o `pipeline.py` e os `scripts/` e falha se um arquivo que imprime não reconfigura a saída;
   - `dados_reais`: roda `pipeline.py --a-partir-de silver` numa cópia temporária do projeto e do banco, com `PYTHONIOENCODING=cp1252` e a saída num arquivo. Com o `pipeline.py` antigo, falha com o mesmo `UnicodeEncodeError`; com o novo, passa.
 - **Bom para os slides?** não
+
+## 2026-10-20 — O painel gravava no banco do pipeline, e isso não foi notado na Fase 1
+- **Onde:** código gerado (`app/comum.py`, `_abrir`; `app/pages/2_Simulador.py`, "Salvar"; `src/estado.py`).
+- **O que aconteceu:** o painel abria `data/radar.duckdb` para gravação. Ao abrir qualquer página, criava as tabelas de estado e inseria a semente se faltasse. No "Salvar" do Simulador, gravava o cenário e, se alguma premissa tivesse mudado, **uma versão nova de premissas**, que passava a ser a vigente para a carga seguinte (`src/transform/gold.py:220`), para o Início (teto teórico), para o conjunto público e para a linha de base. Esperado: o banco é resultado reproduzível do pipeline, e o painel só o lê.
+- **Efeitos:** o banco real nunca recebeu cenário nem versão do painel (só as sementes v1 e v2; conferido em 2026-10-20), então nenhum número publicado foi afetado. Mas:
+  - o SHA-256 do banco mudava a cada uso do painel;
+  - com o painel aberto, nenhum outro programa conseguia ler o banco (o pipeline falhava logo no início);
+  - todas as conferências da Fase 1 precisaram de uma cópia do banco para não mexer no real, sem que a causa fosse registrada.
+- **Como foi detectado:** pela IA, na verificação da pasta nova (2026-10-20), ao preparar o comando para o autor abrir o painel (`duckdb.connect(caminho)` sem `read_only`). O autor pediu a correção.
+- **Causa provável:** o SPEC (§2.1, §2.4) previa o estado do app "no mesmo arquivo DuckDB", e a IA seguiu sem medir as consequências: estado pessoal misturado ao resultado reproduzível e versões do painel virando premissa oficial. Os testes usavam sempre uma cópia, o que escondia o efeito.
+- **Correção:** D-034. O painel abre o banco só para leitura; os cenários vão para `data/painel_estado.json` (`src/cenarios.py`), sem criar versão de premissas; o pipeline para antes de começar se o banco estiver aberto. Testes: SHA-256 igual depois de abrir e salvar, banco com atributo de somente leitura, cenário presente depois de reiniciar, varredura de `read_only` no código do painel.
+- **Bom para os slides?** sim (um teste que sempre usa cópia pode esconder que o programa grava onde não devia).
+
+## 2026-10-20 — Teste substituído sem aprovação e contagem parcial apresentada como a da suíte
+- **Onde:** relatório da D-034 e `tests/test_app.py`.
+- **O que aconteceu:**
+  - (1) o relatório trouxe "63 passed" para os testes `dados_reais`, logo depois de uma rodada com 73. Os 63 eram só 4 arquivos (`test_app` 14, `test_auditoria_painel` 45, `test_pipeline` 3, `test_saida_utf8` 1), não a suíte inteira, e o relatório não deixou isso claro;
+  - (2) ao reescrever o teste de "Salvar cenário", a IA trocou `test_simulador_salva_cenario_sem_nova_versao` (Fase 1) por um teste de nome novo, sem pedir aprovação. A regra do autor: nenhum teste removido sem aprovação.
+- **Como foi detectado:** pelo autor, ao perguntar por que a contagem caiu de 73 para 63. A IA comparou a lista de testes coletados no commit `21303e2` (73) com a atual (76): a única saída era esse teste; as entradas eram 3 testes novos do painel e o `test_pipeline_com_saida_redirecionada`.
+- **Causa provável:** rodada parcial para ganhar tempo, sem rodar a suíte inteira antes do relatório; e o teste antigo tratado como "o mesmo teste reescrito", em vez de mantido.
+- **Correção:**
+  - o teste voltou com o nome original e a mesma intenção (salvar sem mexer em premissa grava o cenário e não cria versão nova); só as verificações passaram da tabela antiga para o arquivo de cenários. O teste novo do SHA-256 ficou ao lado;
+  - a suíte `dados_reais` foi rodada inteira.
+  - Regras: nunca comparar contagens de rodadas diferentes sem dizer o que cada uma cobriu; mudar o que um teste verifica só dizendo qual teste e por quê; remover, só com aprovação.
+- **Bom para os slides?** não

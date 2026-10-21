@@ -10,7 +10,7 @@ import yaml
 
 from comum import (RAIZ, _br, aviso_estimativa, brl, conexao, consulta, demonstracao, md_seguro, num, pct, rodape,
                    slider_br, universo_txt, aprox)
-from src import estado
+from src import cenarios, estado
 from src.model import simulador
 from src.model.premissas import PremissaInvalida, com_novo_base
 from src.model.rateio import METODOS
@@ -273,20 +273,24 @@ rodape(["cnj_serventias", "cnj_colaboradores", "cnj_arrecadacao", "rais_vinculos
 # ------------------------------------------------------------------ salvar
 st.header("Salvar cenário")
 if DEMO:
-    st.caption("Desativado no modo demonstração: o banco é temporário e seria apagado. Com os dados completos "
-               "(ou recalculando com os dados públicos), os cenários ficam salvos no seu banco local.")
+    st.caption("Desativado no modo demonstração. Com os dados completos (ou recalculando com os dados públicos), os "
+               "cenários ficam salvos em data/painel_estado.json, fora do banco.")
 nome = st.text_input("Nome do cenário", placeholder="ex.: taxa 2,5% e share 10%", disabled=DEMO)
 if st.button("Salvar", type="primary", disabled=DEMO or not nome):
-    con = conexao()
-    novo, diff = com_novo_base(semente, aj)
-    v = estado.salvar_versao(con, novo, diff, "autor (simulador)", f"simulador: {nome}") if diff else versao
-    cid = estado.salvar_cenario(con, nome, v, cenario, regra, metodo, "base",
-                                {**aj, **({"fracao_exigencia_garantia": fracao_parcial} if fracao_parcial else {})}, r)
-    calcular.clear()
-    st.success(f"Cenário #{cid} salvo com as premissas versão {v}" +
-               (f" (nova versão; {len(diff)} premissa(s) alterada(s))." if diff else " (sem mudança de premissa)."))
+    # D-034: o cenário vai para um arquivo próprio; o banco do pipeline e as versões de premissas não mudam
+    _, diff = com_novo_base(semente, aj)
+    cid = cenarios.salvar({
+        "nome": nome, "versao_premissas": versao, "cenario_stf": cenario, "regra_classe": regra,
+        "metodo_rateio": metodo, "nivel": "base", "premissas_alteradas": diff, "resultado": r,
+        "ajustes": {**aj, **({"fracao_exigencia_garantia": fracao_parcial} if fracao_parcial else {})}})
+    st.success(f"Cenário #{cid} salvo sobre as premissas versão {versao}" +
+               (f" ({len(diff)} premissa(s) alterada(s))." if diff else " (sem mudança de premissa)."))
 
-salvos = consulta("SELECT id, nome, criado_em, versao_premissas, cenario_stf, regra_classe, metodo_rateio "
-                  "FROM estado.cenarios_salvos ORDER BY id DESC")
-if len(salvos):
-    st.dataframe(salvos, hide_index=True, width="stretch")
+salvos, aviso_salvos = cenarios.ler()
+if aviso_salvos:
+    st.warning(aviso_salvos)
+if salvos:
+    tabela = pd.DataFrame([{**c, "premissas_alteradas": len(c.get("premissas_alteradas") or {})} for c in salvos])
+    colunas = ["id", "nome", "criado_em", "versao_premissas", "premissas_alteradas", "cenario_stf", "regra_classe",
+               "metodo_rateio"]
+    st.dataframe(tabela.reindex(columns=colunas).sort_values("id", ascending=False), hide_index=True, width="stretch")

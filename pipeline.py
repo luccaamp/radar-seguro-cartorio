@@ -111,6 +111,26 @@ def _trazer_do_banco_antigo(con, antigo: Path, etapa: str) -> None:
     con.execute("DETACH antigo")
 
 
+def em_uso(banco: Path) -> bool:
+    """No Windows, o banco não pode ser trocado enquanto outro programa (o painel, um notebook) o tem aberto, nem
+    só para leitura. Tenta abrir o arquivo sem compartilhar: falha de compartilhamento = em uso. Só abre e fecha;
+    não altera nada. Fora do Windows a troca funciona com o arquivo aberto, então devolve False (D-034)."""
+    if os.name != "nt" or not banco.exists():
+        return False
+    import ctypes
+    from ctypes import wintypes
+    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    k32.CreateFileW.restype = wintypes.HANDLE
+    k32.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, wintypes.LPVOID, wintypes.DWORD,
+                                wintypes.DWORD, wintypes.HANDLE]
+    leitura, sem_compartilhar, so_se_existir, erro_de_compartilhamento = 0x80000000, 0, 3, 32
+    h = k32.CreateFileW(str(banco), leitura, sem_compartilhar, None, so_se_existir, 0, None)
+    if h == wintypes.HANDLE(-1).value:
+        return ctypes.get_last_error() == erro_de_compartilhamento
+    k32.CloseHandle(h)
+    return False
+
+
 def main(etapa: str = "all", banco: Path = BANCO, exportar_parquet: bool = True) -> None:
     """Carga atômica (1.7): grava num arquivo temporário e só troca o banco no fim. Se a carga falhar, o banco
     anterior fica como estava; o arquivo não cresce de uma carga para outra.
@@ -122,6 +142,9 @@ def main(etapa: str = "all", banco: Path = BANCO, exportar_parquet: bool = True)
         etapa_ingest()
         return
     banco = Path(banco)
+    if em_uso(banco):   # antes de tudo: sem isso, a carga regravaria os Parquet e só falharia na troca do banco
+        raise SystemExit(f"{banco.name} está aberto por outro programa (o painel, um notebook): feche e rode de novo. "
+                         "Nada foi alterado.")
     temp = banco.with_name(banco.name + ".novo")
     for resto in (temp, temp.with_name(temp.name + ".wal")):   # sobra de uma carga anterior que falhou
         resto.unlink(missing_ok=True)
@@ -142,8 +165,10 @@ def main(etapa: str = "all", banco: Path = BANCO, exportar_parquet: bool = True)
         os.replace(temp, banco)
     except PermissionError as e:
         temp.unlink(missing_ok=True)
-        raise SystemExit(f"Não foi possível trocar {banco.name}: o arquivo está aberto por outro programa "
-                         "(feche o painel e rode de novo). O banco anterior não foi alterado.") from e
+        # o painel foi aberto no meio da carga (D-034, limitação): o banco fica o anterior, mas os Parquet não
+        raise SystemExit(f"Não foi possível trocar {banco.name}: o arquivo foi aberto por outro programa durante a "
+                         "carga (feche o painel e rode de novo). O banco anterior não foi alterado, mas os Parquet de "
+                         "data/silver e data/gold já são desta carga; rodar de novo os deixa iguais ao banco.") from e
 
 
 def argumentos(argv: list[str] | None = None) -> str:

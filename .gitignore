@@ -11,6 +11,9 @@ data/gold/
 data/publico.novo/
 data/publico.antigo/
 data/carga_atual.json
+# cenários salvos pelo painel (D-034): pessoais, fora do git, dos pacotes e do conjunto público
+data/painel_estado.json
+data/painel_estado.json.*
 # pacotes de dados para os Releases (D-030): gerados por scripts/empacotar_dados.py, publicados pelo autor
 pacotes/
 

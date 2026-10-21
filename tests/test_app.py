@@ -2,9 +2,16 @@
 
 Os testes rodam sobre uma CÓPIA TEMPORÁRIA do banco gerado pelo pipeline (variável RADAR_BANCO, lida por app/comum.py).
 O banco real (data/radar.duckdb) nunca é aberto para escrita aqui; o último teste confere que ele não mudou.
+O painel abre o banco só para leitura (D-034); os cenários salvos vão para um arquivo temporário (RADAR_ESTADO).
 dados_reais (fora da suíte padrão): precisam do banco completo, com silver e interno_*. O modo demonstração, que roda
 em qualquer clone, está em test_app_demo.py.
 """
+import hashlib
+import os
+import shutil
+import stat
+from pathlib import Path
+
 import duckdb
 import pytest
 
@@ -40,29 +47,91 @@ def test_simulador_suspende_zera_premio():
     assert premios and all(v == "R$ 0" for v in premios)   # zero sem centavos (E8)
 
 
-def test_simulador_salva_cenario_sem_nova_versao(banco_temporario):
-    """Salvar sem mexer em premissa grava o cenário (na cópia) e não cria versão nova."""
+def _sha256(p: Path) -> str:
+    return hashlib.sha256(p.read_bytes()).hexdigest()
+
+
+def _salvar_pelo_simulador(nome: str):
     from streamlit.testing.v1 import AppTest
-    copia = str(banco_temporario["copia"])
     at = AppTest.from_file(str(RAIZ / "app/pages/2_Simulador.py"), default_timeout=120).run()
-    with duckdb.connect(copia) as db:
-        antes_v = db.sql("SELECT max(versao) FROM estado.premissas_versoes").fetchone()[0]
-        antes_c = db.sql("SELECT coalesce(max(id), 0) FROM estado.cenarios_salvos").fetchone()[0]
-    at.text_input[0].set_value("teste automatico").run()
+    at.text_input[0].set_value(nome).run()
     at.button[0].click().run()
+    assert not at.exception and any("salvo" in s.value for s in at.success)
+
+
+def _nomes_na_tabela_de_salvos() -> list[str]:
+    from streamlit.testing.v1 import AppTest
+    at = AppTest.from_file(str(RAIZ / "app/pages/2_Simulador.py"), default_timeout=120).run()
     assert not at.exception
-    assert any("salvo" in s.value for s in at.success)
-    with duckdb.connect(copia) as db:
+    return [n for df in (d.value for d in at.dataframe) if "nome" in df.columns for n in df["nome"]]
+
+
+def test_simulador_salva_cenario_sem_nova_versao(banco_temporario):
+    """Salvar sem mexer em premissa grava o cenário e não cria versão nova. Teste da Fase 1 mantido; desde a D-034 o
+    cenário fica no arquivo RADAR_ESTADO (antes, em estado.cenarios_salvos do banco)."""
+    from src import cenarios
+    copia = str(banco_temporario["copia"])
+    with duckdb.connect(copia, read_only=True) as db:
+        antes_v = db.sql("SELECT max(versao) FROM estado.premissas_versoes").fetchone()[0]
+    antes_c = max((c["id"] for c in cenarios.ler()[0]), default=0)
+    _salvar_pelo_simulador("teste automatico")
+    with duckdb.connect(copia, read_only=True) as db:
         assert db.sql("SELECT max(versao) FROM estado.premissas_versoes").fetchone()[0] == antes_v
-        novos = db.sql(f"SELECT nome, versao_premissas FROM estado.cenarios_salvos WHERE id > {antes_c}").fetchall()
-        assert novos == [("teste automatico", antes_v)]
+    novos = [(c["nome"], c["versao_premissas"]) for c in cenarios.ler()[0] if c["id"] > antes_c]
+    assert novos == [("teste automatico", antes_v)]
+
+
+def test_abrir_o_painel_e_salvar_cenario_nao_altera_o_banco(banco_temporario):
+    """D-034: abrir todas as páginas e salvar um cenário deixam o SHA-256 do banco igual. O cenário vai para o arquivo
+    RADAR_ESTADO (ao lado da cópia, nunca em data/), sobre a versão de premissas vigente no banco, que não muda."""
+    from streamlit.testing.v1 import AppTest
+    from src import cenarios
+    copia = banco_temporario["copia"]
+    antes = _sha256(copia)
+    for pagina in PAGINAS:
+        assert not AppTest.from_file(str(RAIZ / pagina), default_timeout=120).run().exception
+    _salvar_pelo_simulador("teste do sha256")
+    with duckdb.connect(str(copia), read_only=True) as db:
+        vigente = db.sql("SELECT max(versao) FROM estado.premissas_versoes").fetchone()[0]
+    salvos, aviso = cenarios.ler()
+    assert aviso is None and cenarios.caminho().parent == copia.parent
+    assert [(c["nome"], c["versao_premissas"], c["premissas_alteradas"]) for c in salvos][-1] == \
+        ("teste do sha256", vigente, {})
+    assert _sha256(copia) == antes
+
+
+def test_cenario_salvo_continua_depois_de_reiniciar_o_painel(banco_temporario):
+    """Reiniciar = caches do Streamlit vazios e conexão nova: a tabela de salvos lê o arquivo de novo."""
+    from apoio_painel import _limpar_caches
+    _salvar_pelo_simulador("antes de reiniciar")
+    _limpar_caches()
+    assert "antes de reiniciar" in _nomes_na_tabela_de_salvos()
+
+
+def test_painel_com_banco_marcado_somente_leitura(banco_temporario, tmp_path):
+    """Com o atributo 'somente leitura' do Windows no arquivo do banco, todas as páginas abrem e salvar funciona."""
+    from streamlit.testing.v1 import AppTest
+    from apoio_painel import apontar_painel, restaurar
+    ro = tmp_path / "radar.duckdb"
+    shutil.copy2(banco_temporario["copia"], ro)
+    os.chmod(ro, stat.S_IREAD)   # no Windows, liga o atributo "somente leitura"
+    anterior = apontar_painel(ro)
+    try:
+        for pagina in PAGINAS:
+            at = AppTest.from_file(str(RAIZ / pagina), default_timeout=120).run()
+            assert not at.exception, (pagina, at.exception)
+        _salvar_pelo_simulador("banco somente leitura")
+        assert (tmp_path / "painel_estado.json").exists()
+    finally:
+        restaurar(anterior)
+        os.chmod(ro, stat.S_IREAD | stat.S_IWRITE)
 
 
 def test_mercado_filtro_pequeno_esconde_estimativa(banco_temporario):
     from streamlit.testing.v1 import AppTest
     at = AppTest.from_file(str(RAIZ / "app/pages/1_Mercado.py"), default_timeout=120).run()
     # um município com 1 ou 2 serventias: as estimativas não podem aparecer (LGPD)
-    with duckdb.connect(str(banco_temporario["copia"])) as con:  # mesma configuração da conexão do app
+    with duckdb.connect(str(banco_temporario["copia"]), read_only=True) as con:  # mesma configuração da conexão do app
         nome = con.sql("SELECT municipio FROM gold.dim_municipio WHERE n_serventias = 1 ORDER BY municipio LIMIT 1"
                        ).fetchone()[0]
         area = con.execute("""SELECT p.n_serventias FROM gold.mercado_area_publico p JOIN gold.geo_area_municipio a
@@ -105,7 +174,7 @@ def _valores_das_figuras(spec: dict) -> set[str]:
 def test_lgpd_tabelas_publicas_do_gold_e_da_qualidade(banco_temporario):
     """D1: nenhuma tabela pública (gold e qualidade, fora as 'interno_*' e as exceções) tem nome de município com
     menos de 3 serventias."""
-    with duckdb.connect(str(banco_temporario["copia"])) as con:
+    with duckdb.connect(str(banco_temporario["copia"]), read_only=True) as con:
         pequenos = _municipios_pequenos(con)
         cols = con.execute("""SELECT table_schema || '.' || table_name, column_name FROM information_schema.columns
                               WHERE table_schema IN ('gold', 'qualidade') AND data_type = 'VARCHAR'
@@ -125,7 +194,7 @@ def test_lgpd_tabelas_e_graficos_do_painel(banco_temporario):
     (o mapa do Mercado agrega esses municípios pela região imediata)."""
     import json
     from streamlit.testing.v1 import AppTest
-    with duckdb.connect(str(banco_temporario["copia"])) as con:
+    with duckdb.connect(str(banco_temporario["copia"]), read_only=True) as con:
         pequenos = _municipios_pequenos(con)
         pequenos_e_codigos = _municipios_pequenos(con, com_codigos=True)
     figuras_vistas = 0

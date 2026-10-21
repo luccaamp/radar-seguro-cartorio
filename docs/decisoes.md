@@ -416,3 +416,39 @@ Formato:
 - **Como mover:** clone novo do GitHub na pasta nova, mais a cópia, com `robocopy`, do que não está no git (dados, banco, notebooks privados, `docs/qa/`, `conversas/`, `.claude/settings.local.json`). O `.venv` não é copiado: é recriado com `uv sync` (se falhar com hardlink, `UV_LINK_MODE=copy`, `docs/diario.md`).
 - **Justificativa:** o OneDrive não faz parte da reprodutibilidade (o backup do código é o GitHub; o dos dados, os Releases e o backup externo de `C:\radar_arquivo\`), e os bloqueios de sincronização já custaram retrabalho e erros registrados.
 - **Histórico:** as menções a "fora do OneDrive" em `docs/diario.md`, `docs/erros_ia.md`, `docs/historico/` e nas conversas ficam como estão, porque descrevem o que aconteceu na época.
+
+## D-034 — O painel só lê o banco do pipeline; cenários salvos em arquivo próprio
+- **Data:** 2026-10-20
+- **Contexto:** o painel abria `data/radar.duckdb` para gravação (`app/comum.py`, `_abrir`). Levantamento do que ele gravava (linhas do commit `eba593b`, antes da mudança):
+  - ao abrir qualquer página: `estado.garantir_tabelas` (cria o esquema `estado` e as tabelas `premissas_versoes` e `cenarios_salvos`, e insere a semente se faltasse; `app/comum.py:72` → `src/estado.py:51-61`);
+  - no botão "Salvar" do Simulador: `estado.salvar_versao` (uma **versão nova de premissas** quando algum controle mudou; `app/pages/2_Simulador.py:282` → `src/estado.py:77-83`) e `estado.salvar_cenario` (`2_Simulador.py:283` → `src/estado.py:86-91`).
+- **Consequências achadas:**
+  - a versão criada pelo Simulador virava a "vigente": a **carga seguinte** calcularia o gold oficial com ela (`src/transform/gold.py:220`), o Início mostraria o teto com a taxa do cenário, o conjunto público publicaria essa versão (`config/publico.yaml`, `estado.premissas_vigente`) e a linha de base leria essa taxa. Não aconteceu: o banco real só tem as sementes v1 e v2 e nenhum cenário salvo (conferido em 2026-10-20);
+  - com o painel aberto para gravação, nenhum outro programa conseguia ler o banco (o pipeline falhava logo no início, e também os notebooks, o empacotador e a linha de base).
+- **Opções para o arquivo:** (a) JSON; (b) SQLite; (c) outro DuckDB.
+- **Decisão (pedido do autor; formato proposto pela IA):**
+  - o painel abre o banco sempre com `read_only=True`, também no modo demonstração;
+  - os cenários salvos vão para **`data/painel_estado.json`** (opção a; variável `RADAR_ESTADO` para testes e galeria), no `.gitignore` e fora dos pacotes (camadas explícitas em `config/pacotes.yaml`) e do conjunto público. Formato e regras em `src/cenarios.py`;
+  - arquivo ausente: o painel cria no primeiro "Salvar". Arquivo corrompido: o painel abre com um aviso e a lista vazia; no próximo "Salvar", o arquivo ruim é **movido** (não apagado) para `painel_estado.json.corrompido-AAAAMMDD-HHMMSS`. A gravação é atômica (temporário + troca), com uma trava por processo;
+  - **o painel não cria mais versão de premissas.** O cenário guarda a versão vigente do banco e o diff das premissas alteradas sobre ela. Só o pipeline grava versões, a partir das sementes de `config/premissas/`;
+  - o pipeline confere **antes de começar** se o banco está aberto por outro programa (`pipeline.em_uso`, só no Windows: abertura exclusiva que não altera nada). Se estiver, para sem gravar banco nem Parquet.
+- **Justificativa:** o banco é o resultado reproduzível do pipeline; estado pessoal dentro dele mudava o SHA-256 a cada uso e podia mudar os números oficiais. JSON porque são poucos registros, só um gravador (o painel), leitura fácil, biblioteca padrão e detecção simples de corrupção. SQLite e DuckDB resolveriam a concorrência entre processos, mas é um caso raro aqui.
+- **Concorrência (medida na cópia, 2026-10-20):**
+  - painel aberto → pipeline: para em cerca de 1 s com "feche e rode de novo. Nada foi alterado";
+  - pipeline rodando → painel aberto no meio: o painel abre normalmente (lê o banco anterior); no fim, a troca do banco falha (Windows), o banco anterior fica intacto e o temporário é apagado;
+  - painel fechado → pipeline: normal;
+  - dois leitores (painel e notebook) ao mesmo tempo: ok.
+- **Limitações:**
+  - no segundo caso, os Parquet de `data/silver` e `data/gold` já foram regravados pela carga que não trocou o banco. A mensagem avisa, e rodar de novo com o painel fechado os iguala. **Pendência do Bloco 2 (decisão do autor):** avaliar se o pipeline deve gravar também os Parquet numa pasta temporária e só trocar no fim, como já faz com o banco;
+  - o painel aberto impede a carga até ser fechado;
+  - dois processos do painel salvando no mesmo instante podem perder um dos dois cenários (a trava é por processo), mas o arquivo nunca fica pela metade.
+- **Tabela antiga `estado.cenarios_salvos` (decisão do autor):** não é apagada do banco agora. O pipeline deixou de criá-la (`estado.criar_tabelas`) e de copiá-la do banco anterior (`estado.TABELAS_ESTADO` = só `premissas_versoes`), então ela some na próxima carga. Provado numa cópia: antes da carga, `cenarios_salvos`, `log_decisoes` e `premissas_versoes`; depois, só as duas últimas, com os 10 números e os 25 + 25 hashes iguais. Teste: `tests/test_pipeline.py::test_carga_preserva_estado_nao_cresce_e_e_reprodutivel`.
+- **Modo demonstração:** sem mudança de comportamento ("Salvar" continua desativado). Ativar fica para o **redesenho do painel** (decisão do autor).
+- **SPEC:** §2.1 e §2.4 atualizados (estado do app fora do banco).
+- **Testes:**
+  - `tests/test_cenarios.py`: ausente, corrompido, reinício, gravação atômica;
+  - `tests/test_app_codigo.py`: toda conexão do painel é `read_only` e não há SQL que grava;
+  - `tests/test_pipeline_cli.py`: `em_uso` e a carga que para antes de começar;
+  - `tests/test_app_demo.py`: SHA-256 do banco de demonstração igual;
+  - `tests/test_app.py` (`dados_reais`): SHA-256 igual depois de abrir as páginas e salvar, cenário presente depois de reiniciar, banco com atributo de somente leitura; `test_simulador_salva_cenario_sem_nova_versao` (Fase 1) mantido, com as verificações apontando para o arquivo de cenários;
+  - `tests/test_pipeline.py::test_carga_preserva_estado_nao_cresce_e_e_reprodutivel` (`dados_reais`): mantido; em vez de um cenário na tabela antiga, confere que as versões de premissas são preservadas e que `estado.cenarios_salvos` não existe depois da carga.

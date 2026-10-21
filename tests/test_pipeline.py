@@ -41,16 +41,20 @@ def copia(tmp_path) -> Path:
 
 
 def test_carga_preserva_estado_nao_cresce_e_e_reprodutivel(copia):
-    with duckdb.connect(str(copia)) as con:   # um cenário salvo pelo usuário, que a carga não pode perder
-        n = con.execute("SELECT coalesce(max(id), 0) + 1 FROM estado.cenarios_salvos").fetchone()[0]
-        con.execute("INSERT INTO estado.cenarios_salvos (id, nome) VALUES (?, 'cenário de teste')", [n])
+    # D-034: o estado preservado entre cargas são as versões de premissas; os cenários do painel saíram do banco, e
+    # a tabela antiga estado.cenarios_salvos (ainda no banco real até a próxima carga) não é mais criada nem copiada
+    tabela_antiga = "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'estado' " \
+                    "AND table_name = 'cenarios_salvos'"
+    with duckdb.connect(str(copia)) as con:
+        if not con.execute(tabela_antiga).fetchone()[0]:   # banco já recarregado: recria a tabela antiga para o teste
+            con.execute("CREATE TABLE estado.cenarios_salvos (id INTEGER PRIMARY KEY, nome VARCHAR)")
         versoes = con.execute("SELECT count(*) FROM estado.premissas_versoes").fetchone()[0]
     pipeline.main("gold", banco=copia, exportar_parquet=False)
     tamanho_1, hash_1 = copia.stat().st_size, _hash_publico(copia)
     pipeline.main("gold", banco=copia, exportar_parquet=False)
     tamanho_2, hash_2 = copia.stat().st_size, _hash_publico(copia)
     with duckdb.connect(str(copia), read_only=True) as con:
-        assert con.execute("SELECT nome FROM estado.cenarios_salvos WHERE id = ?", [n]).fetchone() == ("cenário de teste",)
+        assert con.execute(tabela_antiga).fetchone()[0] == 0
         assert con.execute("SELECT count(*) FROM estado.premissas_versoes").fetchone()[0] == versoes
         assert con.execute("SELECT count(*) FROM silver.serventia").fetchone()[0] > 0   # silver trazido do banco anterior
     assert abs(tamanho_2 - tamanho_1) <= 0.05 * tamanho_1     # o arquivo não cresce de uma carga para outra

@@ -1,8 +1,8 @@
 """QA visual do painel: servidor próprio, estados fixos e checagens de layout no navegador (Playwright + Chromium).
 
 Usado por scripts/prints_painel.py (galeria), tests/test_visual.py (checagens) e scripts/acessibilidade.py (axe).
-- O servidor sobe o Streamlit numa porta livre sobre uma CÓPIA temporária do banco (RADAR_BANCO); nada é gravado em
-  data/ e o Streamlit do autor não é usado.
+- O servidor sobe o Streamlit numa porta livre sobre uma CÓPIA temporária do banco (RADAR_BANCO) e um arquivo de
+  cenários temporário (RADAR_ESTADO); nada é gravado em data/ e o Streamlit do autor não é usado.
 - Os estados são montados por cliques na interface, como uma pessoa faria (sem zoom manual).
 - As checagens leem a página renderizada (DOM e o gráfico Plotly já desenhado), não o fig.to_dict().
 """
@@ -40,7 +40,8 @@ def servidor():
     copia = pasta / "radar.duckdb"
     shutil.copy2(BANCO_REAL, copia)               # o banco real só é lido (copiado)
     porta = _porta_livre()
-    env = os.environ | {"RADAR_BANCO": str(copia), "PYTHONIOENCODING": "utf-8"}
+    env = os.environ | {"RADAR_BANCO": str(copia), "RADAR_ESTADO": str(pasta / "painel_estado.json"),
+                        "PYTHONIOENCODING": "utf-8"}
     proc = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "app/Inicio.py", "--server.headless", "true",
                              "--server.port", str(porta), "--browser.gatherUsageStats", "false",
                              "--server.fileWatcherType", "none"], cwd=RAIZ, env=env,

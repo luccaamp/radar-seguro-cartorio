@@ -475,3 +475,47 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
   - suíte padrão 146 passed (137 + 9); lint ok;
   - retiradas do `.claude/settings.local.json` as duas permissões com o caminho do OneDrive (ficaram `python --version` e `uv --version`).
 - **Próximo passo:** plano do Q4 (e do Q8, do qual depende), para aprovação do autor.
+
+## 2026-10-20 — Painel só leitura (D-034)
+- **Pedido do autor:** o banco do pipeline deve ser só leitura para o painel.
+- **Levantamento:** o painel abria o banco para gravação, criava as tabelas de estado ao abrir e, no "Salvar", gravava o cenário e uma versão nova de premissas, que viraria a vigente da carga seguinte (`docs/erros_ia.md`; D-034). O banco real só tinha as sementes v1 e v2 e nenhum cenário: nada a migrar e nenhum número afetado.
+- **Feito (tudo numa cópia do projeto; depois, levado ao projeto real para a prova final):**
+  - `app/comum.py`: conexão `read_only=True`, sem `garantir_tabelas`;
+  - `src/cenarios.py` (novo): `data/painel_estado.json` (JSON, gravação atômica, aviso se corrompido, arquivo ruim movido para `.corrompido-…`), variável `RADAR_ESTADO`;
+  - Simulador: salva no arquivo, com a versão vigente e o diff; não cria versão de premissas;
+  - `src/estado.py`: saíram `salvar_versao` e `salvar_cenario`;
+  - `pipeline.py`: `em_uso()` (abertura exclusiva no Windows) para a carga antes de começar se o banco estiver aberto; mensagem da troca final explica os Parquet;
+  - `.gitignore`, `scripts/qa_painel.py` (arquivo de cenários temporário), testes, SPEC §2.1 e §2.4, `dicionario_dados.md`, `README.md` (seção 5, roteiro sem cópia do banco), `ESTADO_ATUAL.md`.
+- **Experimento de travas (DuckDB × Windows, cópia):**
+  - o painel antigo (gravação) impedia qualquer outro leitor;
+  - com o painel só leitura, dois leitores convivem, mas a troca do banco no fim da carga falha (`WinError 5`);
+  - o arquivo com atributo de somente leitura abre normalmente em `read_only`.
+- **Concorrência (servidor Streamlit real × pipeline, cópia):**
+  - painel aberto → carga para em cerca de 1 s, "Nada foi alterado";
+  - salvar → banco igual e cenário no arquivo; reiniciar → o cenário continua;
+  - painel aberto no meio da carga → banco anterior intacto e sem `.novo`; só `data/gold/execucao.parquet` mudou (limitação na D-034);
+  - painel fechado → carga normal (35 s).
+- **Testes:**
+  - suíte padrão 155 passed (146 + 9 novos);
+  - `dados_reais` do painel 59 passed (cópia) e 63 passed (projeto real, com `test_pipeline` e `test_saida_utf8`);
+  - visual 2 passed;
+  - galeria `--checar`: 52 prints, 0 falhas; diferença de pixels só no carimbo da hora da carga;
+  - lint ok.
+- **Prova final (projeto real, banco real, cenários num arquivo do scratchpad):** as 4 páginas abrem com "dados completos", salvar e reiniciar mantêm o cenário, o SHA-256 do banco e a assinatura dos 191 arquivos de `data/` ficam iguais, e nenhum `data/painel_estado.json` foi criado.
+- **Tropeço do script de prova (não do painel):** a primeira versão esperava um elemento `stCaption`, que nesta versão do Streamlit tem outro nome, e métricas na página Qualidade, que não tem nenhuma; deu tempo esgotado duas vezes. O diagnóstico mostrou as 4 páginas sem exceção. Os servidores que ficaram abertos foram encerrados, e os dados reais foram conferidos intactos nas duas vezes.
+- **Decisões abertas para o autor:** ativar "Salvar" no modo demonstração; retirar a tabela antiga `estado.cenarios_salvos`.
+- **Próximo passo:** commit do autor e a Parte 2 (plano do Q4 e do Q8).
+
+## 2026-10-20 — Ajustes da D-034 (pedido do autor)
+- **73 → 63 explicado:**
+  - os 63 eram uma rodada parcial (4 arquivos), não a suíte `dados_reais`;
+  - a lista coletada mostra 73 no commit `21303e2` e 76 depois da D-034: saiu `test_app.py::test_simulador_salva_cenario_sem_nova_versao` (substituído sem aprovação, `erros_ia.md`); entraram `test_saida_utf8.py::test_pipeline_com_saida_redirecionada` e 3 testes do painel (SHA-256, reinício, banco somente leitura);
+  - o teste da Fase 1 voltou com o nome original;
+  - suíte `dados_reais` inteira: **77 passed** (73 + 1 + 3).
+- **Testes com verificação alterada:**
+  - `test_simulador_salva_cenario_sem_nova_versao`: o cenário é conferido no arquivo, não na tabela antiga;
+  - `test_pipeline.py::test_carga_preserva_estado_nao_cresce_e_e_reprodutivel`: deixou de inserir um cenário na tabela antiga e confere que ela some e que as versões de premissas são preservadas.
+- **`estado.cenarios_salvos`:** o pipeline a criava (`estado.criar_tabelas`) e a copiava a cada carga (`TABELAS_ESTADO`). Ajustado: não cria nem copia mais. Não foi apagada do banco real (decisão do autor); some na próxima carga. Prova na cópia (`--a-partir-de silver`): tabelas do `estado` antes `cenarios_salvos`, `log_decisoes`, `premissas_versoes`; depois só as duas últimas, com v1 e v2; 10 números, gold 25/25, público 25/25 e `data/publico` 26/26 iguais.
+- **Pendências registradas** (`ESTADO_ATUAL.md` e D-034): Parquet numa pasta temporária, com troca no fim (Bloco 2); "Salvar" no modo demonstração (redesenho do painel).
+- **Suítes no projeto real:** padrão 155 passed; `dados_reais` 77 passed; lint ok; `data/` real igual (191 arquivos, SHA-256 e data).
+- **Próximo passo:** commit do autor e a Parte 2 (plano do Q4 e do Q8).

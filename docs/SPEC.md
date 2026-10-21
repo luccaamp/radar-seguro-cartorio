@@ -117,7 +117,8 @@ O painel cruza várias fontes, porque nenhuma traz tudo sozinha. A qualidade dos
 - **Bronze**: o bruto como veio, particionado por data de coleta.
 - **Silver**: dados limpos e tipados, com chaves normalizadas (código IBGE do município, CNS) e uma tabela por entidade. **Nome e CPF de titular são descartados aqui** (ver §6).
 - **Gold**: tabelas de negócio e métricas, como `fato_mercado_uf`, `fato_passivo_municipio` e `dim_serventia`.
-- **Estado do app**: no mesmo arquivo DuckDB local, em tabelas separadas: `premissas_versoes`, `cenarios_salvos`, `log_decisoes` e, se houver radar, `eventos_radar` e `aprovacoes`.
+- **Estado do pipeline**: no mesmo arquivo DuckDB local, no esquema `estado`: `premissas_versoes` (as sementes) e `log_decisoes`. Só o pipeline grava nele.
+- **Estado do app** (D-034): o painel abre o banco **só para leitura**. O que ele guarda (cenários salvos e, se houver radar, as aprovações) fica num arquivo próprio, `data/painel_estado.json`, fora do git, dos pacotes e do conjunto público.
 
 ### 2.2 Stack
 
@@ -180,8 +181,8 @@ radar-seguro-cartorio/
 ### 2.4 Premissas versionadas
 
 - **Semente**: o YAML em `config/premissas/` é a versão inicial, versionada no git.
-- **Versões salvas**: ficam na tabela `premissas_versoes` do DuckDB local. Cada versão guarda o número, o diff sobre a anterior, o autor, a data e a origem (ajuste no simulador ou evento do radar). O app lê a versão vigente do banco e cai para a semente se o banco estiver vazio.
-- **Cenários**: `cenarios_stf.yaml` tem as definições fixas (`mantem`, `suspende_8_17`, `parcial`). `cenarios_salvos` guarda as combinações que o usuário salva no simulador.
+- **Versões salvas**: ficam na tabela `premissas_versoes` do DuckDB local. Cada versão guarda o número, o diff sobre a anterior, o autor, a data e a origem. Desde a D-034, só o pipeline cria versões, a partir das sementes (como um evento do radar entra numa versão fica para a Fase 4). O app lê a versão vigente do banco e cai para a semente se o banco estiver vazio.
+- **Cenários**: `cenarios_stf.yaml` tem as definições fixas (`mantem`, `suspende_8_17`, `parcial`). As combinações que o usuário salva no simulador vão para `data/painel_estado.json` (`src/cenarios.py`), com a versão vigente das premissas e o diff das que ele alterou (D-034).
 
 Cada premissa tem `valor` (ou `min`/`base`/`max`), `unidade`, `fonte` (URL ou "suposição"), `data_referencia` e `justificativa`. Exemplo:
 

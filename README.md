@@ -34,7 +34,7 @@ uv run streamlit run app/Inicio.py
 
 O navegador abre em `http://localhost:8501`. No modo demonstração:
 - o Simulador recalcula as premissas de seguro, déficit e cenário do STF livremente, e as do passivo numa grade pré-calculada (uma por vez);
-- "Salvar cenário" fica desativado.
+- "Salvar cenário" fica desativado (com o banco, os cenários vão para `data/painel_estado.json`; ver a seção 5).
 
 Os testes também rodam sem dados reais: `uv run pytest`.
 
@@ -79,6 +79,17 @@ uv run pipeline.py --a-partir-de bronze
 ### 4. Equipe
 
 Colaboradores convidados baixam qualquer camada (bronze, silver, gold completo, banco) da mesma carga pelo repositório privado de dados. Veja [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+### 5. Conferir o painel
+
+O painel só **lê** o banco (`data/radar.duckdb`) e pode ser aberto direto, sem cópia: `uv run streamlit run app/Inicio.py`. Os cenários salvos no Simulador vão para `data/painel_estado.json`, fora do banco e do git (D-034). Com o painel aberto, o pipeline não roda: ele para no início e pede para fechar o painel.
+
+Roteiro, com a carga 2026-10-19 (premissas v2, regra v2, nível base, regra do STF mantida):
+- **Início:** 2.525 serventias, 12.134 empregados CLT, passivo R$ 311,9 mi (todas) e R$ 238,1 mi (obrigados), déficit R$ 36,9 mi, prêmio R$ 368,7 mil, teto teórico R$ 4,8 mi (238,1 mi × 2,0%).
+- **Mercado:** os mesmos totais, ≈ 1.121 obrigadas e ≈ 486 com déficit. Um filtro (ex.: Classe 3) e um município (Belo Horizonte; um pequeno aparece pela área agregada).
+- **Simulador:** 1.121, R$ 238,1 mi, 486, R$ 36,9 mi, IS R$ 18,4 mi, prêmio R$ 368,7 mil. Taxa em 3% muda o prêmio; "STF suspende" zera a demanda. Salvar um cenário: ele aparece na tabela e continua lá depois de reabrir o painel.
+- **Qualidade dos dados:** data de referência de cada fonte, reconciliações (CNPJ × CNJ +15,8%, aviso; RAIS × CNJ +1,8%; cobertura da arrecadação 96,9%) e limitações, sem "R$" quebrado.
+- **Rodapé:** "Carga 2026-10-19 · dados completos" (ou "· demonstração" sem o banco).
 
 ## Estrutura do projeto
 

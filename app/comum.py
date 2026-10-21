@@ -68,9 +68,8 @@ NIVEIS = {"min": "mínimo", "base": "base", "max": "máximo"}
 
 @st.cache_resource
 def _abrir(caminho: str) -> duckdb.DuckDBPyConnection:
-    con = duckdb.connect(caminho)
-    estado.garantir_tabelas(con)
-    return con
+    # só leitura (D-034): o painel nunca grava no banco do pipeline; os cenários salvos vão para src/cenarios.py
+    return duckdb.connect(caminho, read_only=True)
 
 
 def conexao() -> duckdb.DuckDBPyConnection:

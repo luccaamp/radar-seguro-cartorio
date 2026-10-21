@@ -17,6 +17,7 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito e local.
 - **Pasta do projeto:** **`C:\projetos\radar-seguro-cartorio`** (D-033), clonada do GitHub em 2026-10-20, com os dados copiados da pasta antiga. A pasta antiga do OneDrive ficou só como cópia de segurança e não é mais usada.
   - Verificação completa da pasta nova em 2026-10-20 (`docs/diario.md`): suítes 137 / 73 / 2, pipeline a partir do silver com 25/25 + 25/25 e os 10 números, galeria com 0 falhas, modo demonstração ok.
   - Linha de base do "antes" do Bloco 2: `C:\radar_arquivo\baseline_2026-10-20\linha_de_base.json` (igual à de 19/10 e ao `manifesto.json`).
+- **Painel só leitura (D-034, 2026-10-20):** o painel abre `data/radar.duckdb` só para leitura e pode ser aberto direto, sem cópia (roteiro no `README.md`, seção 5). Os cenários salvos vão para `data/painel_estado.json`, e o Simulador não cria mais versão de premissas. Com o painel aberto, o pipeline para no início.
 - **Próximo:** Bloco 2, começando pelo **Q4** (receita bruta), que depende do **Q8** (repasse por serventia no silver).
 
 ## Ordem das etapas (decisão do autor, 2026-10-20; `docs/SPEC.md`, §8)
@@ -50,6 +51,7 @@ O conjunto público (`data/publico/manifesto.json`) traz o hash de cada tabela. 
 - **D-031:** vínculos da RAIS no silver público, só com as colunas que o pipeline usa.
 - **D-032:** bronze enxuto (extrato + `original.json`). Os originais ficam fora do projeto, em `C:\radar_arquivo\bronze_originais`. O coletor da RAIS foi corrigido.
 - **D-033:** projeto sai do OneDrive para `C:\projetos\radar-seguro-cartorio`; pacotes e originais continuam fora do projeto.
+- **D-034:** o painel só lê o banco do pipeline; cenários salvos em `data/painel_estado.json`; o pipeline para se o banco estiver aberto.
 
 ## Em andamento e próximos 5 passos
 1. Autor aprova o plano do Q4 (e do Q8, do qual ele depende).
@@ -60,20 +62,25 @@ O conjunto público (`data/publico/manifesto.json`) traz o hash de cada tabela. 
 
 ## Pendências que dependem do autor
 - **Pasta de sessões do Claude Code:** conferir o nome novo (`docs/prompts.md`).
-- **`UV_LINK_MODE=copy`:** está gravada nas variáveis do usuário do Windows, mas o VS Code aberto antes dela não a enxerga; reabrir o VS Code para valer nos terminais novos.
 - **Conferência de LGPD do zip do silver público** (`dados-2026-10-19`, já publicado): abrir o zip baixado do Release e conferir que não há nome, CPF, e-mail nem telefone de pessoa física, nem estimativa do modelo por serventia (D-030, D-031).
 - **Convite aos colegas, depois de quarta (21/10/2026)** (`docs/publicacao.md`, seção 5; `CONTRIBUTING.md`).
 - **Configurar o e-mail "noreply"** do GitHub nos próximos commits.
 - **Revisar as regras de estilo do ruff em outra rodada:** hoje o lint usa só as regras `F` (`pyproject.toml`); as regras padrão do ruff acusam cerca de 100 avisos de estilo.
 - **`docs/qa/depois/`** (18 MB, fora do git): galeria de QA de uma rodada anterior, com os mesmos 54 nomes de `docs/qa/atual/`, mas imagens diferentes. Foi copiada para a pasta nova; decidir se ainda serve ou se vai para `C:\radar_arquivo`.
 
+## Pendências registradas para etapas futuras (decisões do autor, 2026-10-20)
+- **Bloco 2:** avaliar se o pipeline deve gravar também os Parquet de `data/silver` e `data/gold` numa pasta temporária e só trocar no fim, como já faz com o banco. Hoje, se o painel for aberto no meio da carga, o banco fica o anterior, mas os Parquet já são da carga nova (D-034, limitações).
+- **Redesenho do painel:** ativar "Salvar cenário" no modo demonstração, agora que os cenários ficam num arquivo separado do banco (D-034).
+- **Próxima carga:** a tabela antiga `estado.cenarios_salvos` some do banco real (o pipeline não a cria nem a copia mais; D-034). Não foi apagada à mão.
+
 ## Feito pelo autor fora das sessões
 - Backup externo de `C:\radar_arquivo\` em `E:\radar_arquivo` (203 arquivos, 0 falhas), com as conversas (2026-10-20).
 - `nbstripout --install` neste clone (filtro conferido em 2026-10-20 no `.git/config` e no `.git/info/attributes`).
+- VS Code reaberto: o `UV_LINK_MODE=copy` passou a valer nos terminais (conferido em 2026-10-20).
 
 ## Onde está cada coisa
 - [`docs/SPEC.md`](SPEC.md): especificação (escopo, arquitetura, fases).
-- [`docs/decisoes.md`](decisoes.md): decisões D-001 a D-033.
+- [`docs/decisoes.md`](decisoes.md): decisões D-001 a D-034.
 - [`docs/historico/INDICE.md`](historico/INDICE.md): documentos de rodada da Fase 1.
 - [`notebooks/README.md`](../notebooks/README.md): regras dos notebooks.
 - [`docs/diario.md`](diario.md): o que foi feito e descoberto, com data.

@@ -1,7 +1,9 @@
-"""Estado do app no DuckDB (SPEC §2.1 e §2.4): versões das premissas, cenários salvos e log de decisões.
+"""Estado no DuckDB do pipeline (SPEC §2.1 e §2.4): versões das premissas e log de decisões. Só o pipeline grava.
 
-- `premissas_versoes`: a semente YAML entra como versão 1; o Simulador grava as seguintes com o diff.
+- `premissas_versoes`: cada semente YAML entra como uma versão (v001, v002...). Desde a D-034, o painel não cria
+  versão: os cenários salvos (com o diff sobre a versão vigente) ficam em data/painel_estado.json (src/cenarios.py).
 - O app e o pipeline usam a versão vigente (a mais recente) e caem para a semente se o banco estiver vazio.
+- `cenarios_salvos`: tabela antiga, que o pipeline não cria nem copia mais (D-034); some do banco na próxima carga.
 - `log_decisoes`: espelho de docs/decisoes.md, recarregado a cada execução do pipeline (fonte para o chat).
 """
 import datetime as dt
@@ -33,7 +35,7 @@ def ler_semente() -> dict:
     return yaml.safe_load(SEMENTE.read_text(encoding="utf-8"))
 
 
-TABELAS_ESTADO = ("premissas_versoes", "cenarios_salvos")   # estado do usuário: preservado entre cargas (1.7)
+TABELAS_ESTADO = ("premissas_versoes",)   # preservado entre cargas (1.7); cenarios_salvos saiu (D-034)
 
 
 def criar_tabelas(con: duckdb.DuckDBPyConnection) -> None:
@@ -42,10 +44,6 @@ def criar_tabelas(con: duckdb.DuckDBPyConnection) -> None:
     con.execute("""CREATE TABLE IF NOT EXISTS estado.premissas_versoes (
         versao INTEGER PRIMARY KEY, criada_em TIMESTAMP, autor VARCHAR, origem VARCHAR,
         diff_json VARCHAR, conteudo_json VARCHAR)""")
-    con.execute("""CREATE TABLE IF NOT EXISTS estado.cenarios_salvos (
-        id INTEGER PRIMARY KEY, nome VARCHAR, criado_em TIMESTAMP, versao_premissas INTEGER,
-        cenario_stf VARCHAR, regra_classe VARCHAR, metodo_rateio VARCHAR, nivel VARCHAR,
-        ajustes_json VARCHAR, resultado_json VARCHAR)""")
 
 
 def garantir_tabelas(con: duckdb.DuckDBPyConnection) -> None:
@@ -72,22 +70,6 @@ def premissas_vigentes(con: duckdb.DuckDBPyConnection) -> tuple[dict, int]:
         s = ler_semente()
         return s, int(s["versao"])
     return _de_json(linha[1]), int(linha[0])
-
-
-def salvar_versao(con, conteudo: dict, diff: dict, autor: str, origem: str) -> int:
-    nova = con.execute("SELECT coalesce(max(versao), 0) + 1 FROM estado.premissas_versoes").fetchone()[0]
-    conteudo = {**conteudo, "versao": nova, "criada_em": dt.date.today().isoformat(), "origem": origem}
-    con.execute("INSERT INTO estado.premissas_versoes VALUES (?, now(), ?, ?, ?, ?)",
-                [nova, autor, origem, _json(diff), _json(conteudo)])
-    return int(nova)
-
-
-def salvar_cenario(con, nome: str, versao: int, cenario: str, regra: str, metodo: str, nivel: str,
-                   ajustes: dict, resultado: dict) -> int:
-    novo = con.execute("SELECT coalesce(max(id), 0) + 1 FROM estado.cenarios_salvos").fetchone()[0]
-    con.execute("INSERT INTO estado.cenarios_salvos VALUES (?, ?, now(), ?, ?, ?, ?, ?, ?, ?)",
-                [novo, nome, versao, cenario, regra, metodo, nivel, _json(ajustes), _json(resultado)])
-    return int(novo)
 
 
 def carregar_log_decisoes(con: duckdb.DuckDBPyConnection) -> int:

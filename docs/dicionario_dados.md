@@ -95,10 +95,13 @@ Calculado por `src/motor.py` com a versão vigente das premissas. Níveis: `min`
 - `gold.interno_serventia`: serventia × nível × regra, com passivo, classe, peso_universo, motivo, n_deficit e valor_descoberto. O painel só mostra agregados.
 - `gold.interno_dim_serventia`: receita de referência de 2025, origem_receita, classe_v1 e classe_v2.
 
-## Estado do app (`estado.*`)
-- `premissas_versoes`: versao, criada_em, autor, origem, diff_json, conteudo_json. A versão 1 é a semente YAML.
-- `cenarios_salvos`: id, nome, versao_premissas, cenario_stf, regra_classe, metodo_rateio, nivel, ajustes_json, resultado_json.
+## Estado do pipeline (`estado.*`, só o pipeline grava)
+- `premissas_versoes`: versao, criada_em, autor, origem, diff_json, conteudo_json. Uma versão por semente YAML (v001, v002); desde a D-034, o painel não cria versão.
+- `cenarios_salvos`: id, nome, versao_premissas, cenario_stf, regra_classe, metodo_rateio, nivel, ajustes_json, resultado_json. Tabela antiga, vazia e não usada pelo painel desde a D-034; o pipeline não a cria mais, e ela some na próxima carga.
 - `log_decisoes`: id (D-NNN), titulo, data, texto (espelho de `docs/decisoes.md`).
+
+## Cenários salvos do painel (`data/painel_estado.json`, D-034)
+- JSON `{"formato": 1, "cenarios": [...]}`; cada cenário: id, nome, criado_em, versao_premissas (a vigente no banco), premissas_alteradas (diff `{premissa: {de, para}}`), ajustes, cenario_stf, regra_classe, metodo_rateio, nivel, resultado. Fora do git, dos pacotes e do conjunto público (`src/cenarios.py`).
 
 ## Qualidade
 

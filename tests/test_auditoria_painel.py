@@ -28,7 +28,7 @@ COL_UF = {"valor_descoberto": "valor_descoberto", "passivo": "passivo_todas", "n
 def db(banco_temporario):
     # mesma configuração da conexão do painel (o DuckDB não abre o mesmo arquivo com configurações diferentes no
     # mesmo processo); é a CÓPIA temporária, não o banco real
-    con = duckdb.connect(str(banco_temporario["copia"]))
+    con = duckdb.connect(str(banco_temporario["copia"]), read_only=True)
     yield con
     con.close()
 

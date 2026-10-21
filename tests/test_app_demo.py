@@ -2,6 +2,7 @@
 
 Roda em qualquer clone (suíte padrão). O banco de demonstração é temporário, montado a partir dos Parquet públicos.
 """
+import hashlib
 import json
 import re
 
@@ -24,7 +25,7 @@ def rodar(pagina: str):
 def ler(painel_demo, sql: str, params: list | None = None):
     # mesma configuração da conexão do painel (o DuckDB não abre o mesmo arquivo com configurações diferentes no
     # mesmo processo); é o banco temporário de demonstração, não o banco real
-    with duckdb.connect(str(painel_demo["banco"])) as con:
+    with duckdb.connect(str(painel_demo["banco"]), read_only=True) as con:
         return con.execute(sql, params or []).df()
 
 
@@ -85,6 +86,14 @@ def test_salvar_cenario_desativado():
     at = rodar("app/pages/2_Simulador.py")
     assert at.button[0].disabled and at.text_input[0].disabled
     assert any("Desativado no modo demonstração" in c.value for c in at.caption)
+
+
+def test_abrir_as_paginas_nao_altera_o_banco_de_demonstracao(painel_demo):
+    """D-034: o painel abre o banco só para leitura, também no modo demonstração."""
+    antes = hashlib.sha256(painel_demo["banco"].read_bytes()).hexdigest()
+    for pagina in PAGINAS:
+        rodar(pagina)
+    assert hashlib.sha256(painel_demo["banco"].read_bytes()).hexdigest() == antes
 
 
 def test_mercado_municipio_pequeno_aparece_agregado(painel_demo):

@@ -2,8 +2,10 @@
 
 1.1: texto com "R$" exibido pelo Streamlit precisa passar por md_seguro (o "$" vira fórmula LaTeX).
 1.7: o painel só lê tabelas públicas; gold.interno_* é proibido fora do pipeline.
+D-034: o painel abre o banco só para leitura.
 """
 import ast
+import re
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[1]
@@ -57,6 +59,21 @@ def test_painel_nao_le_tabelas_internas():
     achados = [str(a.relative_to(RAIZ)).replace("\\", "/") for a in ARQUIVOS_APP
                if "interno_" in a.read_text(encoding="utf-8")]
     assert not achados, achados
+
+
+def test_painel_abre_o_banco_so_para_leitura():
+    """D-034: toda conexão DuckDB do painel tem read_only=True, e o código do painel não tem SQL que grava."""
+    sem_read_only, grava = [], []
+    for a in ARQUIVOS_APP:
+        texto = a.read_text(encoding="utf-8")
+        for no in ast.walk(ast.parse(texto)):
+            if isinstance(no, ast.Call) and isinstance(no.func, ast.Attribute) and no.func.attr == "connect":
+                if not any(k.arg == "read_only" and getattr(k.value, "value", None) is True for k in no.keywords):
+                    sem_read_only.append(f"{a.relative_to(RAIZ)}:{no.lineno}")
+            if isinstance(no, ast.Constant) and isinstance(no.value, str) and re.search(
+                    r"\b(INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|COPY|ATTACH)\b", no.value):
+                grava.append(f"{a.relative_to(RAIZ)}:{no.lineno}")
+    assert not sem_read_only and not grava, (sem_read_only, grava)
 
 
 def test_detector_pega_o_caso_errado():
