@@ -1,0 +1,11 @@
+# Chat do painel (E5): modelo local pelo Ollama, gratuito e sem nuvem. Lido só por src/llm.py.
+# fonte: escolha da Fase 0 (docs/historico/viabilidade.md, §3): qwen3:8b acertou 4 de 4 no teste de chamada de
+# ferramentas, 100% na GPU; reserva llama3.1:8b. Os parâmetros abaixo são suposição de partida, ajustáveis.
+url: http://127.0.0.1:11434      # servidor local do Ollama; a variável RADAR_OLLAMA_URL troca (testes)
+modelo: qwen3:8b
+reserva: llama3.1:8b
+think: false                     # sem raciocínio longo: respostas mais rápidas; as contas vêm das ferramentas
+num_ctx: 8192                    # contexto (o padrão do Ollama, 4096, corta o texto das normas)
+temperatura: 0                   # respostas reprodutíveis na avaliação
+timeout_s: 180                   # tempo máximo por chamada ao modelo
+max_rodadas_ferramentas: 4       # chamadas de ferramenta por pergunta, antes de responder

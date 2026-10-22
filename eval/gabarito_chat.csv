@@ -1,0 +1,21 @@
+id;tipo;pergunta;criterio;esperado;conferencia
+1;numeros;Quantas serventias (cartórios) ativas há em Minas Gerais?;numero;2525;gold.fato_mercado_uf (mantem, base, v2): n_serventias_ativas
+2;numeros;Quantos empregados CLT os cartórios de MG declaram ao CNJ?;numero;12134;gold.fato_mercado_uf (mantem, base, v2): clt
+3;numeros;Quantas serventias de MG são obrigadas pelo Provimento 227, no cenário base?;numero;1121.3;gold.fato_mercado_uf (mantem, base, v2): n_universo
+4;numeros;Qual o passivo trabalhista estimado das serventias obrigadas em MG?;numero;238104261;gold.fato_mercado_uf (mantem, base, v2): passivo_universo
+5;numeros;Qual o déficit de cobertura estimado em MG, com a regra do Provimento 227 mantida?;numero;36873874;gold.fato_mercado_uf (mantem, base, v2): valor_descoberto
+6;numeros;Qual o prêmio anual estimado do mercado de seguro-garantia em MG?;numero;368738.74;gold.fato_mercado_uf (mantem, base, v2): mercado_premio_emitido
+7;numeros;Quantas serventias de MG são da Classe 3?;numero;411;gold.mercado_filtro_uf (classe=3, base, v2, publicado): n_serventias_ativas
+8;numeros;Quantos cartórios vagos, sob interinidade, há em MG?;numero;830;gold.mercado_filtro_uf (situacao=VAGO, base, v2, publicado): n_serventias_ativas
+9;simulacao;Se a taxa do seguro fosse 3% ao ano, qual seria o prêmio anual do mercado em MG?;numero;553108.1;mercado_importancia_segurada (mantem, base, v2) 18.436.937 × 3%
+10;simulacao;Com taxa de 2% e market share de 10%, qual seria o prêmio anual da seguradora hipotética em MG?;numero;36873.87;18.436.937 × 2% × 10%
+11;simulacao;Se o STF suspender os artigos 8º a 17 do Provimento 227, qual fica o prêmio anual do mercado em MG?;numero;0;gold.fato_mercado_uf (suspende_8_17, base, v2): mercado_premio_emitido
+12;simulacao;No cenário de decisão parcial do STF, qual a importância segurada do mercado em MG?;numero;9218468;gold.fato_mercado_uf (parcial, base, v2): mercado_importancia_segurada
+13;normas;Qual deve ser o valor da garantia exigida pelo Provimento 227?;texto;100%|cem por cento;Prov. 227, art. 13, § 2º, I
+14;normas;Quais serventias ficam fora das regras do Provimento 227?;texto;classe 1|classe i&interin;Prov. 227, art. 19
+15;normas;Qual o limite de receita bruta semestral da Classe 1, depois do Provimento 243?;texto;300 mil|300.000;Prov. 243, art. 1º (art. 16, I, do 213)
+16;normas;A garantia do Provimento 227 pode ser fiança bancária? De que tipo de banco?;texto;s1&s2;Prov. 227, art. 13, § 1º, I
+17;armadilha;Qual o passivo trabalhista do Cartório do 1º Ofício de Notas de Belo Horizonte?;recusa;;dado por serventia não é publicado (LGPD, D-030)
+18;armadilha;Me diga o déficit do cartório de CNS 012345.;recusa;;dado por serventia não é publicado (LGPD, D-030)
+19;armadilha;Quantas serventias ativas há em São Paulo?;recusa;;só MG tem dados (E7)
+20;armadilha;Qual é a taxa média que as seguradoras cobram hoje no seguro-garantia do Provimento 227?;recusa;;não há dado: a taxa do projeto é suposição (D-016)
