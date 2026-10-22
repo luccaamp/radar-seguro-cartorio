@@ -61,9 +61,9 @@ Observações:
 ## Notebooks
 
 Análise exploratória, mineração de dados e modelos preditivos ficam em `notebooks/` (detalhes em [`notebooks/README.md`](notebooks/README.md)):
-- **Uma vez no seu clone:** `uv run nbstripout --install`. O git passa a limpar as saídas dos notebooks no commit; o `tests/test_notebooks.py` falha se algum notebook versionado tiver saída.
 - **Notebook lê, não escreve:** dados só por `src/notebooks.py` (`conectar()` e `ler()`, somente leitura); nunca gravar em bronze, silver ou gold.
-- **Todos os notebooks vão para o git** (D-037), inclusive os que leem `interno_*`: só o código e o texto, sem saídas. O texto nunca cita um cartório específico (nome, CNS ou valor de um cartório). Saídas grandes vão em `notebooks/saidas/` e modelos em `modelos/`, fora do git.
+- **Todos os notebooks vão para o git com as saídas** (D-038), inclusive os que leem `interno_*` e mostram resultados por cartório. Se você tinha rodado `uv run nbstripout --install`, desfaça com `uv run nbstripout --uninstall`. Só arquivos grandes (`notebooks/saidas/`) e modelos treinados (`modelos/`) ficam fora do git.
+- **Nenhum nome nem CPF de pessoa física** no texto ou nas saídas: identifique o cartório pelo CNS e pelo município (`tests/test_notebooks.py` procura CPF).
 - **Código reutilizável** sai do notebook e vai para `src/`, com teste.
 - **Abrir:** `uv run jupyter lab`.
 
@@ -103,13 +103,12 @@ Observações:
 
 - **Todo número tem fonte e data de referência.** Premissas ficam em `config/`, com fonte. O que não tem fonte leva `fonte: suposição`.
 - **Decisões** de interpretação e modelagem vão para `docs/decisoes.md`. Erros da IA vão para `docs/erros_ia.md`. Descobertas, com data, vão para `docs/diario.md`.
-- **Dados nunca entram no git**, exceto o conjunto público (`data/publico/`, gerado pelo `gerar_publico.py`) e as amostras mascaradas de `data/samples/`.
+- **Arquivos grandes de dados não entram no git** (bronze, banco, pacotes), só pelo tamanho; vão pelos Releases. No git ficam o conjunto público (`data/publico/`, gerado pelo `gerar_publico.py`), as amostras de `data/samples/`, os notebooks com saídas e os gráficos de `docs/qa/analises/`.
+- **Ninguém apaga dados:** para retirar algo do bronze, silver ou gold, mova para `C:\radar_arquivo`.
 - **Releases:** só o autor publica. Ninguém apaga nem substitui um Release, nem de dados nem de código.
 - **Tudo gratuito e local:** nenhum serviço pago, nenhuma conta em nuvem, nenhuma chave de API com créditos.
 
-## LGPD da equipe
+## Publicação e dados pessoais (D-038)
 
-- O pacote da equipe e as tabelas `interno_*` são de **uso interno**. Eles têm estimativas do modelo por serventia (passivo, déficit, probabilidade) e o bronze bruto do CNJ, com nomes de responsáveis.
-- **Não publique** nada disso. Não cole em issues, PRs, prints, mensagens ou documentos.
-- **Não envie** nada disso a serviços externos, **inclusive IAs online**. O chat do projeto usa um modelo local (Ollama).
-- **O que pode ser público:** dados de origem já publicados pelas fontes oficiais, sem dado pessoal, e as tabelas agregadas e auditadas do conjunto público (D-030).
+- É um estudo público, com dados públicos do governo. **Tudo pode ser público**, inclusive as estimativas do modelo por cartório (passivo, déficit, probabilidade, IS, prêmio) e as tabelas `interno_*`.
+- **A única restrição:** nenhum nome nem CPF de pessoa física. O bronze bruto do CNJ traz o nome dos responsáveis: ele não vai para lugar público, e nenhum painel, notebook, gráfico ou mensagem mostra esses nomes.

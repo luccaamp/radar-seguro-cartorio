@@ -12,14 +12,10 @@ from src.agent import avaliacao, chat, ferramentas
 CODIGO_DO_CHAT = [RAIZ / "src" / "llm.py", *sorted((RAIZ / "src" / "agent").glob("*.py")), RAIZ / "app/pages/4_Chat.py"]
 
 
-# ------------------------------------------------------------------ LGPD: só tabelas públicas
-def test_codigo_do_chat_nao_le_tabelas_internas():
-    achados = [p.relative_to(RAIZ).as_posix() for p in CODIGO_DO_CHAT if "interno_" in p.read_text(encoding="utf-8")]
-    assert not achados, achados
-
-
+# ------------------------------------------------------------------ tabelas que existem no modo demonstração
 def test_ferramentas_so_leem_tabelas_do_conjunto_publico():
-    """Toda tabela citada no SQL das ferramentas está em config/publico.yaml; nenhum SQL grava (D-030, D-034)."""
+    """Toda tabela citada no SQL das ferramentas está em config/publico.yaml, para o chat funcionar também no banco
+    de demonstração (D-029); nenhum SQL grava (D-034). A D-038 retirou a proibição de interno_* por LGPD."""
     publicas = set(yaml.safe_load((RAIZ / "config" / "publico.yaml").read_text(encoding="utf-8"))["tabelas"])
     publicas.add("estado.premissas_versoes")   # publicada como estado.premissas_vigente (só a versão vigente)
     texto = (RAIZ / "src" / "agent" / "ferramentas.py").read_text(encoding="utf-8")

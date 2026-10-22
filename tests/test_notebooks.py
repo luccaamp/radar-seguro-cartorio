@@ -1,6 +1,7 @@
-"""Notebooks (notebooks/README.md): saídas limpas, acesso somente leitura e o exemplo funcionando.
+"""Notebooks (notebooks/README.md): acesso somente leitura, nenhum CPF e o exemplo funcionando.
 
-Roda em qualquer clone: o exemplo usa o conjunto público (modo demonstração) se não houver banco local.
+Os notebooks vão para o git com as saídas (D-038). Roda em qualquer clone: o exemplo usa o conjunto público (modo
+demonstração) se não houver banco local.
 """
 import json
 import re
@@ -16,29 +17,28 @@ def notebooks_versionaveis() -> list[Path]:
     return arquivos_versionaveis("*.ipynb")
 
 
-def test_notebooks_versionados_sem_saida():
-    """Saída de notebook pode carregar dado interno para o repositório público: nada de saída nem contagem."""
-    sujos = []
-    for nb in notebooks_versionaveis():
-        for i, c in enumerate(json.loads(nb.read_text(encoding="utf-8"))["cells"]):
-            if c.get("cell_type") == "code" and (c.get("outputs") or c.get("execution_count") is not None):
-                sujos.append(f"{nb.relative_to(RAIZ).as_posix()} célula {i}")
+CPF = re.compile(r"\b\d{3}\.\d{3}\.\d{3}-\d{2}\b")
+
+
+def _textos(celula: dict) -> list[str]:
+    textos = ["".join(celula["source"])]
+    for saida in celula.get("outputs", []):
+        textos.append("".join(saida.get("text", [])))
+        for valor in saida.get("data", {}).values():
+            if isinstance(valor, (str, list)):
+                textos.append("".join(valor))
+    return textos
+
+
+def test_notebooks_nao_mostram_cpf():
+    """D-038: nenhum CPF de pessoa física no texto, no código ou nas saídas dos notebooks."""
     assert notebooks_versionaveis(), "o notebook de exemplo deveria existir"
-    assert not sujos, f"rode `uv run nbstripout <arquivo>` (ou `uv run nbstripout --install` uma vez): {sujos}"
-
-
-CNS = re.compile(r"\bCNS\b\W{0,3}\d|\b\d{2}\.\d{3}-\d\b")   # "CNS 048108", "CNS: 12" ou o formato do BI, "00.005-9"
-
-
-def test_texto_dos_notebooks_nao_cita_cartorio():
-    """D-037: todo notebook vai para o git (inclusive os que leem interno_*), mas o TEXTO nunca cita um cartório
-    específico. Confere o CNS nas células de texto e no código; nomes de cartório ficam na revisão do autor."""
     ruins = []
     for nb in notebooks_versionaveis():
         for i, c in enumerate(json.loads(nb.read_text(encoding="utf-8"))["cells"]):
-            if CNS.search("".join(c["source"])):
+            if any(CPF.search(t) for t in _textos(c)):
                 ruins.append(f"{nb.relative_to(RAIZ).as_posix()} célula {i}")
-    assert not ruins, f"texto ou código cita o CNS de um cartório: {ruins}"
+    assert not ruins, f"notebook mostra um CPF: {ruins}"
 
 
 def test_conectar_e_somente_leitura(tmp_path):

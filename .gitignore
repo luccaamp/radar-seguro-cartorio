@@ -26,7 +26,7 @@ conversas/
 .agents/
 .claude/skills/
 
-# Notebooks: todos vão para o git, sem saídas (nbstripout; D-037); saídas grandes e modelos nunca no git
+# Notebooks: todos vão para o git, com as saídas (D-038); só arquivos grandes e modelos treinados ficam fora
 notebooks/saidas/
 modelos/
 
@@ -45,5 +45,6 @@ __pycache__/
 # Streamlit
 .streamlit/secrets.toml
 
-# QA visual (prints, galeria e relatório de acessibilidade gerados por scripts)
-docs/qa/
+# QA visual (prints, galeria e relatório de acessibilidade gerados por scripts); os gráficos da mineração vão (D-038)
+docs/qa/*
+!docs/qa/analises/

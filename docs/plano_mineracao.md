@@ -22,17 +22,13 @@ Entender a fundo os dados de MG e o mercado do Prov. 227, com:
 
 ## 2. Regras
 
-As regras do `CLAUDE.md` continuam (testes, cópia do banco, nada de commit, nenhum número sem fonte), com estas regras próprias da etapa:
+As regras do `CLAUDE.md` continuam (nada de commit sem pedido, não apagar dados, 100% gratuito, nenhum nome nem CPF de pessoa física, nenhum número sem fonte, cópia do banco), com estas regras próprias da etapa:
 
-- **Os 10 números oficiais não mudam** nesta etapa. Tudo o que for diferente da base é sensibilidade ou projeção, rotulado como tal.
-- **Todos os notebooks vão para o git, em `notebooks/`** (não existe mais a pasta `notebooks/privado/`). A equipe precisa ver tudo. Isso é seguro porque:
-  - o `nbstripout` tira as **saídas** antes do commit (`tests/test_notebooks.py` confere); o que vai para o git é só o código e o texto;
-  - os dados por serventia (inclusive `interno_*`) só existem no banco local e no pacote da equipe, no repositório privado;
-  - **regra para o texto dos notebooks:** as células de texto nunca citam um cartório específico (nome, CNS ou valor de um cartório). Interpretações só com números agregados.
-- Essa mudança de regra está registrada na decisão **D-037** (2026-10-22), e o `CLAUDE.md`, o `notebooks/README.md`, o `CONTRIBUTING.md` e o `tests/test_notebooks.py` já foram atualizados.
+- **Os 10 números oficiais não mudam** nesta etapa. Tudo o que for diferente da base é sensibilidade ou projeção, rotulado como tal. Se algo indicar que o cálculo do painel deveria mudar, a IA avisa no relatório em vez de mudar.
+- **Todos os notebooks vão para o git, em `notebooks/`, com as saídas** (D-038, 2026-10-22). É um estudo público, com dados públicos: os notebooks podem usar todos os dados, inclusive `interno_*` e os resultados por cartório, identificados pelo CNS e pelo município (nunca pelo nome do responsável).
 - **Cálculo reutilizável fica em `src/analise/`**, com teste. Os notebooks leem dados só por `src/notebooks.py` e chamam essas funções.
-- **Resultados que podem ir para o painel** viram tabelas `gold.analise_*`, **só agregadas** (3 ou mais serventias), passando pelo auditor e pelo `gerar_publico.py`.
-- **Gráficos** exportados em PNG em `docs/qa/analises/` (fora do git), com nomes que dizem o conteúdo.
+- **Resultados que podem ir para o painel** viram tabelas `gold.analise_*`, geradas pelo pipeline e pelo `gerar_publico.py`.
+- **Gráficos** exportados em PNG em `docs/qa/analises/` (vão para o git), com nomes que dizem o conteúdo.
 - **Bibliotecas:** pode adicionar com `uv add` bibliotecas gratuitas de análise (por exemplo `scikit-learn`, `statsmodels`, `mlxtend`). Listar no relatório.
 - **Decida sozinho os detalhes pequenos.** Pare antes do fim da parte só se algo mudar os 10 números oficiais ou tocar em LGPD.
 - Se a sessão estiver perto do limite, registre no `diario.md` onde parou, para a próxima sessão continuar.
@@ -126,7 +122,7 @@ Para cada um: referência simples; regressão logística e árvore ou floresta; 
 |---|---|---|
 | **A** | Checagem do Ollama (5 minutos: instalado? o `qwen3:8b` responde?); base de `src/analise/`; notebooks **01** e **02** | resultado do Ollama; notebooks 01 e 02; PNGs; testes |
 | **B** | Notebooks **03, 04, 05 e 06** | notebooks; PNGs; métricas de cada modelo contra a referência |
-| **C** | Notebooks **07, 08 e 09**; tabelas `gold.analise_*` agregadas; auditor e `gerar_publico.py` | notebooks; tabelas; achados; tabela de lacunas; recomendação para o painel |
+| **C** | Notebooks **07, 08 e 09**; tabelas `gold.analise_*`; `gerar_publico.py` | notebooks; tabelas; achados; tabela de lacunas; recomendação para o painel |
 
 **Relatório no fim de cada parte** (curto):
 - o que foi feito, notebook por notebook, com os principais números;
@@ -134,7 +130,7 @@ Para cada um: referência simples; regressão logística e árvore ou floresta; 
 - os PNGs gerados (nomes);
 - bibliotecas adicionadas;
 - problemas encontrados nos dados;
-- suíte padrão (e auditor, na parte C);
+- suíte padrão;
 - arquivos para commit.
 
 Depois do relatório, **pare**.

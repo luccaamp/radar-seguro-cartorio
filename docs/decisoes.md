@@ -500,3 +500,16 @@ Formato:
   - ficam vivos: `SPEC.md`, `dicionario_dados.md`, `publicacao.md` e os registros (`decisoes.md`, `diario.md`, `erros_ia.md`).
 - **Consequências / onde aparece:** `CLAUDE.md`, `docs/ESTADO_ATUAL.md`, `docs/plano_mineracao.md`, `notebooks/README.md`, `CONTRIBUTING.md`, `src/notebooks.py`, `.gitignore`, `tests/test_notebooks.py` (o teste "notebook versionado não usa `interno_*`" virou "o texto não cita o CNS de um cartório"), `tests/test_links_docs.py` (o teste do índice de `docs/` virou o do índice do histórico mais "o ESTADO_ATUAL aponta para o documento da etapa"). Substitui a parte da D-035 sobre o ROADMAP como fonte do plano e os níveis dos documentos. A D-036 dizia que a primeira decisão da E1 seria a D-037; com esta decisão, a próxima livre é a **D-038**.
 - **Fonte:** pedido do autor em 2026-10-22 ("limpeza dos documentos").
+
+## D-038 — Estudo público: sem restrições de publicação, exceto nome e CPF
+- **Data:** 2026-10-22
+- **Contexto:** as regras de publicação (D-026 a D-030, D-037) tratavam as estimativas por serventia como dado interno. O autor decidiu que o projeto é um estudo público, feito com dados públicos do governo.
+- **Decisão (do autor):** saem dos documentos as restrições de publicação: mínimo de 3 serventias, auditor obrigatório para coisa nova, proibição de `interno_*` no painel e no chat, "nada por serventia no público", notebooks sem saída e a separação entre o público e a equipe. Tudo pode ir para o git e ser público, inclusive os resultados por cartório. Ficam só estas regras:
+  - a IA não faz commit nem push sem pedido do autor;
+  - a IA não apaga dados;
+  - 100% gratuito;
+  - não mostrar nome nem CPF de pessoa física.
+- **Escopo desta sessão:** só documentos e testes. O pipeline, o auditor e o `gerar_publico.py` ficam como estão (o painel continua com a supressão de áreas pequenas e o conjunto público atual) até um pedido do autor; mudar agora quebraria o painel.
+- **Escolhas da IA nos detalhes:** as regras de qualidade dos dados do `CLAUDE.md` (fonte em todo número, premissas em `config/`, cópia do banco, ferramenta de edição) continuam, porque não são restrições de publicação; o cartório é identificado pelo CNS e pelo município, nunca pelo nome do responsável (o bronze do CNJ traz esses nomes); os PNGs de `docs/qa/analises/` passam a ir para o git; o `nbstripout` continua como dependência de dev, sem o filtro instalado.
+- **Consequências / onde aparece:** `CLAUDE.md`, `CONTRIBUTING.md`, `notebooks/README.md`, `docs/plano_mineracao.md` (§2 e §6), `src/notebooks.py` (docstring), `.gitignore`, `tests/test_notebooks.py` (saem "sem saída" e "não cita o CNS"; entra "nenhum CPF no texto, no código e nas saídas"), `tests/test_app_codigo.py` e `tests/test_chat.py` (saem as checagens de `interno_*`; fica a do chat ler só tabelas do conjunto público, porque o chat também roda no banco de demonstração). Filtro do git removido com `uv run nbstripout --uninstall`. Substitui, nas partes de publicação, a D-026, a D-027, a D-028, a D-030 e a D-037.
+- **Fonte:** pedido do autor em 2026-10-22.

@@ -1,0 +1,12 @@
+# Parâmetros da mineração de dados (docs/plano_mineracao.md), lidos por src/analise/. Não mudam os 10 números oficiais.
+outliers:
+  k_iqr: 1.5        # fonte: Tukey (1977), Exploratory Data Analysis: as "cercas" do boxplot ficam a 1,5 × IQR dos quartis
+  escala: log10     # fonte: suposição (receita e passivo variam em várias ordens de grandeza; no log a cerca não marca
+                    # metade da cauda como atípica)
+saltos:             # semestre muito fora do histórico da própria serventia (provável erro de declaração)
+  janela: 4         # fonte: suposição (os 4 semestres anteriores = 2 anos de histórico)
+  fator: 10         # fonte: suposição (10 vezes acima ou abaixo da mediana da janela; corte largo, para só pegar o grosseiro)
+semente: 20261022   # fonte: suposição (qualquer inteiro fixo; só garante que o resultado se repete)
+graficos:
+  pasta: docs/qa/analises   # PNGs dos notebooks (D-038: vão para o git)
+  dpi: 150

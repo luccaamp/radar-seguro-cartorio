@@ -8,8 +8,8 @@ bronze, silver ou gold.
     con = conectar()
     df = ler("SELECT * FROM gold.fato_mercado_uf")
 
-Todos os notebooks vão para o git, sem saídas (D-037); podem ler tabelas `interno_*`, mas o texto nunca cita um
-cartório específico.
+Todos os notebooks vão para o git com as saídas (D-038); podem ler qualquer tabela, inclusive `interno_*`, e mostrar
+resultados por cartório, sem nome nem CPF de pessoa física.
 """
 from pathlib import Path
 

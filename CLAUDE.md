@@ -16,13 +16,9 @@ Regras de segurança para a IA que trabalha neste repositório. Em cada sessão,
 - Nunca invente valores de premissa, URLs, números de normas ou dados apresentados como reais. Sem fonte: `fonte: suposição`, e avise.
 - Nenhum número fixo no código: premissas ficam em `config/`, versionadas e com fonte.
 - **A IA roda testes e pipeline sempre numa cópia do banco;** a carga oficial no `data/radar.duckdb` real só com pedido explícito do autor na mensagem atual.
-- Nunca apagar dado do bronze, silver ou gold sem aprovação explícita; para retirar, **mover** para `C:\radar_arquivo`. Arquivos grandes (bronze, banco, pacotes) nunca vão para o git e ficam fora do OneDrive.
+- **A IA não apaga dados:** nada do bronze, silver ou gold sai sem aprovação explícita; para retirar, **mover** para `C:\radar_arquivo`. Arquivos grandes (bronze, banco, pacotes) ficam fora do git só pelo tamanho, e fora do OneDrive.
 - Edite código só com a ferramenta de edição de arquivos, nunca por script de substituição de texto (`docs/erros_ia.md`).
 
-## LGPD
-- Nenhum nome, CPF, e-mail ou telefone de pessoa física em painel, resposta do chat, notebook ou log de saída.
-- **Mínimo de 3 serventias:** toda estimativa publicada por área só aparece se a área tiver 3 ou mais serventias e passar no auditor de ataque por diferença (D-026, D-027); partições internas da mesma visão seguem a D-028.
-- **Público (repositório e Release públicos):** nenhuma ESTIMATIVA do modelo no nível de serventia (passivo, déficit, probabilidade, IS, prêmio); dados de origem já publicados pelas fontes oficiais podem ir, sem dado pessoal (D-030).
-- **Pacote da equipe:** `interno_*`, o banco `.duckdb` e o pacote da equipe só existem localmente ou no repositório privado `radar-seguro-cartorio-dados` (D-030). Nunca no repositório público, em issues, PRs, prints ou serviços externos (inclusive IAs online).
-- Painel e chat só leem tabelas públicas; `interno_*` é proibido fora do pipeline e dos notebooks (`tests/test_app_codigo.py`, `tests/test_chat.py`).
-- **Notebooks:** todos vão para o git, **sem saídas** (`nbstripout`; `tests/test_notebooks.py`) e **sem citar um cartório específico** (nome, CNS ou valor de um cartório) no texto; interpretações só com números agregados (D-037).
+## Publicação e dados pessoais (D-038)
+- É um estudo público, com dados públicos do governo: **tudo pode ir para o git e ser público**, inclusive os resultados por cartório (estimativas do modelo por serventia), as tabelas `interno_*` e os notebooks com as saídas.
+- A única restrição: **nenhum nome nem CPF de pessoa física** em painel, resposta do chat, notebook, gráfico, log ou arquivo publicado. Cartório se identifica pelo CNS e pelo município, nunca pelo nome do responsável (`tests/test_notebooks.py` procura CPF nos notebooks).

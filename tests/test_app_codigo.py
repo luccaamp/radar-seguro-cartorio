@@ -1,7 +1,6 @@
 """Testes estáticos do código do painel (não abrem o banco).
 
 1.1: texto com "R$" exibido pelo Streamlit precisa passar por md_seguro (o "$" vira fórmula LaTeX).
-1.7: o painel só lê tabelas públicas; gold.interno_* é proibido fora do pipeline.
 D-034: o painel abre o banco só para leitura.
 """
 import ast
@@ -51,14 +50,6 @@ def _violacoes(arquivo: Path) -> list[str]:
 def test_textos_com_rs_passam_por_md_seguro():
     violacoes = [v for a in ARQUIVOS_APP for v in _violacoes(a)]
     assert not violacoes, violacoes
-
-
-def test_painel_nao_le_tabelas_internas():
-    """1.7 e D-026: o painel (e, na Fase 3, o chat) só lê tabelas públicas; 'interno_' não pode aparecer no código.
-    Sem exceções (a do Mercado foi removida com a opção B)."""
-    achados = [str(a.relative_to(RAIZ)).replace("\\", "/") for a in ARQUIVOS_APP
-               if "interno_" in a.read_text(encoding="utf-8")]
-    assert not achados, achados
 
 
 def test_painel_abre_o_banco_so_para_leitura():
