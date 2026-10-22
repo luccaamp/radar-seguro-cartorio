@@ -3,6 +3,7 @@
 Roda em qualquer clone: o exemplo usa o conjunto público (modo demonstração) se não houver banco local.
 """
 import json
+import re
 from pathlib import Path
 
 import duckdb
@@ -26,13 +27,18 @@ def test_notebooks_versionados_sem_saida():
     assert not sujos, f"rode `uv run nbstripout <arquivo>` (ou `uv run nbstripout --install` uma vez): {sujos}"
 
 
-def test_notebooks_versionados_nao_usam_interno():
-    """Nenhuma célula de CÓDIGO de notebook versionado lê tabela interno_* (o texto explicativo pode citar a regra)."""
-    def codigo(nb: Path) -> str:
-        return "\n".join("".join(c["source"]) for c in json.loads(nb.read_text(encoding="utf-8"))["cells"]
-                         if c["cell_type"] == "code")
-    ruins = [nb.name for nb in notebooks_versionaveis() if "interno_" in codigo(nb)]
-    assert not ruins, f"interno_* só em notebooks/privado/ (fora do git): {ruins}"
+CNS = re.compile(r"\bCNS\b\W{0,3}\d|\b\d{2}\.\d{3}-\d\b")   # "CNS 048108", "CNS: 12" ou o formato do BI, "00.005-9"
+
+
+def test_texto_dos_notebooks_nao_cita_cartorio():
+    """D-037: todo notebook vai para o git (inclusive os que leem interno_*), mas o TEXTO nunca cita um cartório
+    específico. Confere o CNS nas células de texto e no código; nomes de cartório ficam na revisão do autor."""
+    ruins = []
+    for nb in notebooks_versionaveis():
+        for i, c in enumerate(json.loads(nb.read_text(encoding="utf-8"))["cells"]):
+            if CNS.search("".join(c["source"])):
+                ruins.append(f"{nb.relative_to(RAIZ).as_posix()} célula {i}")
+    assert not ruins, f"texto ou código cita o CNS de um cartório: {ruins}"
 
 
 def test_conectar_e_somente_leitura(tmp_path):

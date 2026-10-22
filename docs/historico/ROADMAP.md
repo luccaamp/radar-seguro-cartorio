@@ -1,5 +1,7 @@
 # Roteiro do projeto (ROADMAP)
 
+> **Histórico (D-037, 2026-10-22).** Não é mais a fonte do plano: cada etapa tem o seu documento, indicado no `docs/ESTADO_ATUAL.md`. Fica como referência das etapas, das pendências (§7) e da E2 detalhada.
+
 > **Fonte única do plano daqui em diante.** O `docs/ESTADO_ATUAL.md` diz em que etapa estamos; este arquivo diz o que cada etapa precisa entregar e como saber que terminou.
 > Em conflito, vale o `CLAUDE.md` (regras), depois este roteiro, depois o `SPEC.md` (desenho técnico).
 > Criado em 2026-10-21, ao fim da Fase 1 (MG publicado, carga 2026-10-19). Harmonizado com os demais documentos em 2026-10-21 (D-035).
@@ -8,7 +10,7 @@
 
 ## 1. Os 10 números de referência
 
-As etapas dizem quais números mudam por esta numeração. **Os valores atuais ficam no [`ESTADO_ATUAL.md`](ESTADO_ATUAL.md#números-de-referência)**, a fonte dos valores; onde o projeto está também fica lá.
+As etapas dizem quais números mudam por esta numeração. **Os valores atuais ficam no [`ESTADO_ATUAL.md`](../ESTADO_ATUAL.md#números-de-referência)**, a fonte dos valores; onde o projeto está também fica lá.
 
 | # | Número |
 |---|---|
@@ -79,7 +81,7 @@ Toda etapa que mudar um desses números registra a mudança na **cascata** (seç
 7. **Registro:** decisões novas no `decisoes.md` (a próxima livre é a **D-036**), o `diario.md`, o `erros_ia.md` e o `ESTADO_ATUAL.md`.
 8. **Commit e merge pelo autor.** Nova linha de base em `C:\radar_arquivo\baseline_AAAA-MM-DD\` sempre que os números mudarem.
 
-**Regras que valem em todas as etapas:** as do [`CLAUDE.md`](../CLAUDE.md) (git, dados, gratuito, LGPD, cópia do banco), sem repetir aqui.
+**Regras que valem em todas as etapas:** as do [`CLAUDE.md`](../../CLAUDE.md) (git, dados, gratuito, LGPD, cópia do banco), sem repetir aqui.
 
 ---
 
@@ -230,7 +232,7 @@ Toda etapa abaixo segue estes campos. Ao começar uma etapa, a IA completa o que
   - todos os ramos da SES na `BaseCompleta.zip` dos originais (o extrato do bronze só tem o 0775 e o 0776), para comparar taxa, sinistralidade e despesas com ramos como garantia judicial, garantia de obrigações e fiança locatícia (a conferir no `Ses_ramos.csv`);
   - o CSV do BI do CNJ (`data/bronze/cnj_bi_painel/2026-10-18/`), com arrecadação, repasse, custeio e atos de 11.866 CNS;
   - o extrato do CNPJ com todas as UFs;
-  - o PIB municipal, com o acesso testado na Fase 0 (SIDRA, tabela 5938, PIB de 2023; [`historico/viabilidade.md`](historico/viabilidade.md)), mas ainda não coletado.
+  - o PIB municipal, com o acesso testado na Fase 0 (SIDRA, tabela 5938, PIB de 2023; [`historico/viabilidade.md`](viabilidade.md)), mas ainda não coletado.
 - **Fontes candidatas a investigar:**
   - mais campos do CNJ (Justiça Aberta e BI) sobre os cartórios;
   - dados municipais do IBGE (PIB, renda, população), para explicar a receita dos cartórios pela economia local;
@@ -294,7 +296,8 @@ Toda etapa abaixo segue estes campos. Ao começar uma etapa, a IA completa o que
 ### E5. Agente de IA no painel
 
 - **Objetivo:** um chat dentro do painel que responde perguntas sobre o mercado, com fonte.
-- **Modelo local:** Ollama, gratuito, sem nuvem. Ponto de partida: **`qwen3:8b`** (escolhido na Fase 0: 4 de 4 no teste de chamada de ferramentas, 100% na GPU), com reserva **`llama3.1:8b`** ([`historico/viabilidade.md`](historico/viabilidade.md), §3). O LLM é acessado só por `src/llm.py`; `num_ctx` e `think` ficam em `config/llm.yaml` (a criar).
+- **Situação (2026-10-21, D-036): E5 reduzida feita, antes da E1, a pedido do autor.** Feito: `src/llm.py`, `config/llm.yaml`, 5 ferramentas (SPEC §5.2), página Chat (desativada sem Ollama), gabarito-rascunho de 20 perguntas e avaliação (a) × (c) em `eval/resultado_avaliacao.md`. Falta: gabarito de 40 a 60 perguntas revisado e congelado pelo autor, versão (b) com as normas no prompt, as ferramentas de qualidade e de decisões, o acerto mínimo e o gráfico de comparação.
+- **Modelo local:** Ollama, gratuito, sem nuvem. Ponto de partida: **`qwen3:8b`** (escolhido na Fase 0: 4 de 4 no teste de chamada de ferramentas, 100% na GPU), com reserva **`llama3.1:8b`** ([`historico/viabilidade.md`](viabilidade.md), §3). O LLM é acessado só por `src/llm.py`; `num_ctx` e `think` ficam em `config/llm.yaml` (a criar).
 - **Saída estruturada:** o Pydantic foi removido na limpeza da Fase 1; a decisão de trazê-lo de volta fica para o plano desta etapa.
 - **Ordem de trabalho:** gabarito (rotulado pelo autor) → ferramentas → integração com o Ollama → chat no painel → avaliação das versões.
 - **Desenho no SPEC:** as ferramentas e as regras do chat estão no **SPEC §5.2**; o gabarito, as métricas e o gráfico de comparação das versões, no **SPEC §7** (§7.1 e §7.2).
@@ -325,7 +328,7 @@ Toda etapa abaixo segue estes campos. Ao começar uma etapa, a IA completa o que
   - o cadastro das 27 UFs (`data/bronze/cnj_justica_aberta/2026-10-17/`);
   - o extrato do CNPJ com todas as UFs;
   - o CSV do BI do CNJ com 11.866 CNS (sem coluna de UF; casa com o cadastro pelo CNS);
-  - os totais do Brasil da Fase 0 (CNJ, CNPJ, RAIS e ANOREG; [`historico/viabilidade.md`](historico/viabilidade.md), §2);
+  - os totais do Brasil da Fase 0 (CNJ, CNPJ, RAIS e ANOREG; [`historico/viabilidade.md`](viabilidade.md), §2);
   - empregados e arrecadação pela API do CNJ: **só MG** foi coletado;
   - a SES por UF: **a conferir** (`SES_UF2.csv`, na `BaseCompleta.zip`; ver a E2, Parte C).
 - **Achado a levar em conta:** a RAIS do Brasil tem 12% mais vínculos que a ANOREG (106.524 × 95.099 CLT), com causa desconhecida (datas diferentes, cadastro desatualizado ou empresas que não são cartório usando o CNAE em outras UFs; `historico/viabilidade.md`, §2). Em MG, RAIS e CNJ concordam (1,8%).
@@ -352,7 +355,7 @@ Toda etapa abaixo segue estes campos. Ao começar uma etapa, a IA completa o que
   6. painel e chat com a UF nova (o gabarito do chat ganha perguntas da UF);
   7. pacotes e Releases.
 - **Pendência herdada do SPEC:** medir o tempo do auditor com as 27 UFs.
-- **Riscos das fontes** ([`historico/viabilidade.md`](historico/viabilidade.md), §4): API do CNJ sem documentação oficial; a consulta do Brasil inteiro numa requisição dá timeout (coletar por UF); layout oficial da RAIS desatualizado; grafia de municípios diferente entre fontes.
+- **Riscos das fontes** ([`historico/viabilidade.md`](viabilidade.md), §4): API do CNJ sem documentação oficial; a consulta do Brasil inteiro numa requisição dá timeout (coletar por UF); layout oficial da RAIS desatualizado; grafia de municípios diferente entre fontes.
 - **Critério de pronto por UF:** suítes passando; reconciliações dentro da tolerância ou explicadas; divergências entre fontes documentadas no `diario.md` e na página Qualidade dos dados; auditor sem vazamento.
 - **Marco:** `v2.x` a cada UF (com o pacote de entrega da seção 2 atualizado).
 

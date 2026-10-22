@@ -13,11 +13,18 @@ Pedidos do autor (e uma resposta da IA) que conduziram a Fase 1, na ordem em que
 | [repositorio_reproduzivel.md](repositorio_reproduzivel.md) | 2026-10-19 | Conjunto público, modo demonstração e pacotes de dados (D-029, D-030). |
 | [limpeza_projeto.md](limpeza_projeto.md) | 2026-10-19 | Ajustes finais (D-031, registro da Fase 1, `ESTADO_ATUAL.md`), limpeza do projeto e D-032. |
 
-O plano do Bloco 2 (`docs/plano_qualidade_e_correcoes.md`) continua em `docs/`, porque ainda será executado.
+O plano do Bloco 2 (`plano_qualidade_e_correcoes.md`) ficou em `docs/` até 2026-10-22; desde então está nesta pasta (seção abaixo).
 
 ## Movidos para cá em 2026-10-21 (D-035)
 
 | Arquivo | Data | O que foi |
 |---|---|---|
-| [viabilidade.md](viabilidade.md) | 2026-10-17/18 | Resultado da Fase 0: fontes testadas, conferências entre fontes, escolha do universo e do modelo do Ollama. Continua como fonte para a E2, a E5, a E6 e a E7 do `docs/ROADMAP.md`. |
-| [prompts.md](prompts.md) | 2026-10-17 a 2026-10-20 | Pedidos por fase usados até a Fase 1. Superado pelo `docs/ROADMAP.md`; o procedimento de salvar conversas foi para o `CONTRIBUTING.md`. |
+| [viabilidade.md](viabilidade.md) | 2026-10-17/18 | Resultado da Fase 0: fontes testadas, conferências entre fontes, escolha do universo e do modelo do Ollama. Continua como fonte para a E2, a E5, a E6 e a E7 do `ROADMAP.md` (nesta pasta). |
+| [prompts.md](prompts.md) | 2026-10-17 a 2026-10-20 | Pedidos por fase usados até a Fase 1. Superado pelo `ROADMAP.md`; o procedimento de salvar conversas foi para o `CONTRIBUTING.md`. |
+
+## Movidos para cá em 2026-10-22 (D-037)
+
+| Arquivo | Data | O que foi |
+|---|---|---|
+| [ROADMAP.md](ROADMAP.md) | 2026-10-21 | Roteiro das etapas E1 a E7 (fonte do plano pela D-035). Superado pela D-037: cada etapa tem o seu documento, indicado no `docs/ESTADO_ATUAL.md`. Continua útil como referência das etapas, das pendências (§7) e da E2 detalhada. |
+| [plano_qualidade_e_correcoes.md](plano_qualidade_e_correcoes.md) | 2026-10-18 | Plano de qualidade: Bloco 1 (feito na Fase 1), itens Q1 a Q11 (qualidade dos dados) e S1 a S6 (modelo de seguro). Parte dele entrou no `docs/plano_mineracao.md` (por exemplo, a receita líquida como sensibilidade). |

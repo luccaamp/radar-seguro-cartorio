@@ -8,7 +8,8 @@ bronze, silver ou gold.
     con = conectar()
     df = ler("SELECT * FROM gold.fato_mercado_uf")
 
-Tabelas `interno_*` (dados por serventia) só em notebooks de notebooks/privado/, que fica fora do git.
+Todos os notebooks vão para o git, sem saídas (D-037); podem ler tabelas `interno_*`, mas o texto nunca cita um
+cartório específico.
 """
 from pathlib import Path
 

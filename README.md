@@ -4,7 +4,7 @@ Painel de cartórios do Brasil com dados públicos reais, simulador do mercado d
 
 > Projeto em construção. A especificação está em [`docs/SPEC.md`](docs/SPEC.md).
 
-Este README será completado no marco `v1.0` do [roteiro](docs/ROADMAP.md) (e atualizado no `v1.1`) com: problema, arquitetura, como rodar, resultados da avaliação e limitações.
+Este README será completado com: problema, arquitetura, como rodar, resultados da avaliação e limitações. A etapa atual está no [`docs/ESTADO_ATUAL.md`](docs/ESTADO_ATUAL.md).
 
 ## Como rodar
 
@@ -89,21 +89,23 @@ Roteiro, com a carga 2026-10-19 (premissas v2, regra v2, nível base, regra do S
 - **Mercado:** os mesmos totais, ≈ 1.121 obrigadas e ≈ 486 com déficit. Um filtro (ex.: Classe 3) e um município (Belo Horizonte; um pequeno aparece pela área agregada).
 - **Simulador:** 1.121, R$ 238,1 mi, 486, R$ 36,9 mi, IS R$ 18,4 mi, prêmio R$ 368,7 mil. Taxa em 3% muda o prêmio; "STF suspende" zera a demanda. Salvar um cenário: ele aparece na tabela e continua lá depois de reabrir o painel.
 - **Qualidade dos dados:** data de referência de cada fonte, reconciliações (CNPJ × CNJ +15,8%, aviso; RAIS × CNJ +1,8%; cobertura da arrecadação 96,9%) e limitações, sem "R$" quebrado.
+- **Chat:** precisa do [Ollama](https://ollama.com) rodando, com o modelo `qwen3:8b` (`ollama pull qwen3:8b`); sem ele, a página aparece desativada, com a explicação. Perguntas para testar: "Quantas serventias ativas há em MG?" (2.525), "Se a taxa fosse 3%, qual o prêmio do mercado?" (R$ 553,1 mil), "A garantia pode ser fiança bancária?" (sim, de banco S1 ou S2; Prov. 227, art. 13) e "Qual o passivo do cartório X?" (recusa: dado por serventia não é publicado). Cada resposta leva de 10 a 60 segundos.
 - **Rodapé:** "Carga 2026-10-19 · dados completos" (ou "· demonstração" sem o banco).
 
 ## Estrutura do projeto
 
 ```
-app/                 painel Streamlit (Início, Mercado, Simulador, Qualidade dos dados)
+app/                 painel Streamlit (Início, Mercado, Simulador, Qualidade dos dados, Chat)
 config/              premissas e regras versionadas, com fonte
 data/publico/        conjunto público versionado (tabelas agregadas e auditadas que o painel lê)
 data/samples/        amostras mascaradas das fontes (Fase 0)
-docs/                índice (README.md), ROADMAP, estado atual, SPEC, decisões, dicionário de dados, diário, erros da IA, publicação, plano de qualidade
-docs/historico/      documentos de épocas anteriores: rodadas da Fase 1, viabilidade (Fase 0) e pedidos por fase (com INDICE.md)
+docs/                estado atual, plano da etapa atual, SPEC, decisões, dicionário de dados, diário, erros da IA, publicação
+docs/historico/      documentos de épocas anteriores: rodadas da Fase 1, viabilidade (Fase 0), pedidos por fase, ROADMAP e plano de qualidade (com INDICE.md)
+eval/                gabarito do chat e resultado da avaliação (scripts/avaliar_chat.py)
 notebooks/           exploração e modelos (só leitura; ver notebooks/README.md)
 scripts/             conjunto público, pacotes de dados, QA visual e acessibilidade, conversas
 scripts/arquivo/     scripts de uso único da Fase 1
-src/                 coleta, bronze→silver→gold, modelo, qualidade, conjunto público, pacotes
+src/                 coleta, bronze→silver→gold, modelo, qualidade, conjunto público, pacotes, chat (agent, llm)
 tests/               suíte padrão, dados_reais e visual
 pipeline.py          orquestrador: uv run pipeline.py --a-partir-de bronze|silver
 ```

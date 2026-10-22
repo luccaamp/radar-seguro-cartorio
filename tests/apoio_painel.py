@@ -12,7 +12,9 @@ import duckdb
 
 RAIZ = Path(__file__).resolve().parents[1]
 BANCO_REAL = RAIZ / "data" / "radar.duckdb"
-PAGINAS = ["app/Inicio.py", "app/pages/1_Mercado.py", "app/pages/2_Simulador.py", "app/pages/3_Qualidade_dos_dados.py"]
+PAGINAS = ["app/Inicio.py", "app/pages/1_Mercado.py", "app/pages/2_Simulador.py", "app/pages/3_Qualidade_dos_dados.py",
+           "app/pages/4_Chat.py"]
+OLLAMA_AUSENTE = "http://127.0.0.1:9"   # porta sem servidor: nos testes do painel, o chat fica sempre "sem Ollama"
 
 
 def assinatura_real(p: Path = BANCO_REAL) -> tuple:
@@ -33,8 +35,8 @@ def preparar_copia(destino_dir: Path) -> Path:
     return copia
 
 
-VARIAVEIS = ("RADAR_BANCO", "RADAR_PUBLICO", "RADAR_ESTADO")
-PASTAS_FORA_DO_GIT = {".git", ".venv", "data", "conversas", "qa", "privado", "saidas", "modelos", "__pycache__",
+VARIAVEIS = ("RADAR_BANCO", "RADAR_PUBLICO", "RADAR_ESTADO", "RADAR_OLLAMA_URL")
+PASTAS_FORA_DO_GIT = {".git", ".venv", "data", "conversas", "qa", "saidas", "modelos", "__pycache__",
                       ".pytest_cache", ".ruff_cache", ".agents", ".claude", ".ipynb_checkpoints"}
 
 
@@ -67,6 +69,7 @@ def apontar_painel(copia: Path, publico: Path | None = None) -> dict:
     anterior = {v: os.environ.get(v) for v in VARIAVEIS}
     os.environ["RADAR_BANCO"] = str(copia)
     os.environ["RADAR_ESTADO"] = str(copia.with_name("painel_estado.json"))   # cenários salvos ao lado da cópia (D-034)
+    os.environ["RADAR_OLLAMA_URL"] = OLLAMA_AUSENTE
     if publico is not None:
         os.environ["RADAR_PUBLICO"] = str(publico)
     _limpar_caches()

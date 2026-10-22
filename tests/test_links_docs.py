@@ -32,16 +32,18 @@ def _alvos(md):
     return {(md.parent / a.split("#")[0]).resolve() for a in LINK.findall(md.read_text(encoding="utf-8"))}
 
 
-def test_indice_de_docs_cita_todos_os_documentos():
-    """docs/README.md (índice) tem um link para cada .md de docs/, para o docs/historico/INDICE.md e para os
-    documentos fora de docs/ que fazem parte do sistema; o INDICE.md do histórico tem um link para cada .md de
-    docs/historico/ (D-035); o CLAUDE.md aponta para o índice."""
-    indice, historico = RAIZ / "docs" / "README.md", RAIZ / "docs" / "historico" / "INDICE.md"
-    esperados = [p for p in arquivos_md() if p.parent == RAIZ / "docs" and p != indice] + [historico]
-    esperados += [RAIZ / "CLAUDE.md", RAIZ / "README.md", RAIZ / "CONTRIBUTING.md", RAIZ / "notebooks" / "README.md"]
-    faltando = [p.relative_to(RAIZ).as_posix() for p in esperados if p.resolve() not in _alvos(indice)]
-    assert not faltando, f"documentos sem entrada no docs/README.md: {faltando}"
+def test_indice_do_historico_cita_todos_os_documentos():
+    """O docs/historico/INDICE.md tem um link para cada .md de docs/historico/ (D-035). O índice de docs/ (README.md)
+    saiu na simplificação dos documentos (D-037): cada sessão lê o CLAUDE.md, o ESTADO_ATUAL.md e o documento da
+    etapa, que o ESTADO_ATUAL.md indica."""
+    historico = RAIZ / "docs" / "historico" / "INDICE.md"
     no_historico = [p for p in arquivos_md() if p.parent == historico.parent and p != historico]
     faltando = [p.relative_to(RAIZ).as_posix() for p in no_historico if p.resolve() not in _alvos(historico)]
     assert no_historico and not faltando, f"documentos sem entrada no docs/historico/INDICE.md: {faltando}"
-    assert "docs/README.md" in (RAIZ / "CLAUDE.md").read_text(encoding="utf-8")
+
+
+def test_estado_atual_indica_o_documento_da_etapa():
+    """O ESTADO_ATUAL.md aponta, com link, para um documento da etapa que existe em docs/ (D-037)."""
+    estado = RAIZ / "docs" / "ESTADO_ATUAL.md"
+    alvos = [a for a in _alvos(estado) if a.parent == estado.parent.resolve() and a.name.startswith("plano_")]
+    assert alvos and all(a.exists() for a in alvos), "o ESTADO_ATUAL.md precisa apontar para docs/plano_<etapa>.md"

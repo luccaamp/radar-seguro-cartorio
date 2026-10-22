@@ -26,8 +26,7 @@ conversas/
 .agents/
 .claude/skills/
 
-# Notebooks (docs/historico/limpeza_projeto.md 3.5): interno_* só em privado/; saídas e modelos nunca no git
-notebooks/privado/
+# Notebooks: todos vão para o git, sem saídas (nbstripout; D-037); saídas grandes e modelos nunca no git
 notebooks/saidas/
 modelos/
 

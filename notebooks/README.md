@@ -6,8 +6,7 @@ Análise exploratória, mineração de dados e modelos preditivos. Regras (tamb�
 2. **Notebook lê, não escreve.** Dados só por `src/notebooks.py` (`conectar()` e `ler()`, somente leitura); nunca gravar em bronze, silver ou gold.
 3. **Código que vira reutilizável sai do notebook** e vai para `src/`, com teste em `tests/`.
 4. **Saídas sempre limpas antes do commit.** Rode uma vez no seu clone: `uv run nbstripout --install`, e o git passa a limpar as saídas ao commitar. O `tests/test_notebooks.py` falha se algum `.ipynb` versionado tiver saída.
-5. **`interno_*` (dados por serventia) só em `notebooks/privado/`**, que fica fora do git. Saídas grandes vão em `notebooks/saidas/` e modelos treinados em `modelos/`, ambos fora do git.
-6. **Bibliotecas de modelagem** (ex.: `scikit-learn`) só quando o primeiro notebook precisar, com aprovação do autor.
+5. **Todos os notebooks vão para o git** (D-037), inclusive os que leem tabelas `interno_*`: vai só o código e o texto, sem saídas, e os dados por serventia continuam só no banco local e no pacote da equipe. **O texto nunca cita um cartório específico** (nome, CNS ou valor de um cartório); interpretações só com números agregados. Saídas grandes vão em `notebooks/saidas/` e modelos treinados em `modelos/`, ambos fora do git.
 
 Para abrir:
 ```

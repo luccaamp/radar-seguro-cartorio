@@ -1,7 +1,7 @@
 # Radar Seguro-Garantia Cartórios: Especificação do Projeto
 
 > Documento de referência para a IA de código (Claude Code) que constrói o projeto.
-> Leia a parte que for mexer; a ordem das etapas está no `docs/ROADMAP.md`.
+> Leia a parte que for mexer; a etapa atual e o seu documento estão no `docs/ESTADO_ATUAL.md`.
 > Última revisão: 2026-10-21. Histórico de revisões no `docs/diario.md`.
 
 ## 0. Contexto e objetivo
@@ -130,21 +130,21 @@ O painel cruza várias fontes, porque nenhuma traz tudo sozinha. A qualidade dos
 | Orquestração | `uv run pipeline.py [etapa]` | substitui o `make` |
 | Validação de dados | contratos e reconciliações próprios em `src/quality/` (`contratos.py`, `reconciliacao.py`), com resultado em `qualidade.checagens` e `qualidade.reconciliacoes` | sem Pandera; erro faz o pipeline falhar, aviso só registra |
 | LLM do chat (e do radar, se houver) | **Ollama**, rodando no computador do autor, com um modelo aberto que suporte *tool calling* | escolhido na Fase 0 conforme a RAM e a GPU disponíveis. O código acessa o LLM por uma interface única (`src/llm.py`), para dar para trocar de modelo sem reescrever o chat |
-| Saída estruturada do LLM | Pydantic | removido na limpeza da Fase 1; a decisão de trazê-lo de volta fica para o plano da E5 (`docs/ROADMAP.md`) |
+| Saída estruturada do LLM | Pydantic | removido na limpeza da Fase 1; o chat (D-036) usa só `httpx`; trazê-lo de volta fica para quando o chat for completado (`docs/historico/ROADMAP.md`, E5) |
 | Interface | Streamlit, rodando localmente | |
 | Agendamento do radar (se houver) | execução manual (`uv run pipeline.py radar`); opcionalmente o Agendador de Tarefas do Windows | |
 | Testes | pytest | |
 
 ### 2.3 Estrutura de pastas
 
-A estrutura atual está na seção "Estrutura do projeto" do `README.md` da raiz. Ainda não existem (entram na E5 e no Radar do `docs/ROADMAP.md`): `config/llm.yaml` (modelo do Ollama e parâmetros), `src/llm.py` (interface única para o LLM local), `src/agent/` (chat, com `tools/`, a camada semântica), `src/radar/`, `src/eval/` e `eval/` (`gabarito_chat.csv` e, se houver radar, `gabarito_radar.csv`).
+A estrutura atual está na seção "Estrutura do projeto" do `README.md` da raiz. O chat (E5) está em `config/llm.yaml`, `src/llm.py` (interface única para o LLM local), `src/agent/` (ferramentas, laço do chat e correção da avaliação), `app/pages/4_Chat.py` e `eval/` (gabarito e resultado). Ainda não existem: `src/radar/` e, se houver radar, `eval/gabarito_radar.csv`.
 
 **"Do zero"** significa rodar o pipeline **a partir dos snapshots do bronze**, sem coletar de novo.
 
 ### 2.4 Premissas versionadas
 
 - **Semente**: o YAML em `config/premissas/` é a versão inicial, versionada no git.
-- **Versões salvas**: ficam na tabela `premissas_versoes` do DuckDB local. Cada versão guarda o número, o diff sobre a anterior, o autor, a data e a origem. Desde a D-034, só o pipeline cria versões, a partir das sementes (como um evento do radar entra numa versão fica para o Radar, no `docs/ROADMAP.md`). O app lê a versão vigente do banco e cai para a semente se o banco estiver vazio.
+- **Versões salvas**: ficam na tabela `premissas_versoes` do DuckDB local. Cada versão guarda o número, o diff sobre a anterior, o autor, a data e a origem. Desde a D-034, só o pipeline cria versões, a partir das sementes (como um evento do radar entra numa versão fica para o Radar, opcional; ver `docs/historico/ROADMAP.md`). O app lê a versão vigente do banco e cai para a semente se o banco estiver vazio.
 - **Cenários**: `cenarios_stf.yaml` tem as definições fixas (`mantem`, `suspende_8_17`, `parcial`). As combinações que o usuário salva no simulador vão para `data/painel_estado.json` (`src/cenarios.py`), com a versão vigente das premissas e o diff das que ele alterou (D-034).
 
 Cada premissa tem `valor` (ou `min`/`base`/`max`), `unidade`, `fonte` (URL ou "suposição"), `data_referencia` e `justificativa`. Exemplo real: `config/premissas/premissas_v002.yaml`. A IA não deve inventar valores; onde não houver fonte, marcar `fonte: suposição` e pedir validação ao autor.
@@ -257,8 +257,8 @@ Páginas:
 1. **Mercado**: mapa e ranking por UF; filtros por UF, município, atribuição e situação (titular/interino/Classe 1); total de serventias, empregados, passivo estimado e déficit (em faixa).
 2. **Simulador**: controles para cada premissa, seletor de cenário do STF, receita do mercado total e da seguradora hipotética lado a lado, por UF; botão para salvar o cenário.
 3. **Qualidade dos dados**: data de referência de cada fonte, cobertura e divergências entre fontes.
-4. **Chat**: dentro do painel (E5 do `docs/ROADMAP.md`); sem Ollama instalado, aparece desativado, com uma explicação.
-5. **Radar** (só se for feito; etapa opcional do ROADMAP).
+4. **Chat**: dentro do painel (D-036); sem Ollama instalado, aparece desativado, com uma explicação.
+5. **Radar** (só se for feito; etapa opcional, descrita em `docs/historico/ROADMAP.md`).
 
 ### 5.2 Chat (`src/agent`)
 
@@ -266,13 +266,15 @@ O LLM local **não calcula números**. Ele entende a pergunta, chama as ferramen
 
 Ferramentas:
 
-- `contar_serventias(uf?, municipio?, atribuicao?, classe?, situacao?)`
-- `estimar_passivo(uf?, municipio?, versao_premissas?)`
-- `estimar_deficit(uf?, cenario?, versao_premissas?)`
-- `simular(ajustes_premissas, cenario)`
-- `buscar_normas(pergunta)`: devolve trechos com norma, artigo e data
-- `consultar_qualidade(fonte?)`: data de referência e cobertura das fontes
-- `consultar_decisoes(tema)`: lê o log de decisões
+Ferramentas implementadas (E5 reduzida, D-036; `src/agent/ferramentas.py`), todas com a UF como parâmetro e só sobre tabelas do conjunto público:
+
+- `contar_serventias(uf, filtro?, valor?)`: serventias ativas e CLT; filtro por classe, situação ou atribuição (as contagens que o auditor publicou);
+- `passivo_e_obrigadas(uf)`: obrigadas pelo 227 e passivo (todas e obrigadas), com a faixa;
+- `deficit_e_mercado(uf, cenario_stf?)`: com déficit, déficit, IS e prêmio (mercado e seguradora hipotética), com a faixa;
+- `simular(uf, taxa?, market_share?, cenario_stf?)`: prêmio com outra taxa e outro market share (nível base, regra v2);
+- `buscar_norma(pergunta, provimento?)`: até 3 artigos dos Provimentos 227, 213 e 243 (texto oficial do bronze), com norma, artigo e publicação.
+
+Previstas e ainda não feitas: consultar a qualidade das fontes e consultar as decisões.
 - **Sem SQL livre:** as ferramentas devolvem só as visões públicas já auditadas (regra da Fase 3, 2026-10-18). O antigo `sql_readonly(query)` saiu do desenho; se faltar uma pergunta, cria-se uma ferramenta nova sobre uma visão pública auditada.
 
 Regras do prompt do chat:
@@ -337,11 +339,11 @@ Gabarito de 40 a 60 documentos reais, com pelo menos 10 relevantes. Métricas: p
 - **Fase 0 (viabilidade):** concluída; critérios e resultado em `docs/historico/viabilidade.md` (§6) e no `docs/diario.md`.
 - **Fase 1 (painel de MG):** concluída; critérios e resultado no `docs/diario.md` ("Aceite da Fase 1", 2026-10-18).
 
-Da E1 em diante, o plano está no **`docs/ROADMAP.md`** (D-035).
+Depois da Fase 1, cada etapa tem o seu documento, indicado no **`docs/ESTADO_ATUAL.md`** (D-037). O roteiro anterior, com as etapas E1 a E7, está em `docs/historico/ROADMAP.md`.
 
 ## 9. Como a IA deve trabalhar neste projeto
 
-- **Ritmo**: etapa por etapa, na ordem do `docs/ROADMAP.md`, parando ao fim de cada uma para revisão do autor.
+- **Ritmo**: etapa por etapa, pelo documento da etapa indicado no `docs/ESTADO_ATUAL.md`, parando no fim da parte pedida.
 - **Coletores**: antes de escrever um, inspecionar uma amostra real da fonte e mostrar os campos encontrados.
 - **Nada inventado**: nunca inventar valores de premissa, URLs, números de normas ou dados apresentados como reais.
 - **Nada pago**: nunca sugerir, instalar ou configurar serviço pago, conta em nuvem ou chave de API com créditos.
@@ -357,10 +359,10 @@ Da E1 em diante, o plano está no **`docs/ROADMAP.md`** (D-035).
 | Computador sem RAM suficiente para um bom modelo local | Chat lento ou ruim | Modelo menor; o chat depende das ferramentas para os números, não da força do modelo |
 | Modelo local erra a escolha da ferramenta | Respostas erradas | Ferramentas com nomes e descrições claros, poucos parâmetros, e o eval medindo isso |
 | Passivo concentrado em cartórios grandes | O rateio uniforme distorce o déficit | Padrão atual `por_empregados_cnj` (D-005): o passivo vai para cada serventia pelos empregados CLT declarados; os rateios por arrecadação, uniforme e por atribuição ficam como sensibilidade no painel |
-| **Segurado indefinido**: o art. 13 do 227 não diz quem é o beneficiário da garantia; o tomador é pessoa física (o delegatário) | Taxa e sinistralidade sem referência direta; o desenho do produto pode mudar por norma estadual | Premissa (`fonte: suposição`), limitação no README e normas estaduais que definam o beneficiário conferidas no início de cada etapa (ROADMAP §3); o radar é opcional |
+| **Segurado indefinido**: o art. 13 do 227 não diz quem é o beneficiário da garantia; o tomador é pessoa física (o delegatário) | Taxa e sinistralidade sem referência direta; o desenho do produto pode mudar por norma estadual | Premissa (`fonte: suposição`), limitação no README e normas estaduais que definam o beneficiário conferidas no início de cada etapa (§9); o radar é opcional |
 | Classificação da Classe 1 aproximada (arrecadação pública ≠ receita bruta do art. 2º, XXIV) | Universo errado perto do limite | Marca `classificacao_aproximada`, classe indeterminada (§3.4) e sensibilidade `v1` × `v2` |
 | Base do art. 6º (maior remuneração fixa) não existe na RAIS | Passivo subestimado ou superestimado | `base_remuneracao_rais` (dezembro × média anual) e sensibilidade no painel |
-| Limites de classe mudam todo ano (art. 16, §2º, do 213) | Universo desatualizado | Nova versão em `regras_classificacao.yaml`; conferido no início de cada etapa (ROADMAP §3); o radar é opcional |
+| Limites de classe mudam todo ano (art. 16, §2º, do 213) | Universo desatualizado | Nova versão em `regras_classificacao.yaml`; conferido no início de cada etapa (§9); o radar é opcional |
 | Concorrência com regularização por bens próprios e com fiança | Demanda superestimada | Premissa `escolha_garantia` |
 | Liminar na ADI 8015 perto da entrevista | Muda a narrativa da demo | Cenário `suspende_8_17` pronto; conferir na véspera |
 | Corte de conhecimento da IA anterior às normas | A IA pode inventar artigos | Confirmar todo artigo no texto oficial; registrar erros em `erros_ia.md` |

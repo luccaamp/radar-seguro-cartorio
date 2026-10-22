@@ -475,3 +475,28 @@ Formato:
 - **Justificativa:** um plano só, em um lugar, evita que a ordem e as pendências fiquem desatualizadas em vários documentos; cada documento passa a ter um papel e um nível de leitura.
 - **Consequências / onde aparece:** `CLAUDE.md`, `docs/ROADMAP.md`, `docs/ESTADO_ATUAL.md`, `docs/SPEC.md` (§8 resumido), `docs/README.md` (índice), `docs/plano_qualidade_e_correcoes.md` (nota no topo), `CONTRIBUTING.md`, `docs/historico/`. As decisões da E1 começam na **D-036**.
 - **Fonte:** pedido do autor em 2026-10-21 ("rodada de harmonização dos documentos").
+
+## D-036 — Chat no painel antes da E1 (E5 reduzida) e o desenho das ferramentas
+- **Data:** 2026-10-21
+- **Contexto:** o autor pediu o chat de IA no painel como o primeiro bloco depois da harmonização ("Bloco 1: chat de IA no painel (E5 reduzida)"), antes da E1, e passou a trabalhar com um bloco por sessão e uma parada só no fim.
+- **Decisão (do autor):** a E5 reduzida vem antes da E1. O restante da E5 (gabarito de 40 a 60 perguntas congelado, versão (b) com as normas no prompt, as duas ferramentas que faltam, o acerto mínimo) continua na E5 do ROADMAP. A primeira decisão da E1 passa a ser a D-037.
+- **Escolhas da IA nos detalhes (o autor pediu que decida sozinha os detalhes pequenos):**
+  - modelo `qwen3:8b` no Ollama local, sem raciocínio longo (`think: false`), temperatura 0, contexto 8.192 (`config/llm.yaml`, suposição de partida); reserva `llama3.1:8b`;
+  - acesso ao Ollama só por `src/llm.py`, com `httpx` (sem dependência nova; o Pydantic continua fora);
+  - 5 ferramentas (SPEC §5.2), todas sobre tabelas do conjunto público, com a UF como parâmetro, valores já formatados e a linha "Fonte" (carga e versão das premissas) em cada resultado; a busca de normas é por palavras, sem embeddings, sobre o texto oficial do bronze;
+  - sem Ollama, a página Chat aparece desativada com a explicação, e o resto do painel segue;
+  - a avaliação usa o banco de demonstração montado a partir do `data/publico` (nunca o banco real) e uma correção automática simples (`src/agent/avaliacao.py`); o gabarito de 20 perguntas é rascunho, a revisar pelo autor.
+- **LGPD:** as ferramentas não recebem CNS nem nome de cartório e só leem tabelas publicadas; o teste `tests/test_chat.py` falha se o código do chat citar uma tabela fora do `config/publico.yaml` ou uma tabela interna.
+- **Fonte:** pedido do autor em 2026-10-21; `docs/historico/viabilidade.md`, §3 (modelo).
+
+## D-037 — Documentos simplificados; o documento da etapa manda
+- **Data:** 2026-10-22
+- **Contexto:** os documentos de plano (ROADMAP, plano de qualidade, índice de `docs/`) cresceram e se repetiam; cada sessão precisava ler muita coisa antes de trabalhar. O autor escreveu o `docs/plano_mineracao.md` como documento único da etapa seguinte.
+- **Decisão (do autor):**
+  - em cada sessão, a IA lê só o `CLAUDE.md`, o `docs/ESTADO_ATUAL.md` e **o documento da etapa** que o ESTADO_ATUAL indica (hoje, `docs/plano_mineracao.md`); se o documento já traz o plano, a IA executa sem pedir aprovação e para no fim da parte pedida;
+  - o `CLAUDE.md` fica só com as regras de segurança (git, 100% gratuito, dados, cópia do banco, LGPD); saem as regras de "ordem do ROADMAP", de "notebooks privados" e de "biblioteca só com aprovação";
+  - **todos os notebooks vão para o git**, inclusive os que leem `interno_*`, sem saídas (`nbstripout`) e sem citar um cartório específico no texto (nome, CNS ou valor de um cartório); a pasta `notebooks/privado/` deixa de existir;
+  - `docs/ROADMAP.md` e `docs/plano_qualidade_e_correcoes.md` vão para `docs/historico/` (`git mv`); não há mais `docs/README.md` (índice);
+  - ficam vivos: `SPEC.md`, `dicionario_dados.md`, `publicacao.md` e os registros (`decisoes.md`, `diario.md`, `erros_ia.md`).
+- **Consequências / onde aparece:** `CLAUDE.md`, `docs/ESTADO_ATUAL.md`, `docs/plano_mineracao.md`, `notebooks/README.md`, `CONTRIBUTING.md`, `src/notebooks.py`, `.gitignore`, `tests/test_notebooks.py` (o teste "notebook versionado não usa `interno_*`" virou "o texto não cita o CNS de um cartório"), `tests/test_links_docs.py` (o teste do índice de `docs/` virou o do índice do histórico mais "o ESTADO_ATUAL aponta para o documento da etapa"). Substitui a parte da D-035 sobre o ROADMAP como fonte do plano e os níveis dos documentos. A D-036 dizia que a primeira decisão da E1 seria a D-037; com esta decisão, a próxima livre é a **D-038**.
+- **Fonte:** pedido do autor em 2026-10-22 ("limpeza dos documentos").

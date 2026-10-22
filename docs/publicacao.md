@@ -119,7 +119,7 @@ Nos **dois** repositórios: *Settings → Collaborators → Add people* (nome de
 1. `uv run pipeline.py ingest` (precisa de internet). Os originais grandes vão para `C:\radar_arquivo\bronze_originais`; o bronze recebe os extratos e o `original.json` (D-032). Atualize os snapshots em `config/escopo.yaml`. Rode `uv run pytest -m dados_reais tests/test_coletores.py`: regerar cada extrato a partir do original dá o mesmo SHA-256.
 2. **Feche o painel** antes do pipeline: com ele aberto, a carga para no início (D-034).
 3. `uv run pipeline.py`. Contratos sem erro; leia os avisos das reconciliações.
-4. Confira os números de referência na página Início; explique no `docs/diario.md` o que mudou e por quê e registre a **cascata** no `docs/ROADMAP.md`, §6.
+4. Confira os números de referência na página Início; explique no `docs/diario.md` o que mudou e por quê (a **cascata**: número, antes, depois, motivo) e atualize os números de referência no `docs/ESTADO_ATUAL.md`.
 5. `uv run python scripts/gerar_publico.py`. Precisa sair com "0 vazamentos" e "ok"; senão, não publique.
 6. `uv run pytest`, `uv run pytest -m dados_reais` e, se o painel mudou, `uv run pytest -m visual`.
 7. `uv run python scripts/prints_painel.py --saida docs/qa/atual --checar` e uma olhada na galeria.

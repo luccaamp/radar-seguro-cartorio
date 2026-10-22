@@ -63,9 +63,8 @@ Observações:
 Análise exploratória, mineração de dados e modelos preditivos ficam em `notebooks/` (detalhes em [`notebooks/README.md`](notebooks/README.md)):
 - **Uma vez no seu clone:** `uv run nbstripout --install`. O git passa a limpar as saídas dos notebooks no commit; o `tests/test_notebooks.py` falha se algum notebook versionado tiver saída.
 - **Notebook lê, não escreve:** dados só por `src/notebooks.py` (`conectar()` e `ler()`, somente leitura); nunca gravar em bronze, silver ou gold.
-- **`interno_*` só em `notebooks/privado/`** (fora do git). Saídas grandes vão em `notebooks/saidas/` e modelos em `modelos/`, também fora do git.
+- **Todos os notebooks vão para o git** (D-037), inclusive os que leem `interno_*`: só o código e o texto, sem saídas. O texto nunca cita um cartório específico (nome, CNS ou valor de um cartório). Saídas grandes vão em `notebooks/saidas/` e modelos em `modelos/`, fora do git.
 - **Código reutilizável** sai do notebook e vai para `src/`, com teste.
-- **Nova biblioteca de modelagem** (ex.: `scikit-learn`) só com aprovação do autor.
 - **Abrir:** `uv run jupyter lab`.
 
 ## Salvar a conversa com a IA

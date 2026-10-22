@@ -1,6 +1,8 @@
 # Plano de correções, qualidade de dados e análises avançadas — fechamento da Fase 1 e Etapa 2
 
-> **Nota (2026-10-21, D-035):** Bloco 1 concluído na Fase 1; Bloco 2 = E1 e Bloco 3 = E2 do `docs/ROADMAP.md`; as decisões novas são numeradas a partir da D-036 (as citações a D-026, D-027 e D-028 neste plano são numeração antiga).
+> **Histórico (D-037, 2026-10-22).** Não é mais um plano em execução; parte dele entrou no `docs/plano_mineracao.md`.
+
+> **Nota (2026-10-21, D-035):** Bloco 1 concluído na Fase 1; Bloco 2 = E1 e Bloco 3 = E2 do `ROADMAP.md` (nesta pasta); as decisões novas são numeradas a partir da D-036 (as citações a D-026, D-027 e D-028 neste plano são numeração antiga).
 
 > **Para o Claude Code.** Atue como **engenheiro de dados sênior, cientista de dados sênior e especialista em seguros**. Este documento junta tudo o que encontrei na revisão do painel (carga de 18/10/2026, 15:18) e propõe correções para os defeitos de tela, para as **limitações declaradas** e para a **qualidade dos dados**, além de análises novas.
 >
