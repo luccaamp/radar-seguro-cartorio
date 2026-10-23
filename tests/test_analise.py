@@ -54,6 +54,59 @@ def test_saltos_marcam_semestre_fora_do_historico():
     assert corrigida["arrecadacao"].sum() == df["arrecadacao"].sum() - 1300 + 11.5 and len(corrigida) == len(df)
 
 
+def test_saltos_para_baixo_e_historico_curto():
+    """Sintético: A cai para 1/20 do histórico (salto para baixo); B tem só 3 semestres antes do salto (não marca)."""
+    linhas = [("A", 2020 + i // 2, i % 2 + 1, v) for i, v in enumerate([100, 110, 90, 100, 5])]
+    linhas += [("B", 2020 + i // 2, i % 2 + 1, v) for i, v in enumerate([10, 11, 12, 5000])]
+    df = pd.DataFrame(linhas, columns=["cns", "ano", "semestre", "arrecadacao"])
+    out = estatistica.saltos(df, janela=4, fator=10)
+    assert out[["cns", "ano", "semestre"]].values.tolist() == [["A", 2022, 1]]
+    assert out["razao"].iloc[0] == pytest.approx(5 / 100)
+
+
+def test_saltos_nao_trocam_zero_pelo_padrao():
+    """janela=0 ou fator=1 são erros, não "use o padrão do config" (antes, `0 or padrão` virava o padrão em silêncio)."""
+    df = pd.DataFrame([("A", 2020, 1, 10.0)], columns=["cns", "ano", "semestre", "arrecadacao"])
+    with pytest.raises(ValueError):
+        estatistica.saltos(df, janela=0, fator=10)
+    with pytest.raises(ValueError):
+        estatistica.saltos(df, janela=4, fator=1)
+
+
+def test_serventias_mantem_quem_nao_tem_municipio():
+    """Banco SINTÉTICO em memória: a serventia S2 não tem cod_ibge e não pode sumir da tabela (LEFT JOIN)."""
+    with duckdb.connect() as con:
+        con.execute("CREATE SCHEMA gold; CREATE SCHEMA silver")
+        con.execute("""CREATE TABLE gold.interno_serventia AS SELECT * FROM (VALUES
+            ('S1', 3100104, 'PROVIDO', 'base', 'v2'), ('S2', NULL, 'VAGO', 'base', 'v2'),
+            ('S1', 3100104, 'PROVIDO', 'max', 'v2')) t(cns, cod_ibge, situacao_juridica, nivel, regra_classe)""")
+        con.execute("""CREATE TABLE silver.serventia AS SELECT * FROM (VALUES ('S1', 2, DATE '2020-01-01'),
+            ('S2', 1, DATE '2021-01-01')) t(cns, n_atribuicoes, data_situacao)""")
+        con.execute("""CREATE TABLE silver.municipio_ibge AS SELECT * FROM (VALUES (3100104, 'Cidade A', 'Imediata A',
+            'Intermediária A', 1000)) t(cod_ibge, nome, regiao_imediata, regiao_intermediaria, populacao)""")
+        con.execute("""CREATE TABLE silver.serventia_colaboradores AS SELECT * FROM (VALUES (('S1'), true, 0, 0))
+            t(cns, informado, estatutarios, terceirizados)""")
+        df = dados.serventias(con)
+    assert df["cns"].tolist() == ["S1", "S2"] and df["situacao"].tolist() == ["provida", "vaga"]
+    assert df.loc[1, "municipio"] is None or pd.isna(df.loc[1, "municipio"])
+
+
+@pytest.mark.dados_reais
+def test_serventias_reproduzem_os_numeros_do_painel(_copia_real):
+    """Numa CÓPIA do banco real: as somas de serventias() batem com gold.fato_mercado_uf (os 10 números do painel)."""
+    with duckdb.connect(str(_copia_real["copia"]), read_only=True) as con:
+        sv = dados.serventias(con)
+        ref = con.execute("""SELECT n_serventias_ativas, n_universo, passivo_todas, passivo_universo, n_deficit,
+            valor_descoberto FROM gold.fato_mercado_uf WHERE uf = 'MG' AND nivel = 'base' AND regra_classe = 'v2'
+            AND cenario_stf = 'mantem'""").df().iloc[0]
+    assert len(sv) == ref["n_serventias_ativas"]
+    assert sv["peso_universo"].sum() == pytest.approx(ref["n_universo"])
+    assert sv["passivo"].sum() == pytest.approx(ref["passivo_todas"])
+    assert (sv["passivo"] * sv["peso_universo"]).sum() == pytest.approx(ref["passivo_universo"])
+    assert sv["n_deficit"].sum() == pytest.approx(ref["n_deficit"])
+    assert sv["valor_descoberto"].sum() == pytest.approx(ref["valor_descoberto"])
+
+
 def test_classe_pela_receita_usa_os_limites_da_v2():
     from src.analise import enquadramento
     c1, c2 = enquadramento.limites_classe("v2")
@@ -88,6 +141,15 @@ def test_correlacao_de_spearman_monotona():
 def test_participacao_topo_e_crescimento():
     assert estatistica.participacao_topo(pd.Series([10, 1, 1, 1, 1, 1, 1, 1, 1, 2]), 0.1) == pytest.approx(0.5)
     assert estatistica.crescimento_medio(pd.Series([100, 110, 121])) == pytest.approx(0.1)
+    assert estatistica.crescimento_medio(pd.Series([100, 121]), periodos=2) == pytest.approx(0.1)   # só as pontas
+
+
+def test_crescimento_tendencia_usa_todos_os_pontos():
+    """Sintético: série de 10% ao período dá 10%; uma queda no meio muda a tendência, mas não a conta de ponta a ponta."""
+    assert estatistica.crescimento_tendencia(pd.Series([100, 110, 121, 133.1])) == pytest.approx(0.1)
+    com_queda = pd.Series([100, 60, 121, 133.1])
+    assert estatistica.crescimento_medio(com_queda) == pytest.approx(0.1)
+    assert estatistica.crescimento_tendencia(com_queda) > 0.1
 
 
 def test_arrecadacao_bi_le_o_formato_do_cnj(tmp_path):

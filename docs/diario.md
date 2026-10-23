@@ -587,3 +587,23 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **PNGs:** 16 em `docs/qa/analises/` (6 do 01, 10 do 02), agora versionados (`.gitignore`).
 - **Suíte padrão:** 178 passed, 80 deselected; ruff sem erro.
 - **Sugestões para o autor (nada mudado no painel):** checagem de saltos no pipeline (aviso); regra para semestre com salto grosseiro no enquadramento; conferir 042986 e 035030 no Justiça Aberta.
+
+## 2026-10-22 — Revisão da parte A da mineração (correções)
+- **Origem:** revisão de cientista de dados (só leitura, números recalculados numa cópia do banco, sem usar `src/analise/`). Os 11 números principais bateram; o veredito foi "precisa corrigir", por frases e gráficos. O autor pediu a correção só dos itens da revisão.
+- **Notebook 02:**
+  - vagas: "24% não são Classe 1" contava as 48 indeterminadas; agora **150 vagas de Classe 2 ou 3 (18,1%)** e mercado futuro de **R$ 35,4 mi** (antes, R$ 50 mi = passivo de todas as vagas);
+  - crescimento real como **faixa de ≈ 7% a 10% ao ano**: ponta a ponta 8,2%, reta de tendência 9,7%, 2021→2025 7,9%, 2022→2025 6,5%, mesmas 2.372 serventias 8,0%, sem mudanças de mais de 10× 7,8%, série sem saltos 8,2%; IPCA 5,7% ao ano. Os saltos não explicam a taxa dos 1º semestres (nos 2º, 10,5% → 9,5%);
+  - contagem acima do limite rotulada como ilustração; nova série com o limite corrigido pelo IPCA (ancorado em R$ 300 mil em 2025; R$ 214 mil em 2019): providas acima 756 → 1.087 (+331) contra 589 → 1.087 (+498) com o limite fixo, ou seja, **34% do aumento é só inflação** (a revisão estimou 761 com a âncora em dez/2025; a âncora em 2025 deixa as duas séries iguais no fim);
+  - mapa: **417 municípios sem obrigada** (2 sem serventia) e 1 com obrigada de passivo zero, em amarelo; 436 com alguma obrigada (antes, "418 sem obrigadas", contando pelo passivo);
+  - concentração com a base dita: 10% maiores = 60,5% do passivo de todas e **53,5% do passivo das obrigadas**; Classe 3 = 65,9% do passivo de todas e **73,2% do das obrigadas**; 106 providas a menos de 10% do limite;
+  - correlações: "prevê" virou "está associada"; CLT × passivo alto por construção; a previsão fica para o notebook 06;
+  - gráficos: 2026-1 marcado como preliminar (57 não informaram); CLT com uma barra por número de empregados; eixo x do gráfico do limite só com anos inteiros; uma linha explicando por que o número de obrigadas é fracionário.
+- **Notebook 01:**
+  - §5: a checagem de município passou a ser feita no `silver.serventia` (a de antes era circular: `dados.serventias()` usava INNER JOIN com o município); resultado igual, 0 de 2.525;
+  - §7b: as duas direções; 12 obrigadas saem e 1 entra (047001, Caldas, cujo salto foi em 2025-1): **efeito líquido −11 (≈ −1,0%)**, déficit −0,7%; ESTADO_ATUAL atualizado;
+  - §1: 276 dos 571 zeros de 2007 vêm antes do 1º valor declarado pela serventia; em 2025, nenhum;
+  - §4: "sem remuneração de dezembro (vazio)": os 887 têm o campo vazio, nenhum com R$ 0; §8: a explicação dos +15,8% do CNPJ virou hipótese;
+  - gráfico dos saltos: os R$ 0 saíram do eixo em reais e foram para uma faixa separada.
+- **Código e testes:** `dados.serventias()` com LEFT JOIN no município; `estatistica.saltos()` com `is None` (janela 0 ou fator ≤ 1 dá erro, em vez de virar o padrão); `crescimento_medio(periodos=)` e `crescimento_tendencia()` novos. `tests/test_analise.py`: +5 testes sintéticos (salto para baixo e histórico curto; janela/fator inválidos; serventia sem município não some; tendência; só as pontas) e 1 `dados_reais` (as somas de `serventias()` batem com `gold.fato_mercado_uf`, numa cópia do banco).
+- **Como foi editado:** notebooks pela ferramenta de notebook. Para poder abri-los na ferramenta, as saídas foram limpas com `jupyter nbconvert --clear-output` e depois refeitas com `jupyter nbconvert --execute --inplace` (os notebooks só leem o banco, em modo somente leitura). PNGs conferidos um a um.
+- **Suítes:** padrão 182 passed, 81 deselected; `dados_reais` de `test_analise.py` 1 passed (cópia do banco).

@@ -18,13 +18,14 @@ SITUACOES = {"PROVIDO": "provida", "VAGO": "vaga"}   # o resto (intervenção, c
 
 def serventias(con: duckdb.DuckDBPyConnection, nivel: str = "base", regra_classe: str = "v2") -> pd.DataFrame:
     """As serventias ativas com o resultado do modelo (gold.interno_serventia) num nível e numa regra de classe, mais
-    o número de atribuições, o município e as regiões do IBGE e os colaboradores declarados ao CNJ."""
+    o número de atribuições, o município e as regiões do IBGE e os colaboradores declarados ao CNJ. Uma serventia sem
+    município casado continua na tabela, com o município vazio (LEFT JOIN)."""
     df = con.execute("""
         SELECT s.*, v.n_atribuicoes, v.data_situacao, m.nome AS municipio, m.regiao_imediata, m.regiao_intermediaria,
                m.populacao, c.informado AS colaboradores_informados, c.estatutarios, c.terceirizados
         FROM gold.interno_serventia s
         JOIN silver.serventia v USING (cns)
-        JOIN silver.municipio_ibge m ON m.cod_ibge = s.cod_ibge
+        LEFT JOIN silver.municipio_ibge m ON m.cod_ibge = s.cod_ibge
         LEFT JOIN silver.serventia_colaboradores c USING (cns)
         WHERE s.nivel = ? AND s.regra_classe = ?
         ORDER BY s.cns""", [nivel, regra_classe]).df()

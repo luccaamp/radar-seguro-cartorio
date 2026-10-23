@@ -57,7 +57,10 @@ def saltos(serie: pd.DataFrame, janela: int | None = None, fator: float | None =
     anteriores dela. Recebe cns, ano, semestre e arrecadacao (uma linha por período); zeros ficam fora da conta (são
     tratados à parte). Devolve as linhas marcadas, com a mediana anterior e a razão."""
     cfg = config()["saltos"]
-    janela, fator = janela or cfg["janela"], fator or cfg["fator"]
+    janela = cfg["janela"] if janela is None else janela
+    fator = cfg["fator"] if fator is None else fator
+    if janela < 1 or fator <= 1:
+        raise ValueError(f"janela ({janela}) precisa ser >= 1 e fator ({fator}) > 1")
     s = serie[serie["arrecadacao"] > 0].sort_values(["cns", "ano", "semestre"]).copy()
     s["mediana_anterior"] = s.groupby("cns")["arrecadacao"].transform(
         lambda v: v.shift(1).rolling(janela, min_periods=janela).median())
@@ -105,7 +108,17 @@ def fatores_reais(indice: pd.DataFrame, base_ano_mes: int) -> pd.Series:
     return fator.rename("fator")
 
 
-def crescimento_medio(valores: pd.Series) -> float:
-    """Taxa média de crescimento por período entre o primeiro e o último valor: (último ÷ primeiro)^(1/(n−1)) − 1."""
+def crescimento_medio(valores: pd.Series, periodos: int | None = None) -> float:
+    """Taxa média de crescimento por período entre o primeiro e o último valor: (último ÷ primeiro)^(1/períodos) − 1.
+    Sem `periodos`, a série tem um valor por período (períodos = n − 1); com ele, bastam as duas pontas."""
     v = pd.Series(valores, dtype="float64").dropna()
-    return (v.iloc[-1] / v.iloc[0]) ** (1 / (len(v) - 1)) - 1
+    periodos = len(v) - 1 if periodos is None else periodos
+    return (v.iloc[-1] / v.iloc[0]) ** (1 / periodos) - 1
+
+
+def crescimento_tendencia(valores: pd.Series) -> float:
+    """Taxa média de crescimento por período pela reta de tendência: ajusta log(valor) = a + b·t (t = 0, 1, 2...) por
+    mínimos quadrados e devolve e^b − 1. Usa todos os pontos, então depende menos do primeiro e do último."""
+    v = pd.Series(valores, dtype="float64").dropna()
+    b = np.polyfit(np.arange(len(v)), np.log(v.values), 1)[0]
+    return float(np.exp(b) - 1)

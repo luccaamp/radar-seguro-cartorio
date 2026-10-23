@@ -565,3 +565,27 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** o filtro `> 0`, necessário para a escala log das barras, foi reaproveitado nas linhas de resumo; o padrão do boxplot não foi conferido.
 - **Correção:** mediana e média da série inteira; boxplot desenhado em log10; zeros marcados com "×" e legenda.
 - **Bom para os slides?** sim (um gráfico pode contradizer a tabela ao lado sem nenhum teste falhar)
+
+## 2026-10-22 — Vagas "fora da Classe 1" contavam as indeterminadas, e o mercado futuro usava o passivo de todas as vagas
+- **Onde:** notebook 02, §3 e achado 4 (parte A da mineração).
+- **O que aconteceu:** o texto dizia "24% das vagas não são Classe 1" e "≈ R$ 50 milhões de passivo" como mercado futuro. A conta `classe != "1"` incluía as 48 vagas de classe indeterminada; o certo é `classe in ("2", "3")`: 150 vagas (18,1%). E os R$ 50 mi eram o passivo de **todas** as vagas, inclusive as de Classe 1, que nunca entrariam no universo; o das vagas de Classe 2 ou 3 é R$ 35,4 mi.
+- **Como foi detectado:** revisão de cientista de dados, recalculando direto no banco.
+- **Causa provável:** a negação ("não é Classe 1") tratou "indeterminada" como "acima do limite", e o número do mercado futuro foi tirado da tabela por situação sem filtrar a classe.
+- **Correção:** filtro por `classe in ("2", "3")`, com a contagem das indeterminadas à parte; texto e resumo refeitos.
+- **Bom para os slides?** sim (um "não é X" num campo com três valores esconde o terceiro)
+
+## 2026-10-22 — Checagem circular de "serventia sem município"
+- **Onde:** notebook 01, §5; `src/analise/dados.py`, `serventias()`.
+- **O que aconteceu:** a checagem procurava serventias sem município na tabela `sv`, mas `serventias()` fazia INNER JOIN com `silver.municipio_ibge`: uma serventia sem município seria descartada antes da checagem, que daria sempre 0. O resultado estava certo por outro caminho (2.525 em `sv` = 2.525 ativas no cadastro), mas o teste não testava nada.
+- **Como foi detectado:** revisão de cientista de dados.
+- **Causa provável:** a checagem foi escrita sobre a tabela pronta, sem olhar como ela é montada.
+- **Correção:** LEFT JOIN em `serventias()`; a checagem passou a ler o `silver.serventia`; teste sintético novo (`test_serventias_mantem_quem_nao_tem_municipio`).
+- **Bom para os slides?** sim (uma checagem que não pode falhar não é uma checagem)
+
+## 2026-10-22 — "418 municípios sem obrigadas" contava pelo passivo, não pelas obrigadas
+- **Onde:** notebook 02, §5 (mapa) e achado 5.
+- **O que aconteceu:** o mapa pinta de cinza os municípios com **passivo** das obrigadas igual a zero (418), e o texto os chamou de "sem nenhuma obrigada". Um município tem obrigada com passivo zero (zero CLT), e 2 não têm serventia: são 417 sem obrigada, o que bate com os 436 "com alguma obrigada" da §8 (853 − 436).
+- **Como foi detectado:** revisão de cientista de dados (853 − 436 ≠ 418).
+- **Causa provável:** o rótulo do gráfico descreveu a regra de cor com outra palavra.
+- **Correção:** o mapa separa "sem obrigada" (cinza) de "obrigada sem passivo" (amarelo); o texto diz 417, com os 2 sem serventia.
+- **Bom para os slides?** não
