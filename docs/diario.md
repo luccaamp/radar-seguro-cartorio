@@ -615,3 +615,23 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Limitações encontradas:** o "porquê" da regra cita só o que a norma diz (art. 13, § 1º); a norma da SUSEP sobre seguro-garantia não foi citada, porque não está entre as normas baixadas em `data/bronze/normas/`.
 - **README corrigido no mesmo dia:** "Proteção de dados" passou a seguir a D-038 (antes citava a D-030), dizendo que o conjunto público e o painel ainda seguem a regra antiga; escopo "do Brasil" virou "hoje só MG"; o "será completado com: problema" aponta para o novo documento; `docs/qa/analises/` aparece como versionado (antes "docs/qa/ fora do git"); notebooks "com as saídas"; a recusa do chat por serventia explicada pelo conjunto público. O prompt do chat (`src/agent/chat.py`) ainda diz que os dados por serventia "não são publicados": não foi mexido.
 - **Próximo passo:** segue a parte B do plano de mineração.
+
+## 2026-10-23 — Plano do projeto, testes de métodos T1 a T7 e D-039
+- **O que foi feito:**
+  - ambiente novo da colaboradora `leticia-ribeirom` (WSL): carga 2026-10-19 da equipe instalada com `scripts/baixar_dados.py` (bronze, silver, gold, banco; hashes conferidos). Os originais grandes (`originais-2026`) não foram baixados: só são necessários para regerar um extrato do bronze;
+  - `scripts/testes_metodos.py` (escrito fora do repositório e trazido pela colaboradora): compara de 3 a 7 métodos em sete pontos que dependem de estimativa (T1 empregados pela receita, T2 previsão da arrecadação, T3 subida de classe, T4 vacância, T5 salário de dezembro ausente, T6 reserva salarial, T7 faixa do prêmio), cada um contra uma referência simples e com o indicador fixado antes. Rodado três vezes (duas com bibliotecas temporárias, uma com as do projeto): `resultados.json` idêntico byte a byte. Resultados em `docs/qa/analises/testes_metodos_resultados.json`, explicados em `docs/qa/analises/testes_metodos.md`;
+  - `docs/plano_projeto.md` (escrito pela colaboradora): seis etapas até a entrega, portões, riscos e as decisões do autor com a etapa de cada uma; revisado contra os documentos e o banco (os números citados batem com o `resultados.json`, exceto o T6, que dizia 143 municípios em vez de 135: corrigido), com os trechos quebrados da exportação trocados por tabelas e "Fase" trocado por "Etapa";
+  - `docs/plano_mineracao.md` reescrito como detalhamento da Etapa 1, coerente com o plano do projeto (D-039); `ESTADO_ATUAL.md` aponta para os dois;
+  - `uv add scikit-learn statsmodels mlxtend`;
+  - escada de perguntas com 9 degraus: a pergunta do STF saiu do `plano_projeto.md` e do `entenda_o_projeto.md` (pedido da colaboradora). O cenário do STF continua no Simulador e nos riscos;
+  - `notebooks/README.md` excluído a pedido da colaboradora: as regras já estavam no `CONTRIBUTING.md` (seção Notebooks) e a lista dos notebooks está no `plano_mineracao.md`. As referências vivas (README, CONTRIBUTING, notebook 00, `src/notebooks.py`, `tests/test_notebooks.py`) apontam para o CONTRIBUTING; as menções nos registros antigos ficam como estão;
+  - `CONTRIBUTING.md`: qualquer colaborador pode fazer o merge na `main` (D-040, proposta), alinhando o texto à ruleset, que já não exige aprovação.
+- **Decisões:** D-039 e D-040 (proposta; vale com a aprovação do autor no pull request). O teste `test_estado_atual_indica_o_documento_da_etapa` exige o prefixo `plano_`, por isso o arquivo se chama `plano_projeto.md`.
+- **Suposições:** nenhuma nova. Os testes só leem dados e premissas v2.
+- **Limitações encontradas:**
+  - T1: nenhum método acerta o total de uma região não vista com até 5% de erro (o melhor, ~9%);
+  - T2 e T3: os vencedores no passado erram para baixo em 2024–2026 (o 2026-1 parcial, R$ 3,20 bi, já passou do P90 da previsão; 218 subidas previstas × 294 reais);
+  - T4: vazamento declarado (receita e CLT de vagas medidos sob interino);
+  - T6: os municípios testados são os 135 maiores, que diferem mais da própria região que os pequenos;
+  - T7: sem valor real para comparar; o critério é a largura e a probabilidade declarada da faixa.
+- **Próximo passo:** commit e pull request da colaboradora; aprovação do autor; depois, a parte B do plano da mineração.

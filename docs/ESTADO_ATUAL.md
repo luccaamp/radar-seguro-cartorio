@@ -1,6 +1,6 @@
 # Estado atual do projeto
 
-> Leia primeiro. Atualizado ao fim de cada sessão (regra do `CLAUDE.md`). Última atualização: **2026-10-22**.
+> Leia primeiro. Atualizado ao fim de cada sessão (regra do `CLAUDE.md`). Última atualização: **2026-10-23**.
 
 ## O que é
 Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito e local.
@@ -10,10 +10,12 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito e local.
 - **Para leigos:** [`entenda_o_projeto.md`](entenda_o_projeto.md) (problema, seguro-garantia, perguntas do projeto e glossário), com link no README e no `CONTRIBUTING.md`.
 
 ## Etapa atual
-- **Mineração dos dados de MG.** Documento da etapa: [`plano_mineracao.md`](plano_mineracao.md) (siga só ele; regra do `CLAUDE.md`).
+- **Plano oficial do projeto:** [`plano_projeto.md`](plano_projeto.md) (D-039, aprovação do autor pendente no pull request): seis etapas até a entrega, com portões e as decisões do autor.
+- **Etapa 1 — Mineração dos dados de MG.** Documento da etapa: [`plano_mineracao.md`](plano_mineracao.md) (siga ele na execução; regra do `CLAUDE.md`). Em conflito, vale o `plano_projeto.md`.
 - **Parte A feita em 2026-10-22** (Ollama ok; `src/analise/`; notebooks 01 e 02 com saídas; 16 PNGs em `docs/qa/analises/`) e **revisada no mesmo dia** (revisão de cientista de dados: 16 correções de texto, gráfico, código e testes; nenhum dos 10 números mudou). Resumo no `docs/diario.md`.
-- **Próximo passo:** a **parte B** do plano (notebooks 03, 04, 05 e 06).
-- **Ramo atual:** `main` (último commit `82a4a6b`, com a D-038, a parte A e a revisão; o documento para leigos e as correções do README ainda sem commit).
+- **Testes de métodos T1 a T7 feitos em 2026-10-23** (`scripts/testes_metodos.py`; explicação em `docs/qa/analises/testes_metodos.md`): escolheram o método dos notebooks 05 a 08. Nenhum dos 10 números mudou.
+- **Próximo passo:** a **parte B** do plano da mineração (notebooks 03, 04, 05 e 06).
+- **Ramo atual:** `plano-nome-do-plano` (a partir da `main` em `bfe0765`); o plano do projeto, a D-039, os testes de métodos e as bibliotecas novas ainda sem commit.
 - **Regras de publicação (D-038):** estudo público; tudo pode ir para o git, inclusive resultados por cartório e notebooks com saídas. Só não pode nome nem CPF de pessoa física. Pipeline, auditor e `gerar_publico.py` ainda seguem as regras antigas (mudança só com pedido do autor).
 
 ## Onde estamos
@@ -35,10 +37,11 @@ Carga **2026-10-19**, premissas **v2**, regra base (Classe 1 até R$ 300 mil, Pr
 
 Valores exatos na linha de base. O conjunto público (`data/publico/manifesto.json`) traz o hash de cada tabela. "Recalcular dá o mesmo" foi provado em 2026-10-19 e em 2026-10-20: 25 de 25 tabelas idênticas.
 
-**Última decisão:** D-038. **Próxima:** D-039 (ver [`decisoes.md`](decisoes.md)).
+**Última decisão:** D-040. **Próxima:** D-041 (ver [`decisoes.md`](decisoes.md)).
 
 ## O que depende do autor agora
-- Commit do `entenda_o_projeto.md` e das correções do README; revisar o gabarito-rascunho do chat (`eval/gabarito_chat.csv`).
+- **Aprovar ou não o `plano_projeto.md` (D-039)** no pull request da branch `plano-nome-do-plano`. As decisões do autor, com a etapa em que cada uma precisa ser tomada, estão no fim do plano.
+- Revisar o gabarito-rascunho do chat (`eval/gabarito_chat.csv`).
 - Achados da parte A para decidir (nenhum número mudou): conferir as serventias 042986 (R$ 108 mi em 2025-2) e 035030 (API ≠ BI em 2025-2; muda a classe) no Justiça Aberta; se quer uma checagem de "saltos" no pipeline e uma regra para semestre com salto grosseiro no enquadramento (efeito máximo: −11 obrigadas, ≈ −1,0%; 12 saem e 1 entra).
 - Se e quando levar a D-038 ao pipeline, ao auditor e ao `gerar_publico.py` (hoje o painel ainda suprime áreas pequenas). Junto, ajustar o prompt do chat (`src/agent/chat.py`, "os dados por serventia não são publicados"), por decisão do autor em 2026-10-22.
 - Conferência de nome de pessoa no zip do silver público (`dados-2026-10-19`).

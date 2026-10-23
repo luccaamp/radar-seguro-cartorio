@@ -1,4 +1,4 @@
-"""Acesso aos dados para notebooks (notebooks/README.md): SOMENTE LEITURA.
+"""Acesso aos dados para notebooks (CONTRIBUTING.md, seção Notebooks): SOMENTE LEITURA.
 
 Notebook lê, não escreve. Com o banco local (data/radar.duckdb), abre em modo somente leitura; sem ele, usa o banco
 de demonstração montado a partir do conjunto público (data/publico, D-029), também somente leitura. Nunca grava em

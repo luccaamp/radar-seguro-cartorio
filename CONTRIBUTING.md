@@ -53,7 +53,7 @@ Observações:
    git pull
    git switch -c minha-tarefa
    ```
-2. **Pull request** para a `main`. A `main` é protegida: não aceita push direto nem force-push, e o merge é feito pelo autor depois da revisão.
+2. **Pull request** para a `main`. A `main` é protegida: não aceita push direto nem force-push. **Qualquer colaborador pode fazer o merge**, inclusive do próprio PR, depois de cumprir o item 3 (D-040). A ruleset da `main` não exige aprovação (`docs/publicacao.md`, seção 4).
 3. **Antes de abrir o PR:**
    - `uv run pytest` passando (e `uv run pytest -m dados_reais`, se você tem os dados da equipe);
    - `uv run ruff check src app tests scripts pipeline.py --exclude scripts/arquivo` sem erro (o padrão do projeto);
@@ -62,7 +62,7 @@ Observações:
 
 ## Notebooks
 
-Análise exploratória, mineração de dados e modelos preditivos ficam em `notebooks/` (detalhes em [`notebooks/README.md`](notebooks/README.md)):
+Análise exploratória, mineração de dados e modelos preditivos ficam em `notebooks/` (o que cada um faz: [`docs/plano_mineracao.md`](docs/plano_mineracao.md)):
 - **Notebook lê, não escreve:** dados só por `src/notebooks.py` (`conectar()` e `ler()`, somente leitura); nunca gravar em bronze, silver ou gold.
 - **Todos os notebooks vão para o git com as saídas** (D-038), inclusive os que leem `interno_*` e mostram resultados por cartório. Se você tinha rodado `uv run nbstripout --install`, desfaça com `uv run nbstripout --uninstall`. Só arquivos grandes (`notebooks/saidas/`) e modelos treinados (`modelos/`) ficam fora do git.
 - **Nenhum nome nem CPF de pessoa física** no texto ou nas saídas: identifique o cartório pelo CNS e pelo município (`tests/test_notebooks.py` procura CPF).
