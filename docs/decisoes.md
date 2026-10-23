@@ -527,3 +527,10 @@ Formato:
 - **Efeito nos 10 números:** nenhum. Os testes só leem dados; toda mudança de base continua exigindo uma decisão nova do autor.
 - **Consequências / onde aparece:** `docs/plano_projeto.md` (novo), `docs/plano_mineracao.md` (reescrito), `docs/ESTADO_ATUAL.md`, `docs/qa/analises/testes_metodos.md` e `testes_metodos_resultados.json` (novos), `scripts/testes_metodos.py` (novo), `pyproject.toml` e `uv.lock`. O `docs/historico/ROADMAP.md` continua como referência; as etapas E3.5, E3b, E6 e E7 dele passam a "depois da entrega, opcional" no plano do projeto. Substitui a parte da D-037 que dizia que o `plano_mineracao.md` era o documento único da etapa.
 - **Fonte:** pedido de `leticia-ribeirom` em 2026-10-23; aprovação do autor pendente.
+
+## D-040 — Qualquer colaborador pode fazer o merge na `main`
+- **Data:** 2026-10-23
+- **Contexto:** o `CONTRIBUTING.md` dizia que "o merge é feito pelo autor depois da revisão", mas a ruleset `main protegida` já exige só um pull request, com 0 aprovações (`docs/publicacao.md`, seção 4), e os colaboradores têm permissão de escrita. A regra escrita era mais restrita que a técnica.
+- **Decisão (proposta por `leticia-ribeirom`; vale com a aprovação do autor no pull request):** qualquer colaborador pode fazer o merge de um PR na `main`, inclusive do próprio, depois de cumprir a lista "Antes de abrir o PR" do `CONTRIBUTING.md`. Continuam: nada de push direto nem force-push na `main`; mudar um dos 10 números exige decisão nova do autor (`plano_projeto.md`, Etapa 2).
+- **Consequências / onde aparece:** `CONTRIBUTING.md` ("Fluxo de trabalho", item 2). Nenhuma mudança no GitHub: a ruleset já permite. O `CLAUDE.md` não muda: a IA continua sem fazer merge nem `gh pr merge`.
+- **Fonte:** pedido de `leticia-ribeirom` em 2026-10-23; aprovação do autor pendente.

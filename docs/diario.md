@@ -624,8 +624,9 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
   - `docs/plano_mineracao.md` reescrito como detalhamento da Etapa 1, coerente com o plano do projeto (D-039); `ESTADO_ATUAL.md` aponta para os dois;
   - `uv add scikit-learn statsmodels mlxtend`;
   - escada de perguntas com 9 degraus: a pergunta do STF saiu do `plano_projeto.md` e do `entenda_o_projeto.md` (pedido da colaboradora). O cenário do STF continua no Simulador e nos riscos;
-  - `notebooks/README.md` excluído a pedido da colaboradora: as regras já estavam no `CONTRIBUTING.md` (seção Notebooks) e a lista dos notebooks está no `plano_mineracao.md`. As referências vivas (README, CONTRIBUTING, notebook 00, `src/notebooks.py`, `tests/test_notebooks.py`) apontam para o CONTRIBUTING; as menções nos registros antigos ficam como estão.
-- **Decisões:** D-039 (proposta; vale com a aprovação do autor no pull request). O teste `test_estado_atual_indica_o_documento_da_etapa` exige o prefixo `plano_`, por isso o arquivo se chama `plano_projeto.md`.
+  - `notebooks/README.md` excluído a pedido da colaboradora: as regras já estavam no `CONTRIBUTING.md` (seção Notebooks) e a lista dos notebooks está no `plano_mineracao.md`. As referências vivas (README, CONTRIBUTING, notebook 00, `src/notebooks.py`, `tests/test_notebooks.py`) apontam para o CONTRIBUTING; as menções nos registros antigos ficam como estão;
+  - `CONTRIBUTING.md`: qualquer colaborador pode fazer o merge na `main` (D-040, proposta), alinhando o texto à ruleset, que já não exige aprovação.
+- **Decisões:** D-039 e D-040 (proposta; vale com a aprovação do autor no pull request). O teste `test_estado_atual_indica_o_documento_da_etapa` exige o prefixo `plano_`, por isso o arquivo se chama `plano_projeto.md`.
 - **Suposições:** nenhuma nova. Os testes só leem dados e premissas v2.
 - **Limitações encontradas:**
   - T1: nenhum método acerta o total de uma região não vista com até 5% de erro (o melhor, ~9%);
