@@ -8,22 +8,56 @@
 
 O projeto termina em seis etapas: mineração (notebooks 03 a 09), pipeline, painel, simulador, chat e entrega. A mineração já tem os métodos escolhidos, porque foram testados com os dados reais de MG antes de escrever este plano.
 
-**A pergunta:** quanto dinheiro o seguro obrigatório dos cartórios (Prov. CNJ 227/2026) pode movimentar em Minas Gerais, e quão certo é esse número?
+**Onde estamos (23/10/2026):** a primeira versão de MG (painel, simulador e chat reduzido, carga 2026-10-19) está concluída; parte A da mineração feita (notebooks 01 e 02).
 
-**Onde estamos (23/10/2026):** a primeira versão de MG (painel, simulador e chat reduzido, carga 2026-10-19) está concluída; parte A da mineração feita (notebooks 01 e 02). Os 10 números oficiais estão fixos e não mudam na mineração:
+## As perguntas do projeto
 
-| # | Número | Valor em MG | Tipo |
-| --- | --- | --- | --- |
-| 1 | Serventias ativas | 2.525 | dado real |
-| 2 | Empregados CLT | 12.134 | dado real |
-| 3 | Obrigadas pelo 227 | ≈ 1.121 | dado real + regra |
-| 4 | Passivo de todas | R$ 311,9 mi | dado real + norma |
-| 5 | Passivo das obrigadas | R$ 238,1 mi | dado real + norma |
-| 6 | Com déficit | ≈ 486 | suposição (faixa) |
-| 7 | Déficit | R$ 36,9 mi | suposição (faixa) |
-| 8 | Importância segurada | R$ 18,4 mi | suposição (faixa) |
-| 9 | Prêmio anual | R$ 368,7 mil | suposição (faixa) |
-| 10 | Teto teórico | R$ 4,76 mi | passivo das obrigadas × taxa base, calculado no painel |
+**A pergunta:** quanto dinheiro o seguro obrigatório dos cartórios (Prov. CNJ 227/2026) pode movimentar em Minas Gerais, **e quão certo é esse número?**
+
+Ela tem duas metades, e cada uma está num ponto diferente:
+
+| Metade | O que responde | Situação |
+| --- | --- | --- |
+| **"Quanto dinheiro"** | A escada de 10 perguntas abaixo, calculada pelo pipeline | ✅ **respondida** em 20/10/2026, para MG, no cenário de hoje (carga 2026-10-19) |
+| **"Quão certo"** (e como muda) | Quanto confiar em cada degrau, o que mais pesa no resultado e como ele muda em 2026–27 | ⬜ **em andamento:** os testes T1 a T7 já escolheram os métodos; os notebooks 03 a 09 respondem |
+
+### Parte 1 — A escada (já respondida)
+
+Cada resposta alimenta a próxima. Os números vêm do banco (`gold.fato_mercado_uf`, MG, regra de classe v2, cenário do STF "mantém"); a faixa vai do nível mínimo ao máximo das premissas.
+
+| # | Pergunta | Como responde | Dado ou suposição | Resposta em MG (base) | Faixa (mín – máx) | Número oficial |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Quantos cartórios existem? | Conta os ativos | **Dado** (CNJ, cadastro) | 2.525 | — | nº 1 |
+| 2 | Quantos funcionários CLT eles têm? | Soma o que cada cartório declara | **Dado** (CNJ) | 12.134 | — | nº 2 |
+| 3 | Quantos são obrigados pela regra? | Tira a Classe 1 (até R$ 300 mil por semestre) e os sem titular | **Dado** + regra; a classe é aproximada (a receita publicada não é exatamente a da norma) | ≈ 1.121 | 1.103 – 1.159 | nº 3 |
+| 4 | Quanto custaria demitir todos os funcionários? (a dívida, ou passivo) | Aviso prévio, férias, 13º, multa do FGTS e encargos de cada vínculo, como manda a norma | **Dado** (RAIS 2025, média salarial do município) + lei | R$ 311,9 mi (todos); R$ 238,1 mi (obrigados) | R$ 285,5 – 355,2 mi; R$ 216,4 – 279,8 mi | nºs 4 e 5 |
+| 5 | Quantos não têm bens para cobrir a dívida? | Chance de déficit por classe | **Suposição** | ≈ 486 | 276 – 732 | nº 6 |
+| 6 | Quanto falta, somando todos? | Parte da dívida sem bens, por classe | **Suposição** | R$ 36,9 mi | R$ 9,9 – 113,9 mi | nº 7 |
+| 7 | Quanto disso vira seguro? | Divide o que falta entre bens, fiança e seguro | **Suposição** | R$ 18,4 mi garantidos | R$ 2,5 – 79,7 mi | nº 8 |
+| 8 | Quanto as seguradoras receberiam por ano? | Valor garantido × taxa (2% na base) | **Suposição** (taxa) | R$ 368,7 mil | R$ 24,7 mil – 2,79 mi | nº 9 |
+| 9 | Isso dá lucro para a seguradora? | Prêmio − prejuízos − comissão − despesas | **Dado** (SUSEP, 2020–2026) para prejuízos e comissão; **suposição** para as despesas | resultado técnico de R$ 236 mil por ano | de −R$ 218 mil a R$ 236 mil (no máximo, os prejuízos do ramo privado superam o prêmio) | — (no Simulador) |
+| 10 | E se o STF derrubar a regra? (ADI 8015) | Três cenários: mantém, derruba os arts. 8º a 17, meio-termo | Cenários; o meio-termo é **suposição** | mantém: R$ 368,7 mil; meio-termo: R$ 184,4 mil; derruba: zero | — | — (no Simulador) |
+| — | Qual o máximo possível? | Toda a dívida dos obrigados × 2%, como se ninguém tivesse bens | Não depende das suposições 5 a 7 | R$ 4,76 mi por ano | — | nº 10 (teto teórico) |
+
+**Perguntas × números oficiais.** As perguntas e os 10 números não são a mesma lista: a pergunta 4 dá dois números (o passivo de todas e o das obrigadas), as perguntas 9 e 10 são respondidas no Simulador, sem um número único, e o nº 10 (teto teórico) é uma pergunta à parte. Os 10 números ficam fixos durante a mineração; mudar um deles exige uma decisão nova do autor.
+
+**Dado × suposição.** As perguntas 1 a 4 se apoiam em dados públicos. Da 5 à 8, o cálculo precisa de coisas que ninguém publica: o patrimônio do titular, quanto dele cobre a dívida, quantos vão escolher seguro e a taxa que a seguradora vai cobrar. Sem isso, o projeto só daria o teto teórico. Essas suposições (`config/premissas/premissas_v002.yaml`, marcadas `fonte: suposição`) não vêm de dado: foram propostas pela IA e aprovadas pelo autor em 18/10/2026 (D-016), cada uma com uma justificativa tirada da norma (por exemplo, só contam bens penhoráveis, e a fiança só vale de bancos S1 ou S2). Por isso as respostas 5 a 9 sempre aparecem com faixa, e o Simulador deixa mudar cada suposição.
+
+### Parte 2 — O que ainda falta responder ("quão certo" e "como muda")
+
+A escada dá o número de hoje. Estas perguntas dizem quanto confiar nele e como ele muda. Nenhuma muda os 10 números: o que for diferente da base sai como sensibilidade ou projeção.
+
+| Pergunta | Degraus da escada | Teste que escolheu o método | Onde responde | Situação |
+| --- | --- | --- | --- | --- |
+| Quão larga é, de verdade, a incerteza do prêmio? | 5 a 8 | T7 (Monte Carlo) | notebook 08 → painel e simulador | teste feito: a faixa realista é R$ 207 – 737 mil (P5–P95), bem mais estreita que a dos cantos |
+| Qual suposição mais mexe no resultado? | 5 a 8 | T7 (tornado) | notebook 08 → simulador | teste feito: a taxa, seguida da escolha pelo seguro |
+| O passivo (degrau 4) é robusto às escolhas de método? | 4 | T5 (salário ausente), T6 (reserva salarial) | notebook 08 | teste feito: incluir os 887 vínculos muda +1,0% |
+| Quantos cartórios vão passar a ser obrigados em 2026 e 2027? | 3 | T3 (subida de classe) | notebooks 05b e 07 | teste feito; os modelos subestimam as subidas e precisam de recalibração |
+| Quanto o mercado vai valer em 2026 e 2027? | 3 a 8 | T2 (arrecadação) | notebook 07 → painel | teste feito; o 2026-1 já passou da previsão e o 07 refaz com o semestre completo |
+| Que tipo de cartório é obrigado, e qual é o cliente do seguro? | 3 e 7 | — | notebooks 03 e 04 | ⬜ parte B |
+| Como são os cartórios vagos (o risco que o seguro cobre)? | — | T4 (vacância) | notebook 05a | ⬜ parte B (leitura de associação, não de previsão) |
+| A escada vale para outros estados? | 2 e 4 | T1 (empregados pela receita) | notebook 06a; expansão depois da entrega | teste feito: erro de ~9% no total de uma região não vista |
+| O que os dados não respondem, e qual fonte resolveria? | 5 a 8 | — | notebook 09 | ⬜ parte C; já conhecidas: patrimônio do titular, taxa das seguradoras e chance de a delegação terminar |
 
 **Fonte dos testes:** silver da carga 2026-10-19 (API do Justiça Aberta, RAIS 2025, IBGE) e as funções de `src/model/` do repositório, sem alterar o banco nem os 10 números. Script: `scripts/testes_metodos.py` (semente 42); resultados reproduzidos em 23/10/2026 com o silver do pacote da equipe (`carga-2026-10-19`). Explicação de cada teste e das métricas: [`qa/analises/testes_metodos.md`](qa/analises/testes_metodos.md).
 
