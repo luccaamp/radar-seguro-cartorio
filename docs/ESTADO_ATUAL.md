@@ -7,12 +7,13 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito e local.
 - **Painel:** cartórios de Minas Gerais, com dados públicos reais.
 - **Simulador:** mercado de seguro-garantia criado pelo Provimento CNJ 227/2026.
 - **Chat com fontes:** versão reduzida no painel (página Chat, Ollama local, `qwen3:8b`; D-036).
+- **Para leigos:** [`entenda_o_projeto.md`](entenda_o_projeto.md) (problema, seguro-garantia, perguntas do projeto e glossário), com link no README e no `CONTRIBUTING.md`.
 
 ## Etapa atual
 - **Mineração dos dados de MG.** Documento da etapa: [`plano_mineracao.md`](plano_mineracao.md) (siga só ele; regra do `CLAUDE.md`).
 - **Parte A feita em 2026-10-22** (Ollama ok; `src/analise/`; notebooks 01 e 02 com saídas; 16 PNGs em `docs/qa/analises/`) e **revisada no mesmo dia** (revisão de cientista de dados: 16 correções de texto, gráfico, código e testes; nenhum dos 10 números mudou). Resumo no `docs/diario.md`.
 - **Próximo passo:** a **parte B** do plano (notebooks 03, 04, 05 e 06).
-- **Ramo atual:** `main` (último commit `cdd87ca`; a D-038 e a parte A ainda sem commit).
+- **Ramo atual:** `main` (último commit `82a4a6b`, com a D-038, a parte A e a revisão; o documento para leigos e as correções do README ainda sem commit).
 - **Regras de publicação (D-038):** estudo público; tudo pode ir para o git, inclusive resultados por cartório e notebooks com saídas. Só não pode nome nem CPF de pessoa física. Pipeline, auditor e `gerar_publico.py` ainda seguem as regras antigas (mudança só com pedido do autor).
 
 ## Onde estamos
@@ -37,9 +38,9 @@ Valores exatos na linha de base. O conjunto público (`data/publico/manifesto.js
 **Última decisão:** D-038. **Próxima:** D-039 (ver [`decisoes.md`](decisoes.md)).
 
 ## O que depende do autor agora
-- Commit da D-038, da parte A e da revisão da parte A; revisar o gabarito-rascunho do chat (`eval/gabarito_chat.csv`).
+- Commit do `entenda_o_projeto.md` e das correções do README; revisar o gabarito-rascunho do chat (`eval/gabarito_chat.csv`).
 - Achados da parte A para decidir (nenhum número mudou): conferir as serventias 042986 (R$ 108 mi em 2025-2) e 035030 (API ≠ BI em 2025-2; muda a classe) no Justiça Aberta; se quer uma checagem de "saltos" no pipeline e uma regra para semestre com salto grosseiro no enquadramento (efeito máximo: −11 obrigadas, ≈ −1,0%; 12 saem e 1 entra).
-- Se e quando levar a D-038 ao pipeline, ao auditor e ao `gerar_publico.py` (hoje o painel ainda suprime áreas pequenas).
+- Se e quando levar a D-038 ao pipeline, ao auditor e ao `gerar_publico.py` (hoje o painel ainda suprime áreas pequenas). Junto, ajustar o prompt do chat (`src/agent/chat.py`, "os dados por serventia não são publicados"), por decisão do autor em 2026-10-22.
 - Conferência de nome de pessoa no zip do silver público (`dados-2026-10-19`).
 - Convidar os colegas para os dois repositórios e mandar o `CONTRIBUTING.md`.
 - E-mail "noreply" do GitHub nos commits.

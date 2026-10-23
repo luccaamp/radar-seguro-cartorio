@@ -1,10 +1,12 @@
 # Radar Seguro-Garantia Cartórios
 
-Painel de cartórios do Brasil com dados públicos reais, simulador do mercado de seguro-garantia criado pelo Provimento CNJ 227/2026 e chat que responde com fontes. Custo zero: tudo roda localmente.
+Painel de cartórios com dados públicos reais (hoje só **Minas Gerais**; outros estados numa fase seguinte), simulador do mercado de seguro-garantia criado pelo Provimento CNJ 227/2026 e chat que responde com fontes. Custo zero: tudo roda localmente.
+
+> **Nunca ouviu falar de seguro-garantia nem do Provimento 227? Comece por [`docs/entenda_o_projeto.md`](docs/entenda_o_projeto.md):** o problema, o básico de seguro-garantia, as perguntas que o projeto responde e um glossário, em linguagem simples.
 
 > Projeto em construção. A especificação está em [`docs/SPEC.md`](docs/SPEC.md).
 
-Este README será completado com: problema, arquitetura, como rodar, resultados da avaliação e limitações. A etapa atual está no [`docs/ESTADO_ATUAL.md`](docs/ESTADO_ATUAL.md).
+O problema e as perguntas do projeto estão no [`docs/entenda_o_projeto.md`](docs/entenda_o_projeto.md). Este README ainda será completado com a arquitetura, os resultados da avaliação e as limitações. A etapa atual está no [`docs/ESTADO_ATUAL.md`](docs/ESTADO_ATUAL.md).
 
 ## Como rodar
 
@@ -89,7 +91,7 @@ Roteiro, com a carga 2026-10-19 (premissas v2, regra v2, nível base, regra do S
 - **Mercado:** os mesmos totais, ≈ 1.121 obrigadas e ≈ 486 com déficit. Um filtro (ex.: Classe 3) e um município (Belo Horizonte; um pequeno aparece pela área agregada).
 - **Simulador:** 1.121, R$ 238,1 mi, 486, R$ 36,9 mi, IS R$ 18,4 mi, prêmio R$ 368,7 mil. Taxa em 3% muda o prêmio; "STF suspende" zera a demanda. Salvar um cenário: ele aparece na tabela e continua lá depois de reabrir o painel.
 - **Qualidade dos dados:** data de referência de cada fonte, reconciliações (CNPJ × CNJ +15,8%, aviso; RAIS × CNJ +1,8%; cobertura da arrecadação 96,9%) e limitações, sem "R$" quebrado.
-- **Chat:** precisa do [Ollama](https://ollama.com) rodando, com o modelo `qwen3:8b` (`ollama pull qwen3:8b`); sem ele, a página aparece desativada, com a explicação. Perguntas para testar: "Quantas serventias ativas há em MG?" (2.525), "Se a taxa fosse 3%, qual o prêmio do mercado?" (R$ 553,1 mil), "A garantia pode ser fiança bancária?" (sim, de banco S1 ou S2; Prov. 227, art. 13) e "Qual o passivo do cartório X?" (recusa: dado por serventia não é publicado). Cada resposta leva de 10 a 60 segundos.
+- **Chat:** precisa do [Ollama](https://ollama.com) rodando, com o modelo `qwen3:8b` (`ollama pull qwen3:8b`); sem ele, a página aparece desativada, com a explicação. Perguntas para testar: "Quantas serventias ativas há em MG?" (2.525), "Se a taxa fosse 3%, qual o prêmio do mercado?" (R$ 553,1 mil), "A garantia pode ser fiança bancária?" (sim, de banco S1 ou S2; Prov. 227, art. 13) e "Qual o passivo do cartório X?" (recusa: o chat só lê o conjunto público, que não traz dados por serventia). Cada resposta leva de 10 a 60 segundos.
 - **Rodapé:** "Carga 2026-10-19 · dados completos" (ou "· demonstração" sem o banco).
 
 ## Estrutura do projeto
@@ -99,10 +101,11 @@ app/                 painel Streamlit (Início, Mercado, Simulador, Qualidade do
 config/              premissas e regras versionadas, com fonte
 data/publico/        conjunto público versionado (tabelas agregadas e auditadas que o painel lê)
 data/samples/        amostras mascaradas das fontes (Fase 0)
-docs/                estado atual, plano da etapa atual, SPEC, decisões, dicionário de dados, diário, erros da IA, publicação
+docs/                entenda o projeto (para leigos), estado atual, plano da etapa atual, SPEC, decisões, dicionário de dados, diário, erros da IA, publicação
 docs/historico/      documentos de épocas anteriores: rodadas da Fase 1, viabilidade (Fase 0), pedidos por fase, ROADMAP e plano de qualidade (com INDICE.md)
+docs/qa/analises/    gráficos da mineração de dados (PNG)
 eval/                gabarito do chat e resultado da avaliação (scripts/avaliar_chat.py)
-notebooks/           exploração e modelos (só leitura; ver notebooks/README.md)
+notebooks/           exploração e modelos, com as saídas (só leem o banco; ver notebooks/README.md)
 scripts/             conjunto público, pacotes de dados, QA visual e acessibilidade, conversas
 scripts/arquivo/     scripts de uso único da Fase 1
 src/                 coleta, bronze→silver→gold, modelo, qualidade, conjunto público, pacotes, chat (agent, llm)
@@ -110,7 +113,7 @@ tests/               suíte padrão, dados_reais e visual
 pipeline.py          orquestrador: uv run pipeline.py --a-partir-de bronze|silver
 ```
 
-Fora do git, só local: `data/bronze`, `data/silver`, `data/gold`, `data/radar.duckdb`, `data/painel_estado.json` (cenários salvos no painel, D-034), `conversas/` e `docs/qa/`. Também ficam fora, e fora da pasta do projeto, os pacotes de dados (`C:\radar_pacotes`) e os originais grandes do bronze (`C:\radar_arquivo\bronze_originais`, D-032).
+Fora do git, só local: `data/bronze`, `data/silver`, `data/gold`, `data/radar.duckdb`, `data/painel_estado.json` (cenários salvos no painel, D-034), `conversas/` e `docs/qa/` (menos `docs/qa/analises/`, que vai para o git). Também ficam fora, e fora da pasta do projeto, os pacotes de dados (`C:\radar_pacotes`) e os originais grandes do bronze (`C:\radar_arquivo\bronze_originais`, D-032).
 
 ## Fontes
 
@@ -123,7 +126,7 @@ Fora do git, só local: `data/bronze`, `data/silver`, `data/gold`, `data/radar.d
 | IBGE: municípios, população, malha, INPC e IPCA | [servicodados.ibge.gov.br](https://servicodados.ibge.gov.br/api/docs/) e [apisidra.ibge.gov.br](https://apisidra.ibge.gov.br/) | municípios vigentes em 2026-10-18; população 2026; malha 2022; índices até 2026-09 | regiões, mapa, correção salarial |
 
 - **Termos de uso:** todos os dados são públicos, de acesso aberto. Os termos de uso são os de cada site acima: confira na fonte antes de reutilizar.
-- **Proteção de dados:** o projeto não publica nome, CPF nem e-mail de pessoa. Também não publica nenhuma estimativa do modelo por serventia (D-030).
+- **Publicação e proteção de dados (D-038):** é um estudo público, com dados públicos do governo; tudo pode ser público, inclusive as estimativas do modelo por cartório (os notebooks já as mostram, pelo CNS e pelo município). A única restrição: nenhum nome nem CPF de pessoa física. O conjunto público e o painel ainda seguem a regra antiga (sem estimativas por serventia e com as áreas pequenas agregadas) até o pipeline ser ajustado.
 - **Detalhe de cada fonte:** data de coleta, URL e SHA-256 estão em `data/publico/manifesto.json` e na página "Qualidade dos dados".
 
 ## Licença

@@ -2,6 +2,8 @@
 
 Guia para quem foi convidado a trabalhar no Radar Seguro-Garantia Cartórios. As regras completas do projeto estão em [`CLAUDE.md`](CLAUDE.md) e a especificação em [`docs/SPEC.md`](docs/SPEC.md).
 
+**Antes de tudo, leia o [`docs/entenda_o_projeto.md`](docs/entenda_o_projeto.md):** o problema, o básico de seguro-garantia, as perguntas que o projeto responde e o glossário dos termos técnicos.
+
 ## Como pedir acesso
 
 1. Peça ao autor (`luccaamp`) o convite para os dois repositórios:
