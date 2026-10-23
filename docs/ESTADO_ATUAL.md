@@ -37,7 +37,7 @@ Carga **2026-10-19**, premissas **v2**, regra base (Classe 1 até R$ 300 mil, Pr
 
 Valores exatos na linha de base. O conjunto público (`data/publico/manifesto.json`) traz o hash de cada tabela. "Recalcular dá o mesmo" foi provado em 2026-10-19 e em 2026-10-20: 25 de 25 tabelas idênticas.
 
-**Última decisão:** D-040. **Próxima:** D-041 (ver [`decisoes.md`](decisoes.md)).
+**Última decisão:** D-041. **Próxima:** D-042 (ver [`decisoes.md`](decisoes.md)).
 
 ## O que depende do autor agora
 - **Aprovar ou não o `plano_projeto.md` (D-039)** no pull request da branch `plano-nome-do-plano`. As decisões do autor, com a etapa em que cada uma precisa ser tomada, estão no fim do plano.

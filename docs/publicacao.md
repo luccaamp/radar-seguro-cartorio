@@ -93,6 +93,10 @@ Na prática:
 - **o autor** pode dar push direto na `main` (está na Bypass list); mesmo assim, ninguém apaga a `main` nem força push nela;
 - **os colaboradores** não podem dar push direto: trabalham numa branch e abrem um PR, e o merge não exige aprovação de outra pessoa (0 aprovações).
 
+> **Conferência de 2026-10-23 (D-041):** a regra do projeto é que qualquer colaborador dá commit e push direto na `main`, sem PR. Ao conferir pela API do GitHub (`gh api repos/luccaamp/radar-seguro-cartorio/rulesets`), a lista de rulesets veio **vazia** e `branches/main/protection` respondeu "Branch not protected": hoje **não há ruleset nem proteção ativa** na `main`, então o GitHub **não** bloqueia o push direto de quem tem permissão de escrita (nem o force-push ou a exclusão da `main`). O texto acima descreve a ruleset como ela foi criada em 2026-10-20; ela não aparece mais.
+
+> **Ruleset recriada em 2026-10-23 (D-041):** `main protegida` (id 25761192), ativa, só com *Restrict deletions* e *Block force pushes*, sem a regra de pull request e sem Bypass list. Resultado: ninguém apaga a `main` nem força push nela, e qualquer colaborador com escrita dá push direto. Os itens "Require a pull request" e "Bypass list" descritos acima não valem mais.
+
 Como foi criada (para refazer em outro repositório): *Settings → Rules → Rulesets → New ruleset → New branch ruleset*:
 
 1. **Ruleset name:** `main protegida`. **Enforcement status:** *Active*.

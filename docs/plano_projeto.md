@@ -145,7 +145,7 @@ A mineração é detalhada no [`plano_mineracao.md`](plano_mineracao.md) (regras
 
 ## Etapa 2 — Pipeline
 
-O que a mineração provar entra no pipeline como tabelas novas `gold.analise_*`, ao lado das 25 atuais, sem mexer nas que dão os 10 números. Mudar um dos 10 números exige uma decisão nova (D-041 em diante) aprovada pelo autor.
+O que a mineração provar entra no pipeline como tabelas novas `gold.analise_*`, ao lado das 25 atuais, sem mexer nas que dão os 10 números. Mudar um dos 10 números exige uma decisão nova (D-042 em diante) aprovada pelo autor.
 
 1. Levar o cálculo dos notebooks para `src/analise/` com teste (o plano já exige); o pipeline chama essas funções.
 2. Gerar as tabelas: `analise_regras`, `analise_grupos`, `analise_clt_modelo`, `analise_previsao` (2026–27 com P10–P90), `analise_tornado`, `analise_monte_carlo`.

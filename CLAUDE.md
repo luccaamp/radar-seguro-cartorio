@@ -5,8 +5,8 @@ Regras de segurança para a IA que trabalha neste repositório. Em cada sessão,
 **Siga o documento da etapa indicado no `docs/ESTADO_ATUAL.md`. Se ele já traz o plano, execute sem pedir aprovação e pare no fim da parte pedida.** Responda em português. Ao parar, atualize o `docs/ESTADO_ATUAL.md` e o `docs/diario.md`, registre erros da IA no `docs/erros_ia.md` e liste os arquivos alterados com uma sugestão de mensagem de commit.
 
 ## Git
-- **NUNCA rode `git commit`, `git push` ou qualquer comando que altere o histórico ou a branch (`reset`, `rebase`, `merge`, `checkout`, `switch`, `stash`, `tag`) sem pedido explícito do autor na mensagem atual.** Um pedido anterior não vale para os próximos. Comandos só de leitura (`git status`, `git diff`, `git log`) são permitidos.
-- **Nunca** rode comandos do `gh` que criem, alterem ou apaguem algo (`gh release create/upload/delete/edit`, `gh repo edit/create/delete`, `gh pr merge`, `gh api` com escrita). Leitura é permitida. Quem publica é o autor.
+- **Qualquer colaborador pode pedir, na mensagem atual, qualquer comando de `git` ou `gh`** (`commit`, `push` na `main`, `merge`, `checkout`, `switch`, `stash`, `reset`, `rebase`, `tag`, `gh pr`, `gh release` etc.), e a IA executa sem restrição, sem exigir pull request nem aprovação do autor (D-041). Sem pedido explícito na mensagem atual, a IA não altera o histórico nem a branch: um pedido anterior não vale para os próximos. Comandos só de leitura (`git status`, `git diff`, `git log`) são sempre permitidos.
+- As regras de "100% gratuito" e de "Dados" abaixo continuam valendo para os comandos de git: não versionar bronze, silver, gold completo nem o banco, e não apagar dados nem Releases.
 
 ## 100% gratuito
 - **NUNCA sugira, instale ou configure serviço pago, conta em nuvem (Google Cloud, AWS, Azure, MotherDuck etc.), chave de API com créditos ou qualquer coisa que possa gerar cobrança.** Se algo parecer exigir isso, pare e pergunte.

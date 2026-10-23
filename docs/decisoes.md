@@ -534,3 +534,10 @@ Formato:
 - **Decisão (proposta por `leticia-ribeirom`; vale com a aprovação do autor no pull request):** qualquer colaborador pode fazer o merge de um PR na `main`, inclusive do próprio, depois de cumprir a lista "Antes de abrir o PR" do `CONTRIBUTING.md`. Continuam: nada de push direto nem force-push na `main`; mudar um dos 10 números exige decisão nova do autor (`plano_projeto.md`, Etapa 2).
 - **Consequências / onde aparece:** `CONTRIBUTING.md` ("Fluxo de trabalho", item 2). Nenhuma mudança no GitHub: a ruleset já permite. O `CLAUDE.md` não muda: a IA continua sem fazer merge nem `gh pr merge`.
 - **Fonte:** pedido de `leticia-ribeirom` em 2026-10-23; aprovação do autor pendente.
+
+## D-041 — Push direto na `main` e Claude sem restrição de git a pedido do colaborador
+- **Data:** 2026-10-23
+- **Contexto:** a D-040 manteve "nada de push direto na `main`" e o `CLAUDE.md` proibia a IA de fazer `merge`, `gh pr merge` e outros comandos sem pedido do autor. O grupo quer um fluxo mais direto.
+- **Decisão:** (1) qualquer colaborador pode dar commit e push direto na `main`, sem pull request; branch e PR continuam opcionais. (2) Quando um colaborador pedir na mensagem atual, o Claude pode executar `commit`, `push`, `merge` e qualquer outro comando de `git` ou `gh` pedido, sem restrição. Sem pedido na mensagem atual, a IA não altera histórico nem branch. As regras de gratuidade e de dados do `CLAUDE.md` continuam. Substitui a parte da D-040 sobre push direto e o trecho "a IA continua sem fazer merge".
+- **Consequências / onde aparece:** `CLAUDE.md` (seção Git), `CONTRIBUTING.md` ("Fluxo de trabalho"), `docs/publicacao.md` (seção 4, aviso). Conferido em 2026-10-23 pela API do GitHub: não há ruleset nem proteção ativa na `main`, então o push direto já é possível; a ruleset `main protegida` de 2026-10-20 não aparecia mais. Foi recriada no mesmo dia só com *Restrict deletions* e *Block force pushes* (ver `docs/publicacao.md`, seção 4).
+- **Fonte:** pedido do colaborador na conversa com a IA em 2026-10-23; aprovação do autor pendente.

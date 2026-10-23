@@ -635,3 +635,9 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
   - T6: os municípios testados são os 135 maiores, que diferem mais da própria região que os pequenos;
   - T7: sem valor real para comparar; o critério é a largura e a probabilidade declarada da faixa.
 - **Próximo passo:** commit e pull request da colaboradora; aprovação do autor; depois, a parte B do plano da mineração.
+
+## 2026-10-23 — Push direto na main e Claude sem restrição de git (D-041)
+- **O que foi feito:** a pedido de um colaborador, `CLAUDE.md` (seção Git), `CONTRIBUTING.md` (Fluxo de trabalho) e `docs/publicacao.md` (seção 4) passam a dizer que qualquer colaborador dá commit e push direto na `main`, sem PR, e que o Claude executa `commit`, `push`, `merge` e demais comandos de `git`/`gh` pedidos na mensagem atual. Decisão D-041 (aprovação do autor pendente).
+- **Conferência no GitHub:** `gh api .../rulesets` retornou lista vazia e `branches/main/protection` retornou "Branch not protected". Não há ruleset ativa, então o push direto de colaboradores com permissão de escrita já funciona (a ruleset de 2026-10-20 não existe mais). `docs/publicacao.md`, seção 4, ficou com essa conferência.
+- **Ruleset recriada** a pedido do autor, via `gh api` (id 25761192): `main protegida`, ativa, regras `deletion` e `non_fast_forward`, sem PR obrigatório e sem Bypass list.
+- **Correção:** `plano_projeto.md` citava "D-041 em diante" como próxima decisão; passou a "D-042 em diante".

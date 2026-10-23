@@ -47,14 +47,14 @@ Observações:
 
 ## Fluxo de trabalho
 
-1. **Uma branch por tarefa**, a partir da `main` atualizada:
+1. **Qualquer colaborador pode dar commit e push direto na `main`, sem pull request** (D-041). Atualize antes de começar:
    ```
    git switch main
    git pull
-   git switch -c minha-tarefa
    ```
-2. **Pull request** para a `main`. A `main` é protegida: não aceita push direto nem force-push. **Qualquer colaborador pode fazer o merge**, inclusive do próprio PR, depois de cumprir o item 3 (D-040). A ruleset da `main` não exige aprovação (`docs/publicacao.md`, seção 4).
-3. **Antes de abrir o PR:**
+   Branch e pull request continuam permitidos, se você preferir (por exemplo, para uma mudança grande).
+2. **Claude Code:** quando um colaborador pedir na conversa, o Claude pode fazer `commit`, `push`, `merge` e os demais comandos de `git` e `gh` que o colaborador pedir na hora, sem restrição (`CLAUDE.md`, seção Git).
+3. **Antes do commit na `main` (ou do PR):**
    - `uv run pytest` passando (e `uv run pytest -m dados_reais`, se você tem os dados da equipe);
    - `uv run ruff check src app tests scripts pipeline.py --exclude scripts/arquivo` sem erro (o padrão do projeto);
    - se mexeu no painel: `uv run python scripts/prints_painel.py --saida docs/qa/atual --checar`, com os prints e o `checagens.md` anexados ao PR (0 falhas de layout);
