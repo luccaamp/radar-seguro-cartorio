@@ -589,3 +589,20 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** o rótulo do gráfico descreveu a regra de cor com outra palavra.
 - **Correção:** o mapa separa "sem obrigada" (cinza) de "obrigada sem passivo" (amarelo); o texto diz 417, com os 2 sem serventia.
 - **Bom para os slides?** não
+
+## 2026-10-23 — Plano do projeto com "143 municípios" no T6, e revisão que não pegou
+- **Onde:** documentos (`docs/plano_projeto.md`, escrito com outra IA no navegador, e a revisão feita aqui).
+- **O que aconteceu:** o plano dizia que o teste T6 usou 143 municípios com 20 ou mais vínculos; o `resultados.json` do script diz 135 (`n_municipios_teste`). Na primeira revisão do plano, a IA desta sessão afirmou que "todos os resultados do T1 ao T7 se reproduzem exatamente", conferindo as métricas, mas sem conferir os tamanhos de amostra.
+- **Como foi detectado:** ao escrever `docs/qa/analises/testes_metodos.md` a partir dos campos do JSON.
+- **Causa provável:** a revisão comparou só os números das tabelas impressas no terminal, e o tamanho da amostra do T6 só aparece no JSON.
+- **Correção:** 135 nos dois lugares do plano; o documento dos testes tira todos os números do JSON.
+- **Resultado depois da correção:** os tamanhos (2.444, 2.692, 2.406, 10.978, 887, 135) conferidos contra o JSON.
+- **Bom para os slides?** sim (afirmar "tudo confere" sem conferir tudo)
+
+## 2026-10-23 — D-039 acrescentada ao `decisoes.md` por comando do shell
+- **Onde:** documentos (`docs/decisoes.md`).
+- **O que aconteceu:** a D-039 foi acrescentada no fim do arquivo com `cat >> ... <<EOF`, e não com a ferramenta de edição, a mesma falha da entrada de 2026-10-22 ("Arquivo de teste gravado por comando do shell").
+- **Como foi detectado:** a própria IA, logo depois, ao lembrar a regra do `CLAUDE.md`.
+- **Causa provável:** pressa num acréscimo grande no fim de um arquivo longo.
+- **Correção:** conferido que o texto entrou inteiro e sem mudar o resto do arquivo (`git diff docs/decisoes.md`: só linhas acrescentadas); os outros registros da sessão foram feitos com a ferramenta de edição.
+- **Bom para os slides?** não
