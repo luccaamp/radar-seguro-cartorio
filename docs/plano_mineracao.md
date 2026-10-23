@@ -47,7 +47,7 @@ Nada de código sem explicação. Termos técnicos explicados na primeira vez em
   - nenhuma variável que "entregue a resposta" (vazamento). Exemplo: para prever vacância, não usar nada que só existe porque o cartório já está vago. Dizer no notebook quais variáveis foram descartadas por esse motivo.
 - **Métricas explicadas** e sempre comparadas com a referência.
 - **Incerteza:** previsões e projeções com faixa, não só um número.
-- **Reprodutível:** semente fixa (42) e o mesmo resultado ao rodar de novo.
+- **Reprodutível:** semente fixa (a de `config/analise.yaml`) e o mesmo resultado ao rodar de novo. Os testes T1 a T7 usaram a semente 42; resultados um pouco diferentes nos notebooks por causa da semente são esperados e não precisam ser explicados.
 
 ---
 

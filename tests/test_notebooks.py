@@ -1,4 +1,4 @@
-"""Notebooks (notebooks/README.md): acesso somente leitura, nenhum CPF e o exemplo funcionando.
+"""Notebooks (CONTRIBUTING.md, seção Notebooks): acesso somente leitura, nenhum CPF e o exemplo funcionando.
 
 Os notebooks vão para o git com as saídas (D-038). Roda em qualquer clone: o exemplo usa o conjunto público (modo
 demonstração) se não houver banco local.

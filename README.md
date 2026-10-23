@@ -105,7 +105,7 @@ docs/                entenda o projeto (para leigos), estado atual, plano da eta
 docs/historico/      documentos de épocas anteriores: rodadas da Fase 1, viabilidade (Fase 0), pedidos por fase, ROADMAP e plano de qualidade (com INDICE.md)
 docs/qa/analises/    gráficos da mineração de dados (PNG)
 eval/                gabarito do chat e resultado da avaliação (scripts/avaliar_chat.py)
-notebooks/           exploração e modelos, com as saídas (só leem o banco; ver notebooks/README.md)
+notebooks/           exploração e modelos, com as saídas (só leem o banco; regras no CONTRIBUTING.md, seção Notebooks)
 scripts/             conjunto público, pacotes de dados, QA visual e acessibilidade, conversas
 scripts/arquivo/     scripts de uso único da Fase 1
 src/                 coleta, bronze→silver→gold, modelo, qualidade, conjunto público, pacotes, chat (agent, llm)

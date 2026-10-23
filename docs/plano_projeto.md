@@ -18,7 +18,7 @@ Ela tem duas metades, e cada uma está num ponto diferente:
 
 | Metade | O que responde | Situação |
 | --- | --- | --- |
-| **"Quanto dinheiro"** | A escada de 10 perguntas abaixo, calculada pelo pipeline | ✅ **respondida** em 20/10/2026, para MG, no cenário de hoje (carga 2026-10-19) |
+| **"Quanto dinheiro"** | A escada de 9 perguntas abaixo, calculada pelo pipeline | ✅ **respondida** em 20/10/2026, para MG, no cenário de hoje (carga 2026-10-19) |
 | **"Quão certo"** (e como muda) | Quanto confiar em cada degrau, o que mais pesa no resultado e como ele muda em 2026–27 | ⬜ **em andamento:** os testes T1 a T7 já escolheram os métodos; os notebooks 03 a 09 respondem |
 
 ### Parte 1 — A escada (já respondida)
@@ -36,10 +36,9 @@ Cada resposta alimenta a próxima. Os números vêm do banco (`gold.fato_mercado
 | 7 | Quanto disso vira seguro? | Divide o que falta entre bens, fiança e seguro | **Suposição** | R$ 18,4 mi garantidos | R$ 2,5 – 79,7 mi | nº 8 |
 | 8 | Quanto as seguradoras receberiam por ano? | Valor garantido × taxa (2% na base) | **Suposição** (taxa) | R$ 368,7 mil | R$ 24,7 mil – 2,79 mi | nº 9 |
 | 9 | Isso dá lucro para a seguradora? | Prêmio − prejuízos − comissão − despesas | **Dado** (SUSEP, 2020–2026) para prejuízos e comissão; **suposição** para as despesas | resultado técnico de R$ 236 mil por ano | de −R$ 218 mil a R$ 236 mil (no máximo, os prejuízos do ramo privado superam o prêmio) | — (no Simulador) |
-| 10 | E se o STF derrubar a regra? (ADI 8015) | Três cenários: mantém, derruba os arts. 8º a 17, meio-termo | Cenários; o meio-termo é **suposição** | mantém: R$ 368,7 mil; meio-termo: R$ 184,4 mil; derruba: zero | — | — (no Simulador) |
 | — | Qual o máximo possível? | Toda a dívida dos obrigados × 2%, como se ninguém tivesse bens | Não depende das suposições 5 a 7 | R$ 4,76 mi por ano | — | nº 10 (teto teórico) |
 
-**Perguntas × números oficiais.** As perguntas e os 10 números não são a mesma lista: a pergunta 4 dá dois números (o passivo de todas e o das obrigadas), as perguntas 9 e 10 são respondidas no Simulador, sem um número único, e o nº 10 (teto teórico) é uma pergunta à parte. Os 10 números ficam fixos durante a mineração; mudar um deles exige uma decisão nova do autor.
+**Perguntas × números oficiais.** A escada tem 9 perguntas e o painel tem 10 números oficiais: as duas listas não são a mesma. A pergunta 4 dá dois números (o passivo de todas e o das obrigadas), a pergunta 9 é respondida no Simulador, sem um número único, e o nº 10 (teto teórico) é uma pergunta à parte. Os 10 números ficam fixos durante a mineração; mudar um deles exige uma decisão nova do autor.
 
 **Dado × suposição.** As perguntas 1 a 4 se apoiam em dados públicos. Da 5 à 8, o cálculo precisa de coisas que ninguém publica: o patrimônio do titular, quanto dele cobre a dívida, quantos vão escolher seguro e a taxa que a seguradora vai cobrar. Sem isso, o projeto só daria o teto teórico. Essas suposições (`config/premissas/premissas_v002.yaml`, marcadas `fonte: suposição`) não vêm de dado: foram propostas pela IA e aprovadas pelo autor em 18/10/2026 (D-016), cada uma com uma justificativa tirada da norma (por exemplo, só contam bens penhoráveis, e a fiança só vale de bancos S1 ou S2). Por isso as respostas 5 a 9 sempre aparecem com faixa, e o Simulador deixa mudar cada suposição.
 
@@ -146,7 +145,7 @@ A mineração é detalhada no [`plano_mineracao.md`](plano_mineracao.md) (regras
 
 ## Etapa 2 — Pipeline
 
-O que a mineração provar entra no pipeline como tabelas novas `gold.analise_*`, ao lado das 25 atuais, sem mexer nas que dão os 10 números. Mudar um dos 10 números exige uma decisão nova (D-039 em diante) aprovada pelo autor.
+O que a mineração provar entra no pipeline como tabelas novas `gold.analise_*`, ao lado das 25 atuais, sem mexer nas que dão os 10 números. Mudar um dos 10 números exige uma decisão nova (D-040 em diante) aprovada pelo autor.
 
 1. Levar o cálculo dos notebooks para `src/analise/` com teste (o plano já exige); o pipeline chama essas funções.
 2. Gerar as tabelas: `analise_regras`, `analise_grupos`, `analise_clt_modelo`, `analise_previsao` (2026–27 com P10–P90), `analise_tornado`, `analise_monte_carlo`.
@@ -200,7 +199,7 @@ A entrega é a demo de 5 minutos com 5 slides, rodando no computador do autor, c
 1. Conferir normas na véspera: ADI 8015, Provimentos 213, 227 e 243 e a atualização anual do limite de classe.
 2. Rodar o pipeline do zero e conferir os 10 números contra a linha de base.
 3. Revisão final de dados pessoais: nenhum nome nem CPF em painel, chat, notebook, gráfico ou arquivo publicado.
-4. Slides: a pergunta, a escada dos 10 números, o que é sólido × o que é suposição (faixa P5–P95), os 3 achados principais do 09, a decisão do STF.
+4. Slides: a pergunta, a escada de 9 perguntas (com os 10 números oficiais), o que é sólido × o que é suposição (faixa P5–P95), os 3 achados principais do 09, a decisão do STF.
 5. Ensaiar a demo duas vezes: Início → Mercado → Simulador (mudar a taxa e o STF) → uma pergunta ao chat.
 6. Release `v1.0` (o autor publica) e README com as limitações declaradas.
 

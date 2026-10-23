@@ -102,7 +102,6 @@ As perguntas formam uma escada: cada resposta alimenta a próxima.
 | 7 | Quanto disso vira seguro? | Divide o déficit entre bens, fiança e seguro | **Suposição** | R$ 18,4 mi garantidos |
 | 8 | Quanto as seguradoras receberiam por ano? | Valor garantido × preço (2%) | **Suposição** (a SUSEP não publica o preço) | R$ 368,7 mil |
 | 9 | Isso dá lucro? | Receita − prejuízos − comissão − custos | **Real** (SUSEP, 2020–2026) para prejuízo e comissão; **suposição** para os custos | no Simulador |
-| 10 | E se o STF derrubar a regra? | Três cenários: mantém, derruba, meio-termo | Cenários; o meio-termo é **suposição** | se derrubar, o mercado vai a zero |
 | — | Qual o máximo possível? (**teto teórico**) | Toda a dívida × 2%, como se ninguém tivesse bens | Não depende das suposições 5 a 7 | R$ 4,76 mi por ano |
 
 **Como ler:** as perguntas 1 a 4 se apoiam em **dados públicos reais**. Da 5 em diante entram **suposições**, porque ninguém publica o patrimônio do titular nem o preço que as seguradoras cobram. Por isso esses números vêm sempre com **mínimo, base e máximo**, e o **Simulador** deixa você mudar cada suposição e ver o efeito. Toda suposição fica escrita em [`config/premissas/`](../config/premissas/), com a marca `fonte: suposição`.
@@ -117,9 +116,11 @@ As perguntas formam uma escada: cada resposta alimenta a próxima.
 |---|---|
 | **Pipeline** | a "fábrica": baixa os dados oficiais, limpa e faz as contas |
 | **Painel** | site local que mostra os números, com mapa, filtros e a fonte de cada número |
-| **Simulador** | página do painel onde você muda as suposições e vê o mercado mudar |
+| **Simulador** | página do painel onde você muda as suposições e vê o mercado mudar, inclusive no cenário de o STF derrubar a regra (§1) |
 | **Chat** | responde perguntas sobre os números, com a conta e a fonte (roda no computador, de graça) |
 | **Notebooks** | estudos dos dados: qualidade, padrões, grupos, previsões ([`plano_mineracao.md`](plano_mineracao.md)) |
+
+O caminho até a entrega (o que já foi respondido, o que falta e em que ordem) está no [`plano_projeto.md`](plano_projeto.md).
 
 ---
 
