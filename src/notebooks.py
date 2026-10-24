@@ -24,10 +24,9 @@ BANCO = RAIZ / "data" / "radar.duckdb"
 
 
 def conectar(banco: Path | None = None) -> duckdb.DuckDBPyConnection:
-    """Conexão SOMENTE LEITURA: o banco dado; senão, o da variável RADAR_BANCO (uma cópia do banco, como no painel);
-    senão, o banco completo, se existir; senão, o de demonstração (conjunto público)."""
-    if banco is None and os.environ.get("RADAR_BANCO"):
-        banco = Path(os.environ["RADAR_BANCO"])
+    """Conexão SOMENTE LEITURA: o banco dado, o de RADAR_BANCO (uma cópia, como no painel), o banco completo, se
+    existir, ou o de demonstração (conjunto público)."""
+    banco = banco or os.environ.get("RADAR_BANCO")
     caminho = Path(banco) if banco else (BANCO if BANCO.exists() else publico.banco_demonstracao())
     return duckdb.connect(str(caminho), read_only=True)
 

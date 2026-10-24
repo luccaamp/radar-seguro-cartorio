@@ -63,7 +63,7 @@ Observações:
 ## Notebooks
 
 Análise exploratória, mineração de dados e modelos preditivos ficam em `notebooks/` (o que cada um faz: [`docs/plano_mineracao.md`](docs/plano_mineracao.md)):
-- **Notebook lê, não escreve:** dados só por `src/notebooks.py` (`conectar()` e `ler()`, somente leitura); nunca gravar em bronze, silver ou gold.
+- **Notebook lê, não escreve:** dados só por `src/notebooks.py` (`conectar()` e `ler()`, somente leitura); nunca gravar em bronze, silver ou gold. Para rodar numa cópia do banco, aponte a variável `RADAR_BANCO` para ela (a mesma do painel): `RADAR_BANCO=<copia>.duckdb uv run jupyter nbconvert --to notebook --execute --inplace notebooks/<nb>.ipynb`.
 - **Todos os notebooks vão para o git com as saídas** (D-038), inclusive os que leem `interno_*` e mostram resultados por cartório. Se você tinha rodado `uv run nbstripout --install`, desfaça com `uv run nbstripout --uninstall`. Só arquivos grandes (`notebooks/saidas/`) e modelos treinados (`modelos/`) ficam fora do git.
 - **Nenhum nome nem CPF de pessoa física** no texto ou nas saídas: identifique o cartório pelo CNS e pelo município (`tests/test_notebooks.py` procura CPF).
 - **Código reutilizável** sai do notebook e vai para `src/`, com teste.

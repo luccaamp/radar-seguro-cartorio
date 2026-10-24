@@ -96,6 +96,22 @@ def participacao_topo(serie: pd.Series, fracao: float) -> float:
     return s.iloc[:n].sum() / s.sum()
 
 
+def curva_lorenz(serie: pd.Series) -> pd.DataFrame:
+    """Curva de concentração (Lorenz): ordena do menor para o maior e acumula. Cada ponto diz que os `fracao_unidades`
+    menores somam `fracao_valor` do total; começa em (0, 0) e termina em (1, 1). Vazios ficam fora."""
+    s = np.sort(pd.Series(serie, dtype="float64").dropna().to_numpy())
+    return pd.DataFrame({"fracao_unidades": np.arange(len(s) + 1) / len(s),
+                         "fracao_valor": np.concatenate([[0.0], np.cumsum(s)]) / s.sum()})
+
+
+def gini(serie: pd.Series) -> float:
+    """Índice de Gini: 0 = todos iguais; perto de 1 = quase tudo numa só unidade. É o dobro da área entre a linha
+    da igualdade e a curva de Lorenz: G = Σ (2i − n − 1)·x_i ÷ (n·Σx), com x em ordem crescente (i = 1..n)."""
+    s = np.sort(pd.Series(serie, dtype="float64").dropna().to_numpy())
+    n = len(s)
+    return float(np.sum((2 * np.arange(1, n + 1) - n - 1) * s) / (n * s.sum()))
+
+
 def fatores_reais(indice: pd.DataFrame, base_ano_mes: int) -> pd.Series:
     """Fator que leva um valor de cada semestre a preços do mês-base: índice do mês-base ÷ média do índice nos 6 meses
     do semestre. Recebe ano_mes (AAAAMM) e numero_indice; só semestres com os 6 meses. Índice: "2025-2"."""

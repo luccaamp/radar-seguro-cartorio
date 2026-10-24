@@ -8,7 +8,7 @@
 
 O projeto termina em seis etapas: mineração (notebooks 03 a 09), pipeline, painel, simulador, chat e entrega. A mineração já tem os métodos escolhidos, porque foram testados com os dados reais de MG antes de escrever este plano.
 
-**Onde estamos (23/10/2026):** a primeira versão de MG (painel, simulador e chat reduzido, carga 2026-10-19) está concluída; parte A da mineração feita (notebooks 01 e 02).
+**Onde estamos (23/10/2026):** a primeira versão de MG (painel, simulador e chat reduzido, carga 2026-10-19) está concluída; parte A da mineração feita (notebooks 01 e 02); notebooks 06 (regressão) e 08 (sensibilidade) feitos e revisados, com a D-042 proposta a partir deles.
 
 ## As perguntas do projeto
 
@@ -19,7 +19,7 @@ Ela tem duas metades, e cada uma está num ponto diferente:
 | Metade | O que responde | Situação |
 | --- | --- | --- |
 | **"Quanto dinheiro"** | A escada de 9 perguntas abaixo, calculada pelo pipeline | ✅ **respondida** em 20/10/2026, para MG, no cenário de hoje (carga 2026-10-19) |
-| **"Quão certo"** (e como muda) | Quanto confiar em cada degrau, o que mais pesa no resultado e como ele muda em 2026–27 | ⬜ **em andamento:** os testes T1 a T7 já escolheram os métodos; os notebooks 03 a 09 respondem |
+| **"Quão certo"** (e como muda) | Quanto confiar em cada degrau, o que mais pesa no resultado e como ele muda em 2026–27 | ⬜ **em andamento:** os testes T1 a T7 já escolheram os métodos; os notebooks 06 e 08 já responderam a parte deles; faltam 03, 04, 05, 07 e 09 |
 
 ### Parte 1 — A escada (já respondida)
 
@@ -48,14 +48,15 @@ A escada dá o número de hoje. Estas perguntas dizem quanto confiar nele e como
 
 | Pergunta | Degraus da escada | Teste que escolheu o método | Onde responde | Situação |
 | --- | --- | --- | --- | --- |
-| Quão larga é, de verdade, a incerteza do prêmio? | 5 a 8 | T7 (Monte Carlo) | notebook 08 → painel e simulador | teste feito: a faixa realista é R$ 207 – 737 mil (P5–P95), bem mais estreita que a dos cantos |
-| Qual suposição mais mexe no resultado? | 5 a 8 | T7 (tornado) | notebook 08 → simulador | teste feito: a taxa, seguida da escolha pelo seguro |
-| O passivo (degrau 4) é robusto às escolhas de método? | 4 | T5 (salário ausente), T6 (reserva salarial) | notebook 08 | teste feito: incluir os 887 vínculos muda +1,0% |
+| Quão larga é, de verdade, a incerteza do prêmio? | 5 a 8 | T7 (Monte Carlo) | notebook 08 → painel e simulador | ✅ notebook 08 (23/10/2026): faixa P5–P95 de R$ 206 a 736 mil (T7: 207–737), cerca de 4,4 vezes mais estreita que a dos cantos; com as suposições de patrimônio juntas, R$ 155 a 906 mil. No painel, base > P5–P95 > cantos (D-042) |
+| Qual suposição mais mexe no resultado? | 5 a 8 | T7 (tornado) | notebook 08 → simulador | ✅ notebook 08: a taxa (R$ 184–645 mil), seguida da escolha pelo seguro (R$ 184–516 mil); as premissas do passivo e do universo mexem menos de ±10% |
+| O passivo (degrau 4) é robusto às escolhas de método? | 4 | T5 (salário ausente), T6 (reserva salarial) | notebook 08 | ✅ notebook 08: sim. Incluir os 887 vínculos muda +1,0% no passivo médio por vínculo e +0,6% no passivo total; o encolhimento (T6), −1,6%. Só na tabela de sensibilidade (D-042) |
+| Quem é obrigado muda se a norma for lida ao pé da letra (receita líquida do repasse, art. 2º, XXIV, do Prov. 213)? | 3 a 8 | — | notebook 08 | ✅ notebook 08: o universo cai 20% (1.121 → 894) e o prêmio 8,5% (R$ 337,4 mil), com a faixa de déficit da base. Sensibilidade, sem mudar a base (D-042) |
 | Quantos cartórios vão passar a ser obrigados em 2026 e 2027? | 3 | T3 (subida de classe) | notebooks 05b e 07 | teste feito; os modelos subestimam as subidas e precisam de recalibração |
 | Quanto o mercado vai valer em 2026 e 2027? | 3 a 8 | T2 (arrecadação) | notebook 07 → painel | teste feito; o 2026-1 já passou da previsão e o 07 refaz com o semestre completo |
 | Que tipo de cartório é obrigado, e qual é o cliente do seguro? | 3 e 7 | — | notebooks 03 e 04 | ⬜ parte B |
 | Como são os cartórios vagos (o risco que o seguro cobre)? | — | T4 (vacância) | notebook 05a | ⬜ parte B (leitura de associação, não de previsão) |
-| A escada vale para outros estados? | 2 e 4 | T1 (empregados pela receita) | notebook 06a; expansão depois da entrega | teste feito: erro de ~9% no total de uma região não vista |
+| A escada vale para outros estados? | 2 e 4 | T1 (empregados pela receita) | notebook 06a; expansão depois da entrega | ✅ notebook 06 (23/10/2026): erro de 9,3% no total de uma região não vista (até 26%), −2,5% no total de MG; o passivo depende sobretudo da quantidade de empregados (75% a 79% da diferença entre cartórios). Só totais estaduais, com ±10% como piso e a RAIS como conferência (D-042) |
 | O que os dados não respondem, e qual fonte resolveria? | 5 a 8 | — | notebook 09 | ⬜ parte C; já conhecidas: patrimônio do titular, taxa das seguradoras e chance de a delegação terminar |
 
 **Fonte dos testes:** silver da carga 2026-10-19 (API do Justiça Aberta, RAIS 2025, IBGE) e as funções de `src/model/` do repositório, sem alterar o banco nem os 10 números. Script: `scripts/testes_metodos.py` (semente 42); resultados reproduzidos em 23/10/2026 com o silver do pacote da equipe (`carga-2026-10-19`). Explicação de cada teste e das métricas: [`qa/analises/testes_metodos.md`](qa/analises/testes_metodos.md).
@@ -68,8 +69,8 @@ A escada dá o número de hoje. Estas perguntas dizem quanto confiar nele e como
 | ✅ 21/10/2026 | Antes | Chat reduzido no painel (Ollama local, 5 ferramentas; D-036) | — |
 | ✅ 22/10/2026 | 1 — parte A | Mineração: notebooks 01 (qualidade) e 02 (exploração), revisados | — |
 | ✅ 23/10/2026 | 1 — preparo | Testes de métodos T1 a T7 ([`qa/analises/testes_metodos.md`](qa/analises/testes_metodos.md)) | — |
-| ⬜ próxima | 1 — parte B | Mineração: notebooks 03 a 06 | — |
-| ⬜ | 1 — parte C | Mineração: notebooks 07 a 09 | **Portão 1:** os notebooks rodam do zero com a mesma saída e os 10 números seguem iguais à linha de base |
+| ⬜ em andamento | 1 — parte B | Mineração: notebooks 03 a 06 (✅ 06 feito e revisado em 23/10/2026; faltam 03, 04 e 05) | — |
+| ⬜ | 1 — parte C | Mineração: notebooks 07 a 09 (✅ 08 adiantado, feito e revisado em 23/10/2026; faltam 07 e 09) | **Portão 1:** os notebooks rodam do zero com a mesma saída e os 10 números seguem iguais à linha de base |
 | ⬜ | 2 | Pipeline (tabelas `gold.analise_*`) | **Portão 2:** o pipeline do zero reproduz a linha de base e gera as tabelas novas |
 | ⬜ | 3 | Painel | — |
 | ⬜ | 4 | Simulador | — |
@@ -133,10 +134,10 @@ A mineração é detalhada no [`plano_mineracao.md`](plano_mineracao.md) (regras
 | 04 Grupos | B | k-means em escala log (receita, CLT, nº de atribuições, situação), k de 2 a 8 pela silhueta; hierárquico Ward para comparar | — | silhueta e concordância k-means × Ward (índice de Rand ajustado) | perfil de cada grupo e o grupo-alvo do seguro; `gold.analise_grupos` |
 | 05a Vacância | B | floresta aleatória (T4); logística para explicar os pesos | proporção de vagas | cruzada estratificada 5 × 3, AUC | importância por permutação; variáveis descartadas por vazamento |
 | 05b Subida de classe | B | floresta aleatória (T3), recalibrada nos anos 2022–2023 | taxa histórica | temporal (treino até 2023, teste 2024–25), Brier | contagem esperada de subidas em 2026 e 2027 |
-| 06a CLT pela receita | B | floresta aleatória (T1); Poisson como versão interpretável | mediana por decil de receita | região intermediária de fora, MAE | `gold.analise_clt_modelo`; total com ±10% |
-| 06b Passivo | B | decomposição: passivo = CLT × passivo médio por vínculo; regressão log-log nos resíduos | — | 10 dobras | quanto do passivo vem de quantidade, salário e tempo de casa |
+| ✅ 06a CLT pela receita | B | floresta aleatória (T1); Poisson como versão interpretável | mediana por decil de receita | região intermediária de fora, MAE | feito em 23/10/2026: MAE 1,86 × 2,34 da referência; `gold.analise_clt_modelo` desenhada; total com ±10% |
+| ✅ 06b Passivo | B | decomposição: passivo = CLT × passivo médio por vínculo; regressão log-log nos resíduos | — | 10 dobras | feito em 23/10/2026: quantidade 75%, salário 18%, tempo de casa 6% (R² 0,99 fora da amostra); PNGs `06_*` |
 | 07 Previsão | C | tendência log-linear com semestre (T2) e SARIMA, faixa P10–P90 dos erros do passado; refeito com 2026-1 completo | repetir o último semestre | origem móvel + treino até 2023 | arrecadação, universo, passivo, IS e prêmio de 2026–27, limite fixo e corrigido |
-| 08 Sensibilidade | C | tornado + Monte Carlo (T7); curva de concentração e Gini; receita líquida do Prov. 213 | cantos atuais | — | `gold.analise_tornado`, `gold.analise_monte_carlo` |
+| ✅ 08 Sensibilidade | C | tornado + Monte Carlo (T7); curva de concentração e Gini; receita líquida do Prov. 213 | cantos atuais | — | feito em 23/10/2026: P5–P95 R$ 206–736 mil; Gini do passivo das obrigadas 0,63; `gold.analise_tornado` e `gold.analise_monte_carlo` desenhadas; PNGs `08_*` |
 | 09 Conclusões | C | 8 a 10 achados com número, gráfico e frase; tabela de lacunas; recomendação ao painel | — | — | achados e lacunas para o painel e os slides |
 
 **Lacunas já conhecidas para o 09** (nenhuma tem fonte pública hoje): patrimônio livre do titular (passos 5 e 6), taxa cobrada pelas seguradoras (passo 8) e a chance de a delegação terminar no ano (D-025, sinistro por frequência).
@@ -145,7 +146,7 @@ A mineração é detalhada no [`plano_mineracao.md`](plano_mineracao.md) (regras
 
 ## Etapa 2 — Pipeline
 
-O que a mineração provar entra no pipeline como tabelas novas `gold.analise_*`, ao lado das 25 atuais, sem mexer nas que dão os 10 números. Mudar um dos 10 números exige uma decisão nova (D-042 em diante) aprovada pelo autor.
+O que a mineração provar entra no pipeline como tabelas novas `gold.analise_*`, ao lado das 25 atuais, sem mexer nas que dão os 10 números. Mudar um dos 10 números exige uma decisão nova (D-043 em diante) aprovada pelo autor.
 
 1. Levar o cálculo dos notebooks para `src/analise/` com teste (o plano já exige); o pipeline chama essas funções.
 2. Gerar as tabelas: `analise_regras`, `analise_grupos`, `analise_clt_modelo`, `analise_previsao` (2026–27 com P10–P90), `analise_tornado`, `analise_monte_carlo`.
@@ -157,9 +158,10 @@ O que a mineração provar entra no pipeline como tabelas novas `gold.analise_*`
 
 | Proposta | Origem | Efeito nos 10 números |
 | --- | --- | --- |
-| Painel mostra a faixa P5–P95 do Monte Carlo ao lado dos cantos min/max | T7 | nenhum (faixa nova, mesma base) |
-| Imputar os 154 vínculos com remuneração média, como sensibilidade | T5 | nenhum na base; +1,0% no passivo médio se adotado |
-| Encolhimento amostra → região como sensibilidade da reserva salarial | T6 | nenhum na base |
+| Faixa do prêmio com a hierarquia base > P5–P95 (R$ 210–740 mil) > cantos, para déficit, IS e prêmio (D-042, proposta) | T7, notebook 08 | nenhum (faixa nova, mesma base) |
+| Salário estimado para os 887 vínculos sem dezembro, só na tabela de sensibilidade (D-042, proposta) | T5, notebook 08 | nenhum na base; +0,6% no passivo total se adotado |
+| Encolhimento amostra → região, só na tabela de sensibilidade (D-042, proposta) | T6, notebook 08 | nenhum na base; −1,6% no passivo total se adotado |
+| Receita líquida do repasse como sensibilidade do universo, com a faixa de déficit da base (D-042, proposta) | notebook 08 | nenhum na base; −20% no universo e −8,5% no prêmio se adotada |
 | Previsão 2026–27 rotulada como projeção, nunca como número oficial | T2, T3 | nenhum |
 | Regra para semestre com salto grosseiro (já pendente da parte A) | notebook 01 | até −11 obrigadas (≈ −1,0%) |
 
@@ -171,10 +173,10 @@ As três peças já existem em versão de MG; aqui elas recebem os resultados da
 
 **Etapa 3 — Painel (Streamlit, só leitura)**
 
-- Início: os 10 números, com a faixa P5–P95 ao lado dos cantos e a situação da ADI 8015 conferida na véspera.
+- Início: os 10 números, com a "faixa provável" P5–P95 logo abaixo do déficit, da IS e do prêmio, e os cantos oficiais como nota secundária (D-042), e a situação da ADI 8015 conferida na véspera.
 - Mercado: mapa e filtros atuais, mais os grupos do notebook 04 e o grupo-alvo do seguro.
 - Página nova "Análises" (ou seções no Mercado): previsão 2026–27 com faixa, concentração (Gini) e os achados do 09.
-- Qualidade dos dados: as lacunas do 09 e as linhas de sensibilidade novas (T5, T6).
+- Qualidade dos dados: as lacunas do 09, o bloco "Passivo: escolhas de método" (T5 +0,6%, T6 −1,6% e a reserva no estado inteiro +5,9%) e a leitura literal do art. 2º, XXIV, do Prov. 213 (universo −20%, prêmio −8,5%), com os rótulos da D-042.
 - Todo número com fonte, data de referência e versão das premissas; projeção sempre rotulada.
 - **Pronto quando:** `tests/test_app.py` passa e o modo demonstração abre sem o banco local.
 

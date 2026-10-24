@@ -1,6 +1,6 @@
 # Estado atual do projeto
 
-> Leia primeiro. Atualizado ao fim de cada sessão (regra do `CLAUDE.md`). Última atualização: **2026-10-23**.
+> Leia primeiro. Atualizado ao fim de cada sessão (regra do `CLAUDE.md`). Última atualização: **2026-10-24**.
 
 ## O que é
 Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito e local.
@@ -16,8 +16,10 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito e local.
 - **Testes de métodos T1 a T7 feitos em 2026-10-23** (`scripts/testes_metodos.py`; explicação em `docs/qa/analises/testes_metodos.md`): escolheram o método dos notebooks 05 a 08. Nenhum dos 10 números mudou.
 - **Parte B, notebooks 03, 04 e 05 feitos e revisados em 2026-10-23** (`src/analise/padroes.py`, `grupos.py`, `classificacao.py`; 10 PNGs `03_*`, `04_*`, `05*`; rodados numa cópia do banco via `RADAR_BANCO`, duas vezes com a mesma saída). Nenhum dos 10 números mudou (banco real com o mesmo SHA-256 da linha de base). Resumo no `docs/diario.md`.
 - **Validação e notebook extra 05c em 2026-10-23:** os notebooks 00 a 05 rodados de novo do zero numa cópia deram as mesmas saídas e os mesmos 26 PNGs do commit. Novo notebook **05c (vacância no tempo)**, fora do plano original, a pedido do autor: mede a taxa de vacância com as datas do cadastro do CNJ e propõe uma faixa para a P(fim da delegação no ano) da D-025 (2% a 7,5%, central ≈ 4%), sem mudar nenhuma premissa.
-- **Próximo passo:** os **notebooks 06, 07 e 08** estão com a colaboradora; o 06 fecha a parte B.
-- **Ramo atual:** `notebooks-03-04-05` (a partir da `main` em `1810f98`); notebooks 03 a 05 (commit `84e0c75`) e 05c com commit; falta juntar o ramo na `main`.
+- **Notebooks 06 (regressão) e 08 (sensibilidade e concentração) feitos e revisados em 2026-10-23**, a pedido da colaboradora (o 08 é da parte C, adiantado): `src/analise/regressao.py` e `sensibilidade.py`, 11 PNGs `06_*` e `08_*`, desenho de `analise_clt_modelo`, `analise_tornado` e `analise_monte_carlo`. Reproduzem o T1 e o T7; rodados duas vezes do zero numa cópia do banco, com as mesmas saídas. Nenhum dos 10 números mudou. Resumo no `docs/diario.md`.
+- **Parte B concluída** (notebooks 03 a 06, mais o extra 05c).
+- **Próximo passo:** a **parte C** do plano da mineração: notebooks **07 e 09** (o 08 já está feito).
+- **Ramo atual:** `notebooks-03-04-05-06-08` (2026-10-24), que junta `notebooks-03-04-05` (03, 04, 05 e 05c) e `notebooks-06-08` (06 e 08, da colaboradora), com commit de merge; ainda não enviado ao GitHub nem juntado na `main`.
 - **Regras de publicação (D-038):** estudo público; tudo pode ir para o git, inclusive resultados por cartório e notebooks com saídas. Só não pode nome nem CPF de pessoa física. Pipeline, auditor e `gerar_publico.py` ainda seguem as regras antigas (mudança só com pedido do autor).
 
 ## Onde estamos
@@ -39,11 +41,12 @@ Carga **2026-10-19**, premissas **v2**, regra base (Classe 1 até R$ 300 mil, Pr
 
 Valores exatos na linha de base. O conjunto público (`data/publico/manifesto.json`) traz o hash de cada tabela. "Recalcular dá o mesmo" foi provado em 2026-10-19 e em 2026-10-20: 25 de 25 tabelas idênticas.
 
-**Última decisão:** D-041. **Próxima:** D-042 (ver [`decisoes.md`](decisoes.md)).
+**Última decisão:** D-042. **Próxima:** D-043 (ver [`decisoes.md`](decisoes.md)).
 
 ## O que depende do autor agora
 - **Aprovar ou não o `plano_projeto.md` (D-039)** no pull request da branch `plano-nome-do-plano`. As decisões do autor, com a etapa em que cada uma precisa ser tomada, estão no fim do plano.
 - Revisar o gabarito-rascunho do chat (`eval/gabarito_chat.csv`).
+- Aprovar ou não a **D-042** (proposta pela colaboradora em 2026-10-23, a partir dos notebooks 06 e 08; nenhum número muda): faixa do prêmio com a hierarquia base > P5–P95 (R$ 210–740 mil) > cantos; receita líquida do repasse como sensibilidade com a faixa de déficit da base (universo −20%, prêmio −8,5%); T5 e T6 só na tabela de sensibilidade; CLT de outros estados só como total estadual, com ±10% como piso e a RAIS como conferência.
 - Achados da parte A para decidir (nenhum número mudou): conferir as serventias 042986 (R$ 108 mi em 2025-2) e 035030 (API ≠ BI em 2025-2; muda a classe) no Justiça Aberta; se quer uma checagem de "saltos" no pipeline e uma regra para semestre com salto grosseiro no enquadramento (efeito máximo: −11 obrigadas, ≈ −1,0%; 12 saem e 1 entra).
 - Questões da parte B (notebooks 03 a 05; detalhes no `docs/diario.md`, 2026-10-23): (a) manter ou não a recalibração do 05b, que ajudou em 2024–25 mas errou mais na média da origem móvel (68 × 53 subidas); (b) aprovar as premissas novas com `fonte: suposição` em `config/analise.yaml` (cortes do Apriori, `n_init`, limiar 0,5, repetições da permutação, bootstrap, faixa P10–P90); (c) se a `gold.analise_grupos` fica por serventia (proposta) ou por grupo; (d) do 05c: se a P(fim da delegação no ano) da D-025 passa a usar a faixa 2% / 4% / 7,5% (fonte: notebook 05c) e se vale fazer uma segunda coleta do cadastro do CNJ (gratuita) para medir as mudanças de situação sem viés de sobrevivência.
 - Se e quando levar a D-038 ao pipeline, ao auditor e ao `gerar_publico.py` (hoje o painel ainda suprime áreas pequenas). Junto, ajustar o prompt do chat (`src/agent/chat.py`, "os dados por serventia não são publicados"), por decisão do autor em 2026-10-22.

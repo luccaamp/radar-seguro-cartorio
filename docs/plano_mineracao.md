@@ -79,7 +79,7 @@ Dois alvos com resposta real nos dados. Para cada um: referência, modelo venced
 - **(a) Vacância (teste T4):** floresta aleatória contra a proporção de vagas; validação cruzada estratificada 5 × 3; indicador AUC. **Vazamento declarado:** a receita e os empregados de um cartório vago são medidos já sob interino. O resultado é lido como **associação** ("cartórios vagos costumam ser assim"), não como previsão de quem vai vagar.
 - **(b) Subida de classe (teste T3):** prever se o cartório passa de R$ 300 mil no ano seguinte, usando só a série até o ano anterior. Floresta aleatória contra a taxa histórica; validação temporal (treino até 2023, teste em 2024–25); indicador Brier. O teste mostrou que **todos os modelos subestimam as subidas** (218 previstas × 294 reais): recalibrar com 2022–23 e mostrar o efeito. **Entrega:** a contagem esperada de subidas em 2026 e 2027, com faixa (insumo do 07).
 
-### 06 — Regressão (parte B)
+### ✅ 06 — Regressão (parte B, feito em 2026-10-23)
 - **(a) Empregados CLT pela receita (teste T1):** floresta aleatória contra a mediana por faixa de receita; Poisson como versão interpretável. Validação deixando uma região intermediária de fora; indicador MAE. O teste mostrou erro de ~9% no total de uma região não vista: o total sai com ±10%. **Uso:** estimar empregados nos estados onde o CNJ não traz essa informação. **Entrega:** desenho da `gold.analise_clt_modelo`.
 - **(b) Passivo por serventia:** decomposição do passivo em quantidade (CLT), salário e tempo de casa (passivo = CLT × passivo médio por vínculo), com regressão log-log nos resíduos e validação em 10 dobras. Mostra quanto do passivo vem de cada parte.
 - Resíduos e limites de cada modelo.
@@ -92,7 +92,7 @@ Dois alvos com resposta real nos dados. Para cada um: referência, modelo venced
 - **Dois cenários:** limite fixo e limite corrigido pela inflação (art. 16, §2º, do Prov. 213).
 - Tudo rotulado como **projeção**, nunca como número oficial. **Entrega:** desenho da `gold.analise_previsao`.
 
-### 08 — Sensibilidade e concentração (parte C)
+### ✅ 08 — Sensibilidade e concentração (parte C, adiantado e feito em 2026-10-23)
 - **Tornado e Monte Carlo (teste T7):** cada premissa sozinha do mínimo ao máximo; Monte Carlo triangular com a faixa P5–P95 ao lado dos cantos atuais (mínimo e máximo). A variante com as suposições de patrimônio juntas fica como sensibilidade. Usar as funções do modelo. **Entrega:** desenho da `gold.analise_tornado` e da `gold.analise_monte_carlo`.
 - **Sensibilidades do passivo:** salário de dezembro ausente (teste T5: incluir os 887 vínculos com salário estimado, +1,0% no passivo médio) e reserva salarial por encolhimento (teste T6). Sem mudar a base (D-015 e D-022 mantidas).
 - **Concentração:** curva de concentração e índice de Gini do passivo e da receita (quanto os 10% maiores concentram).
