@@ -61,20 +61,20 @@ O que falta em cada fonte e campo, valores atípicos, consistência entre fontes
 ### ✅ 02 — Análise exploratória (parte A, feito em 2026-10-22)
 Distribuições em escala log, recortes por classe, atribuição, situação e região, série histórica da arrecadação e correlações.
 
-### 03 — Padrões frequentes (parte B)
+### ✅ 03 — Padrões frequentes (parte B, feito em 2026-10-23)
 - Regras de associação (Apriori, `mlxtend`) sobre as combinações de atribuições e características (porte, classe, situação, região), com foco nas regras que terminam em "obrigada".
 - Suporte, confiança e lift explicados com um exemplo.
 - **Referência:** a frequência simples de obrigadas por atribuição. Uma regra só interessa se o lift mostrar que ela diz mais que essa frequência.
 - **Estabilidade:** manter só as regras que se repetem em 2 reamostragens de 80%.
 - **Entrega:** as 10 regras principais e o que indicam para o mercado; desenho da `gold.analise_regras`.
 
-### 04 — Agrupamentos (parte B)
+### ✅ 04 — Agrupamentos (parte B, feito em 2026-10-23)
 - k-means em escala log (receita, empregados, número de atribuições, situação), com k de 2 a 8 escolhido pela silhueta e pelo cotovelo; hierárquico (Ward) para comparar, com a concordância medida pelo índice de Rand ajustado.
 - Perfil de cada grupo: quantos cartórios, receita e empregados medianos, % obrigadas, passivo e déficit esperados, atribuições típicas.
 - **Qual grupo é o mercado-alvo do seguro e por quê.**
 - **Entrega:** desenho da `gold.analise_grupos`.
 
-### 05 — Classificação (parte B)
+### ✅ 05 — Classificação (parte B, feito em 2026-10-23)
 Dois alvos com resposta real nos dados. Para cada um: referência, modelo vencedor do teste, logística para explicar os pesos, matriz de confusão, precisão, recall, AUC e Brier explicados, quais variáveis mais pesam (importância por permutação) e o que o resultado significa para o seguro.
 - **(a) Vacância (teste T4):** floresta aleatória contra a proporção de vagas; validação cruzada estratificada 5 × 3; indicador AUC. **Vazamento declarado:** a receita e os empregados de um cartório vago são medidos já sob interino. O resultado é lido como **associação** ("cartórios vagos costumam ser assim"), não como previsão de quem vai vagar.
 - **(b) Subida de classe (teste T3):** prever se o cartório passa de R$ 300 mil no ano seguinte, usando só a série até o ano anterior. Floresta aleatória contra a taxa histórica; validação temporal (treino até 2023, teste em 2024–25); indicador Brier. O teste mostrou que **todos os modelos subestimam as subidas** (218 previstas × 294 reais): recalibrar com 2022–23 e mostrar o efeito. **Entrega:** a contagem esperada de subidas em 2026 e 2027, com faixa (insumo do 07).

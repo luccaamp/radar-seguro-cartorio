@@ -14,8 +14,9 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito e local.
 - **Etapa 1 — Mineração dos dados de MG.** Documento da etapa: [`plano_mineracao.md`](plano_mineracao.md) (siga ele na execução; regra do `CLAUDE.md`). Em conflito, vale o `plano_projeto.md`.
 - **Parte A feita em 2026-10-22** (Ollama ok; `src/analise/`; notebooks 01 e 02 com saídas; 16 PNGs em `docs/qa/analises/`) e **revisada no mesmo dia** (revisão de cientista de dados: 16 correções de texto, gráfico, código e testes; nenhum dos 10 números mudou). Resumo no `docs/diario.md`.
 - **Testes de métodos T1 a T7 feitos em 2026-10-23** (`scripts/testes_metodos.py`; explicação em `docs/qa/analises/testes_metodos.md`): escolheram o método dos notebooks 05 a 08. Nenhum dos 10 números mudou.
-- **Próximo passo:** a **parte B** do plano da mineração (notebooks 03, 04, 05 e 06).
-- **Ramo atual:** `plano-nome-do-plano` (a partir da `main` em `bfe0765`); o plano do projeto, a D-039, os testes de métodos e as bibliotecas novas ainda sem commit.
+- **Parte B, notebooks 03, 04 e 05 feitos e revisados em 2026-10-23** (`src/analise/padroes.py`, `grupos.py`, `classificacao.py`; 10 PNGs `03_*`, `04_*`, `05*`; rodados numa cópia do banco via `RADAR_BANCO`, duas vezes com a mesma saída). Nenhum dos 10 números mudou (banco real com o mesmo SHA-256 da linha de base). Resumo no `docs/diario.md`.
+- **Próximo passo:** o **notebook 06** (regressão: CLT pela receita, teste T1, e decomposição do passivo), que fecha a parte B.
+- **Ramo atual:** `notebooks-03-04-05` (a partir da `main` em `1810f98`); notebooks 03 a 05 sem commit.
 - **Regras de publicação (D-038):** estudo público; tudo pode ir para o git, inclusive resultados por cartório e notebooks com saídas. Só não pode nome nem CPF de pessoa física. Pipeline, auditor e `gerar_publico.py` ainda seguem as regras antigas (mudança só com pedido do autor).
 
 ## Onde estamos
@@ -43,6 +44,7 @@ Valores exatos na linha de base. O conjunto público (`data/publico/manifesto.js
 - **Aprovar ou não o `plano_projeto.md` (D-039)** no pull request da branch `plano-nome-do-plano`. As decisões do autor, com a etapa em que cada uma precisa ser tomada, estão no fim do plano.
 - Revisar o gabarito-rascunho do chat (`eval/gabarito_chat.csv`).
 - Achados da parte A para decidir (nenhum número mudou): conferir as serventias 042986 (R$ 108 mi em 2025-2) e 035030 (API ≠ BI em 2025-2; muda a classe) no Justiça Aberta; se quer uma checagem de "saltos" no pipeline e uma regra para semestre com salto grosseiro no enquadramento (efeito máximo: −11 obrigadas, ≈ −1,0%; 12 saem e 1 entra).
+- Questões da parte B (notebooks 03 a 05; detalhes no `docs/diario.md`, 2026-10-23): (a) manter ou não a recalibração do 05b, que ajudou em 2024–25 mas errou mais na média da origem móvel (68 × 53 subidas); (b) aprovar as premissas novas com `fonte: suposição` em `config/analise.yaml` (cortes do Apriori, `n_init`, limiar 0,5, repetições da permutação, bootstrap, faixa P10–P90); (c) se a `gold.analise_grupos` fica por serventia (proposta) ou por grupo.
 - Se e quando levar a D-038 ao pipeline, ao auditor e ao `gerar_publico.py` (hoje o painel ainda suprime áreas pequenas). Junto, ajustar o prompt do chat (`src/agent/chat.py`, "os dados por serventia não são publicados"), por decisão do autor em 2026-10-22.
 - Conferência de nome de pessoa no zip do silver público (`dados-2026-10-19`).
 - Convidar os colegas para os dois repositórios e mandar o `CONTRIBUTING.md`.

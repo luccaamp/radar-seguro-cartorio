@@ -11,6 +11,7 @@ bronze, silver ou gold.
 Todos os notebooks vão para o git com as saídas (D-038); podem ler qualquer tabela, inclusive `interno_*`, e mostrar
 resultados por cartório, sem nome nem CPF de pessoa física.
 """
+import os
 from pathlib import Path
 
 import duckdb
@@ -23,7 +24,10 @@ BANCO = RAIZ / "data" / "radar.duckdb"
 
 
 def conectar(banco: Path | None = None) -> duckdb.DuckDBPyConnection:
-    """Conexão SOMENTE LEITURA: o banco completo, se existir; senão, o de demonstração (conjunto público)."""
+    """Conexão SOMENTE LEITURA: o banco dado; senão, o da variável RADAR_BANCO (uma cópia do banco, como no painel);
+    senão, o banco completo, se existir; senão, o de demonstração (conjunto público)."""
+    if banco is None and os.environ.get("RADAR_BANCO"):
+        banco = Path(os.environ["RADAR_BANCO"])
     caminho = Path(banco) if banco else (BANCO if BANCO.exists() else publico.banco_demonstracao())
     return duckdb.connect(str(caminho), read_only=True)
 

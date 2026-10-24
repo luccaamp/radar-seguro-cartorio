@@ -49,8 +49,20 @@ def test_conectar_e_somente_leitura(tmp_path):
         con.execute("CREATE TABLE t AS SELECT 1")
 
 
+def test_conectar_usa_a_copia_de_radar_banco(tmp_path, monkeypatch):
+    """Com RADAR_BANCO, o notebook lê a cópia indicada (a IA roda os notebooks numa cópia do banco)."""
+    from src.notebooks import conectar
+    copia = tmp_path / "copia.duckdb"
+    with duckdb.connect(str(copia)) as c:
+        c.execute("CREATE TABLE marca AS SELECT 'copia' AS origem")
+    monkeypatch.setenv("RADAR_BANCO", str(copia))
+    with conectar() as con:
+        assert con.execute("SELECT origem FROM marca").fetchone() == ("copia",)
+
+
 def test_exemplo_mostra_os_numeros_de_referencia(monkeypatch):
     """Executa as células de código do 00_exemplo_leitura (sem jupyter) sobre o conjunto público."""
+    monkeypatch.delenv("RADAR_BANCO", raising=False)
     from src import notebooks, publico
     monkeypatch.setattr(notebooks, "BANCO", RAIZ / "nao_existe.duckdb")   # força o conjunto público
     nb = json.loads((RAIZ / "notebooks" / "00_exemplo_leitura.ipynb").read_text(encoding="utf-8"))

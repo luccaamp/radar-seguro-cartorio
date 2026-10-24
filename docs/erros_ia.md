@@ -606,3 +606,20 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** pressa num acréscimo grande no fim de um arquivo longo.
 - **Correção:** conferido que o texto entrou inteiro e sem mudar o resto do arquivo (`git diff docs/decisoes.md`: só linhas acrescentadas); os outros registros da sessão foram feitos com a ferramenta de edição.
 - **Bom para os slides?** não
+
+## 2026-10-23 — Ordem das regras de associação mudava a cada execução
+- **Onde:** código (`src/analise/padroes.py`) e notebook 03, §4.
+- **O que aconteceu:** as regras vinham na ordem do `mlxtend`, que depende da ordem dos itens em `frozenset` de textos; essa ordem muda a cada sessão do Python (hash aleatório). Com empate no lift (Notas→RCPN e RCPN→Notas), a tabela saía em ordem diferente a cada execução.
+- **Como foi detectado:** na revisão, rodando os notebooks duas vezes do zero e comparando as saídas.
+- **Causa provável:** confiar na ordem de saída de uma biblioteca e ordenar só pelo lift, sem desempate.
+- **Correção:** ordenação completa e fixa (texto do "se", consequente, lift, suporte), teste novo e prova com `PYTHONHASHSEED` 1 e 2.
+- **Resultado depois da correção:** saídas e PNGs idênticos nas duas rodadas.
+- **Bom para os slides?** sim ("semente fixa" não basta para reprodutibilidade)
+
+## 2026-10-23 — Texto dos notebooks escrito antes de ver os números
+- **Onde:** notebooks 03, 04 e 05.
+- **O que aconteceu:** parte das leituras foi escrita com os números da exploração, antes da execução final, e algumas não bateram: a subestimação do 05b atribuída às faixas altas (está nas baixas), "metade das janelas" (4 de 10), "dois terços do déficit" (59% no máximo), Varginha entre as 10 principais (11ª) e uma afirmação sem número ("as vagas não achadas são as grandes"). No gráfico da projeção, `"recal" in "sem recalibração"` deu rótulos errados.
+- **Como foi detectado:** revisão, conferindo cada frase contra as saídas e cada gráfico aberto.
+- **Causa provável:** escrever a interpretação junto com o código, sem uma passada final frase a frase contra a saída.
+- **Correção:** frases corrigidas; as afirmações que dependiam de conta (sensibilidade do grupo-alvo, perfil das vagas não achadas) passaram a ser calculadas no notebook; rótulo pelo nome exato do modelo.
+- **Bom para os slides?** não

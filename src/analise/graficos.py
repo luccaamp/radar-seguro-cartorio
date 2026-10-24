@@ -61,12 +61,13 @@ def reais(v: float, casas: int = 1) -> str:
     return f"R$ {num(v)}"
 
 
-FORMATOS = {"int": num, "num1": lambda v: num(v, 1), "num2": lambda v: num(v, 2), "pct": pct, "reais": reais,
+FORMATOS = {"int": num, "num1": lambda v: num(v, 1), "num2": lambda v: num(v, 2), "num3": lambda v: num(v, 3),
+            "pct": pct, "reais": reais,
              "reais_cheio": lambda v: "R$ " + num(v, 2)}
 
 
 def tabela(df: pd.DataFrame, formatos: dict[str, str]) -> pd.DataFrame:
-    """Cópia da tabela com as colunas indicadas como texto no formato brasileiro (int, num1, num2, pct, reais,
+    """Cópia da tabela com as colunas indicadas como texto no formato brasileiro (int, num1, num2, num3, pct, reais,
     reais_cheio); vazios viram "—". Só para mostrar: as contas usam a tabela original."""
     out = df.copy()
     for col, f in formatos.items():

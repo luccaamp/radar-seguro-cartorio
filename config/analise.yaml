@@ -10,3 +10,38 @@ semente: 20261022   # fonte: suposição (qualquer inteiro fixo; só garante que
 graficos:
   pasta: docs/qa/analises   # PNGs dos notebooks (D-038: vão para o git)
   dpi: 150
+padroes:            # notebook 03: regras de associação (Apriori)
+  porte_clt: [0, 2, 9]   # faixas de empregados CLT: 0 | 1 a 2 | 3 a 9 | 10 ou mais. fonte: 2 = mediana de CLT das
+                         # serventias de MG (notebook 02); 9 = teto da microempresa de comércio e serviços no critério
+                         # de porte por pessoas ocupadas do SEBRAE (micro até 9; pequena de 10 a 49)
+  suporte_min: 0.03      # fonte: suposição (regra que vale para pelo menos 3% das serventias, ≈ 73 delas)
+  confianca_min: 0.5     # fonte: suposição (a regra acerta em pelo menos metade dos casos)
+  max_itens: 4           # fonte: suposição (até 3 itens no "se" e 1 no "então": regras que se leem numa frase)
+  melhoria_min: 0.02     # critério de "melhoria mínima" de Bayardo, Agrawal e Gunopulos (2000), Constraint-based rule
+                         # mining in large, dense databases: o item a mais precisa subir a confiança. Valor (2 pontos
+                         # percentuais): fonte: suposição
+  reamostragens: 2       # fonte: docs/plano_mineracao.md, notebook 03 (regras que se repetem em 2 reamostragens de 80%)
+  fracao: 0.8            # fonte: idem
+  n_principais: 10       # fonte: idem (as 10 regras principais)
+grupos:             # notebook 04: k-means e Ward
+  k_min: 2               # fonte: docs/plano_mineracao.md, notebook 04 (k de 2 a 8)
+  k_max: 8               # fonte: idem
+  n_init: 20             # fonte: suposição (o k-means recomeça 20 vezes e fica com a melhor; reduz o efeito do sorteio
+                         # inicial)
+classificacao:      # notebook 05: vacância (T4) e subida de classe (T3)
+  floresta:              # fonte: scripts/testes_metodos.py (mesmos parâmetros dos testes T3 e T4)
+    n_arvores: 500
+    folha_min: 10
+  logistica_c: 1.0       # fonte: scripts/testes_metodos.py (T3 e T4)
+  dobras: 5              # fonte: docs/plano_mineracao.md, notebook 05a (validação cruzada estratificada 5 × 3)
+  repeticoes: 3          # fonte: idem
+  limiar: 0.5            # fonte: suposição (probabilidade acima da qual o caso é chamado de "sim" na matriz de confusão)
+  permutacao_repeticoes: 10   # fonte: suposição (vezes que cada variável é embaralhada na importância por permutação)
+  subida:
+    ano_treino_fim: 2023     # fonte: docs/plano_mineracao.md, notebook 05b (treino até 2023, teste em 2024–25)
+    anos_teste: [2024, 2025] # fonte: idem
+    anos_calibracao: 2       # fonte: idem (recalibrar com os 2 anos anteriores ao teste: 2022–23)
+    taxa_desde: 2019         # fonte: scripts/testes_metodos.py (referência "taxa histórica 2019–2023" do T3)
+    primeiro_ano: 2011       # fonte: idem (primeiro ano previsto no T3)
+    bootstrap: 200           # fonte: suposição (reamostragens da recalibração para a faixa da contagem)
+    faixa: [0.10, 0.90]      # fonte: suposição (a mesma faixa P10–P90 da previsão da arrecadação no T2)
