@@ -623,3 +623,12 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** escrever a interpretação junto com o código, sem uma passada final frase a frase contra a saída.
 - **Correção:** frases corrigidas; as afirmações que dependiam de conta (sensibilidade do grupo-alvo, perfil das vagas não achadas) passaram a ser calculadas no notebook; rótulo pelo nome exato do modelo.
 - **Bom para os slides?** não
+
+## 2026-10-23 — Taxa de vacância "sem lote" tirava os lotes também do estoque
+- **Onde:** código (`src/analise/vacancia.py`, primeira versão de `taxas_por_ano`), antes de entrar no notebook 05c.
+- **O que aconteceu:** para tirar as vacâncias decididas em lote, a função filtrava o cadastro inteiro; com isso, as providas em lote (as ondas de concurso) saíam também do denominador, e o estoque caía de ≈ 2.000 para ≈ 500, inflando a taxa (2025: 42% em vez de 7,4%).
+- **Como foi detectado:** a própria IA, ao comparar o estoque com e sem lote na exploração.
+- **Causa provável:** usar um filtro de linhas onde a regra pedia tirar só do numerador.
+- **Correção:** parâmetro `fora` em `taxa_vacancia` (sai das vacâncias, fica no estoque), com teste sintético.
+- **Também na sessão:** de novo, números escritos no texto antes da execução final (983 × 1.008, 60% × 54%, 20% × 17,5%), corrigidos na conferência frase a frase; e um comando do shell (`cat >> ... <<EOF` vazio) rodado sobre `tests/test_analise_modelos.py` por engano: não acrescentou nada (conferido no `git diff`), e o teste foi escrito com a ferramenta de edição.
+- **Bom para os slides?** não

@@ -1,9 +1,11 @@
-"""src/analise dos notebooks 03, 04 e 05 (padrões, grupos e classificação). Dados SINTÉTICOS."""
+"""src/analise dos notebooks 03, 04, 05 e 05c (padrões, grupos, classificação e vacância). Dados SINTÉTICOS."""
+import json
+
 import numpy as np
 import pandas as pd
 import pytest
 
-from src.analise import classificacao as cl, grupos as gr, padroes
+from src.analise import classificacao as cl, dados, grupos as gr, padroes, vacancia as va
 
 
 def _serventias(n_por_tipo: int = 40) -> pd.DataFrame:
@@ -166,3 +168,61 @@ def test_tabela_subidas_colunas():
     t = cl.tabela_subidas([{"ano": 2026, "horizonte": 1, "recorte": "todas", "abaixo_do_limite_no_ano_base": 10,
                             "p10": 1.0, "esperado": 2.0, "p90": 3.0, "modelo": "m", "anos_recalibracao": "2024–2025"}])
     assert t.columns.tolist()[:4] == ["ano", "horizonte", "recorte", "abaixo_do_limite_no_ano_base"] and len(t) == 1
+
+
+# ------------------------------------------------------------------------------------------- vacância (05c)
+def _cadastro() -> pd.DataFrame:
+    """Sintético: 10 providas desde 2015; 3 vagaram (2024, 2025 e 2025, esta num lote de 2 com outra vaga);
+    1 vaga desde 2020 provida em 2025; 1 inativa."""
+    linhas = [(f"P{i}", "PROVIDO", "2015-03-01") for i in range(10)]
+    linhas += [("V1", "VAGO", "2024-05-01"), ("V2", "VAGO", "2025-02-01"), ("V3", "VAGO", "2025-06-01"),
+               ("V4", "VAGO", "2025-06-01"), ("N1", "PROVIDO", "2025-08-01")]
+    df = pd.DataFrame(linhas, columns=["cns", "situacao_juridica", "data_decisao"]).assign(uf="MG", status="Ativo")
+    df = pd.concat([df, pd.DataFrame([{"cns": "X1", "situacao_juridica": "VAGO", "data_decisao": "2025-01-01",
+                                       "uf": "MG", "status": "Inativo"}])], ignore_index=True)
+    df["data_decisao"] = pd.to_datetime(df["data_decisao"])
+    return df
+
+
+def test_estoque_e_taxa_de_vacancia():
+    cad = _cadastro()
+    est = va.estoque_providas(cad, 2025)
+    assert set(cad.cns[est]) == {f"P{i}" for i in range(10)} | {"V2", "V3", "V4"}   # N1 estava vaga; V1 já vagara
+    t = va.taxa_vacancia(cad, 2025).iloc[0]
+    assert (t.providas_no_inicio, t.vacancias) == (13, 3) and t.taxa == pytest.approx(3 / 13)
+    lote = va.em_lote(cad, minimo=2)
+    assert set(cad.cns[lote]) == {"V3", "V4"} | {f"P{i}" for i in range(10)}
+    sem = va.taxa_vacancia(cad, 2025, fora=lote).iloc[0]
+    assert (sem.providas_no_inicio, sem.vacancias) == (13, 1)   # o lote sai das vacâncias, não do estoque
+    por = va.taxa_vacancia(cad, 2025, grupo=pd.Series(np.where(cad.cns.str.startswith("V"), "a", "b"), index=cad.index))
+    assert por.loc["a", "vacancias"] == 3 and por.loc["b", "vacancias"] == 0
+
+
+def test_taxas_por_ano_e_decisoes():
+    cad = _cadastro()
+    t = va.taxas_por_ano(cad, range(2024, 2026), sem_lote=False).set_index("ano")
+    assert t.loc[2024, "vacancias"] == 1 and t.loc[2024, "providas_no_inicio"] == 14
+    d = va.decisoes_por_ano(cad)
+    assert d.loc[2025, "VAGO"] == 3 and d.loc[2025, "PROVIDO"] == 1 and d.values.sum() == 15   # a inativa fica fora
+    assert va.anos_desde(pd.Series(pd.to_datetime(["2024-10-17"])), pd.Timestamp("2026-10-17")).iloc[0] == \
+        pytest.approx(2, abs=0.01)
+
+
+def test_cadastro_cnj_nao_le_campos_pessoais(tmp_path, monkeypatch):
+    """Bronze SINTÉTICO: o nome do responsável e os contatos não saem da leitura."""
+    pasta = tmp_path / "data" / "bronze" / "cnj_justica_aberta" / "2026-10-17"
+    pasta.mkdir(parents=True)
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "escopo.yaml").write_text("snapshots:\n  cnj_justica_aberta: '2026-10-17'\n",
+                                                       encoding="utf-8")
+    reg = {"cns": "000001", "uf": "MG", "status": "Ativo", "email": "x@y", "telefone": "1",
+           "situacao_juridica_cartorio": {"descricao": "VAGO", "data_decisao": "2025-02-01"},
+           "responsavel": {"nome": "Pessoa Sintética", "data_ingresso": "Invalid DateTime",
+                           "situacao_juridica_responsavel": "Interino"}, "substitutos": "Outra Pessoa"}
+    (pasta / "serventias_MG.json").write_text(json.dumps({"meta": {}, "data": [reg]}), encoding="utf-8")
+    (pasta / "serventias_MG.meta.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(dados, "RAIZ", tmp_path)
+    df = dados.cadastro_cnj()
+    assert len(df) == 1 and df.loc[0, "data_decisao"] == pd.Timestamp("2025-02-01") and pd.isna(df.loc[0, "data_ingresso"])
+    assert not {"nome", "substitutos", "email", "telefone"} & set(df.columns)
+    assert "Pessoa" not in df.to_string()

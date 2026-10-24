@@ -45,3 +45,9 @@ classificacao:      # notebook 05: vacância (T4) e subida de classe (T3)
     primeiro_ano: 2011       # fonte: idem (primeiro ano previsto no T3)
     bootstrap: 200           # fonte: suposição (reamostragens da recalibração para a faixa da contagem)
     faixa: [0.10, 0.90]      # fonte: suposição (a mesma faixa P10–P90 da previsão da arrecadação no T2)
+vacancia:           # notebook 05c: as datas do cadastro do Justiça Aberta
+  lote_min: 10      # fonte: suposição (um dia com 10 ou mais decisões na mesma UF é tratado como "lote": ato coletivo,
+                    # como a outorga de um concurso, ou carga do sistema)
+  inicio_confiavel: 2011   # fonte: notebook 05c, §1 (983 das 2.525 serventias ativas de MG têm decisão em 12/07/2010
+                           # ou 27/08/2010; tratadas como data de carga do sistema, motivo: suposição)
+  ano_recadastro: 2024     # fonte: docs/decisoes.md, D-025 (nota de 2026-10-18: ingressos de 2024 são recadastramento)

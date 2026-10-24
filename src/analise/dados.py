@@ -2,6 +2,7 @@
 
 Cada função devolve um DataFrame pronto para análise, uma linha por unidade (serventia, período ou município).
 """
+import json
 from pathlib import Path
 
 import duckdb
@@ -72,6 +73,30 @@ def arrecadacao_bi(con: duckdb.DuckDBPyConnection, arquivo: Path | None = None) 
         FROM b
         WHERE inicio IS NOT NULL AND datediff('month', inicio, fim) < 6    -- só semestres (2005 e 2006 são anuais)
         GROUP BY ALL""").df()
+    return df
+
+
+def cadastro_cnj(ufs: list[str] | None = None) -> pd.DataFrame:
+    """Datas do cadastro do Justiça Aberta no bronze (snapshot de config/escopo.yaml), para todas as UFs coletadas ou
+    só as pedidas: CNS, UF, status, situação jurídica, data da decisão da situação, data de ingresso do responsável
+    atual e o tipo dele (titular, interino, interventor). Os campos pessoais do arquivo (nome do responsável,
+    substitutos, contatos, endereço) não são lidos (D-038)."""
+    snap = yaml.safe_load((RAIZ / "config" / "escopo.yaml").read_text(encoding="utf-8"))["snapshots"]["cnj_justica_aberta"]
+    pasta = RAIZ / "data" / "bronze" / "cnj_justica_aberta" / snap
+    arquivos = sorted(p for p in pasta.glob("serventias_*.json")
+                      if not p.name.endswith(".meta.json") and (ufs is None or p.stem.split("_")[1] in ufs))
+    linhas = []
+    for arq in arquivos:
+        for s in json.loads(arq.read_text(encoding="utf-8"))["data"]:
+            sit = s.get("situacao_juridica_cartorio") if isinstance(s.get("situacao_juridica_cartorio"), dict) else {}
+            resp = s.get("responsavel") if isinstance(s.get("responsavel"), dict) else {}
+            linhas.append({"cns": s["cns"], "uf": s["uf"], "status": s.get("status"),
+                           "situacao_juridica": sit.get("descricao"), "data_decisao": sit.get("data_decisao"),
+                           "data_ingresso": resp.get("data_ingresso"),
+                           "tipo_responsavel": resp.get("situacao_juridica_responsavel")})
+    df = pd.DataFrame(linhas)
+    for c in ["data_decisao", "data_ingresso"]:
+        df[c] = pd.to_datetime(df[c], errors="coerce", format="%Y-%m-%d")
     return df
 
 
