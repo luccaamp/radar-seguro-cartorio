@@ -606,3 +606,19 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** pressa num acréscimo grande no fim de um arquivo longo.
 - **Correção:** conferido que o texto entrou inteiro e sem mudar o resto do arquivo (`git diff docs/decisoes.md`: só linhas acrescentadas); os outros registros da sessão foram feitos com a ferramenta de edição.
 - **Bom para os slides?** não
+
+## 2026-10-23 — Leituras dos notebooks 06 e 08 com números arredondados "de cabeça"
+- **Onde:** notebooks 06 (§3 e §8) e 08 (§2 e §4), textos de leitura.
+- **O que aconteceu:** seis frases tinham números que não vinham de uma saída impressa, mas de uma leitura do gráfico ou de uma conta de cabeça: mediana do resíduo "entre −0,6 e +0,1" (era −0,55 a +0,02), resíduos "de 40 a 65" (36 a 65), "316 serventias com zero CLT" (no recorte, 285), "três quartos do passivo" (72%), "quase metade da IS" (43%) e "4,5 vezes" (4,4).
+- **Como foi detectado:** na revisão pedida pela colaboradora, recalculando cada número do texto na cópia do banco.
+- **Causa provável:** as leituras foram escritas logo depois da primeira execução, a partir do que o gráfico "mostrava", sem imprimir o número.
+- **Correção:** os seis números corrigidos; a conta das verbas que crescem com o tempo de casa entrou no texto, verba por verba.
+- **Bom para os slides?** sim (número de texto também precisa de saída que o prove)
+
+## 2026-10-23 — Rótulo "R$ … a R$ …" virou fórmula no gráfico
+- **Onde:** notebook 08, gráficos do tornado e do Monte Carlo.
+- **O que aconteceu:** o matplotlib trata o texto entre dois `$` como fórmula; "R$ 206,1 mil a R$ 736,2 mil" saiu como "R206,1milaR 736,2 mil" em itálico.
+- **Como foi detectado:** conferência visual dos PNGs.
+- **Causa provável:** os rótulos dos notebooks 01 e 02 tinham um só valor em reais por texto, e o problema não tinha aparecido.
+- **Correção:** `\$` nos rótulos com dois valores; PNGs conferidos de novo.
+- **Bom para os slides?** não

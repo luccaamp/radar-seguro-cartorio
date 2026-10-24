@@ -7,6 +7,18 @@ saltos:             # semestre muito fora do histórico da própria serventia (p
   janela: 4         # fonte: suposição (os 4 semestres anteriores = 2 anos de histórico)
   fator: 10         # fonte: suposição (10 vezes acima ou abaixo da mediana da janela; corte largo, para só pegar o grosseiro)
 semente: 20261022   # fonte: suposição (qualquer inteiro fixo; só garante que o resultado se repete)
+regressao:          # notebook 06 (teste T1 em docs/qa/analises/testes_metodos.md)
+  floresta:         # fonte: scripts/testes_metodos.py, T1 (os mesmos parâmetros do método vencedor)
+    n_arvores: 400
+    min_folha: 5
+  poisson_alpha: 0.0001   # fonte: scripts/testes_metodos.py, T1 (penalização quase nula: só estabiliza a conta)
+  faixas_referencia: 10   # fonte: scripts/testes_metodos.py, T1 (referência = mediana por decil de receita)
+  margem_total: 0.10      # fonte: testes_metodos.md, T1 (erro do total de uma região não vista de ~9%: publicar ±10%)
+  dobras_passivo: 10      # fonte: docs/plano_mineracao.md, 06b (validação em 10 dobras)
+sensibilidade:      # notebook 08 (testes T5, T6 e T7 em docs/qa/analises/testes_metodos.md)
+  sorteios: 200000        # fonte: scripts/testes_metodos.py, T7 (200 mil sorteios)
+  percentis: [0.05, 0.25, 0.50, 0.75, 0.95]   # fonte: docs/plano_mineracao.md, 08 (faixa P5–P95)
+  topo_concentracao: 0.10 # fonte: docs/plano_mineracao.md, 08 ("quanto os 10% maiores concentram")
 graficos:
   pasta: docs/qa/analises   # PNGs dos notebooks (D-038: vão para o git)
   dpi: 150
