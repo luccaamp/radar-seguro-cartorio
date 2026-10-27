@@ -19,6 +19,24 @@ sensibilidade:      # notebook 08 (testes T5, T6 e T7 em docs/qa/analises/testes
   sorteios: 200000        # fonte: scripts/testes_metodos.py, T7 (200 mil sorteios)
   percentis: [0.05, 0.25, 0.50, 0.75, 0.95]   # fonte: docs/plano_mineracao.md, 08 (faixa P5–P95)
   topo_concentracao: 0.10 # fonte: docs/plano_mineracao.md, 08 ("quanto os 10% maiores concentram")
+previsao:           # notebook 07 (teste T2 em docs/qa/analises/testes_metodos.md)
+  ultimo_periodo: "2025-2"  # fonte: testes_metodos.md, T2 (o 2026-1 está incompleto: só conferência)
+  origens: ["2019-2", "2020-2", "2021-2", "2022-2", "2023-2"]   # fonte: idem (origem móvel)
+  horizonte: 4              # fonte: idem (4 semestres à frente)
+  faixa: [0.10, 0.90]       # fonte: idem (P10–P90 dos erros do teste no passado)
+  ano_base: 2025            # fonte: docs/decisoes.md, D-010 (receita de referência = média dos semestres de 2025)
+  anos: [2026, 2027]        # fonte: docs/plano_mineracao.md, notebook 07
+  quebra: "2025-2"          # fonte: idem (testar uma quebra de nível em 2025-2)
+  completar_com: "2025-1"   # fonte: suposição (quem não informou o 2026-1 recebe o próprio 2025-1 × o crescimento de
+                            # quem informou; só na sensibilidade da quebra)
+  desvios:                  # crescimento de cada serventia em relação ao de MG (dispersão da projeção)
+    banda: 3                # fonte: suposição (só serventias entre L/3 e 3 × L no ano-base: as que podem cruzar o limite)
+    anos: 6                 # fonte: suposição (os 6 anos-base mais recentes com resposta)
+  sorteios: 500             # fonte: suposição (sorteios da projeção do mercado)
+  inflacao_meses: 12        # fonte: suposição (o IPCA dos últimos 12 meses do banco, repetido em cada ano). O índice é o
+                            # da redação original do art. 16, § 2º, do Prov. 213; a redação do Prov. 243 não nomeia índice
+  consolidacao: 0.10        # fonte: Prov. 213, art. 16, § 3º (redação do Prov. 243): variação de até 10% do limite
+                            # precisa de dois ciclos
 graficos:
   pasta: docs/qa/analises   # PNGs dos notebooks (D-038: vão para o git)
   dpi: 150

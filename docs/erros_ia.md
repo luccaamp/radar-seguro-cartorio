@@ -648,3 +648,19 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** os rótulos dos notebooks 01 e 02 tinham um só valor em reais por texto, e o problema não tinha aparecido.
 - **Correção:** `\$` nos rótulos com dois valores; PNGs conferidos de novo.
 - **Bom para os slides?** não
+
+## 2026-10-27 — MASE do teste T2 com o divisor errado
+- **Onde:** `scripts/testes_metodos.py`, T2 (sessão de 2026-10-23), e a tabela do T2 em `docs/qa/analises/testes_metodos.md`.
+- **O que aconteceu:** o comentário dizia "MASE: erro do sazonal ingênuo no treino", mas o código usava `np.mean(np.abs(np.diff(x, 2)))`, que é a **segunda diferença** da série, não a diferença de 2 semestres (`x[t] − x[t−2]`). Todos os MASE do T2 ficaram ≈ 1,5 vez menores (tendência 0,52 em vez de 0,79; referência 1,30 em vez de 1,99).
+- **Como foi detectado:** ao refazer o T2 no notebook 07, o MAPE e o viés bateram com o teste e o MASE não, sempre na mesma proporção.
+- **Causa provável:** `np.diff(x, n)` foi lido como "diferença com defasagem n", mas o `n` é a ordem da diferença.
+- **Correção:** `src/analise/previsao.py` usa `x[2:] − x[:-2]`; nota no `testes_metodos.md`. O script do T2 não foi alterado (fica como registro do teste). O MAPE, que decide, e a escolha do método não mudam.
+- **Bom para os slides?** sim (nome de função que parece dizer uma coisa e faz outra)
+
+## 2026-10-27 — Exemplo do notebook 07 com número que parecia real
+- **Onde:** notebook 07, §5 (rascunho do texto), antes da execução final.
+- **O que aconteceu:** o exemplo do desvio dizia "em 2024, MG cresceu 20%", mas o crescimento real de 2024 foi de 12,8%. Também, a leitura da tabela de desvios dizia "metade das serventias" para a faixa P10–P90, que cobre 8 em cada 10.
+- **Como foi detectado:** na conferência dos números do texto contra as saídas, antes de parar.
+- **Causa provável:** exemplo didático escrito com um ano real, sem conferir; P10–P90 confundido com o intervalo entre os quartis.
+- **Correção:** o exemplo passou a ser hipotético ("num ano em que MG cresce 20%") e a leitura diz "8 em cada 10".
+- **Bom para os slides?** não

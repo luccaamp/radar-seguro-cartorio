@@ -96,6 +96,8 @@ Todos seguem a mesma regra, que vem dos critérios de qualidade do [`plano_miner
 
 **Leitura:** o 2026-1, mesmo incompleto, já somou **R$ 3,20 bi**: 17% acima da previsão central e acima do P90. A arrecadação acelerou em 2025-2 e 2026-1, e o melhor método do passado não pegou isso.
 
+**Nota de 2026-10-27 (notebook 07):** a coluna **MASE** acima está com o divisor errado: o script dividia pela segunda diferença da série (`np.diff(x, 2)`), e não pelo erro do sazonal ingênuo. Com o divisor certo (`src/analise/previsao.py`), todos os MASE ficam ≈ 1,5 vez maiores (tendência 0,79; SARIMA 1,26; referência 1,99). O MAPE, que decide, e a ordem dos métodos não mudam. O notebook 07 também mostra que o 2026-1 "acima do P90" vinha, em grande parte, de saltos grosseiros de declaração (serventias 059816 e 046219): sem eles e com as 57 serventias sem informação completadas, o 2026-1 fica dentro da faixa.
+
 **O que será usado:** a tendência log-linear, com o SARIMA para comparar, e sempre com a faixa. O notebook 07 refaz a previsão quando o 2026-1 fechar e testa se houve uma quebra de nível em 2025-2 (conferir a serventia 042986). A previsão é sempre rotulada como projeção, nunca como número oficial.
 
 ---

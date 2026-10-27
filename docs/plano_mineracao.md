@@ -84,7 +84,7 @@ Dois alvos com resposta real nos dados. Para cada um: referência, modelo venced
 - **(b) Passivo por serventia:** decomposição do passivo em quantidade (CLT), salário e tempo de casa (passivo = CLT × passivo médio por vínculo), com regressão log-log nos resíduos e validação em 10 dobras. Mostra quanto do passivo vem de cada parte.
 - Resíduos e limites de cada modelo.
 
-### 07 — Previsão do mercado (parte C)
+### ✅ 07 — Previsão do mercado (parte C, feito em 2026-10-27)
 - **Arrecadação de 2026 e 2027 (teste T2):** tendência log-linear com efeito de semestre, com o SARIMA para comparar, contra a referência "repete o último semestre". Faixa P10–P90 a partir dos erros do teste no passado.
 - **Teste no passado:** origem móvel (treinos até 2019-2 … 2023-2) e o teste do treino até 2023, com MAPE e viés.
 - **Atenção:** o 2026-1, mesmo incompleto, já passou do P90 da previsão do teste. Refazer com o 2026-1 completo, se já estiver disponível, e testar uma quebra de nível em 2025-2 (serventia 042986). Se o autor ainda não tiver decidido a regra do salto grosseiro, rodar com a regra atual e mostrar a quebra como sensibilidade.
