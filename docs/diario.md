@@ -724,3 +724,15 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Achados para o autor:** ver `docs/ESTADO_ATUAL.md`, "O que depende do autor agora" (regra do salto, coleta nova do 2026-1, limite fixo × corrigido, suposições novas). O MASE do T2 estava com o divisor errado (nota acrescentada em `testes_metodos.md`; o vencedor não muda).
 - **Suítes:** padrão 230 passed, 83 deselected; `dados_reais` de `test_analise_previsao.py` 1 passed (cópia do banco); ruff sem erro.
 - **Próximo passo:** notebook 09 (conclusões e lacunas), que fecha a parte C.
+
+## 2026-10-27 — Validação de todos os notebooks (confiança e lacunas)
+- **Reexecução (Portão 1):** os notebooks 01 a 08 (com o 05c) rodados do zero no ramo juntado, numa cópia do banco: as saídas de todas as células são **iguais às commitadas**. Os 11 PNGs do 06 e do 08 mudaram byte a byte, mas são idênticos pixel a pixel (só metadados); foram restaurados. Banco real com o mesmo SHA-256 da linha de base.
+- **Confiança por degrau da escada:** 1 a 4 altos (fontes coerentes; passivo robusto: T5 +0,6%, T6 −1,6%, premissas abaixo de ±10%); 3 com a maior incerteza dos dados: a leitura literal da receita (art. 2º, XXIV) tira 20% do universo, mais que todos os problemas de dado; 5 a 8 só suposições (P5–P95 do prêmio R$ 206–736 mil); 9 (resultado da seguradora) **sem nenhum notebook**: a sinistralidade vai de 1,7% a 73,9% (SES, ramos 0775/0776, carteira de obras e contratos).
+- **Lacunas encontradas para o 09 e para o autor:**
+  - pergunta 9 sem análise: conta indicativa com a P(fim da delegação) do 05c (≈ 4% ao ano nas Classes 2 e 3) e taxa de 2%: sinistralidade ≈ 2 × q, sendo q a parte da IS que vira sinistro por delegação encerrada (suposição); a base da SES (10,9%) equivale a q ≈ 5,5%, e o resultado técnico zera com q ≈ 37%;
+  - cenário do STF (ADI 8015) fora do Monte Carlo: "suspende" zera a demanda;
+  - previsão do 07 provavelmente conservadora: a principal supõe +7,3% em 2026, mas o 2026-1 limpo e completado já está +22% sobre o 2025-1 e o crescimento recente foi de 14% a 21% ao ano; as subidas de 2026 divergem entre o 07 (78) e o 05b (145);
+  - faixas das projeções mal calibradas (07: 17% a 40% de cobertura; 05b: recalibração pior na origem móvel);
+  - prêmio projetado com o passivo de 2025 (sem reajuste de salário).
+- Nada foi alterado no código nem nos notebooks.
+- **Depois, a pedido do autor ("registre, mas não faça ainda o 9"):** propostas de melhoria para cada ponto de baixa confiança (M1 a M10), na seção nova "Melhorias de confiança" do `plano_mineracao.md`. A mais importante reaproveita a medida F6 de 18/10: passivo ÷ saldo anual do titular (arrecadação − repasse − custeio do BI) para calibrar o déficit dos passos 5 e 6 e, junto com a P(fim) do 05c, estimar o sinistro da pergunta 9. Uma conta rápida desta sessão somou o custeio repetido por atribuição do 2025-2 e deu saldos negativos demais; ela foi descartada, e os números citados são os de 18/10.
