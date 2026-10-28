@@ -15,7 +15,8 @@ pagina("Radar Seguro-Garantia Cartórios", "📊", "Radar Seguro-Garantia · Car
        "Quanto o seguro obrigatório dos cartórios movimenta em MG",
        f"Na regra atual, as seguradoras receberiam **{premio['valor_base']} por ano** em prêmios; o valor provável fica "
        f"entre **{premio['faixa_provavel']}**. É um mercado pequeno diante da dívida trabalhista de "
-       f"{num_['passivo_obrigadas']['valor']} das obrigadas, e o STF pode zerá-lo.")
+       f"{num_['passivo_obrigadas']['valor']} das obrigadas, e o STF pode zerá-lo.",
+       (premio["valor_base"], f"prêmio anual do mercado (valor base); faixa provável {premio['faixa_provavel']}"))
 
 st.markdown("O **Provimento CNJ 227/2026** obriga o titular do cartório a declarar o passivo trabalhista dos "
             "empregados CLT e, se os bens livres não o cobrirem, a apresentar fiança bancária ou **seguro-garantia** "
@@ -34,61 +35,63 @@ with st.expander("Termos em uma linha"):
         "- **Sensibilidade:** quanto o resultado muda se uma escolha de método ou de leitura da norma mudar."))
 
 # ---- D-042: déficit, IS e prêmio (base > faixa provável > extremos)
-st.header("Déficit, garantia e prêmio")
-d042 = [analise("faixa_d042", medida=m) for m in ("deficit", "importancia_segurada", "premio")]
-ui.grade([ui.kpi_d042(r) for r in d042], 3)
-with st.expander("Como ler a faixa provável e os extremos"):
-    st.markdown(md_seguro(
-        f"- **Valor base** é o número oficial do painel. **Faixa provável (P5–P95)**: a {premio['subrotulo_faixa']}; "
-        f"90% dos {premio['sorteios']} sorteios das suposições caem nela. Mede a "
-        "incerteza dentro das faixas de cada suposição, não o risco de elas estarem erradas; não é um intervalo de "
-        "confiança.\n"
-        f"- **Extremos teóricos:** todas as suposições no limite ao mesmo tempo, o que quase nunca acontece "
-        f"(prêmio {premio['extremos']}). {premio['nota_cantos_mc']}\n"
-        f"- {premio['nota_mediana']}\n"
-        f"- Se as quatro suposições de patrimônio andarem juntas (sensibilidade), a faixa do prêmio vai a "
-        f"{premio['sensibilidade_patrimonio_junto']}."))
-    ui.fonte(premio)
-with st.expander("Sensibilidades: o que mais mexe no prêmio"):
-    tor = analise("tornado")
-    st.markdown(md_seguro(f"Uma suposição por vez, do mínimo ao máximo: **{tor['mais_pesam'][0]}**; "
-                          f"{tor['mais_pesam'][1]}. As duas primeiras somam {tor['parte_das_duas_primeiras']} da "
-                          f"soma das amplitudes. Detalhe na página **Análises**."))
-    ui.fonte(tor)
+with ui.secao("d042", "tinta"):
+    st.header("Déficit, garantia e prêmio")
+    d042 = [analise("faixa_d042", medida=m) for m in ("deficit", "importancia_segurada", "premio")]
+    ui.grade([ui.kpi_d042(r) for r in d042], 3)
+    with st.expander("Como ler a faixa provável e os extremos"):
+        st.markdown(md_seguro(
+            f"- **Valor base** é o número oficial do painel. **Faixa provável (P5–P95)**: a "
+            f"{premio['subrotulo_faixa']}; 90% dos {premio['sorteios']} sorteios das suposições caem nela. Mede a "
+            "incerteza dentro das faixas de cada suposição, não o risco de elas estarem erradas; não é um intervalo "
+            "de confiança. Na barrinha de cada cartão: o trilho vai de um extremo teórico ao outro, a banda é a faixa "
+            "provável e o ponto é o valor base.\n"
+            f"- **Extremos teóricos:** todas as suposições no limite ao mesmo tempo, o que quase nunca acontece "
+            f"(prêmio {premio['extremos']}). {premio['nota_cantos_mc']}\n"
+            f"- {premio['nota_mediana']}\n"
+            f"- Se as quatro suposições de patrimônio andarem juntas (sensibilidade), a faixa do prêmio vai a "
+            f"{premio['sensibilidade_patrimonio_junto']}."))
+        ui.fonte(premio)
+    with st.expander("Sensibilidades: o que mais mexe no prêmio"):
+        tor = analise("tornado")
+        st.markdown(md_seguro(f"Uma suposição por vez, do mínimo ao máximo: **{tor['mais_pesam'][0]}**; "
+                              f"{tor['mais_pesam'][1]}. As duas primeiras somam {tor['parte_das_duas_primeiras']} da "
+                              f"soma das amplitudes. Detalhe na página **Análises**."))
+        ui.fonte(tor)
 
-# ---- os 10 números
-st.header("Os 10 números oficiais")
-ajuda = {"obrigadas": "valor esperado: inclui o peso das serventias de classe indeterminada",
-         "com_deficit": "valor esperado: soma das chances de déficit das obrigadas",
-         "passivo_todas": f"custo de demitir todos os empregados CLT; data-base {data_base_passivo()}",
-         "teto": "passivo das obrigadas × taxa base, como se ninguém tivesse bens"}
-cartoes = [ui.kpi(f"{n['numero']}. {n['rotulo']}", n["valor"], "dado" if n["natureza"] == "dado" else "suposicao",
-                  ajuda.get(n["chave"], "")) for n in oficiais["numeros"]]
-ui.grade(cartoes, 5)
-ui.fonte(oficiais, oficiais["observacao"] + ".")
-
-# ---- escada
-r_escada = analise("escada")
-ui.grafico(graficos.escada(r_escada))
-with st.expander("Dados do gráfico e método"):
-    st.markdown(md_seguro(f"{r_escada['conta']}. Os degraus em azul vêm de dados públicos; os em violeta dependem de "
-                          "suposições (D-016, D-046). " + EXPLICA_NIVEIS))
-    ui.baixar(r_escada, "escada_do_mercado")
+# ---- os 10 números e a escada
+with ui.secao("numeros", "clara"):
+    st.header("Os 10 números oficiais")
+    ajuda = {"obrigadas": "valor esperado: inclui o peso das serventias de classe indeterminada",
+             "com_deficit": "valor esperado: soma das chances de déficit das obrigadas",
+             "passivo_todas": f"custo de demitir todos os empregados CLT; data-base {data_base_passivo()}",
+             "teto": "passivo das obrigadas × taxa base, como se ninguém tivesse bens"}
+    cartoes = [ui.kpi(f"{n['numero']}. {n['rotulo']}", n["valor"], "dado" if n["natureza"] == "dado" else "suposicao",
+                      ajuda.get(n["chave"], "")) for n in oficiais["numeros"]]
+    ui.grade(cartoes, 5)
+    ui.fonte(oficiais, oficiais["observacao"] + ".")
+    r_escada = analise("escada")
+    ui.grafico(graficos.escada(r_escada))
+    with st.expander("Dados do gráfico e método"):
+        st.markdown(md_seguro(f"{r_escada['conta']}. Os degraus em azul vêm de dados públicos; os em verde-azulado "
+                              "dependem de suposições (D-016, D-046). " + EXPLICA_NIVEIS))
+        ui.baixar(r_escada, "escada_do_mercado")
 
 # ---- situação regulatória
-st.header("Situação regulatória: ADI 8015")
-adi = analise("situacao_adi")
-stf = analise("premio_por_cenario_stf")
-c1, c2 = st.columns([3, 2])
-with c1:
-    ui.achado(f"Sem liminar · conferido em {adi['conferido_em']}",
-              f"A ANOREG/BR questiona os arts. 8º a 17 do Prov. 227 no STF. {adi['situacao']}", "alerta")
-    st.caption(md_seguro(adi["citar"]))
-with c2:
-    ui.grade([ui.kpi(c["nome"], c["premio_txt"], "suposicao" if c["cenario"] == "parcial" else None,
-                     f"faixa provável {c['faixa_txt']}" if c["p95"] > 0 else "a demanda de garantia vai a zero")
-              for c in stf["tabela"]], 1)
-    ui.fonte(stf, stf["observacao"] + ".")
+with ui.secao("adi", "tinta"):
+    st.header("Situação regulatória: ADI 8015")
+    adi = analise("situacao_adi")
+    stf = analise("premio_por_cenario_stf")
+    c1, c2 = st.columns([3, 2])
+    with c1:
+        ui.achado(f"Sem liminar · conferido em {adi['conferido_em']}",
+                  f"A ANOREG/BR questiona os arts. 8º a 17 do Prov. 227 no STF. {adi['situacao']}", "alerta")
+        st.caption(md_seguro(adi["citar"]))
+    with c2:
+        ui.grade([ui.kpi(c["nome"], c["premio_txt"], "suposicao" if c["cenario"] == "parcial" else None,
+                         f"faixa provável {c['faixa_txt']}" if c["p95"] > 0 else "a demanda de garantia vai a zero")
+                  for c in stf["tabela"]], 1)
+        ui.fonte(stf, stf["observacao"] + ".")
 
 e = execucao()
 st.caption(f"Peso da classe indeterminada no cenário base: {num(100 * e.peso_classe_indeterminada_base, 1)}% "

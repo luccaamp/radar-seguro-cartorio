@@ -43,7 +43,7 @@ def demonstracao() -> bool:
 
 # paleta (skill de visualização, instância de referência): sequencial azul, série única azul, superfícies
 AZUL_SEQUENCIAL = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
-AZUL_SERIE = "#2a78d6"
+AZUL_SERIE = "#1f5bb8"   # cor "observado" de src/painel/graficos.py
 
 NOMES_FONTE = {
     "cnj_serventias": "CNJ / Justiça Aberta (cadastro)",
@@ -229,15 +229,15 @@ def analise(nome: str, **kw) -> dict:
     return _analise(nome, f"{modo()}:{caminho_banco()}", tuple(sorted(kw.items())))
 
 
-def pagina(titulo_aba: str, icone: str, sobre: str, titulo: str, manchete: str) -> None:
-    """Abre uma página no padrão visual: configuração, CSS único, cabeçalho com a manchete, faixa de contexto e o
-    aviso do modo demonstração."""
+def pagina(titulo_aba: str, icone: str, sobre: str, titulo: str, manchete: str,
+           numero: tuple[str, str] | None = None) -> None:
+    """Abre uma página no padrão visual: configuração, CSS único, faixa do topo (manchete, número principal e selos de
+    contexto) e o aviso do modo demonstração."""
     from src.painel import ui
     st.set_page_config(page_title=titulo_aba, page_icon=icone, layout="wide")
     ui.estilo()
-    ui.cabecalho(sobre, titulo, manchete)
     e = execucao()
-    ui.contexto([("Dados", carga_em_uso()), ("Premissas", f"v{int(e.versao_premissas)}"),
-                 ("Classe 1", "até R$ 300 mil (Prov. 243)"), ("Nível", "base"), ("STF", "regra mantida"),
-                 ("UF", "MG")])
+    ui.cabecalho(sobre, titulo, manchete, numero,
+                 [("Dados", carga_em_uso()), ("Premissas", f"v{int(e.versao_premissas)}"),
+                  ("Classe 1", "até R$ 300 mil (Prov. 243)"), ("Nível", "base"), ("STF", "regra mantida"), ("UF", "MG")])
     aviso_modo()

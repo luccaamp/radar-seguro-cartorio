@@ -1,20 +1,20 @@
-# Tema do painel (docs/painel/padrao_visual.md). Só aparência; nenhum dado.
+# Tema do painel (docs/painel/padrao_visual.md, segunda rodada). Só aparência; nenhum dado.
 [theme]
 base = "light"
-primaryColor = "#184f95"
-backgroundColor = "#f7f7f5"
-secondaryBackgroundColor = "#efeeea"
-textColor = "#1b1b19"
-font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-baseRadius = "8px"
-borderColor = "#e3e2dc"
-linkColor = "#184f95"
-chartCategoricalColors = ["#2a78d6", "#eb6834", "#6250d6", "#898781"]
+primaryColor = "#1f4e86"
+backgroundColor = "#eef2f7"
+secondaryBackgroundColor = "#e4ecf7"
+textColor = "#16202e"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+baseRadius = "10px"
+borderColor = "#d9e0ea"
+linkColor = "#1f4e86"
+chartCategoricalColors = ["#1f5bb8", "#f07f26", "#17a398", "#8d8b84"]
 
 [theme.sidebar]
 backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f4f4f1"
+secondaryBackgroundColor = "#e4ecf7"
 
 [client]
 toolbarMode = "minimal"
