@@ -2,7 +2,7 @@
 
 > **O que é:** o detalhamento da **Etapa 1 — Mineração** do [`plano_projeto.md`](plano_projeto.md), o plano oficial do projeto (D-039). Aqui ficam as regras, o formato dos notebooks, os critérios de qualidade e o que cada notebook entrega. A visão geral, os portões e as decisões do autor ficam no plano do projeto. **Em conflito, vale o `plano_projeto.md`.**
 > **Como usar:** em toda sessão desta etapa, a IA lê este arquivo inteiro e executa **só a parte pedida** (A, B ou C), com uma parada no fim de cada parte.
-> **Criado em:** 2026-10-22. **Atualizado em:** 2026-10-23 (D-039: métodos escolhidos pelos testes T1 a T7). Vira histórico quando a parte C fechar (Portão 1 do plano do projeto).
+> **Criado em:** 2026-10-22. **Atualizado em:** 2026-10-28 (parte C fechada com o notebook 09; Portão 1 cumprido). Vira histórico: a Etapa 2 (pipeline) foi feita na mesma sessão, e as melhorias M1 a M10 continuam abertas.
 
 ---
 
@@ -98,12 +98,14 @@ Dois alvos com resposta real nos dados. Para cada um: referência, modelo venced
 - **Concentração:** curva de concentração e índice de Gini do passivo e da receita (quanto os 10% maiores concentram).
 - **Receita líquida do Prov. 213, como sensibilidade:** citar o texto literal do art. 2º, XXIV, a partir do bronze; medir quantos providos ficam acima de R$ 300 mil pela arrecadação e pela arrecadação menos o repasse (CSV do BI), e o efeito no universo e no prêmio. **Sem mudar a base.**
 
-### 09 — Conclusões e lacunas (parte C)
+### ✅ 09 — Conclusões e lacunas (parte C, feito em 2026-10-28)
 - Os **8 a 10 achados principais**, cada um com o número, o gráfico e a frase para a apresentação.
 - **Tabela de lacunas:** o que os dados não responderam, por quê, e se uma **fonte nova** resolveria (qual, se é pública e gratuita, se existe para todos os estados, quanto mudaria a análise). Já conhecidas: patrimônio livre do titular, taxa cobrada pelas seguradoras e a chance de a delegação terminar no ano (D-025).
 - **Recomendação para o painel:** quais gráficos entram e em qual página (insumo das etapas 3 e 4).
 
-### Melhorias de confiança (propostas de 2026-10-27, aguardando o autor; o 09 espera)
+### Melhorias de confiança (propostas de 2026-10-27, aguardando o autor)
+
+> **2026-10-28:** a pedido de `leticia-ribeirom`, o 09 foi feito antes das melhorias, com o que já existia; a M10 foi feita em parte (achado 5 também em passivo). Quando uma melhoria entrar, o 09 é rodado de novo.
 
 Da validação de todos os notebooks (`diario.md`, 2026-10-27). Nenhuma muda os 10 números sozinha: cada uma entra como sensibilidade ou projeção e, se for para a base, vira decisão nova (D-043 em diante). Todas usam dado público e gratuito; as que pedem coleta nova só rodam a pedido do autor (regra do `CLAUDE.md`).
 
@@ -120,7 +122,7 @@ Da validação de todos os notebooks (`diario.md`, 2026-10-27). Nenhuma muda os 
 | M9 | **Vacância** (05a e 05c): o cadastro só tem a situação atual | **Segunda coleta do cadastro do CNJ** (mesma API) para medir as mudanças de situação entre duas datas | API do Justiça Aberta | baixo | médio: melhora a P(fim) do M2 |
 | M10 | **Grupos** (04): "o grupo 6 tem 55% do déficit" depende das suposições | Reescrever a leitura também em passivo (dado) e refazê-la com o M1 | — | baixo | baixo |
 
-**Ordem sugerida:** M1 → M2 (juntos respondem a pergunta 9 e reduzem a incerteza dos passos 5 e 6), M5 e M4 (sem coleta), M7 e M10 (só texto e gráfico), depois M3, M6 e M9, quando o autor pedir a coleta nova. O notebook 09 fica para depois e usa o que entrar.
+**Ordem sugerida:** M1 → M2 (juntos respondem a pergunta 9 e reduzem a incerteza dos passos 5 e 6), M5 e M4 (sem coleta), M7 e M10 (só texto e gráfico), depois M3, M6 e M9, quando o autor pedir a coleta nova. O notebook 09 já foi feito (2026-10-28) e é rodado de novo com o que entrar.
 
 ---
 
@@ -129,8 +131,8 @@ Da validação de todos os notebooks (`diario.md`, 2026-10-27). Nenhuma muda os 
 | Parte | O que faz | Entregáveis |
 |---|---|---|
 | ✅ **A** (2026-10-22) | Checagem do Ollama; base de `src/analise/`; notebooks **01** e **02** | feito e revisado |
-| **B** | Notebooks **03, 04, 05 e 06** | notebooks; PNGs; métricas de cada modelo contra a referência e contra o resultado do teste; desenho de `analise_regras`, `analise_grupos` e `analise_clt_modelo` |
-| **C** | Notebooks **07, 08 e 09** | notebooks; PNGs; desenho de `analise_previsao`, `analise_tornado` e `analise_monte_carlo`; achados; tabela de lacunas; recomendação para o painel |
+| ✅ **B** (2026-10-23) | Notebooks **03, 04, 05 e 06** | notebooks; PNGs; métricas de cada modelo contra a referência e contra o resultado do teste; desenho de `analise_regras`, `analise_grupos` e `analise_clt_modelo` |
+| ✅ **C** (2026-10-28) | Notebooks **07, 08 e 09** | notebooks; PNGs; desenho de `analise_previsao`, `analise_tornado` e `analise_monte_carlo`; achados; tabela de lacunas; recomendação para o painel |
 
 A geração das tabelas `gold.analise_*` no pipeline e a atualização do `gerar_publico.py` são da Etapa 2 do plano do projeto.
 

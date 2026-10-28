@@ -83,7 +83,7 @@ fonte, arquivo, sha256, bytes, url, coletado_em, **data_referencia** (exibida no
 
 Calculado por `src/motor.py` com a versão vigente das premissas. Níveis: `min`, `base`, `max` (todas as premissas no mesmo nível). Regras de classe: `v2` (R$ 300 mil, base) e `v1` (R$ 100 mil). Valores em R$ por ano.
 
-O gold tem 25 tabelas: 20 sem o prefixo `interno_` e 5 internas. "Pública" = está no conjunto público (`config/publico.yaml`, `data/publico/`) e o painel lê; as 18 públicas passaram pelo auditor de ataque por diferença e pelos contratos de LGPD (D-026 a D-030). Conferido contra o banco em 2026-10-21.
+O gold tem 25 tabelas do modelo (20 sem o prefixo `interno_` e 5 internas) e, a partir da Etapa 2 (2026-10-28), mais 8 tabelas `analise_*` da mineração (6 da D-043 e 2 da D-044): 33 no total. "Pública" = está no conjunto público (`config/publico.yaml`, `data/publico/`) e o painel lê; as 18 públicas passaram pelo auditor de ataque por diferença e pelos contratos de LGPD (D-026 a D-030). Conferido contra o banco em 2026-10-21; as `analise_*`, contra um pipeline do zero numa cópia em 2026-10-28.
 
 ### Totais, sensibilidades e execução
 | Tabela | Grão | Colunas principais | Pública? |
@@ -123,6 +123,20 @@ O gold tem 25 tabelas: 20 sem o prefixo `interno_` e 5 internas. "Pública" = es
 
 `origem_distribuicao` (D-022): `municipio` (o município tem 20 ou mais vínculos na RAIS) → `regiao` (a região imediata do IBGE tem 20 ou mais) → `estado` (MG inteiro). Na carga atual só aparecem `municipio` e `regiao`.
 
+### Análises da mineração (Etapa 2, D-043 e D-044)
+Gravadas pela etapa `etapa_analise` do `pipeline.py`, depois do gold, com as funções de `src/analise/tabelas.py` (o mesmo cálculo dos notebooks, conferido igual). Nenhuma muda as 25 tabelas acima nem os 10 números. Ainda não estão no conjunto público: as 6 agregadas estão em `config/publico.yaml`, `tabelas_da_proxima_carga`, e entram na próxima carga oficial (pedido do autor); as 2 por serventia ficam só no gold da equipe (D-044: no público, só o perfil agregado dos grupos).
+
+| Tabela | Grão | Colunas principais | Notebook | Pública? |
+|---|---|---|---|---|
+| `gold.analise_regras` | regra (10) | posicao, se, entao (`obrigada`), n_itens_se, serventias_com_se, serventias_com_se_e_entao, suporte, confianca, lift, referencia, ganho_sobre_referencia, melhoria, reamostragens_com_a_regra | 03 | proposta (agregada) |
+| `gold.analise_grupos` | serventia agrupada (2.444) | cns, grupo, nome_grupo, grupo_alvo, k, semente | 04 | não (por serventia) |
+| `gold.analise_grupos_perfil` | grupo (6) | grupo, nome_grupo, grupo_alvo, n_serventias, receita_mediana, clt_mediano, atribuicoes_medianas, pct_vagas, obrigadas, passivo, passivo_obrigadas, com_deficit, deficit, pct_obrigadas, pct_deficit_mg, deficit_por_obrigada, pct_<atribuição> (6), pct_serventias, pct_obrigadas_mg, pct_passivo_obrigadas_mg | 04 e 09 | proposta (agregada, D-044) |
+| `gold.analise_clt_modelo` | serventia do recorte do T1 (2.444) | cns, cod_ibge, regiao_intermediaria, receita_ref, n_atribuicoes, clt_declarado, clt_previsto_floresta, clt_previsto_poisson, clt_previsto_referencia, residuo_floresta, validacao | 06a | não (por serventia) |
+| `gold.analise_previsao` | bloco × período × variante × cenário do limite × medida (107) | bloco (`arrecadacao_mg`: semestres de 2026–27, 5 variantes; `mercado`: anos 2026–27, 2 variantes × 2 cenários do limite × 11 medidas), p10, central, p90, realizado, rotulo (sempre `projeção`) | 07 | proposta (agregada) |
+| `gold.analise_tornado` | premissa (11) | suposicao, rotulo, grupo, valor_min, valor_base, valor_max (sim/não como 1/0), premio_no_min, premio_base, premio_no_max, amplitude, ordem | 08 | proposta (agregada) |
+| `gold.analise_monte_carlo` | variante × medida (6) | variante (`independentes`, `patrimônio junto`), medida (deficit, importancia_segurada, premio), media, p05, p25, p50, p75, p95, canto_min, valor_base, canto_max, n_sorteios, semente, distribuicao | 08 | proposta (agregada) |
+| `gold.analise_sensibilidade_metodo` | leitura alternativa (5) | chave (`base`, `receita_liquida`, `t5_salario_estimado`, `t6_encolhimento`, `sem_regiao`), bloco, rotulo, n_universo, passivo_todas, passivo_universo, valor_descoberto, mercado_importancia_segurada, mercado_premio_emitido e `var_` de cada uma (variação sobre a base) | 08 | proposta (agregada, D-042 e D-044) |
+
 ### Internas (nunca exibidas por serventia; só no pipeline, D-030)
 - `gold.interno_serventia`: serventia × nível × regra, com passivo, classe, classe_faixa, peso_universo, motivo, n_deficit e valor_descoberto. O painel só mostra agregados.
 - `gold.interno_dim_serventia`: receita de referência de 2025, origem_receita, semestres_validos, classe_v1 e classe_v2.
@@ -144,7 +158,7 @@ O gold tem 25 tabelas: 20 sem o prefixo `interno_` e 5 internas. "Pública" = es
 tabela, checagem, severidade (erro / aviso), violacoes, detalhe, camada (silver / gold). Erro interrompe o pipeline.
 
 ### `qualidade.reconciliacoes`
-checagem, fonte_a, valor_a, fonte_b, valor_b, indicador (diferença % ou valor), tolerancia (`config/qualidade.yaml`), status (ok / aviso), detalhe.
+checagem, fonte_a, valor_a, fonte_b, valor_b, indicador (diferença % ou valor), tolerancia (`config/qualidade.yaml`), status (ok / aviso), detalhe. Valores arredondados a 10 casas a partir de 2026-10-28 (D-044), para o hash não mudar com a ordem das linhas; o status usa o valor sem arredondar.
 
 ### `qualidade.rec_municipio`
 Por município: n_cnj, n_cnpj, clt_cnj, vinc_rais, dif_serventias, dif_empregados.

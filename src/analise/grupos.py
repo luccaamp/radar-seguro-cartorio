@@ -83,6 +83,19 @@ def perfil(sv: pd.DataFrame, grupo: pd.Series) -> pd.DataFrame:
     return out
 
 
+def nomes_grupos(p: pd.DataFrame) -> tuple[dict[int, str], bool]:
+    """Nomes dos grupos (config/analise.yaml, grupos.nomes, dados no notebook 04) e se o perfil `p` ainda é o que os
+    nomes descrevem: k = 6; grupos 1 e 5 com mais de 90% de vagas; 2, 3 e 6 com menos de 5%; RI em mais da metade
+    do 4; uma atribuição mediana no 3; maior receita mediana no 6. Se o perfil mudou (outra carga), os nomes viram
+    "grupo N" e o segundo valor é False."""
+    nomes = {int(k): v for k, v in config()["grupos"]["nomes"].items()}
+    confere = (set(p.index) == set(nomes)
+               and p.loc[1, "pct_vagas"] > 0.9 and p.loc[5, "pct_vagas"] > 0.9
+               and p.loc[[2, 3, 6], "pct_vagas"].max() < 0.05 and p.loc[4, "pct_ri"] > 0.5
+               and p.loc[3, "atribuicoes_medianas"] == 1 and p["receita_mediana"].idxmax() == 6)
+    return (nomes if confere else {int(i): f"grupo {i}" for i in p.index}), bool(confere)
+
+
 def grupo_alvo(p: pd.DataFrame) -> int:
     """O grupo-alvo do seguro: o que concentra a maior parte do déficit esperado (a parte do passivo das obrigadas
     sem bens que a cubra, que é o que o seguro garante)."""

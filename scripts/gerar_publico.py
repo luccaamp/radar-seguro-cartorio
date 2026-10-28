@@ -8,7 +8,7 @@ Passos (qualquer falha interrompe e não troca a pasta atual):
 4. confere que o hash de conteúdo do Parquet é igual ao do banco e que o total fica abaixo do limite de tamanho;
 5. grava manifesto.json (fontes, carga, premissas, commit, hash e tamanho de cada arquivo) e troca a pasta.
 
-Uso: uv run python scripts/gerar_publico.py
+Uso: uv run python scripts/gerar_publico.py [--banco CÓPIA --destino PASTA]   (as opções: conferir numa cópia)
 Lê data/radar.duckdb só para leitura. Precisa do banco completo (com interno_*), que só existe em quem roda o pipeline.
 """
 import datetime as dt
@@ -47,14 +47,14 @@ def auditar(con) -> list:
     return visoes.auditar(celulas, base, limiar), len(celulas)
 
 
-def main() -> None:
-    if not BANCO.exists():
-        raise SystemExit("Banco completo não encontrado (data/radar.duckdb). Rode o pipeline antes.")
-    destino = publico.PASTA
+def main(banco: Path = BANCO, destino: Path = publico.PASTA) -> None:
+    """`banco` e `destino` mudam só para conferir numa cópia (a IA não lê o banco real; CLAUDE.md)."""
+    if not banco.exists():
+        raise SystemExit(f"Banco completo não encontrado ({banco}). Rode o pipeline antes.")
     novo = destino.with_name(destino.name + ".novo")
     publico.remover_pasta(novo)
     novo.mkdir(parents=True, exist_ok=True)
-    with duckdb.connect(str(BANCO), read_only=True) as con:
+    with duckdb.connect(str(banco), read_only=True) as con:
         achados, n_cel = auditar(con)
         print(f"auditor de ataque por diferença: {n_cel} células, {len(achados)} vazamentos")
         if achados:
@@ -109,11 +109,17 @@ def main() -> None:
     (novo / publico.MANIFESTO).write_text(json.dumps(man, ensure_ascii=False, indent=1), encoding="utf-8")
     publico.trocar_conteudo(novo, destino)   # só depois de tudo validado
     print(f"contratos de 'sem dado pessoal' e de limiar: ok ({len(excecoes)} exceções: {excecoes})")
-    print(f"{len(arquivos)} arquivos, {total / 1e6:.2f} MB em {destino.relative_to(RAIZ)} · carga {man['carga']} · "
+    onde = destino.relative_to(RAIZ) if destino.is_relative_to(RAIZ) else destino
+    print(f"{len(arquivos)} arquivos, {total / 1e6:.2f} MB em {onde} · carga {man['carga']} · "
           f"commit {str(man['commit'])[:7]}{' + alterações sem commit' if man['alteracoes_sem_commit'] else ''}")
 
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")   # também redirecionada (docs/erros_ia.md, 2026-10-20)
     sys.stderr.reconfigure(encoding="utf-8")
-    main()
+    import argparse
+    a = argparse.ArgumentParser(prog="uv run python scripts/gerar_publico.py")
+    a.add_argument("--banco", type=Path, default=BANCO, help="banco completo (padrão: data/radar.duckdb)")
+    a.add_argument("--destino", type=Path, default=publico.PASTA, help="pasta do conjunto (padrão: data/publico)")
+    args = a.parse_args()
+    main(args.banco.resolve(), args.destino.resolve())

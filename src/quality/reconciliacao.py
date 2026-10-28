@@ -22,8 +22,11 @@ def _linha(checagem, fonte_a, valor_a, fonte_b, valor_b, tolerancia, tipo="difer
     else:  # mínimo: valor_a precisa ser >= tolerancia
         dif = valor_a
         ok = valor_a >= tolerancia
-    return {"checagem": checagem, "fonte_a": fonte_a, "valor_a": float(valor_a), "fonte_b": fonte_b,
-            "valor_b": None if valor_b is None else float(valor_b), "indicador": dif, "tolerancia": tolerancia,
+    # 10 casas: a correlação em log mudava no 15º dígito conforme a ordem das linhas (refazer o gold a partir do
+    # Parquet do silver dava 2,8e-15 de diferença e outro hash da tabela pública; D-044)
+    arred = lambda v: None if v is None else round(float(v), 10)  # noqa: E731
+    return {"checagem": checagem, "fonte_a": fonte_a, "valor_a": arred(valor_a), "fonte_b": fonte_b,
+            "valor_b": arred(valor_b), "indicador": arred(dif), "tolerancia": tolerancia,
             "status": "ok" if ok else "aviso", "detalhe": detalhe}
 
 

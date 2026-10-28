@@ -231,6 +231,8 @@ Funções puras, sem I/O, cada uma com teste. Todas recebem as premissas de form
 - o prêmio emitido é monotônico na taxa;
 - o mercado total é sempre maior ou igual à visão da seguradora hipotética.
 
+**Análises da mineração (Etapa 2, 2026-10-28).** Depois do gold, o pipeline grava oito tabelas `gold.analise_*` (regras, grupos e o perfil agregado deles, CLT pela receita, previsão 2026–27, tornado, Monte Carlo e as sensibilidades de método da D-042; D-043, D-044, `docs/dicionario_dados.md`) com as funções de `src/analise/tabelas.py`, que repetem os notebooks 03, 04, 06, 07 e 08 com a semente de `config/analise.yaml`. Elas usam as funções do modelo acima (o prêmio projetado e o do Monte Carlo saem de `universo` e de `resumo_por_totais`), mas não mudam nenhuma das 25 tabelas do modelo nem os 10 números: a previsão é sempre rotulada "projeção", e o resto, sensibilidade. Testes em `tests/test_analise_tabelas.py` e nos testes de cada módulo de `src/analise/`.
+
 ## 4. Qualidade de dados (prioridade do projeto)
 
 Cada tabela silver e gold tem um contrato com:

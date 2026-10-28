@@ -58,6 +58,14 @@ grupos:             # notebook 04: k-means e Ward
   k_max: 8               # fonte: idem
   n_init: 20             # fonte: suposição (o k-means recomeça 20 vezes e fica com a melhor; reduz o efeito do sorteio
                          # inicial)
+  nomes:                 # fonte: notebook 04, seção 3 (nome dado pelo perfil de cada grupo, com k = 6). Só valem se o
+                         # perfil ainda for o descrito (grupos.nomes_grupos confere); senão, "grupo N"
+    1: vagas pequenas
+    2: providas pequenas (Notas e RCPN)
+    3: providas médias de uma atribuição
+    4: registro completo (RI, RTD e RCPJ)
+    5: vagas grandes
+    6: providas grandes
 classificacao:      # notebook 05: vacância (T4) e subida de classe (T3)
   floresta:              # fonte: scripts/testes_metodos.py (mesmos parâmetros dos testes T3 e T4)
     n_arvores: 500

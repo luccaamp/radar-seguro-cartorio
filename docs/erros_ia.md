@@ -664,3 +664,42 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** exemplo didático escrito com um ano real, sem conferir; P10–P90 confundido com o intervalo entre os quartis.
 - **Correção:** o exemplo passou a ser hipotético ("num ano em que MG cresce 20%") e a leitura diz "8 em cada 10".
 - **Bom para os slides?** não
+
+## 2026-10-27 (achado em 2026-10-28) — Número de linhas da `gold.analise_previsao` errado no diário
+- **Onde:** `docs/diario.md`, entrada de 2026-10-27 (notebook 07).
+- **O que aconteceu:** o diário dizia "99 linhas: 19 da arrecadação e 80 do mercado"; a saída do notebook mostra 107 (19 + 88 = 11 medidas × 2 anos × 2 variantes × 2 cenários do limite).
+- **Como foi detectado:** na revisão do 07, conferindo o texto do diário contra a saída da seção 7.
+- **Causa provável:** a conta foi feita com 10 medidas, antes de a medida `classe_2_para_3` entrar, e não foi refeita.
+- **Correção:** a linha do diário foi corrigida, com nota.
+- **Bom para os slides?** não
+
+## 2026-10-28 — Título de gráfico que dizia o contrário do dado
+- **Onde:** notebook 09, achado 10 (rascunho), gráfico `09_clt_outros_estados`.
+- **O que aconteceu:** o título dizia "o total sai com erro de até ±10% na maioria das regiões", mas 7 das 13 regiões passam de ±10%.
+- **Como foi detectado:** na leitura das saídas da primeira execução, antes de escrever o texto.
+- **Causa provável:** título escrito antes de ver o número, pela lembrança de "±10%" do T1 (que vale para o total do estado, não de cada região).
+- **Correção:** o título passou a ser calculado ("passa de ±10% em 7 de 13 regiões") e o texto separa o erro por região do erro do estado (−2,5%).
+- **Bom para os slides?** sim (escrever o título só depois de ver o número)
+
+## 2026-10-28 — Floresta com resultado diferente a cada execução (15ª casa)
+- **Onde:** `src/analise/regressao.py`, `prever_floresta` (notebooks 06 e 09; `gold.analise_clt_modelo`).
+- **O que aconteceu:** a mesma previsão, feita duas vezes, diferia em até 1,4e-14 em 45% das serventias. Na tela não aparece, mas o hash de conteúdo da tabela mudaria a cada carga, e a prova "recalcular dá o mesmo" falharia.
+- **Como foi detectado:** ao comparar a tabela do módulo novo (`tabelas.py`) com a desenhada no notebook 06: 5 das 6 tabelas iguais e esta diferente.
+- **Causa provável:** com `n_jobs=-1`, o scikit-learn soma as árvores em paralelo, em ordem variável, e a soma em ponto flutuante depende da ordem.
+- **Correção:** ajuste em paralelo e previsão sequencial (`set_params(n_jobs=None)`); teste `test_floresta_preve_igual_duas_vezes`. O notebook 06 rodado de novo deu as mesmas saídas e PNGs.
+- **Bom para os slides?** sim (reprodutível na tela não é o mesmo que reprodutível no hash)
+
+## 2026-10-28 — Primeira carga da Etapa 2 parada por tipo misto na `analise_tornado`
+- **Onde:** `pipeline.etapa_analise`, ao gravar a `gold.analise_tornado` (numa cópia).
+- **O que aconteceu:** as colunas `valor_min/base/max` misturavam número e verdadeiro/falso (premissas sim/não), e o DuckDB recusou a tabela. A carga atômica funcionou: nenhum banco foi trocado e `data/` ficou intacto.
+- **Como foi detectado:** na primeira execução do pipeline do zero.
+- **Causa provável:** a conferência com os notebooks usou Parquet, e o pyarrow converte a mistura em número sem avisar; o DuckDB não converte.
+- **Correção:** `sensibilidade.tabela_tornado` grava as três colunas como número (sim = 1, não = 0); teste `test_tabela_tornado_grava_no_duckdb_com_premissa_sim_nao`. Lição: conferir gravando no mesmo destino do pipeline, não num formato intermediário.
+- **Bom para os slides?** sim
+
+## 2026-10-28 — Documento editado por script de substituição
+- **Onde:** `docs/plano_mineracao.md` (6 marcas de status do 09 e das partes B e C).
+- **O que aconteceu:** as trocas foram feitas com um script Python de substituição de texto (com conferência de que cada trecho aparecia uma vez só), e não com a ferramenta de edição. O `CLAUDE.md` proíbe isso para código; para documento não é proibido, mas o motivo da regra (trocar o trecho errado sem ver) é o mesmo.
+- **Como foi detectado:** pela própria IA, logo depois; o `git diff` do arquivo foi conferido e só tem as 6 trocas pretendidas.
+- **Correção:** os outros documentos da sessão (`plano_projeto.md`, `ESTADO_ATUAL.md`, `dicionario_dados.md`, `SPEC.md`) foram editados com a ferramenta de edição.
+- **Bom para os slides?** não

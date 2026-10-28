@@ -39,6 +39,19 @@ tabelas:
     sem_hash: [criada_em]
     comparar: false          # o estado não é recalculado pelo pipeline (cada banco tem o seu histórico)
 
+# D-043 e D-044 (decididas por leticia-ribeirom em 2026-10-28): análises agregadas da mineração que entram no público
+# na próxima carga oficial. Ninguém lê esta lista: na carga (pedido do autor), as linhas passam para `tabelas` acima e
+# o gerar_publico.py roda no banco novo (o manifesto carimba a carga; docs/ESTADO_ATUAL.md, "Próximo passo").
+# Conferido numa cópia em 2026-10-28: auditor e travas de LGPD sem problema. Fora: analise_grupos e
+# analise_clt_modelo (uma linha por serventia; no público vai só o perfil agregado dos grupos).
+tabelas_da_proxima_carga:
+  gold.analise_regras: {}
+  gold.analise_grupos_perfil: {}
+  gold.analise_previsao: {}
+  gold.analise_tornado: {}
+  gold.analise_monte_carlo: {}
+  gold.analise_sensibilidade_metodo: {}
+
 # colunas que contam serventias de uma célula publicada: valor entre 1 e limiar - 1 bloqueia a publicação,
 # salvo exceção abaixo
 contagem_de_serventias: [n_serventias, n_serventias_ativas, n_cnj]

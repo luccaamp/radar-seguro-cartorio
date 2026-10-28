@@ -1,7 +1,7 @@
 """Orquestrador único do projeto.
 
 Uso:
-  uv run pipeline.py                         # bronze -> silver -> contratos -> gold -> qualidade (sem internet)
+  uv run pipeline.py                         # bronze -> silver -> contratos -> gold -> qualidade -> análises (sem internet)
   uv run pipeline.py --a-partir-de bronze    # o mesmo
   uv run pipeline.py --a-partir-de silver    # recalcula o gold a partir de data/silver/*.parquet (sem bronze)
   uv run pipeline.py silver                  # só bronze -> silver (+ contratos do silver)
@@ -69,6 +69,16 @@ def etapa_gold(con, exportar_parquet: bool = True) -> None:
     for r in reconciliacao.reconciliar(con).itertuples():
         ind = ("" if pd.isna(r.indicador) else f"{r.indicador:+.1%}" if pd.notna(r.valor_b) else f"{r.indicador:.3f}")
         print(f"  [{r.status.upper()}] {r.checagem}: {ind} (tolerância {r.tolerancia}) {r.detalhe}")
+
+
+def etapa_analise(con) -> None:
+    """Tabelas gold.analise_* (Etapa 2 do docs/plano_projeto.md): o cálculo dos notebooks 03, 04, 06, 07 e 08, ao lado
+    das tabelas do gold, sem mexer nelas (os 10 números não mudam). Depois de etapa_gold, que define se exporta
+    Parquet. Leva alguns minutos (a projeção do notebook 07 é a parte mais longa)."""
+    from src.analise import tabelas
+    print("gold -> análises da mineração (gold.analise_*)")
+    for nome, df in tabelas.construir(con).items():
+        print(f"  gold.{nome}: {gold._gravar(con, nome, df):,} linhas")
 
 
 def _silver_de_parquet(con, pasta: Path = SILVER) -> None:
@@ -157,6 +167,7 @@ def main(etapa: str = "all", banco: Path = BANCO, exportar_parquet: bool = True)
                 _silver_de_parquet(con)
             if etapa in ("all", "gold", "gold_de_parquet"):
                 etapa_gold(con, exportar_parquet)
+                etapa_analise(con)
             con.execute("CHECKPOINT")
     except BaseException:
         temp.unlink(missing_ok=True)

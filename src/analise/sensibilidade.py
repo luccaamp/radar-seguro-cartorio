@@ -125,10 +125,12 @@ def tabela_monte_carlo(resumos: dict[str, pd.DataFrame], cantos: dict[str, dict]
 
 
 def tabela_tornado(t: pd.DataFrame) -> pd.DataFrame:
-    """Desenho da gold.analise_tornado: uma linha por premissa, com o prêmio no mínimo, no base e no máximo."""
+    """Desenho da gold.analise_tornado: uma linha por premissa, com o prêmio no mínimo, no base e no máximo. Os valores
+    das premissas sim/não (incidências, situações especiais) ficam como 1 e 0, para a coluna ter um tipo só."""
     cols = ["suposicao", "rotulo", "grupo", "valor_min", "valor_base", "valor_max", "premio_no_min", "premio_base",
             "premio_no_max", "amplitude"]
-    return t.reindex(columns=cols).assign(ordem=range(1, len(t) + 1))
+    valores = {c: "float64" for c in ("valor_min", "valor_base", "valor_max")}
+    return t.reindex(columns=cols).astype(valores).assign(ordem=range(1, len(t) + 1))
 
 
 # ---------------------------------------------------------------- premissas do passivo e do universo (recálculo)

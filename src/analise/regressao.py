@@ -49,7 +49,9 @@ def prever_floresta(tr: pd.DataFrame, te: pd.DataFrame, semente: int | None = No
     f = cfg["regressao"]["floresta"]
     m = RandomForestRegressor(f["n_arvores"], min_samples_leaf=f["min_folha"], n_jobs=-1,
                               random_state=cfg["semente"] if semente is None else semente)
-    return m.fit(tr[VARIAVEIS_CLT], tr["clt"]).predict(te[VARIAVEIS_CLT])
+    # previsão sem paralelo: com n_jobs, as árvores são somadas em ordem variável e o resultado muda na 15ª casa,
+    # o que muda o hash da gold.analise_clt_modelo de uma carga para outra (docs/erros_ia.md, 2026-10-28)
+    return m.fit(tr[VARIAVEIS_CLT], tr["clt"]).set_params(n_jobs=None).predict(te[VARIAVEIS_CLT])
 
 
 def prever_poisson(tr: pd.DataFrame, te: pd.DataFrame) -> np.ndarray:

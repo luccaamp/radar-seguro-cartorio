@@ -28,3 +28,9 @@ O plano do Bloco 2 (`plano_qualidade_e_correcoes.md`) ficou em `docs/` até 2026
 |---|---|---|
 | [ROADMAP.md](ROADMAP.md) | 2026-10-21 | Roteiro das etapas E1 a E7 (fonte do plano pela D-035). Superado pela D-037: cada etapa tem o seu documento, indicado no `docs/ESTADO_ATUAL.md`. Continua útil como referência das etapas, das pendências (§7) e da E2 detalhada. |
 | [plano_qualidade_e_correcoes.md](plano_qualidade_e_correcoes.md) | 2026-10-18 | Plano de qualidade: Bloco 1 (feito na Fase 1), itens Q1 a Q11 (qualidade dos dados) e S1 a S6 (modelo de seguro). Parte dele entrou no `docs/plano_mineracao.md` (por exemplo, a receita líquida como sensibilidade). |
+
+## Relatórios de sessão
+
+| Arquivo | Data | O que foi |
+|---|---|---|
+| [sessao_2026-10-28_mineracao_e_etapa2.md](sessao_2026-10-28_mineracao_e_etapa2.md) | 2026-10-28 | Fim da mineração (notebooks 07 e 09), Etapa 2 (tabelas `gold.analise_*` no pipeline) e as decisões da D-044; a carga oficial espera o autor. |

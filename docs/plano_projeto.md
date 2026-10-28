@@ -8,7 +8,7 @@
 
 O projeto termina em seis etapas: mineração (notebooks 03 a 09), pipeline, painel, simulador, chat e entrega. A mineração já tem os métodos escolhidos, porque foram testados com os dados reais de MG antes de escrever este plano.
 
-**Onde estamos (23/10/2026):** a primeira versão de MG (painel, simulador e chat reduzido, carga 2026-10-19) está concluída; parte A da mineração feita (notebooks 01 e 02); notebooks 06 (regressão) e 08 (sensibilidade) feitos e revisados, com a D-042 proposta a partir deles.
+**Onde estamos (28/10/2026):** a primeira versão de MG (painel, simulador e chat reduzido, carga 2026-10-19) está concluída; a mineração terminou (notebooks 01 a 09, Portão 1 cumprido); a Etapa 2 (pipeline com as seis tabelas `gold.analise_*`) foi feita e conferida numa cópia (Portão 2 cumprido), com a D-043 proposta. A próxima é a Etapa 3 (painel).
 
 ## As perguntas do projeto
 
@@ -19,7 +19,7 @@ Ela tem duas metades, e cada uma está num ponto diferente:
 | Metade | O que responde | Situação |
 | --- | --- | --- |
 | **"Quanto dinheiro"** | A escada de 9 perguntas abaixo, calculada pelo pipeline | ✅ **respondida** em 20/10/2026, para MG, no cenário de hoje (carga 2026-10-19) |
-| **"Quão certo"** (e como muda) | Quanto confiar em cada degrau, o que mais pesa no resultado e como ele muda em 2026–27 | ⬜ **em andamento:** os testes T1 a T7 já escolheram os métodos; os notebooks 06 e 08 já responderam a parte deles; faltam 03, 04, 05, 07 e 09 |
+| **"Quão certo"** (e como muda) | Quanto confiar em cada degrau, o que mais pesa no resultado e como ele muda em 2026–27 | ✅ **respondida** em 28/10/2026 (notebooks 03 a 09; resumo no notebook 09): prêmio provável de R$ 206 a 736 mil (P5–P95); as lacunas que restam estão na tabela do 09 |
 
 ### Parte 1 — A escada (já respondida)
 
@@ -52,12 +52,12 @@ A escada dá o número de hoje. Estas perguntas dizem quanto confiar nele e como
 | Qual suposição mais mexe no resultado? | 5 a 8 | T7 (tornado) | notebook 08 → simulador | ✅ notebook 08: a taxa (R$ 184–645 mil), seguida da escolha pelo seguro (R$ 184–516 mil); as premissas do passivo e do universo mexem menos de ±10% |
 | O passivo (degrau 4) é robusto às escolhas de método? | 4 | T5 (salário ausente), T6 (reserva salarial) | notebook 08 | ✅ notebook 08: sim. Incluir os 887 vínculos muda +1,0% no passivo médio por vínculo e +0,6% no passivo total; o encolhimento (T6), −1,6%. Só na tabela de sensibilidade (D-042) |
 | Quem é obrigado muda se a norma for lida ao pé da letra (receita líquida do repasse, art. 2º, XXIV, do Prov. 213)? | 3 a 8 | — | notebook 08 | ✅ notebook 08: o universo cai 20% (1.121 → 894) e o prêmio 8,5% (R$ 337,4 mil), com a faixa de déficit da base. Sensibilidade, sem mudar a base (D-042) |
-| Quantos cartórios vão passar a ser obrigados em 2026 e 2027? | 3 | T3 (subida de classe) | notebooks 05b e 07 | teste feito; os modelos subestimam as subidas e precisam de recalibração |
-| Quanto o mercado vai valer em 2026 e 2027? | 3 a 8 | T2 (arrecadação) | notebook 07 → painel | teste feito; o 2026-1 já passou da previsão e o 07 refaz com o semestre completo |
-| Que tipo de cartório é obrigado, e qual é o cliente do seguro? | 3 e 7 | — | notebooks 03 e 04 | ⬜ parte B |
-| Como são os cartórios vagos (o risco que o seguro cobre)? | — | T4 (vacância) | notebook 05a | ⬜ parte B (leitura de associação, não de previsão) |
+| Quantos cartórios vão passar a ser obrigados em 2026 e 2027? | 3 | T3 (subida de classe) | notebooks 05b e 07 | ✅ notebooks 05b e 07: de 78 (07) a 145 (05b) subidas em 2026; universo de 1.147 em 2026 e 1.204 em 2027 com o limite fixo (projeção); as duas contagens ainda divergem (melhoria M4) |
+| Quanto o mercado vai valer em 2026 e 2027? | 3 a 8 | T2 (arrecadação) | notebook 07 → painel | ✅ notebook 07 (27/10/2026): R$ 5,92 bi de arrecadação em 2026 e R$ 6,71 bi em 2027; prêmio entre R$ 366 e 369 mil (passivo de 2025). O 2026-1 "acima do P90" era, em grande parte, salto grosseiro; refazer com o semestre completo depende de coleta nova (M3) |
+| Que tipo de cartório é obrigado, e qual é o cliente do seguro? | 3 e 7 | — | notebooks 03 e 04 | ✅ notebooks 03 e 04 (23/10/2026): RI (84% obrigadas) e 3 ou mais empregados (74% a 82%); cliente = providas grandes (grupo 6: 67% do passivo das obrigadas, 55% do déficit) |
+| Como são os cartórios vagos (o risco que o seguro cobre)? | — | T4 (vacância) | notebook 05a | ✅ notebooks 05a e 05c (23/10/2026): AUC 0,88 (associação, não previsão); vacância observada de 2% a 7,5% ao ano |
 | A escada vale para outros estados? | 2 e 4 | T1 (empregados pela receita) | notebook 06a; expansão depois da entrega | ✅ notebook 06 (23/10/2026): erro de 9,3% no total de uma região não vista (até 26%), −2,5% no total de MG; o passivo depende sobretudo da quantidade de empregados (75% a 79% da diferença entre cartórios). Só totais estaduais, com ±10% como piso e a RAIS como conferência (D-042) |
-| O que os dados não respondem, e qual fonte resolveria? | 5 a 8 | — | notebook 09 | ⬜ parte C; já conhecidas: patrimônio do titular, taxa das seguradoras e chance de a delegação terminar |
+| O que os dados não respondem, e qual fonte resolveria? | 5 a 8 | — | notebook 09 | ✅ notebook 09 (28/10/2026): 8 lacunas (patrimônio do titular, taxa, adesão, fim da delegação, sinistros, 2026-1 completo, saltos, CLT fora de MG), com a fonte que resolveria cada uma |
 
 **Fonte dos testes:** silver da carga 2026-10-19 (API do Justiça Aberta, RAIS 2025, IBGE) e as funções de `src/model/` do repositório, sem alterar o banco nem os 10 números. Script: `scripts/testes_metodos.py` (semente 42); resultados reproduzidos em 23/10/2026 com o silver do pacote da equipe (`carga-2026-10-19`). Explicação de cada teste e das métricas: [`qa/analises/testes_metodos.md`](qa/analises/testes_metodos.md).
 
@@ -69,9 +69,9 @@ A escada dá o número de hoje. Estas perguntas dizem quanto confiar nele e como
 | ✅ 21/10/2026 | Antes | Chat reduzido no painel (Ollama local, 5 ferramentas; D-036) | — |
 | ✅ 22/10/2026 | 1 — parte A | Mineração: notebooks 01 (qualidade) e 02 (exploração), revisados | — |
 | ✅ 23/10/2026 | 1 — preparo | Testes de métodos T1 a T7 ([`qa/analises/testes_metodos.md`](qa/analises/testes_metodos.md)) | — |
-| ⬜ em andamento | 1 — parte B | Mineração: notebooks 03 a 06 (✅ 06 feito e revisado em 23/10/2026; faltam 03, 04 e 05) | — |
-| ⬜ | 1 — parte C | Mineração: notebooks 07 a 09 (✅ 08 adiantado, feito e revisado em 23/10/2026; faltam 07 e 09) | **Portão 1:** os notebooks rodam do zero com a mesma saída e os 10 números seguem iguais à linha de base |
-| ⬜ | 2 | Pipeline (tabelas `gold.analise_*`) | **Portão 2:** o pipeline do zero reproduz a linha de base e gera as tabelas novas |
+| ✅ 23/10/2026 | 1 — parte B | Mineração: notebooks 03 a 06 (e o extra 05c) | — |
+| ✅ 28/10/2026 | 1 — parte C | Mineração: notebooks 07 a 09 (08 em 23/10, 07 em 27/10, 09 em 28/10) | **Portão 1:** ✅ cumprido em 28/10/2026 (01 a 08 em 27/10 e 09 em 28/10 rodados do zero com a mesma saída; os 10 números iguais) |
+| ✅ 28/10/2026 | 2 | Pipeline (tabelas `gold.analise_*`; D-043 proposta) | **Portão 2:** ✅ cumprido numa cópia em 28/10/2026 (25 de 25 tabelas iguais e as 6 novas iguais às dos notebooks); falta a carga oficial, a pedido do autor |
 | ⬜ | 3 | Painel | — |
 | ⬜ | 4 | Simulador | — |
 | ⬜ | 5 | Chat | **Portão 3:** o critério "pronto quando" das etapas 3, 4 e 5 cumprido |
@@ -136,9 +136,9 @@ A mineração é detalhada no [`plano_mineracao.md`](plano_mineracao.md) (regras
 | 05b Subida de classe | B | floresta aleatória (T3), recalibrada nos anos 2022–2023 | taxa histórica | temporal (treino até 2023, teste 2024–25), Brier | contagem esperada de subidas em 2026 e 2027 |
 | ✅ 06a CLT pela receita | B | floresta aleatória (T1); Poisson como versão interpretável | mediana por decil de receita | região intermediária de fora, MAE | feito em 23/10/2026: MAE 1,86 × 2,34 da referência; `gold.analise_clt_modelo` desenhada; total com ±10% |
 | ✅ 06b Passivo | B | decomposição: passivo = CLT × passivo médio por vínculo; regressão log-log nos resíduos | — | 10 dobras | feito em 23/10/2026: quantidade 75%, salário 18%, tempo de casa 6% (R² 0,99 fora da amostra); PNGs `06_*` |
-| 07 Previsão | C | tendência log-linear com semestre (T2) e SARIMA, faixa P10–P90 dos erros do passado; refeito com 2026-1 completo | repetir o último semestre | origem móvel + treino até 2023 | arrecadação, universo, passivo, IS e prêmio de 2026–27, limite fixo e corrigido |
+| ✅ 07 Previsão | C | tendência log-linear com semestre (T2) e SARIMA, faixa P10–P90 dos erros do passado; refeito com 2026-1 completo | repetir o último semestre | origem móvel + treino até 2023 | arrecadação, universo, passivo, IS e prêmio de 2026–27, limite fixo e corrigido |
 | ✅ 08 Sensibilidade | C | tornado + Monte Carlo (T7); curva de concentração e Gini; receita líquida do Prov. 213 | cantos atuais | — | feito em 23/10/2026: P5–P95 R$ 206–736 mil; Gini do passivo das obrigadas 0,63; `gold.analise_tornado` e `gold.analise_monte_carlo` desenhadas; PNGs `08_*` |
-| 09 Conclusões | C | 8 a 10 achados com número, gráfico e frase; tabela de lacunas; recomendação ao painel | — | — | achados e lacunas para o painel e os slides |
+| ✅ 09 Conclusões | C | 8 a 10 achados com número, gráfico e frase; tabela de lacunas; recomendação ao painel | — | — | achados e lacunas para o painel e os slides |
 
 **Lacunas já conhecidas para o 09** (nenhuma tem fonte pública hoje): patrimônio livre do titular (passos 5 e 6), taxa cobrada pelas seguradoras (passo 8) e a chance de a delegação terminar no ano (D-025, sinistro por frequência).
 
@@ -147,6 +147,8 @@ A mineração é detalhada no [`plano_mineracao.md`](plano_mineracao.md) (regras
 ## Etapa 2 — Pipeline
 
 O que a mineração provar entra no pipeline como tabelas novas `gold.analise_*`, ao lado das 25 atuais, sem mexer nas que dão os 10 números. Mudar um dos 10 números exige uma decisão nova (D-043 em diante) aprovada pelo autor.
+
+> **Feito em 28/10/2026 (D-043, proposta):** passos 1 a 3 e 5 completos; `pipeline.etapa_analise` grava as seis tabelas, e o pipeline do zero numa cópia deu 25 de 25 tabelas iguais, mais as 6 novas. Passo 4 em parte: o `gerar_publico.py` ganhou `--banco` e `--destino`, e a geração com as 4 tabelas agregadas passou nas travas numa cópia, mas o `data/publico/` só muda na próxima carga oficial (pedido do autor). As linhas novas da `sensibilidade_premissas` da D-042 ficaram de fora, porque mudariam uma das 25 tabelas.
 
 1. Levar o cálculo dos notebooks para `src/analise/` com teste (o plano já exige); o pipeline chama essas funções.
 2. Gerar as tabelas: `analise_regras`, `analise_grupos`, `analise_clt_modelo`, `analise_previsao` (2026–27 com P10–P90), `analise_tornado`, `analise_monte_carlo`.
@@ -173,12 +175,60 @@ As três peças já existem em versão de MG; aqui elas recebem os resultados da
 
 **Etapa 3 — Painel (Streamlit, só leitura)**
 
-- Início: os 10 números, com a "faixa provável" P5–P95 logo abaixo do déficit, da IS e do prêmio, e os cantos oficiais como nota secundária (D-042), e a situação da ADI 8015 conferida na véspera.
-- Mercado: mapa e filtros atuais, mais os grupos do notebook 04 e o grupo-alvo do seguro.
-- Página nova "Análises" (ou seções no Mercado): previsão 2026–27 com faixa, concentração (Gini) e os achados do 09.
-- Qualidade dos dados: as lacunas do 09, o bloco "Passivo: escolhas de método" (T5 +0,6%, T6 −1,6% e a reserva no estado inteiro +5,9%) e a leitura literal do art. 2º, XXIV, do Prov. 213 (universo −20%, prêmio −8,5%), com os rótulos da D-042.
-- Todo número com fonte, data de referência e versão das premissas; projeção sempre rotulada.
-- **Pronto quando:** `tests/test_app.py` passa e o modo demonstração abre sem o banco local.
+Objetivo: um painel informativo, interativo e legível, que reúna todos os achados importantes do projeto. O essencial deve ser entendido em segundos; o detalhe fica disponível para quem quiser aprofundar.
+
+Antes de construir
+* **Inventário de achados** (docs/painel/inventario_achados.md): todos os achados relevantes dos notebooks 01 a 09 e da Etapa 2. Para cada um: origem, número-chave, fonte e data, importância, onde entra no painel e em que formato. Achado de importância alta que ficar de fora precisa de justificativa.
+* **Arquitetura da informação** (docs/painel/arquitetura.md):
+  * a pergunta que cada página responde;
+  * três níveis de leitura por página: 10 segundos (manchete), 1 minuto (gráficos centrais) e 5 minutos (detalhes e metodologia);
+  * os filtros e o alcance de cada um.
+* **Padrão visual** (docs/painel/padrao_visual.md, com tema em .streamlit/config.toml):
+  * paleta com significado fixo (observado, projeção, incerteza), segura para daltonismo e com bom contraste;
+  * tipografia e hierarquia;
+  * uma única biblioteca de gráficos;
+  * título que diz a conclusão, eixos com unidade, rodapé com fonte e data, formato brasileiro de números;
+  * padrão único para faixa P5–P95 e para os rótulos da D-042.
+
+Páginas
+* **Início:**
+  * os 10 números;
+  * a "faixa provável" P5–P95 logo abaixo do déficit, da IS e do prêmio;
+  * os cantos oficiais como nota secundária (D-042);
+  * a situação da ADI 8015 conferida na véspera, com a data da conferência visível.
+* **Mercado:**
+  * mapa e filtros atuais;
+  * os grupos do notebook 04;
+  * o grupo-alvo do seguro.
+* **Análises** (página nova ou seções no Mercado, decidido pelo inventário):
+  * previsão 2026–27 com faixa;
+  * concentração (Gini, com explicação para leigos);
+  * os achados do 09;
+  * os demais achados de importância alta do inventário.
+* **Qualidade dos dados:**
+  * as lacunas do 09;
+  * o bloco "Passivo: escolhas de método" (T5 +0,6%, T6 −1,6% e a reserva no estado inteiro +5,9%);
+  * a leitura literal do art. 2º, XXIV, do Prov. 213 (universo −20%, prêmio −8,5%);
+  * tudo com os rótulos da D-042.
+
+Regras
+* Todo número com fonte, data de referência e versão das premissas; projeção sempre rotulada.
+* Números vêm do banco, de config/ ou dos artefatos das etapas anteriores, nunca fixos no código.
+* Nenhum dado de pessoa física em tela, tooltip, download, log ou dado de demonstração.
+* Interatividade com propósito: filtros, tooltips, expansores de metodologia e download dos dados agregados.
+* Consultas com cache; nenhuma página demora mais que alguns segundos para abrir.
+* Preparar para o chat da Etapa 5 (sem implementá-lo):
+  * os números e as análises do painel (previsão com faixa, tornado, Gini, qualidade das fontes, decisões) saem de funções em src/, fora das páginas;
+  * cada função devolve o valor junto com a conta, a fonte, a data de referência, a versão das premissas e o rótulo D-042, no mesmo formato que as ferramentas atuais do chat já usam;
+  * as páginas só exibem o que essas funções devolvem, para que painel e chat mostrem sempre os mesmos números;
+  * as ferramentas do chat que já existem continuam funcionando, e os testes delas continuam passando.
+
+Pronto quando
+* `tests/test_app.py` passa, cobrindo cada página no modo com banco e no modo demonstração, e conferindo os 10 números.
+* O modo demonstração abre sem o banco local.
+* Todo achado de importância alta do inventário está no painel ou tem justificativa para ficar de fora.
+* A revisão foi feita em três olhares (dados, design e leitor leigo), com capturas de cada página em docs/qa/painel/.
+* A página funciona em tela de 1366 px sem rolagem horizontal.
 
 **Etapa 4 — Simulador**
 
