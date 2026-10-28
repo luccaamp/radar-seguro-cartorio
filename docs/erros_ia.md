@@ -751,3 +751,11 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** o Streamlit registra o template dele como padrão do Plotly quando é importado, depois do módulo de gráficos; além disso, `st.plotly_chart` aplica o tema do Streamlit por cima se `theme` não for `None`.
 - **Correção:** cada figura recebe `template="radar"` e as cores de fundo explicitamente, e é exibida por `ui.grafico` com `theme=None`. Também o eixo dos semestres ("2026-1") era lido como data: passou a categoria.
 - **Bom para os slides?** sim
+
+## 2026-10-28 — Pergunta ao usuário com as colunas da D-031 trocadas
+- **Onde:** pergunta de múltipla escolha sobre versionar os dados do painel (D-050).
+- **O que aconteceu:** a pergunta dizia que a D-031 tira do silver público "remuneração e tempo de emprego" da RAIS. É o contrário: essas colunas ficam (o pipeline usa); saem `ano_base`, `tipo_estabelecimento`, `horas_contratadas`, `mes_admissao`, `mes_desligamento` e `cbo`.
+- **Como foi detectado:** leitura do `config/publico.yaml` logo depois da resposta.
+- **Causa provável:** resumo feito antes de ler a lista da D-031 por inteiro.
+- **Correção:** avisado na resposta final; a escolha do usuário não muda (o silver versionado segue a lista da D-031 do `config/publico.yaml`).
+- **Bom para os slides?** não

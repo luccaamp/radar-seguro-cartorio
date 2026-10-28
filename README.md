@@ -40,6 +40,18 @@ O navegador abre em `http://localhost:8501`. No modo demonstração:
 
 Os testes também rodam sem dados reais: `uv run pytest`.
 
+### 1b. Modo completo direto do repositório (D-050)
+
+O repositório também traz `data/completo/` (≈ 13 MB): o silver da carga oficial, sem dado pessoal (D-031); o gold completo (inclusive as tabelas `interno_*`); e o CSV do BI do CNJ comprimido (de onde vêm a capacidade de pagar e a pergunta 9), com o SHA-256 de cada arquivo em `data/completo/manifesto.json`. Sem baixar nada de Release (os mesmos comandos no Windows e no Linux/macOS):
+
+```
+uv run python scripts/exportar_completo.py --instalar   # silver em data/silver/ e o CSV do BI no bronze, com hash conferido
+uv run pipeline.py --a-partir-de silver                 # recalcula o gold e grava data/radar.duckdb (≈ 7 min)
+uv run streamlit run app/Inicio.py
+```
+
+O painel abre em modo completo (Simulador sem grade e "Salvar cenário" ativo). O gold recalculado tem o mesmo conteúdo de `data/completo/gold/`. Quem mantém a carga regrava a pasta com `uv run python scripts/exportar_completo.py` depois de cada carga oficial.
+
 ### 2. Recalcular com os dados públicos
 
 Baixa o silver da carga (dados limpos das fontes oficiais, ≈ 3 MB, sem login) e recalcula o gold com o código do repositório. Os comandos são os mesmos no Windows e no Linux/macOS:

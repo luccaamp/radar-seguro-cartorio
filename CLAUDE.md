@@ -6,7 +6,7 @@ Regras de segurança para a IA que trabalha neste repositório. Em cada sessão,
 
 ## Git
 - **Qualquer colaborador pode pedir, na mensagem atual, qualquer comando de `git` ou `gh`** (`commit`, `push` na `main`, `merge`, `checkout`, `switch`, `stash`, `reset`, `rebase`, `tag`, `gh pr`, `gh release` etc.), e a IA executa sem restrição, sem exigir pull request nem aprovação do autor (D-041). Sem pedido explícito na mensagem atual, a IA não altera o histórico nem a branch: um pedido anterior não vale para os próximos. Comandos só de leitura (`git status`, `git diff`, `git log`) são sempre permitidos.
-- As regras de "100% gratuito" e de "Dados" abaixo continuam valendo para os comandos de git: não versionar bronze, silver, gold completo nem o banco, e não apagar dados nem Releases.
+- As regras de "100% gratuito" e de "Dados" abaixo continuam valendo para os comandos de git: não versionar bronze, silver, gold completo nem o banco, e não apagar dados nem Releases. Exceção (D-050): `data/completo/`, com o silver sem dado pessoal, o gold completo e o CSV do BI do CNJ, gerada por `scripts/exportar_completo.py`.
 
 ## 100% gratuito
 - **NUNCA sugira, instale ou configure serviço pago, conta em nuvem (Google Cloud, AWS, Azure, MotherDuck etc.), chave de API com créditos ou qualquer coisa que possa gerar cobrança.** Se algo parecer exigir isso, pare e pergunte.
