@@ -137,7 +137,7 @@ O painel cruza várias fontes, porque nenhuma traz tudo sozinha. A qualidade dos
 
 ### 2.3 Estrutura de pastas
 
-A estrutura atual está na seção "Estrutura do projeto" do `README.md` da raiz. O chat (E5) está em `config/llm.yaml`, `src/llm.py` (interface única para o LLM local), `src/agent/` (ferramentas, laço do chat e correção da avaliação), `app/pages/4_Chat.py` e `eval/` (gabarito e resultado). Ainda não existem: `src/radar/` e, se houver radar, `eval/gabarito_radar.csv`.
+A estrutura atual está na seção "Estrutura do projeto" do `README.md` da raiz. O chat (E5) está em `config/llm.yaml`, `src/llm.py` (interface única para o LLM local), `src/agent/` (ferramentas, laço do chat e correção da avaliação), `app/pages/5_Chat.py` e `eval/` (gabarito e resultado). Ainda não existem: `src/radar/` e, se houver radar, `eval/gabarito_radar.csv`.
 
 **"Do zero"** significa rodar o pipeline **a partir dos snapshots do bronze**, sem coletar de novo.
 
@@ -255,12 +255,15 @@ O pipeline **falha** quando há violação de chave ou tipo e **avisa** quando h
 
 Páginas:
 
-0. **Início**: apresentação do projeto e do Prov. 227; os números principais de MG (serventias, empregados, passivo de todas e dos obrigados, prêmio anual), o déficit em faixa e o teto teórico do mercado; a situação da ADI 8015.
-1. **Mercado**: mapa e ranking por UF; filtros por UF, município, atribuição e situação (titular/interino/Classe 1); total de serventias, empregados, passivo estimado e déficit (em faixa).
-2. **Simulador**: controles para cada premissa, seletor de cenário do STF, receita do mercado total e da seguradora hipotética lado a lado, por UF; botão para salvar o cenário.
-3. **Qualidade dos dados**: data de referência de cada fonte, cobertura e divergências entre fontes.
-4. **Chat**: dentro do painel (D-036); sem Ollama instalado, aparece desativado, com uma explicação.
-5. **Radar** (só se for feito; etapa opcional, descrita em `docs/historico/ROADMAP.md`).
+Desde a Etapa 3 (D-049), a arquitetura das páginas está em `docs/painel/arquitetura.md` e o padrão visual em `docs/painel/padrao_visual.md`; as análises exibidas saem de `src/painel/analises.py`, no formato das ferramentas do chat.
+
+0. **Início**: o prêmio base com a faixa provável (D-042) na manchete; déficit, IS e prêmio no formato da D-042; os 10 números; a escada do passivo ao prêmio; a situação da ADI 8015 com a data da conferência e o prêmio por cenário do STF.
+1. **Mercado**: mapa, ranking e tabela por área, com os filtros da D-026 (município, atribuição, situação, classe); KPIs do recorte; os grupos do notebook 04 e o grupo-alvo do seguro; quem é obrigado (atribuição e porte).
+2. **Análises**: incerteza do prêmio (faixa D-042 e tornado), projeção 2026–27 (notebook 07, limite fixo principal e corrigido como comparação; 05b como comparação), concentração (Gini) e a pergunta 9.
+3. **Qualidade dos dados**: lacunas do notebook 09, "Passivo: escolhas de método", leitura literal do art. 2º, XXIV, saltos de declaração; data de referência de cada fonte, conferências entre fontes, contratos e limitações.
+4. **Simulador**: controles para cada premissa, seletor de cenário do STF, receita do mercado total e da seguradora hipotética lado a lado; botão para salvar o cenário (Etapa 4).
+5. **Chat**: dentro do painel (D-036); sem Ollama instalado, aparece desativado, com uma explicação (Etapa 5).
+6. **Radar** (só se for feito; etapa opcional, descrita em `docs/historico/ROADMAP.md`).
 
 ### 5.2 Chat (`src/agent`)
 

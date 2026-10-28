@@ -17,12 +17,18 @@ import plotly.graph_objects as go
 import streamlit as st
 import yaml
 
-from comum import (AZUL_SEQUENCIAL, AZUL_SERIE, EXPLICA_NIVEIS, NIVEIS, RAIZ, aprox, aviso_estimativa, brl, consulta,
-                   execucao, md_seguro, num, pct, rodape, ticks_brl)
+from comum import (AZUL_SEQUENCIAL, AZUL_SERIE, EXPLICA_NIVEIS, NIVEIS, RAIZ, analise, aprox, brl, consulta,
+                   execucao, md_seguro, num, pagina, pct, rodape, ticks_brl)
+from src.painel import graficos, ui
 
-st.set_page_config(page_title="Mercado", page_icon="🗺️", layout="wide")
-st.title("Mercado — Minas Gerais")
-aviso_estimativa()
+GRUPOS = analise("grupos")
+pagina("Mercado", "🗺️", "Mercado · onde estão e quem é o cliente",
+       "Onde estão os cartórios obrigados",
+       f"O cliente do seguro são as **{GRUPOS['grupo_alvo'].split(': ')[1]}**: {GRUPOS['serventias_do_alvo']} cartórios "
+       f"({GRUPOS['parte_das_serventias']} dos agrupados) concentram **{GRUPOS['parte_do_passivo_das_obrigadas']} do "
+       f"passivo** das obrigadas e {GRUPOS['parte_do_deficit']} do déficit. Use os filtros para ver cada região.")
+st.caption("Estimativas de mercado com premissas públicas, **não** avaliação de nenhum cartório. Classificação de "
+           "classe sempre aproximada (D-002).")
 LIMIAR = int(execucao().limiar_lgpd)
 REGRA_BASE = yaml.safe_load((RAIZ / "config" / "regras_classificacao.yaml").read_text(encoding="utf-8"))["versao_base"]
 CINZA, SEM_SERV, CONTORNO = "#c9c8c4", "#f3f2ee", "#55534e"
@@ -113,7 +119,8 @@ mun = (municipios[municipios["nome"] == mun_nome].iloc[0]
 nivel_txt = ("nível municipal" if visao is None and mun is None else
              "nível regional por LGPD" if visao else "destaque com contexto")
 partes = ([f"Município: {mun_nome}"] if mun is not None else []) + ([f"{FILTROS[tipo]}: {VALORES[tipo][valor]}"] if visao else [])
-st.markdown(f"**Filtros:** {' · '.join(partes) if partes else 'nenhum'} · {nivel_txt}")
+ui.contexto([("Filtros ativos", " · ".join(partes) if partes else "nenhum"), ("Nível do mapa", nivel_txt),
+             ("Classe 1 até", "R$ 300 mil" if regra == "v2" else "R$ 100 mil (sensibilidade)")])
 
 # ------------------------------------------------------------------ recorte: tabelas da visão escolhida
 if visao:
@@ -199,7 +206,8 @@ if foco is None:
         linhas.append({"Nível": NIVEIS[nivel], "Passivo (obrigados)": brl(x["passivo_universo"]),
                        "Obrigadas": aprox(x["n_universo"]), "Déficit": brl(x["valor_descoberto"]),
                        "IS": brl(x["mercado_importancia_segurada"]), "Prêmio anual": brl(x["mercado_premio_emitido"])})
-    st.markdown("**Faixas** — cenário do STF: regra mantida")
+    st.markdown("**Extremos teóricos do recorte** (todas as suposições no limite ao mesmo tempo) — cenário do STF: "
+                "regra mantida. A faixa provável (P5–P95) de MG está no Início e em Análises.")
     # C3: "Passivo (todas)" foi para o "?" do cabeçalho "Nível", para a tabela caber em 1280 px
     st.dataframe(pd.DataFrame(linhas), hide_index=True, width="stretch", column_config={
         "Nível": st.column_config.TextColumn(help=md_seguro("Passivo de todas as ativas: " + "; ".join(passivo_todas))),
@@ -272,8 +280,8 @@ def mapa(destaque: str | None = None, zoom_ids: list[str] | None = None) -> go.F
                        f"{METRICAS[metrica]}: " "%{customdata[3]}<br>%{customdata[4]} de MG<extra></extra>"),
         # C2: escala dentro da figura, com fundo, título curto e marcas formatadas
         colorbar=dict(title=dict(text=TITULO_ESCALA[metrica], side="top"), thickness=12, len=0.62, tickvals=vals,
-                      ticktext=textos, x=0.99, xanchor="right", y=0.5, bgcolor="rgba(252,252,251,0.85)",
-                      outlinewidth=0)))
+                      ticktext=textos, x=0.9, xanchor="right", y=0.5, bgcolor="rgba(252,252,251,0.85)",
+                      outlinewidth=0)))   # x = 0,9: com o rótulo mais longo ("≥ R$ 298,5 mil"), cabe em 1366 px
     # por último: o polígono de uma região imediata cobre os municípios sem serventia (terceiro estado do E5)
     fig.add_trace(camada(geo_sem, [f["id"] for f in geo_sem["features"]], SEM_SERV,
                          "Município sem serventia no cadastro do CNJ (ver Limitações)", 1.6, CONTORNO))
@@ -396,4 +404,27 @@ with st.expander(titulo_tab):
                                             "completo ao passar o mouse no mapa e no ranking."),
         "Passivo (todas)": st.column_config.TextColumn(help="Passivo de todas as ativas"),
         "Com déficit": st.column_config.TextColumn(help="Valor esperado")})
+# ------------------------------------------------------------------ quem é o cliente (notebooks 03 e 04)
+st.header("Quem é o cliente do seguro")
+st.caption("Para MG inteiro: os filtros acima não se aplicam a esta seção.")
+ui.achado(f"Grupo-alvo: {GRUPOS['grupo_alvo']}",
+          f"{GRUPOS['serventias_do_alvo']} cartórios, {GRUPOS['parte_das_obrigadas']} das obrigadas, "
+          f"{GRUPOS['parte_do_passivo_das_obrigadas']} do passivo das obrigadas e {GRUPOS['parte_do_deficit']} do "
+          f"déficit; déficit médio de {GRUPOS['deficit_por_obrigada']} por obrigada.")
+ui.grafico(graficos.grupos(GRUPOS))
+QUEM = analise("quem_e_obrigado")
+ui.grafico(graficos.quem_e_obrigado(QUEM))
+with st.expander("Perfil dos grupos, regras de associação e método"):
+    P = pd.DataFrame(GRUPOS["tabela"])
+    st.dataframe(pd.DataFrame({
+        "Grupo": [f"{g} · {n}" + (" (alvo)" if a else "") for g, n, a in zip(P.grupo, P.nome_grupo, P.grupo_alvo)],
+        "Serventias": P.n_serventias.map(num), "Receita mediana (semestre)": P.receita_mediana.map(brl),
+        "CLT mediano": P.clt_mediano.map(num), "Obrigadas": P.obrigadas.map(num),   # 7 colunas: cabe em 1280 px
+        "Passivo das obrigadas": P.passivo_obrigadas.map(brl), "Déficit": P.deficit.map(brl)}),
+        hide_index=True, width="stretch")
+    st.markdown(md_seguro("**Regras mais fortes (Apriori, notebook 03):**\n" + "\n".join(f"- {r}" for r in QUEM["regras"])
+                          + f"\n\n{GRUPOS['conta']}. {GRUPOS['observacao']}. {QUEM['conta']}; {QUEM['observacao']}."))
+    ui.baixar(GRUPOS, "grupos_perfil")
+    ui.baixar(QUEM, "quem_e_obrigado")
+ui.fonte(GRUPOS)
 rodape(["cnj_serventias", "cnj_colaboradores", "rais_vinculos", "ibge_malha"])

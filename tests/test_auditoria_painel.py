@@ -61,7 +61,8 @@ def mercado(tipo=None, valor=None, metrica=None, municipio=None, regra=None):
 def figuras(at):
     specs = [json.loads(g.proto.spec) for g in at.get("plotly_chart")]
     mapa = next((s for s in specs if any(t.get("type") == "choroplethmap" for t in s["data"])), None)
-    ranking = next((s for s in specs if any(t.get("type") == "bar" for t in s["data"])), None)
+    # o ranking é o gráfico "15 maiores" (desde a Etapa 3 o Mercado tem outros gráficos de barras, dos grupos)
+    ranking = next((s for s in specs if "15 maiores" in str(s["layout"].get("title", {}).get("text", ""))), None)
     return mapa, ranking
 
 
@@ -267,17 +268,22 @@ def test_kpis_iguais_entre_inicio_mercado_e_simulador():
     from streamlit.testing.v1 import AppTest
     ini = AppTest.from_file(str(RAIZ / "app/Inicio.py"), default_timeout=120).run()
     mer = mercado()
-    sim = AppTest.from_file(str(RAIZ / "app/pages/2_Simulador.py"), default_timeout=120).run()
+    sim = AppTest.from_file(str(RAIZ / "app/pages/4_Simulador.py"), default_timeout=120).run()
     v = lambda at, rot: [m.value for m in at.metric if m.label == rot]  # noqa: E731
-    assert v(ini, "Passivo dos obrigados") == v(mer, "Passivo (obrigados)") == v(sim, "Passivo dos obrigados")
-    assert v(ini, "Passivo de todas as ativas") == v(mer, "Passivo (todas)")
-    assert v(mer, "Com déficit (esperado)") == v(sim, "Com déficit (esperado)")
+    # Etapa 3: o Início mostra os números em cartões HTML (src/painel/ui.py), não em st.metric
+    tela = "\n".join(m.value for m in ini.markdown).replace("&#36;", "$")
+    cartao = lambda rot: re.search(rf'{re.escape(rot)}<span[^>]*>[^<]*</span></div><div class="rd-num">([^<]+)<',  # noqa: E731
+                                   tela).group(1)
+    assert [cartao("5. Passivo trabalhista (obrigadas)")] == v(mer, "Passivo (obrigados)") == \
+        v(sim, "Passivo dos obrigados")
+    assert [cartao("4. Passivo trabalhista (todas)")] == v(mer, "Passivo (todas)")
+    assert [cartao("6. Com déficit (esperado)")] == v(mer, "Com déficit (esperado)") == v(sim, "Com déficit (esperado)")
 
 
 @pytest.mark.parametrize("cenario", ["mantem", "suspende_8_17", "parcial"])
 def test_simulador_nos_tres_cenarios(cenario):
     from streamlit.testing.v1 import AppTest
-    at = AppTest.from_file(str(RAIZ / "app/pages/2_Simulador.py"), default_timeout=120).run()
+    at = AppTest.from_file(str(RAIZ / "app/pages/4_Simulador.py"), default_timeout=120).run()
     at.radio[0].set_value(cenario).run()
     assert not at.exception
     premio = [m.value for m in at.metric if m.label == "Prêmio emitido"][0]

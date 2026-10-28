@@ -23,7 +23,7 @@ import httpx
 
 RAIZ = Path(__file__).resolve().parents[1]
 BANCO_REAL = RAIZ / "data" / "radar.duckdb"
-LARGURAS = {1280: 800, 1920: 1080}
+LARGURAS = {1280: 800, 1366: 768, 1920: 1080}   # 1366: tela de notebook (Etapa 3, "pronto quando")
 
 
 # ------------------------------------------------------------------ servidor
@@ -93,6 +93,12 @@ def marcar(page, opcao: str) -> None:
     esperar(page)
 
 
+def aba(page, nome: str) -> None:
+    """Abre a aba (st.tabs) de texto `nome`."""
+    page.get_by_role("tab", name=nome, exact=True).first.click()
+    esperar(page)
+
+
 def deslizar(page, rotulo: str, passos: int) -> None:
     """Move o controle deslizante de rótulo `rotulo` `passos` posições (positivo = para a direita) pelo teclado."""
     # Streamlit 1.66: slider react-aria; a alça tem um <input type="range"> visualmente escondido que recebe o teclado
@@ -148,6 +154,12 @@ def estados(copia: Path) -> list[Estado]:
                    lambda p: deslizar(p, "Taxa anual (% da importância segurada)", 10)),
             Estado("09_simulador_stf_suspende", "Simulador", lambda p: marcar(p, "STF suspende arts. 8º a 17")),
             Estado("09_simulador_decisao_parcial", "Simulador", lambda p: marcar(p, "Decisão parcial")),
+            Estado("11_analises_incerteza", "Análises"),
+            Estado("11_analises_projecao", "Análises", lambda p: aba(p, "Projeção 2026–27")),
+            Estado("11_analises_projecao_corrigido", "Análises",
+                   lambda p: (aba(p, "Projeção 2026–27"), marcar(p, "limite corrigido pelo IPCA (comparação)"))),
+            Estado("11_analises_concentracao", "Análises", lambda p: aba(p, "Concentração")),
+            Estado("11_analises_pergunta_9", "Análises", lambda p: aba(p, "A seguradora tem lucro?")),
             Estado("10_qualidade_topo", "Qualidade_dos_dados"),
             Estado("10_qualidade_grafico", "Qualidade_dos_dados", rolar_ate="Conferência entre fontes"),
             Estado("10_qualidade_limitacoes", "Qualidade_dos_dados", rolar_ate="Limitações declaradas")]
@@ -162,7 +174,10 @@ def abrir(page, url: str, estado: Estado, erros_console: list) -> None:
     esperar(page, 2000)
     if estado.pagina == "Mercado":   # abre a tabela por área/região (expansor) para entrar no print e nas checagens
         for s in page.locator('[data-testid="stExpander"] details:not([open]) > summary').all():
-            s.click()
+            try:
+                s.click(timeout=3000)
+            except Exception:   # expansor que mudou de lugar ao abrir o anterior: segue sem ele
+                pass
         page.wait_for_timeout(800)
 
 
@@ -209,8 +224,9 @@ JS_CHECAGENS = r"""
     if (!vis(gd) || !gd._fullData) continue;
     const caixa = gd.getBoundingClientRect();
     const tipos = gd._fullData.map(t => t.type);
-    // 3) ranking: toda barra com rótulo, rótulo inteiro dentro da área do gráfico
-    if (tipos.includes('bar')) {
+    // 3) ranking: toda barra com rótulo, rótulo inteiro dentro da área do gráfico (só nos gráficos de barra com
+    //    rótulo de valor; os de grupos e o tornado da Etapa 3 usam a dica do mouse e a tabela de download)
+    if (tipos.includes('bar') && gd._fullData[tipos.indexOf('bar')].text) {
       const ib = tipos.indexOf('bar'), bar = gd._fullData[ib];
       const nbarras = (gd.calcdata && gd.calcdata[ib]) ? gd.calcdata[ib].length : 0;
       const textos = [...gd.querySelectorAll('.bartext')];

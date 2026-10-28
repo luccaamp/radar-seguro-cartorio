@@ -1,0 +1,23 @@
+# Tema do painel (docs/painel/padrao_visual.md). Só aparência; nenhum dado.
+[theme]
+base = "light"
+primaryColor = "#184f95"
+backgroundColor = "#f7f7f5"
+secondaryBackgroundColor = "#efeeea"
+textColor = "#1b1b19"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+baseRadius = "8px"
+borderColor = "#e3e2dc"
+linkColor = "#184f95"
+chartCategoricalColors = ["#2a78d6", "#eb6834", "#6250d6", "#898781"]
+
+[theme.sidebar]
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f4f4f1"
+
+[client]
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false

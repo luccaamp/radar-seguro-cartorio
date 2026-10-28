@@ -12,8 +12,8 @@ import duckdb
 
 RAIZ = Path(__file__).resolve().parents[1]
 BANCO_REAL = RAIZ / "data" / "radar.duckdb"
-PAGINAS = ["app/Inicio.py", "app/pages/1_Mercado.py", "app/pages/2_Simulador.py", "app/pages/3_Qualidade_dos_dados.py",
-           "app/pages/4_Chat.py"]
+PAGINAS = ["app/Inicio.py", "app/pages/1_Mercado.py", "app/pages/2_Análises.py", "app/pages/3_Qualidade_dos_dados.py",
+           "app/pages/4_Simulador.py", "app/pages/5_Chat.py"]
 OLLAMA_AUSENTE = "http://127.0.0.1:9"   # porta sem servidor: nos testes do painel, o chat fica sempre "sem Ollama"
 
 

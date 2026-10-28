@@ -97,7 +97,7 @@ Roteiro, com a carga 2026-10-28 (dados da coleta de 17 e 18/10, premissas v3, re
 ## Estrutura do projeto
 
 ```
-app/                 painel Streamlit (Início, Mercado, Simulador, Qualidade dos dados, Chat)
+app/                 painel Streamlit (Início, Mercado, Análises, Qualidade dos dados, Simulador, Chat; docs/painel/)
 config/              premissas e regras versionadas, com fonte
 data/publico/        conjunto público versionado (tabelas agregadas e auditadas que o painel lê)
 data/samples/        amostras mascaradas das fontes (Fase 0)
@@ -108,7 +108,7 @@ eval/                gabarito do chat e resultado da avaliação (scripts/avalia
 notebooks/           exploração e modelos, com as saídas (só leem o banco; regras no CONTRIBUTING.md, seção Notebooks)
 scripts/             conjunto público, pacotes de dados, QA visual e acessibilidade, conversas
 scripts/arquivo/     scripts de uso único da Fase 1
-src/                 coleta, bronze→silver→gold, modelo, qualidade, conjunto público, pacotes, chat (agent, llm)
+src/                 coleta, bronze→silver→gold, modelo, qualidade, conjunto público, pacotes, chat (agent, llm), painel (análises e interface)
 tests/               suíte padrão, dados_reais e visual
 pipeline.py          orquestrador: uv run pipeline.py --a-partir-de bronze|silver
 ```

@@ -12,7 +12,7 @@ import pytest
 from apoio_painel import PAGINAS, RAIZ
 
 pytestmark = pytest.mark.usefixtures("painel_demo")
-SIMULADOR = str(RAIZ / "app/pages/2_Simulador.py")
+SIMULADOR = str(RAIZ / "app/pages/4_Simulador.py")
 
 
 def rodar(pagina: str):
@@ -41,7 +41,7 @@ def test_pagina_roda_com_faixa_e_carga_no_rodape(pagina):
 
 def test_simulador_padrao_igual_ao_cenario_base_do_painel(painel_demo):
     """Nas premissas padrão, o Simulador de demonstração mostra os números do gold (sem seta de diferença)."""
-    at = rodar("app/pages/2_Simulador.py")
+    at = rodar("app/pages/4_Simulador.py")
     from comum import aprox, brl
     ref = ler(painel_demo, "SELECT * FROM gold.fato_mercado_uf WHERE nivel = 'base' AND regra_classe = 'v2' "
                            "AND cenario_stf = 'mantem'").iloc[0]
@@ -54,7 +54,7 @@ def test_simulador_padrao_igual_ao_cenario_base_do_painel(painel_demo):
 
 
 def test_simulador_suspende_zera_premio():
-    at = rodar("app/pages/2_Simulador.py")
+    at = rodar("app/pages/4_Simulador.py")
     at.radio[0].set_value("suspende_8_17").run()
     assert not at.exception
     premios = [m.value for m in at.metric if m.label == "Prêmio emitido"]
@@ -63,7 +63,7 @@ def test_simulador_suspende_zera_premio():
 
 def test_simulador_uma_premissa_do_passivo_usa_a_grade(painel_demo):
     from comum import brl
-    at = rodar("app/pages/2_Simulador.py")
+    at = rodar("app/pages/4_Simulador.py")
     fap = next(s for s in at.select_slider if s.label.startswith("FAP"))
     fap.set_value(2.0).run()
     assert not at.exception and not at.warning
@@ -74,7 +74,7 @@ def test_simulador_uma_premissa_do_passivo_usa_a_grade(painel_demo):
 
 
 def test_simulador_duas_premissas_do_passivo_avisa_e_nao_calcula():
-    at = rodar("app/pages/2_Simulador.py")
+    at = rodar("app/pages/4_Simulador.py")
     next(s for s in at.select_slider if s.label.startswith("FAP")).set_value(2.0).run()
     next(s for s in at.select_slider if s.label.startswith("Férias")).set_value(1.0).run()
     assert not at.exception
@@ -83,7 +83,7 @@ def test_simulador_duas_premissas_do_passivo_avisa_e_nao_calcula():
 
 
 def test_salvar_cenario_desativado():
-    at = rodar("app/pages/2_Simulador.py")
+    at = rodar("app/pages/4_Simulador.py")
     assert at.button[0].disabled and at.text_input[0].disabled
     assert any("Desativado no modo demonstração" in c.value for c in at.caption)
 

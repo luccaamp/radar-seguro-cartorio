@@ -5,8 +5,10 @@ import streamlit as st
 from comum import aviso_estimativa, conexao, md_seguro, rodape
 from src import llm
 from src.agent import chat
+from src.painel import ui
 
 st.set_page_config(page_title="Chat", page_icon="💬", layout="wide")
+ui.estilo()   # lugar reservado para o chat completo da Etapa 5; esta é a versão reduzida da D-036
 st.title("Chat — perguntas sobre o mercado e as normas (MG)")
 aviso_estimativa()
 

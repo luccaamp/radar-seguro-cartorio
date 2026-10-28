@@ -9,7 +9,7 @@ import yaml
 from apoio_painel import OLLAMA_AUSENTE, RAIZ
 from src.agent import avaliacao, chat, ferramentas
 
-CODIGO_DO_CHAT = [RAIZ / "src" / "llm.py", *sorted((RAIZ / "src" / "agent").glob("*.py")), RAIZ / "app/pages/4_Chat.py"]
+CODIGO_DO_CHAT = [RAIZ / "src" / "llm.py", *sorted((RAIZ / "src" / "agent").glob("*.py")), RAIZ / "app/pages/5_Chat.py"]
 
 
 # ------------------------------------------------------------------ tabelas que existem no modo demonstração
@@ -102,7 +102,7 @@ def test_chat_chama_a_ferramenta_e_devolve_o_texto(con, monkeypatch):
 def test_painel_abre_sem_ollama(painel_demo, monkeypatch):
     from streamlit.testing.v1 import AppTest
     monkeypatch.setenv("RADAR_OLLAMA_URL", OLLAMA_AUSENTE)
-    at = AppTest.from_file(str(RAIZ / "app/pages/4_Chat.py"), default_timeout=120).run()
+    at = AppTest.from_file(str(RAIZ / "app/pages/5_Chat.py"), default_timeout=120).run()
     assert not at.exception
     assert any("Chat desativado" in i.value for i in at.info)
     assert not at.chat_input

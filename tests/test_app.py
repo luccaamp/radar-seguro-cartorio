@@ -40,7 +40,7 @@ def test_app_usa_a_copia(banco_temporario):
 
 def test_simulador_suspende_zera_premio():
     from streamlit.testing.v1 import AppTest
-    at = AppTest.from_file(str(RAIZ / "app/pages/2_Simulador.py"), default_timeout=120).run()
+    at = AppTest.from_file(str(RAIZ / "app/pages/4_Simulador.py"), default_timeout=120).run()
     at.radio[0].set_value("suspende_8_17").run()
     assert not at.exception
     premios = [m.value for m in at.metric if m.label == "Prêmio emitido"]
@@ -53,7 +53,7 @@ def _sha256(p: Path) -> str:
 
 def _salvar_pelo_simulador(nome: str):
     from streamlit.testing.v1 import AppTest
-    at = AppTest.from_file(str(RAIZ / "app/pages/2_Simulador.py"), default_timeout=120).run()
+    at = AppTest.from_file(str(RAIZ / "app/pages/4_Simulador.py"), default_timeout=120).run()
     at.text_input[0].set_value(nome).run()
     at.button[0].click().run()
     assert not at.exception and any("salvo" in s.value for s in at.success)
@@ -61,7 +61,7 @@ def _salvar_pelo_simulador(nome: str):
 
 def _nomes_na_tabela_de_salvos() -> list[str]:
     from streamlit.testing.v1 import AppTest
-    at = AppTest.from_file(str(RAIZ / "app/pages/2_Simulador.py"), default_timeout=120).run()
+    at = AppTest.from_file(str(RAIZ / "app/pages/4_Simulador.py"), default_timeout=120).run()
     assert not at.exception
     return [n for df in (d.value for d in at.dataframe) if "nome" in df.columns for n in df["nome"]]
 
@@ -221,6 +221,24 @@ def test_sem_formula_latex_nos_textos(banco_temporario):
         textos = [m.value for m in at.markdown] + [c.value for c in at.caption]
         ruins = [t[:80] for t in textos if latex.search(t)]
         assert not ruins, (pagina, ruins)
+
+
+def test_etapa_3_no_banco_completo(banco_temporario):
+    """As conferências da Etapa 3 de tests/test_painel.py, agora no modo completo (cópia do banco real): 10 números
+    = ESTADO_ATUAL, D-042 = analise_monte_carlo e fato_mercado_uf (na ordem base > faixa > extremos), sensibilidades
+    = analise_sensibilidade_metodo, 05b do notebook, projeção rotulada, ADI com data e formato das ferramentas."""
+    import comum
+    import test_painel as tp
+    assert comum.modo() == "completo"
+    banco = {"banco": banco_temporario["copia"]}
+    tp.test_funcoes_no_formato_das_ferramentas_do_chat(banco)
+    tp.test_inicio_mostra_os_10_numeros_do_estado_atual(banco)
+    for medida in ("deficit", "importancia_segurada", "premio"):
+        tp.test_d042_bate_com_as_tabelas_e_segue_a_ordem(banco, medida)
+    tp.test_sensibilidades_da_d042_batem_com_a_tabela(banco)
+    tp.test_05b_vem_do_notebook_e_aparece_como_faixa_de_comparacao(banco)
+    tp.test_analises_rotula_projecao_e_a_leitura_do_limite()
+    tp.test_adi_8015_com_data_da_conferencia()
 
 
 def test_banco_real_intacto(banco_temporario):

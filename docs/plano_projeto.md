@@ -72,7 +72,7 @@ A escada dá o número de hoje. Estas perguntas dizem quanto confiar nele e como
 | ✅ 23/10/2026 | 1 — parte B | Mineração: notebooks 03 a 06 (e o extra 05c) | — |
 | ✅ 28/10/2026 | 1 — parte C | Mineração: notebooks 07 a 09 (08 em 23/10, 07 em 27/10, 09 em 28/10) | **Portão 1:** ✅ cumprido em 28/10/2026 (01 a 08 em 27/10 e 09 em 28/10 rodados do zero com a mesma saída; os 10 números iguais) |
 | ✅ 28/10/2026 | 2 | Pipeline (tabelas `gold.analise_*`; D-043 proposta) | **Portão 2:** ✅ cumprido numa cópia em 28/10/2026 (25 de 25 tabelas iguais e as 6 novas iguais às dos notebooks); falta a carga oficial, a pedido do autor |
-| ⬜ | 3 | Painel | — |
+| ✅ 28/10/2026 | 3 | Painel (D-049 proposta; `docs/painel/`, capturas em `docs/qa/painel/`) | — |
 | ⬜ | 4 | Simulador | — |
 | ⬜ | 5 | Chat | **Portão 3:** o critério "pronto quando" das etapas 3, 4 e 5 cumprido |
 | ⬜ | 6 | Validação final, demo e entrega | — |

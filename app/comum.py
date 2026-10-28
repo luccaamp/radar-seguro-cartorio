@@ -211,6 +211,33 @@ def slider_br(col, rotulo: str, vmin: float, vmax: float, passo: float, valor: f
 
 def aviso_estimativa() -> None:
     aviso_modo()
-    st.info("Estimativas de mercado com premissas públicas, **não** avaliação de nenhum cartório. "
-            "O market share é de uma **seguradora hipotética**. Classificação de classe sempre aproximada (D-002).",
-            icon="ℹ️")
+    st.caption("Estimativas de mercado com premissas públicas, **não** avaliação de nenhum cartório. "
+               "O market share é de uma **seguradora hipotética**. Classificação de classe sempre aproximada (D-002).")
+
+
+# ------------------------------------------------------------------ Etapa 3: análises e cabeçalho comum
+@st.cache_data(show_spinner=False)
+def _analise(nome: str, banco: str, kw: tuple) -> dict:
+    from src.painel import analises
+    if nome in analises.SEM_CONEXAO:
+        return analises.SEM_CONEXAO[nome](**dict(kw))
+    return analises.PARA_O_CHAT[nome](conexao(), "MG", **dict(kw))
+
+
+def analise(nome: str, **kw) -> dict:
+    """Resultado de src/painel/analises.py (o mesmo que o chat usará), com cache por banco e argumentos."""
+    return _analise(nome, f"{modo()}:{caminho_banco()}", tuple(sorted(kw.items())))
+
+
+def pagina(titulo_aba: str, icone: str, sobre: str, titulo: str, manchete: str) -> None:
+    """Abre uma página no padrão visual: configuração, CSS único, cabeçalho com a manchete, faixa de contexto e o
+    aviso do modo demonstração."""
+    from src.painel import ui
+    st.set_page_config(page_title=titulo_aba, page_icon=icone, layout="wide")
+    ui.estilo()
+    ui.cabecalho(sobre, titulo, manchete)
+    e = execucao()
+    ui.contexto([("Dados", carga_em_uso()), ("Premissas", f"v{int(e.versao_premissas)}"),
+                 ("Classe 1", "até R$ 300 mil (Prov. 243)"), ("Nível", "base"), ("STF", "regra mantida"),
+                 ("UF", "MG")])
+    aviso_modo()

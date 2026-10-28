@@ -15,12 +15,14 @@ from src.model import simulador
 from src.model.premissas import PremissaInvalida, com_novo_base
 from src.model.rateio import METODOS
 from src.motor import calcular_serventias, peso_indeterminada, premissas_nivel, resumo_mercado
+from src.painel import ui
 from src.transform.gold import carregar_insumos
 
 # modo demonstração (D-029): sem dados internos, recalcula a partir de gold.simulador_* (src/model/simulador.py)
 DEMO = demonstracao()
 
 st.set_page_config(page_title="Simulador", page_icon="🎛️", layout="wide")
+ui.estilo()   # só o padrão visual (Etapa 3); o redesenho do Simulador é a Etapa 4
 st.title("Simulador — seguro-garantia do Prov. 227 (MG)")
 aviso_estimativa()
 
