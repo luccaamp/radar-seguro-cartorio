@@ -106,13 +106,12 @@ def saldo_bi(con: duckdb.DuckDBPyConnection, ano: int, arquivo: Path | None = No
         GROUP BY cns ORDER BY cns""").df()
 
 
-def cadastro_cnj(ufs: list[str] | None = None, snapshot: str | None = None) -> pd.DataFrame:
-    """Datas do cadastro do Justiça Aberta no bronze (snapshot de config/escopo.yaml, ou o `snapshot` pedido), para
-    todas as UFs coletadas ou só as pedidas: CNS, UF, status, situação jurídica, data da decisão da situação, data de
-    ingresso do responsável atual e o tipo dele (titular, interino, interventor). Os campos pessoais do arquivo (nome
-    do responsável, substitutos, contatos, endereço) não são lidos (D-038)."""
-    snap = snapshot or yaml.safe_load((RAIZ / "config" / "escopo.yaml").read_text(encoding="utf-8"))["snapshots"][
-        "cnj_justica_aberta"]
+def cadastro_cnj(ufs: list[str] | None = None) -> pd.DataFrame:
+    """Datas do cadastro do Justiça Aberta no bronze (snapshot de config/escopo.yaml), para todas as UFs coletadas ou
+    só as pedidas: CNS, UF, status, situação jurídica, data da decisão da situação, data de ingresso do responsável
+    atual e o tipo dele (titular, interino, interventor). Os campos pessoais do arquivo (nome do responsável,
+    substitutos, contatos, endereço) não são lidos (D-038)."""
+    snap = yaml.safe_load((RAIZ / "config" / "escopo.yaml").read_text(encoding="utf-8"))["snapshots"]["cnj_justica_aberta"]
     pasta = RAIZ / "data" / "bronze" / "cnj_justica_aberta" / snap
     arquivos = sorted(p for p in pasta.glob("serventias_*.json")
                       if not p.name.endswith(".meta.json") and (ufs is None or p.stem.split("_")[1] in ufs))

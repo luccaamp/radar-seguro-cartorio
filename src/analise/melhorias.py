@@ -310,34 +310,6 @@ def teste_subidas(y: pd.Series, media: pd.DataFrame, saltos: pd.DataFrame, orige
     return out
 
 
-# ---------------------------------------------------------------- M9: duas coletas do cadastro
-
-def mudancas_cadastro(antes: pd.DataFrame, depois: pd.DataFrame) -> pd.DataFrame:
-    """M9: o que mudou, serventia a serventia, entre duas coletas do cadastro do Justiça Aberta (dados.cadastro_cnj):
-    status, situação jurídica, data da decisão e tipo do responsável. Uma linha por CNS que aparece em alguma das duas,
-    com o antes, o depois e o tipo da mudança (`vacancia` = de PROVIDO para VAGO; `provimento` = de VAGO para PROVIDO;
-    `status` = ativa ↔ inativa; `outra`; `nova` ou `sumiu`)."""
-    cols = ["status", "situacao_juridica", "data_decisao", "tipo_responsavel"]
-    m = antes.set_index("cns")[cols].join(depois.set_index("cns")[cols], how="outer", lsuffix="_antes",
-                                          rsuffix="_depois")
-    mudou = pd.Series(False, index=m.index)
-    for c in cols:
-        a, d = m[f"{c}_antes"], m[f"{c}_depois"]
-        mudou |= ~((a == d) | (a.isna() & d.isna()))
-    m = m[mudou].copy()
-    sa, sd = m["situacao_juridica_antes"], m["situacao_juridica_depois"]
-    m["mudanca"] = np.select(
-        [m["status_antes"].isna(), m["status_depois"].isna(), (sa == "PROVIDO") & (sd == "VAGO"),
-         (sa == "VAGO") & (sd == "PROVIDO"), m["status_antes"] != m["status_depois"]],
-        ["nova", "sumiu", "vacancia", "provimento", "status"], "outra")
-    return m.reset_index()
-
-
-def taxa_anualizada(eventos: int, expostos: float, dias: int) -> float:
-    """Taxa por ano a partir de `eventos` em `expostos` serventias durante `dias` dias: 1 − (1 − e ÷ n)^(365 ÷ dias)."""
-    return float(1 - (1 - eventos / expostos) ** (365 / dias)) if expostos else float("nan")
-
-
 # ---------------------------------------------------------------- M5: passivo projetado
 
 def rais_projetada(rais: pd.DataFrame, anos: int, inflacao: float) -> pd.DataFrame:

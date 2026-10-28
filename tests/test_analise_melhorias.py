@@ -90,17 +90,6 @@ def test_cobertura_da_faixa_so_com_o_passado():
     assert cob >= 0.5 and qs[0] < qs[1]
 
 
-def test_mudancas_do_cadastro_e_taxa_anualizada():
-    a = pd.DataFrame({"cns": ["1", "2", "3"], "status": "Ativo", "situacao_juridica": ["PROVIDO", "VAGO", "PROVIDO"],
-                      "data_decisao": pd.NaT, "tipo_responsavel": "Titular"})
-    b = a.copy()
-    b.loc[0, "situacao_juridica"] = "VAGO"
-    b.loc[1, "situacao_juridica"] = "PROVIDO"
-    m = mh.mudancas_cadastro(a, b).set_index("cns")
-    assert m.loc["1", "mudanca"] == "vacancia" and m.loc["2", "mudanca"] == "provimento" and "3" not in m.index
-    assert mh.taxa_anualizada(1, 100, 365) == pytest.approx(0.01)
-
-
 def test_rais_projetada_soma_tempo_e_corrige_salario():
     r = pd.DataFrame({"tempo_emprego_meses": [10.0, None], "rem_dezembro": [1000.0, 2000.0], "rem_media": [900.0, 1800.0]})
     out = mh.rais_projetada(r, 2, 0.05)
