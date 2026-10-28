@@ -25,7 +25,8 @@ def test_escolha_garantia_precisa_somar_1(semente):
 
 def test_resolver_niveis(semente):
     assert resolver(semente, "min")["fap"] == 0.5
-    assert resolver(semente, "max")["prob_deficit"]["classe_3"] == 0.50
+    assert resolver(semente, "max")["prob_deficit"]["classe_3"] == \
+        semente["premissas"]["prob_deficit"]["valores"]["classe_3"]["max"]
     assert resolver(semente, "base", {"taxa_seguro_anual": 0.03})["taxa_seguro_anual"] == 0.03
 
 
@@ -34,7 +35,8 @@ def test_nova_versao_muda_so_o_base(semente):
                                          "fap": 1.0, "fracao_exigencia_garantia": 0.5})
     assert novo["premissas"]["taxa_seguro_anual"]["valores"] == {"min": 0.010, "base": 0.025, "max": 0.035}
     assert novo["premissas"]["prob_deficit"]["valores"]["classe_2"]["base"] == 0.6
-    assert novo["premissas"]["prob_deficit"]["valores"]["classe_3"]["base"] == 0.30
+    assert novo["premissas"]["prob_deficit"]["valores"]["classe_3"]["base"] == \
+        semente["premissas"]["prob_deficit"]["valores"]["classe_3"]["base"]   # a faixa não ajustada fica como estava
     assert set(diff) == {"taxa_seguro_anual", "prob_deficit"}   # fap não mudou; fração do cenário não é premissa
     assert semente["premissas"]["taxa_seguro_anual"]["valores"]["base"] == 0.020   # semente intacta
 
@@ -51,16 +53,19 @@ def _serv():
 
 def test_deficit_por_faixa(p_base):
     d = deficit(_serv(), p_base)
-    assert d["n_deficit"].tolist() == pytest.approx([0.50, 0.30, 0.0])
-    assert d["valor_descoberto"].tolist() == pytest.approx([0.5 * 0.5 * 100_000, 0.3 * 0.4 * 200_000, 0.0])
+    pr, pc = p_base["prob_deficit"], p_base["pct_descoberto"]
+    assert d["n_deficit"].tolist() == pytest.approx([pr["classe_2"], pr["classe_3"], 0.0])
+    assert d["valor_descoberto"].tolist() == pytest.approx([pr["classe_2"] * pc["classe_2"] * 100_000,
+                                                            pr["classe_3"] * pc["classe_3"] * 200_000, 0.0])
 
 
 def test_passivo_zero_nao_conta_como_deficit(p_base):
     """D-021: serventia do universo sem empregado CLT (passivo 0) não entra em 'com déficit'."""
     s = pd.DataFrame({"passivo": [0.0, 100_000.0], "classe": ["2", "2"], "peso_universo": [1.0, 1.0]})
     d = deficit(s, p_base)
-    assert d["n_deficit"].tolist() == pytest.approx([0.0, 0.50])
-    assert d["valor_descoberto"].tolist() == pytest.approx([0.0, 0.5 * 0.5 * 100_000])
+    pr, pc = p_base["prob_deficit"]["classe_2"], p_base["pct_descoberto"]["classe_2"]
+    assert d["n_deficit"].tolist() == pytest.approx([0.0, pr])
+    assert d["valor_descoberto"].tolist() == pytest.approx([0.0, pr * pc * 100_000])
 
 
 def test_cenario_suspende_8_17_zera_demanda(p_base, cenarios):

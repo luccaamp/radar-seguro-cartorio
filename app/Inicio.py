@@ -50,7 +50,7 @@ st.markdown(
     "- **Qualidade dos dados**: data de referência de cada fonte, cobertura, divergências, sensibilidade e contratos.")
 st.header("Situação regulatória")
 st.markdown(
-    "ADI 8015 (ANOREG/BR contra os arts. 8º a 17 do Prov. 227), relator Min. Flávio Dino: rito do art. 12 da "
+    "ADI 8015 (ANOREG/BR contra os arts. 8º a 17 do Prov. 227): rito do art. 12 da "
     "Lei 9.868/1999, **sem liminar**; informações do CNJ e da AGU prestadas, vista à PGR. *Conferido em 17/10/2026 "
     "no portal do STF.* O cenário \"suspende arts. 8º a 17\" está pronto no Simulador.")
 st.caption(f"Peso da classe indeterminada no cenário base: {num(100 * e.peso_classe_indeterminada_base, 1)}% "

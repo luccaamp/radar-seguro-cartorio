@@ -60,7 +60,7 @@ def painel_demo(tmp_path_factory):
 
 @pytest.fixture(scope="session")
 def semente() -> dict:
-    from src.estado import ler_semente   # a mesma semente que o pipeline usa (hoje premissas_v002.yaml)
+    from src.estado import ler_semente   # a mesma semente que o pipeline usa (hoje premissas_v003.yaml)
     return ler_semente()
 
 

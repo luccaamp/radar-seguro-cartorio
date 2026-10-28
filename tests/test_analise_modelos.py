@@ -445,7 +445,8 @@ def test_receita_bi_liquida_nunca_negativa():
 
 @pytest.mark.dados_reais
 def test_sensibilidade_reproduz_a_base_e_o_t7(_copia_real):
-    """Numa CÓPIA do banco: o motor refeito pelo notebook 08 dá o prêmio oficial, e o tornado repete o do T7."""
+    """Numa CÓPIA do banco: o motor refeito pelo notebook 08 dá o prêmio oficial, e o tornado repete o do T7, que foi
+    feito com as premissas v2 (D-046 trocou a semente; o método do tornado é o mesmo)."""
     from src.analise import dados
     from src.model import simulador
     from src.motor import calcular_serventias, premissas_nivel, resumo_mercado
@@ -462,7 +463,9 @@ def test_sensibilidade_reproduz_a_base_e_o_t7(_copia_real):
     recalc = resumo_mercado(calcular_serventias(ins, p, lim["limites"], limites_faixa=lim["limites"])[0], p, CENARIOS,
                             "mantem")
     assert recalc["mercado_premio_emitido"] == pytest.approx(premio)
-    t = sensibilidade.tornado(simulador.totais(sv), sensibilidade.faixas_suposicoes(sem), p, CENARIOS)
+    sem2 = yaml.safe_load((RAIZ / "config" / "premissas" / "premissas_v002.yaml").read_text(encoding="utf-8"))
+    t = sensibilidade.tornado(simulador.totais(sv), sensibilidade.faixas_suposicoes(sem2), premissas_nivel(sem2, "base", peso),
+                              CENARIOS)
     t7 = json.loads((RAIZ / "docs/qa/analises/testes_metodos_resultados.json").read_text(encoding="utf-8"))
     taxa = next(r for r in t7["T7_incerteza_premio"]["tornado"] if r["suposicao"] == "taxa")
     assert t.set_index("suposicao").loc["taxa", "premio_no_min"] / 1e3 == pytest.approx(taxa["min_mil"], abs=0.1)

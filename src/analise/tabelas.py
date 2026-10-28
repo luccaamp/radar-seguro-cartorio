@@ -14,8 +14,10 @@ import yaml
 from src import estado
 from src.analise import RAIZ, config, dados
 from src.analise import classificacao as cl
+from src.analise import enquadramento as enq
 from src.analise import estatistica as est
 from src.analise import grupos as gr
+from src.analise import melhorias as mh
 from src.analise import padroes
 from src.analise import previsao as pv
 from src.analise import regressao as rg
@@ -38,6 +40,10 @@ def _cenarios() -> dict:
 def _limites() -> dict:
     regras = yaml.safe_load((RAIZ / "config" / "regras_classificacao.yaml").read_text(encoding="utf-8"))
     return regras["versoes"]["v2"]["limites"]
+
+
+def _ano_enquadramento() -> int:
+    return yaml.safe_load((RAIZ / "config" / "escopo.yaml").read_text(encoding="utf-8"))["ano_enquadramento"]
 
 
 def _peso_indeterminada(con) -> float:
@@ -89,17 +95,42 @@ def sensibilidade_metodo(con) -> pd.DataFrame:
     refazem o modelo inteiro, ao lado da base. Universo: receita líquida do repasse (art. 2º, XXIV, do Prov. 213), com
     a faixa de déficit da base (D-019). Passivo: T5 (vínculos sem salário de dezembro com salário estimado), T6
     (reserva por encolhimento) e, para comparar, a reserva no estado inteiro (gold.sensibilidade_premissas). Nível
-    base, regra v2, STF mantém. Nenhuma linha muda a base."""
+    base, regra v2, STF mantém. Nenhuma linha muda a base.
+    A receita líquida usa o CSV do BI do CNJ no bronze, que é opcional (README; não vai no pacote público): sem ele, a
+    linha sai com um aviso, e o pipeline a partir do silver continua rodando sem o bronze (D-029)."""
     semente_premissas, cenarios, limites = estado.ler_semente(), _cenarios(), _limites()
     p = premissas_nivel(semente_premissas, "base", _peso_indeterminada(con))
     ins = carregar_insumos(con)
     serv0 = calcular_serventias(ins, p, limites, limites_faixa=limites)[0]
 
-    bi = dados.arrecadacao_bi(con)
-    ins_liq = se.insumos_receita_liquida(ins, se.receita_ref_bi(bi[bi["cns"].isin(serv0["cns"])], 2025))
-    p_liq = premissas_nivel(semente_premissas, "base", peso_indeterminada(ins_liq.serventias, limites))
-    serv_liq = se.com_faixa_da_base(calcular_serventias(ins_liq, p_liq, limites, limites_faixa=limites)[0], serv0,
-                                    p_liq)
+    linha_liq = []
+    if dados.arquivo_bi().exists():
+        bi = dados.arrecadacao_bi(con)
+        ins_liq = se.insumos_receita_liquida(ins, se.receita_ref_bi(bi[bi["cns"].isin(serv0["cns"])], 2025))
+        p_liq = premissas_nivel(semente_premissas, "base", peso_indeterminada(ins_liq.serventias, limites))
+        serv_liq = se.com_faixa_da_base(calcular_serventias(ins_liq, p_liq, limites, limites_faixa=limites)[0],
+                                        serv0, p_liq)
+        linha_liq = [("receita_liquida", "universo: leitura do Prov. 213", "Leitura literal do art. 2º, XXIV: "
+                      "arrecadação − repasse (aproximada: o repasse do BI cobre só o inciso XXVI; o inciso XXV não "
+                      "tem fonte)", resumo_mercado(serv_liq, p_liq, cenarios, "mantem"))]
+    else:
+        warnings.warn(f"analise_sensibilidade_metodo: sem o CSV do BI do CNJ ({dados.arquivo_bi().name}); a linha "
+                      "da receita líquida fica de fora")
+    # regra do salto (D-046): a base usa o valor declarado; aqui, a receita de quem tem salto grosseiro no ano de
+    # enquadramento vira a média dos semestres sem o salto (notebook 01, §7b), com a faixa de déficit da base
+    serie = dados.serie_arrecadacao(con)
+    ref_ss = enq.receita_sem_saltos(serie, est.saltos(serie), _ano_enquadramento())
+    s_ss = ins.serventias.copy()
+    s_ss["receita_ref"] = s_ss["receita_ref"].where(s_ss["receita_ref"].isna(),
+                                                    s_ss["cns"].map(ref_ss).combine_first(s_ss["receita_ref"]))
+    ins_ss = Insumos(rais=ins.rais, serventias=s_ss, fator_inpc=ins.fator_inpc, mes_inpc=ins.mes_inpc,
+                     regioes=ins.regioes)
+    p_ss = premissas_nivel(semente_premissas, "base", peso_indeterminada(ins_ss.serventias, limites))
+    serv_ss = se.com_faixa_da_base(calcular_serventias(ins_ss, p_ss, limites, limites_faixa=limites)[0], serv0, p_ss)
+    linha_ss = ("sem_saltos", "universo: regra do salto", "Semestre de 2025 com salto grosseiro trocado pela média dos "
+                "semestres sem salto (D-046; a base usa o valor declarado)", resumo_mercado(serv_ss, p_ss, cenarios,
+                                                                                         "mantem"))
+
     rais5, _ = se.rais_com_salario_estimado(ins.rais, ins.regioes)
     ins5 = Insumos(rais=rais5, serventias=ins.serventias, fator_inpc=ins.fator_inpc, mes_inpc=ins.mes_inpc,
                    regioes=ins.regioes)
@@ -108,12 +139,11 @@ def sensibilidade_metodo(con) -> pd.DataFrame:
                                        int(p["limiar_vinculos_distribuicao_municipal"]), ins.regioes)
     gold_sem_regiao = con.execute("SELECT * FROM gold.sensibilidade_premissas WHERE chave = 'sem_regiao'").df()
 
-    universo, passivo = "universo: leitura do Prov. 213", "passivo: escolhas de método"
+    passivo = "passivo: escolhas de método"
     linhas = [
         ("base", "base", "Base (arrecadação; D-015 e D-022)", resumo_mercado(serv0, p, cenarios, "mantem")),
-        ("receita_liquida", universo, "Leitura literal do art. 2º, XXIV: arrecadação − repasse (aproximada: o repasse "
-         "do BI cobre só o inciso XXVI; o inciso XXV não tem fonte)", resumo_mercado(serv_liq, p_liq, cenarios,
-                                                                                     "mantem")),
+        *linha_liq,
+        linha_ss,
         ("t5_salario_estimado", passivo, "T5: incluir os vínculos sem salário de dezembro, com salário estimado",
          resumo_mercado(calcular_serventias(ins5, p, limites, limites_faixa=limites)[0], p, cenarios, "mantem")),
         ("t6_encolhimento", passivo, "T6: reserva por encolhimento (município pequeno mistura a própria média com a "
@@ -231,11 +261,45 @@ def previsao(con) -> pd.DataFrame:
     return pv.tabela_previsao(pd.DataFrame(arr), pd.DataFrame(linhas))
 
 
+def melhorias(con, monte_carlo: pd.DataFrame) -> dict[str, pd.DataFrame]:
+    """As tabelas das melhorias de confiança (notebook 10; D-045): capacidade de pagar (M1, por faixa de meses de saldo
+    e por faixa de déficit × horizonte), sinistro por frequência × severidade (M2), prêmio por cenário do STF (M7) e
+    na grade taxa × adesão (M8). A M1 e a M2 usam o CSV do BI do CNJ no bronze, que é opcional: sem ele, essas três
+    tabelas ficam de fora, com um aviso."""
+    semente_premissas, cenarios = estado.ler_semente(), _cenarios()
+    p = premissas_nivel(semente_premissas, "base", _peso_indeterminada(con))
+    sv = dados.serventias(con)
+    out = {"analise_premio_cenarios": mh.premio_por_cenario(monte_carlo, cenarios),
+           "analise_premio_grade": mh.grade_taxa_adesao(float(sv["valor_descoberto"].sum()), semente_premissas)
+           .reset_index().melt(id_vars="taxa", var_name="adesao", value_name="premio")
+           .assign(adesao=lambda d: d["adesao"].str.removeprefix("adesao_").str.rstrip("%").astype(float) / 100)}
+    if not dados.arquivo_bi().exists():
+        warnings.warn(f"analise_capacidade_* e analise_sinistro: sem o CSV do BI do CNJ ({dados.arquivo_bi().name})")
+        return out
+    saldo = dados.saldo_bi(con, config()["melhorias"]["capacidade"]["ano"])
+    cap = mh.capacidade(sv, saldo)
+    faixas = mh.tabela_faixas(cap).reset_index()
+    out["analise_capacidade_faixas"] = faixas.assign(faixa_meses=faixas["faixa_meses"].astype(str))
+    cal = []
+    for h in config()["melhorias"]["capacidade"]["horizontes"]:
+        c = mh.calibracao(mh.capacidade(sv, saldo, h), p).reset_index()
+        tot = {"faixa_deficit": "total", "obrigadas": c["obrigadas"].sum(), "com_dado_bi": c["com_dado_bi"].sum(),
+               "deficit_modelo": c["deficit_modelo"].sum(), "deficit_m1": c["deficit_m1"].sum()}
+        c = pd.concat([c, pd.DataFrame([tot])], ignore_index=True).assign(horizonte_meses=float(h))
+        c["premio_modelo"] = [mh.mercado_por_deficit(v, p)["premio"] for v in c["deficit_modelo"]]
+        c["premio_m1"] = [mh.mercado_por_deficit(v, p)["premio"] for v in c["deficit_m1"]]
+        cal.append(c)
+    out["analise_capacidade_calibracao"] = pd.concat(cal, ignore_index=True)
+    out["analise_sinistro"] = mh.sinistro(cap, p)
+    return out
+
+
 def construir(con) -> dict[str, pd.DataFrame]:
-    """As oito tabelas gold.analise_* (sem o prefixo): as seis do plano (D-043) e as duas da D-044."""
+    """As tabelas gold.analise_* (sem o prefixo): as seis do plano (D-043), as duas da D-044 e as das melhorias de
+    confiança (D-045; as que dependem de um arquivo opcional do bronze ficam de fora sem ele)."""
     tornado, monte_carlo = tornado_e_monte_carlo(con)
     tab_grupos = grupos(con)
     return {"analise_regras": regras(con), "analise_grupos": tab_grupos,
             "analise_grupos_perfil": grupos_perfil(con, tab_grupos), "analise_clt_modelo": clt_modelo(con),
             "analise_previsao": previsao(con), "analise_tornado": tornado, "analise_monte_carlo": monte_carlo,
-            "analise_sensibilidade_metodo": sensibilidade_metodo(con)}
+            "analise_sensibilidade_metodo": sensibilidade_metodo(con), **melhorias(con, monte_carlo)}

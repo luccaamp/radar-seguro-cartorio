@@ -83,7 +83,7 @@ fonte, arquivo, sha256, bytes, url, coletado_em, **data_referencia** (exibida no
 
 Calculado por `src/motor.py` com a versão vigente das premissas. Níveis: `min`, `base`, `max` (todas as premissas no mesmo nível). Regras de classe: `v2` (R$ 300 mil, base) e `v1` (R$ 100 mil). Valores em R$ por ano.
 
-O gold tem 25 tabelas do modelo (20 sem o prefixo `interno_` e 5 internas) e, a partir da Etapa 2 (2026-10-28), mais 8 tabelas `analise_*` da mineração (6 da D-043 e 2 da D-044): 33 no total. "Pública" = está no conjunto público (`config/publico.yaml`, `data/publico/`) e o painel lê; as 18 públicas passaram pelo auditor de ataque por diferença e pelos contratos de LGPD (D-026 a D-030). Conferido contra o banco em 2026-10-21; as `analise_*`, contra um pipeline do zero numa cópia em 2026-10-28.
+O gold tem 25 tabelas do modelo (20 sem o prefixo `interno_` e 5 internas) e, a partir da Etapa 2 (2026-10-28), mais 13 tabelas `analise_*` da mineração (6 da D-043, 2 da D-044 e 5 das melhorias de confiança, D-045 e D-046): 38 no total. "Pública" = está no conjunto público (`config/publico.yaml`, `data/publico/`) e o painel lê; as 18 públicas passaram pelo auditor de ataque por diferença e pelos contratos de LGPD (D-026 a D-030). Conferido contra o banco em 2026-10-21; as `analise_*`, contra um pipeline do zero numa cópia em 2026-10-28.
 
 ### Totais, sensibilidades e execução
 | Tabela | Grão | Colunas principais | Pública? |
@@ -124,7 +124,7 @@ O gold tem 25 tabelas do modelo (20 sem o prefixo `interno_` e 5 internas) e, a 
 `origem_distribuicao` (D-022): `municipio` (o município tem 20 ou mais vínculos na RAIS) → `regiao` (a região imediata do IBGE tem 20 ou mais) → `estado` (MG inteiro). Na carga atual só aparecem `municipio` e `regiao`.
 
 ### Análises da mineração (Etapa 2, D-043 e D-044)
-Gravadas pela etapa `etapa_analise` do `pipeline.py`, depois do gold, com as funções de `src/analise/tabelas.py` (o mesmo cálculo dos notebooks, conferido igual). Nenhuma muda as 25 tabelas acima nem os 10 números. Ainda não estão no conjunto público: as 6 agregadas estão em `config/publico.yaml`, `tabelas_da_proxima_carga`, e entram na próxima carga oficial (pedido do autor); as 2 por serventia ficam só no gold da equipe (D-044: no público, só o perfil agregado dos grupos).
+Gravadas pela etapa `etapa_analise` do `pipeline.py`, depois do gold, com as funções de `src/analise/tabelas.py` (o mesmo cálculo dos notebooks, conferido igual). Nenhuma muda as 25 tabelas acima nem os 10 números. As 6 agregadas estão no conjunto público desde a carga 2026-10-28; as 2 por serventia ficam só no gold da equipe (D-044: no público, só o perfil agregado dos grupos).
 
 | Tabela | Grão | Colunas principais | Notebook | Pública? |
 |---|---|---|---|---|
@@ -135,7 +135,14 @@ Gravadas pela etapa `etapa_analise` do `pipeline.py`, depois do gold, com as fun
 | `gold.analise_previsao` | bloco × período × variante × cenário do limite × medida (107) | bloco (`arrecadacao_mg`: semestres de 2026–27, 5 variantes; `mercado`: anos 2026–27, 2 variantes × 2 cenários do limite × 11 medidas), p10, central, p90, realizado, rotulo (sempre `projeção`) | 07 | proposta (agregada) |
 | `gold.analise_tornado` | premissa (11) | suposicao, rotulo, grupo, valor_min, valor_base, valor_max (sim/não como 1/0), premio_no_min, premio_base, premio_no_max, amplitude, ordem | 08 | proposta (agregada) |
 | `gold.analise_monte_carlo` | variante × medida (6) | variante (`independentes`, `patrimônio junto`), medida (deficit, importancia_segurada, premio), media, p05, p25, p50, p75, p95, canto_min, valor_base, canto_max, n_sorteios, semente, distribuicao | 08 | proposta (agregada) |
-| `gold.analise_sensibilidade_metodo` | leitura alternativa (5) | chave (`base`, `receita_liquida`, `t5_salario_estimado`, `t6_encolhimento`, `sem_regiao`), bloco, rotulo, n_universo, passivo_todas, passivo_universo, valor_descoberto, mercado_importancia_segurada, mercado_premio_emitido e `var_` de cada uma (variação sobre a base) | 08 | proposta (agregada, D-042 e D-044) |
+| `gold.analise_sensibilidade_metodo` | leitura alternativa (6) | chave (`base`, `receita_liquida`, `sem_saltos` (D-046: semestre de 2025 com salto grosseiro trocado pela média sem o salto), `t5_salario_estimado`, `t6_encolhimento`, `sem_regiao`), bloco, rotulo, n_universo, passivo_todas, passivo_universo, valor_descoberto, mercado_importancia_segurada, mercado_premio_emitido e `var_` de cada uma (variação sobre a base) | 08 | proposta (agregada, D-042 e D-044) |
+| `gold.analise_capacidade_faixas` | faixa de meses de saldo (5) | faixa_meses (< 3 meses, 3 a 12 meses, > 12 meses, saldo ≤ 0, sem dado), serventias, obrigadas, passivo_obrigadas, deficit_modelo, pct_obrigadas, pct_deficit_modelo | 10 (M1) | proposta (agregada, D-045) |
+| `gold.analise_capacidade_calibracao` | faixa de déficit (classe_2, classe_3, total) × horizonte de 6, 12 e 24 meses (9) | faixa_deficit, horizonte_meses, obrigadas, com_dado_bi, prob_deficit_modelo, prob_deficit_m1, pct_descoberto_modelo, pct_descoberto_m1, deficit_modelo, deficit_m1, premio_modelo, premio_m1 | 10 (M1) | proposta (agregada, D-045) |
+| `gold.analise_sinistro` | leitura (sem e com a M1) × nível da P(fim) (6) | leitura, nivel_p_fim, p_fim, severidade_q, premio, sinistro_esperado, sinistralidade, indice_combinado, resultado_tecnico, apolices, premio_medio, sinistralidade_ses_base | 10 (M2) | proposta (agregada, D-045) |
+| `gold.analise_premio_cenarios` | cenário do STF (3) | cenario, fracao_exigida, premio_base, premio_p05, premio_p50, premio_p95, descricao | 10 (M7) | proposta (agregada, D-045) |
+| `gold.analise_premio_grade` | taxa × adesão (9) | taxa, adesao, premio (déficit da base) | 10 (M8) | proposta (agregada, D-045) |
+
+As tabelas da M1 e da M2 usam o CSV do BI do CNJ no bronze, que é opcional: sem ele, o pipeline segue e essas tabelas ficam de fora, com aviso. Desde a D-046, nas tabelas da M1, as colunas `*_modelo` são as das premissas v3, que já vêm da M1 (por isso o déficit do modelo e o da M1 ficam quase iguais). A `analise_previsao_atualizada` (D-045) saiu na D-046, junto com a coleta de 28/10 de que ela dependia; as tabelas acima são publicadas desde a carga 2026-10-28 (tarde).
 
 ### Internas (nunca exibidas por serventia; só no pipeline, D-030)
 - `gold.interno_serventia`: serventia × nível × regra, com passivo, classe, classe_faixa, peso_universo, motivo, n_deficit e valor_descoberto. O painel só mostra agregados.
@@ -155,7 +162,7 @@ Gravadas pela etapa `etapa_analise` do `pipeline.py`, depois do gold, com as fun
 ## Qualidade
 
 ### `qualidade.checagens`
-tabela, checagem, severidade (erro / aviso), violacoes, detalhe, camada (silver / gold). Erro interrompe o pipeline.
+tabela, checagem, severidade (erro / aviso), violacoes, detalhe, camada (silver / gold). Erro interrompe o pipeline. Desde a D-046, um aviso conta os semestres do ano de enquadramento com salto grosseiro (10 vezes acima ou abaixo da mediana dos 4 semestres anteriores da serventia); a classe continua com o valor declarado.
 
 ### `qualidade.reconciliacoes`
 checagem, fonte_a, valor_a, fonte_b, valor_b, indicador (diferença % ou valor), tolerancia (`config/qualidade.yaml`), status (ok / aviso), detalhe. Valores arredondados a 10 casas a partir de 2026-10-28 (D-044), para o hash não mudar com a ordem das linhas; o status usa o valor sem arredondar.
@@ -164,6 +171,6 @@ checagem, fonte_a, valor_a, fonte_b, valor_b, indicador (diferença % ou valor),
 Por município: n_cnj, n_cnpj, clt_cnj, vinc_rais, dif_serventias, dif_empregados.
 
 ## Conjunto público (`data/publico/`, D-029)
-- 25 Parquet com as tabelas públicas (18 do gold, 2 do silver, 4 da qualidade e a versão vigente das premissas, `estado.premissas_vigente`), mais o `manifesto.json`. Versionado no git; gerado por `scripts/gerar_publico.py` (auditor, contratos de "sem dado pessoal" e de limiar, limite de tamanho).
+- 36 Parquet com as tabelas públicas (18 do gold, 11 `analise_*` agregadas desde as cargas de 2026-10-28, 2 do silver, 4 da qualidade e a versão vigente das premissas, `estado.premissas_vigente`), mais o `manifesto.json`. Versionado no git; gerado por `scripts/gerar_publico.py` (auditor, contratos de "sem dado pessoal" e de limiar, limite de tamanho).
 - `manifesto.json`: carga, data e hora da execução, versão das premissas, limiar de LGPD, commit, fontes (data de referência, data de coleta e SHA-256 do bronze), exceções ao limiar e, por tabela, o arquivo, as linhas, o SHA-256 do arquivo e o **hash de conteúdo** (linhas ordenadas, sem os carimbos de execução). O `tests/test_publico.py` compara o gold local com esse hash.
 - Sem banco local, o painel monta um banco temporário a partir desses arquivos (modo demonstração).

@@ -26,13 +26,19 @@ def numeros_oficiais(con) -> pd.DataFrame:
     return f[["min", "base", "max"]]
 
 
+NOMES_09 = ["analise_regras", "analise_grupos", "analise_clt_modelo", "analise_previsao", "analise_tornado",
+            "analise_monte_carlo", "analise_sensibilidade_metodo", "analise_capacidade_calibracao", "analise_sinistro",
+            "analise_premio_cenarios"]
+
+
 def carregar(con) -> tuple[dict[str, pd.DataFrame], str]:
-    """As seis tabelas gold.analise_*: do banco, se o pipeline já as gravou (Etapa 2), ou calculadas agora pelas
-    mesmas funções do pipeline (src/analise/tabelas.py). Devolve as tabelas e de onde vieram."""
+    """As tabelas gold.analise_* que o notebook 09 lê (NOMES_09: as seis da D-043, a sensibilidade de método da D-044
+    e três das melhorias, D-045; a linha "sem os saltos" é da D-046): do
+    banco, se o pipeline já as gravou, ou calculadas agora pelas mesmas funções do pipeline (src/analise/tabelas.py).
+    Devolve as tabelas e de onde vieram."""
     no_banco = {t for (t,) in con.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'gold' "
                                           "AND table_name LIKE 'analise_%'").fetchall()}
-    nomes = ["analise_regras", "analise_grupos", "analise_clt_modelo", "analise_previsao", "analise_tornado",
-             "analise_monte_carlo"]
+    nomes = NOMES_09
     if set(nomes) <= no_banco:
         return {t: con.execute(f"SELECT * FROM gold.{t}").df() for t in nomes}, "banco (gold.analise_*)"
     return tabelas.construir(con), "calculadas agora (src/analise/tabelas.py)"

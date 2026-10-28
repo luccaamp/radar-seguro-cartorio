@@ -7,7 +7,7 @@ Relatório da sessão com a IA, pedida por `leticia-ribeirom`. Os detalhes de ca
 - O pipeline passou a gravar 8 tabelas `gold.analise_*` com o que a mineração provou.
 - As quatro questões da Etapa 2 foram decididas pela colaboradora e implementadas.
 - Tudo foi rodado e conferido numa **cópia** do banco. Os 10 números não mudaram em nenhuma checagem.
-- A carga oficial no banco real e a regeração do `data/publico/` **esperam o pedido do autor** (regra do `CLAUDE.md`).
+- No fim do dia, a pedido do autor (transmitido pela colaboradora), rodou a **carga oficial** no banco real e o `data/publico/` foi regerado (seção 11).
 
 ## 1. Pedidos da sessão
 1. **Concluir a mineração e executar a Etapa 2:**
@@ -126,3 +126,76 @@ Iguais em todas as checagens: início, fim da Fase A, fim da Fase B e depois das
   - Código: `pipeline.py`, `scripts/gerar_publico.py`, `src/analise/grupos.py`, `src/analise/regressao.py`, `src/analise/sensibilidade.py`, `src/quality/reconciliacao.py`
   - Config: `config/analise.yaml`, `config/publico.yaml`
   - Docs: `docs/ESTADO_ATUAL.md`, `docs/diario.md`, `docs/erros_ia.md`, `docs/decisoes.md`, `docs/dicionario_dados.md`, `docs/SPEC.md`, `docs/plano_projeto.md`, `docs/plano_mineracao.md`, `docs/historico/INDICE.md`
+
+## 11. Carga oficial 2026-10-28
+Pedida pelo autor, por meio da colaboradora, depois do commit `f50c0f8`. As seções 4, 7 e 9 descrevem o estado de antes dela.
+1. **Cópia de segurança, fora do repositório:**
+   - banco anterior e `data/gold` antigo em `~/radar_arquivo/antes_carga_2026-10-28/` (SHA-256 do banco: `3e055af4…`);
+   - linha de base de antes em `~/radar_arquivo/baseline_2026-10-28_antes/`.
+2. **Carga:** `uv run pipeline.py --a-partir-de silver` no `data/radar.duckdb` real, sem erro. Log em `~/radar_arquivo/carga_2026-10-28.log`.
+3. **Conferência da carga:**
+   - os 10 números iguais;
+   - as 25 tabelas antigas com o mesmo hash de conteúdo;
+   - as 33 tabelas do gold iguais às da carga feita antes na cópia.
+4. **Conjunto público:**
+   - as 6 tabelas agregadas passaram para `tabelas` no `config/publico.yaml`, e a lista `tabelas_da_proxima_carga` saiu;
+   - `uv run python scripts/gerar_publico.py`: 31 arquivos e 0,63 MB. O auditor achou 0 vazamentos em 989 células, a busca de CNS e nomes não achou nada, e as travas de LGPD passaram;
+   - contra o manifesto anterior, só a `qualidade.reconciliacoes` mudou de conteúdo (arredondamento), e entraram as 6 tabelas novas.
+5. **Linha de base nova:** `~/radar_arquivo/baseline_2026-10-28/linha_de_base.json` (211 arquivos em `data/`, 33 tabelas do gold).
+6. **Testes depois da carga:**
+   - suíte padrão: 237 aprovados;
+   - todos os `dados_reais` (31 minutos): 79 aprovados, 3 ignorados e 1 falha;
+   - o teste do silver em Parquet, que falhava desde antes da sessão, **voltou a passar**;
+   - a falha nova foi um erro da IA (`erros_ia.md`): a `analise_sensibilidade_metodo` lia o CSV do BI do CNJ no bronze, que é opcional. Por isso, o pipeline a partir do silver parava sem o bronze;
+   - corrigido: sem o CSV, a linha da receita líquida sai, com aviso. Com o CSV, o resultado é idêntico ao do banco oficial, e a carga não precisou ser refeita;
+   - depois da correção, o teste passou, assim como o teste novo do caso sem o BI e a suíte padrão (237).
+   - Banco oficial novo: SHA-256 `4941cffa…`.
+7. **O que não foi feito:**
+   - nenhuma Release nova no GitHub: `dados-2026-10-19` e `carga-2026-10-19` continuam as publicadas;
+   - o `data/carga_atual.json` ainda descreve o pacote instalado de 19/10.
+
+## 12. Melhorias de confiança M1 a M10 (D-045)
+Pedidas pela colaboradora depois da carga oficial. Ficaram num notebook novo, o **10**, e o 09 foi refeito com elas. Tudo foi conferido numa cópia; o banco oficial ainda não tem as 6 tabelas novas.
+
+| Melhoria | O que foi feito | Resultado |
+|---|---|---|
+| M1 capacidade de pagar | passivo × saldo anual do titular (BI do CNJ, 2025) | chance de déficit de 6,9% / 9,6% (supostos 50% / 30%); déficit total de R$ 34,5 mi (modelo: R$ 36,9 mi) |
+| M2 pergunta 9 | sinistro = P(fim) × parte não paga × IS | com a M1, sinistralidade de 12% a 46% e lucro técnico; sem ela, prejuízo |
+| M3 previsão | teste desde 2012, faixa calibrada, coleta de 28/10 | o 2026-1 ficou 18% acima do previsto; MG +16,6% em 2026 (07: +7,3%) |
+| M4 subidas | desvio condicionado | rejeitada: o erro vem da previsão de MG |
+| M5 passivo projetado | tempo de casa + 12 meses/ano, INPC | passivo +14,6% (2026) e +28,5% (2027); prêmio ≈ R$ 422 mil e ≈ R$ 472 mil |
+| M6 universo e saltos | faixa entre leituras; 4 serventias conferidas | 894 a 1.121 obrigadas; saltos continuam declarados |
+| M7 STF | prêmio por cenário; andamento conferido | sem liminar em 28/10; suspensão = zero |
+| M8 taxa e adesão | SES conferida; grade | a SES não publica a IS; prêmio de R$ 92 mil a R$ 903 mil |
+| M9 vacância | duas coletas do cadastro | o cadastro é atualizado com atraso; 11 dias não medem a taxa |
+| M10 grupos | grupos pela M1 | providas grandes com 85% do déficit |
+
+**Pontos da validação de 27/10 e o que mudou:**
+- **pergunta 9 sem análise:** respondida (M2);
+- **cenário do STF fora da faixa:** prêmio condicionado (M7);
+- **previsão conservadora:** confirmada e corrigida na projeção atualizada (M3 a);
+- **faixas mal calibradas:** a da arrecadação estava boa (86%); a da contagem, calibrada (de 27% para 60%);
+- **subidas divergentes:** explicado (M4) e reduzido (115 na atualizada);
+- **prêmio com o passivo de 2025:** corrigido (M5).
+
+**Coleta nova:** cadastro e arrecadações de MG em 28/10, pela API pública e gratuita, no bronze (`cnj_justica_aberta/2026-10-28/`), só para conferência: o `config/escopo.yaml` não mudou.
+
+**Testes:** 8 testes novos (`tests/test_analise_melhorias.py`); suíte padrão com 245 aprovados; todos os `dados_reais` numa cópia (39 minutos): 81 aprovados, 3 ignorados, nenhuma falha.
+
+**Pendente:** as 6 tabelas novas só entram no banco oficial e no `data/publico/` na próxima carga oficial, com pedido do autor. *(Resolvido na seção 13: entraram 5, porque a sexta dependia da coleta de 28/10.)*
+
+## 13. D-046 e a segunda carga oficial (tarde)
+
+O autor decidiu os três pontos que a D-045 deixou abertos, seguindo a recomendação da IA. No meio do trabalho, a colaboradora pediu para não usar nada coletado em 28/10.
+
+| Ponto | Decisão | Efeito |
+|---|---|---|
+| Regra do salto | valor declarado fica na classe; aviso no pipeline; linha "sem os saltos" na sensibilidade | 45 semestres de 2025 avisados; sem eles, −1,0% no universo e −0,8% no prêmio |
+| Recalibrar a D-016 | premissas v3: chance de déficit (ponderada pelo passivo) e parte descoberta pela M1, depois de conferir as 50 obrigadas com saldo ≤ 0 | déficit, IS e prêmio −7,5%; "com déficit" de ≈ 486 para ≈ 148 |
+| Coleta de 28/10 | não usar; dados só de 17 e 18/10 | coleta apagada (a pedido); sem Release nova; sai a `analise_previsao_atualizada`; saem M3 a, M6 c e M9 do notebook 10 |
+
+**Números de referência novos** (premissas v3): 2.525 serventias; 12.134 CLT; ≈ 1.121 obrigadas; passivo R$ 311,9 mi e R$ 238,1 mi; **≈ 148 com déficit; déficit R$ 34,1 mi; IS R$ 17,1 mi; prêmio R$ 341,1 mil**; teto R$ 4,76 mi. Faixa provável do prêmio: R$ 215 a 687 mil.
+
+**Carga oficial** (pedido do autor): cópia conferida antes; backup em `~/radar_arquivo/antes_carga_2026-10-28_d046/`; banco novo idêntico à cópia; 38 tabelas no gold; `data/publico/` com 36 tabelas e auditor sem vazamento; linha de base em `~/radar_arquivo/baseline_2026-10-28_d046/`.
+
+**Também:** nome do relator da ADI tirado do diário, do SPEC e da página inicial do painel; simulador com uma casa decimal na chance e na parte descoberta (erro da IA achado pelo teste do painel); README e gabarito do chat com os valores novos; notebooks 09 e 10 refeitos; nota da D-046 no fim de 01 a 08.

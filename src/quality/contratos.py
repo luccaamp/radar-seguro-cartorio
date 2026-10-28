@@ -81,6 +81,7 @@ def contratos_silver(con: duckdb.DuckDBPyConnection) -> list[Checagem]:
                  f"cns NOT IN (SELECT cns FROM {s}.serventia)"),
         chave_unica(con, f"{s}.serventia_arrecadacao", "cns, periodo_inicio, periodo_fim, versao"),
         conflitos_arrecadacao(con),
+        saltos_arrecadacao(con),
         condicao(con, f"{s}.serventia_arrecadacao", "arrecadação não negativa", "arrecadacao < 0"),
         condicao(con, f"{s}.serventia_arrecadacao", "arrecadação semestral abaixo de R$ 1 bilhão",
                  "arrecadacao > 1e9", "aviso"),
@@ -122,6 +123,34 @@ def conflitos_arrecadacao(con: duckdb.DuckDBPyConnection) -> Checagem:
         FROM silver.serventia_arrecadacao WHERE conflito_fonte""").fetchone()
     return Checagem("silver.serventia_arrecadacao", "período com valores conflitantes na fonte", "aviso", linhas,
                     f"{linhas} linhas ({pares} pares CNS-período; {pares_ano} em {ano}, os únicos que afetam a classe)")
+
+
+def saltos_arrecadacao(con: duckdb.DuckDBPyConnection) -> Checagem:
+    """Regra do salto (D-046): semestre do ano de enquadramento `fator` vezes acima (ou abaixo) da mediana dos `janela`
+    semestres anteriores com valor > 0 da mesma serventia (a mesma conta de src/analise/estatistica.saltos, com os
+    parâmetros de config/analise.yaml). Só aviso: o valor declarado ao CNJ continua na classe; o efeito de trocá-lo
+    pela média sem o salto fica em gold.analise_sensibilidade_metodo."""
+    import yaml
+    from pathlib import Path
+    raiz = Path(__file__).resolve().parents[2] / "config"
+    ano = yaml.safe_load((raiz / "escopo.yaml").read_text(encoding="utf-8"))["ano_enquadramento"]
+    cfg = yaml.safe_load((raiz / "analise.yaml").read_text(encoding="utf-8"))["saltos"]
+    janela, fator = int(cfg["janela"]), float(cfg["fator"])
+    n, serventias, soma = con.execute(f"""
+        WITH s AS (
+            SELECT cns, ano, semestre::INT AS semestre, arrecadacao FROM silver.serventia_arrecadacao
+            WHERE versao = 1 AND semestre IS NOT NULL AND arrecadacao > 0
+              AND cns IN (SELECT cns FROM silver.serventia WHERE status = 'Ativo')),
+        w AS (
+            SELECT *, median(arrecadacao) OVER j AS mediana, count(*) OVER j AS n_anteriores FROM s
+            WINDOW j AS (PARTITION BY cns ORDER BY ano, semestre ROWS BETWEEN {janela} PRECEDING AND 1 PRECEDING))
+        SELECT count(*), count(DISTINCT cns), coalesce(sum(arrecadacao), 0) FROM w
+        WHERE ano = {ano} AND n_anteriores = {janela}
+          AND (arrecadacao >= {fator} * mediana OR arrecadacao <= mediana / {fator})""").fetchone()
+    return Checagem("silver.serventia_arrecadacao", f"semestre de {ano} com salto grosseiro ({fator:g}× a mediana dos "
+                    f"{janela} anteriores, para cima ou para baixo)", "aviso", n,
+                    f"{n} semestres em {serventias} serventias ({_mi(soma)}); valor declarado mantido na classe "
+                    "(D-046)" if n else "")
 
 
 def _mi(v: float) -> str:

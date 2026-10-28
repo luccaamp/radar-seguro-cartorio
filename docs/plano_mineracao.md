@@ -2,7 +2,7 @@
 
 > **O que é:** o detalhamento da **Etapa 1 — Mineração** do [`plano_projeto.md`](plano_projeto.md), o plano oficial do projeto (D-039). Aqui ficam as regras, o formato dos notebooks, os critérios de qualidade e o que cada notebook entrega. A visão geral, os portões e as decisões do autor ficam no plano do projeto. **Em conflito, vale o `plano_projeto.md`.**
 > **Como usar:** em toda sessão desta etapa, a IA lê este arquivo inteiro e executa **só a parte pedida** (A, B ou C), com uma parada no fim de cada parte.
-> **Criado em:** 2026-10-22. **Atualizado em:** 2026-10-28 (parte C fechada com o notebook 09; Portão 1 cumprido). Vira histórico: a Etapa 2 (pipeline) foi feita na mesma sessão, e as melhorias M1 a M10 continuam abertas.
+> **Criado em:** 2026-10-22. **Atualizado em:** 2026-10-28 (parte C fechada com o notebook 09; Portão 1 cumprido). Vira histórico: a Etapa 2 (pipeline) foi feita na mesma sessão, e as melhorias M1 a M10 também (notebook 10).
 
 ---
 
@@ -103,9 +103,19 @@ Dois alvos com resposta real nos dados. Para cada um: referência, modelo venced
 - **Tabela de lacunas:** o que os dados não responderam, por quê, e se uma **fonte nova** resolveria (qual, se é pública e gratuita, se existe para todos os estados, quanto mudaria a análise). Já conhecidas: patrimônio livre do titular, taxa cobrada pelas seguradoras e a chance de a delegação terminar no ano (D-025).
 - **Recomendação para o painel:** quais gráficos entram e em qual página (insumo das etapas 3 e 4).
 
-### Melhorias de confiança (propostas de 2026-10-27, aguardando o autor)
+### ✅ 10 — Melhorias de confiança (propostas de 2026-10-27; feitas em 2026-10-28)
 
-> **2026-10-28:** a pedido de `leticia-ribeirom`, o 09 foi feito antes das melhorias, com o que já existia; a M10 foi feita em parte (achado 5 também em passivo). Quando uma melhoria entrar, o 09 é rodado de novo.
+> **2026-10-28:** a pedido de `leticia-ribeirom`, o 09 foi feito antes das melhorias; no mesmo dia, as dez foram feitas no **notebook 10** (`notebooks/10_melhorias_confianca.ipynb`, `src/analise/melhorias.py`, D-045), e o 09 foi rodado de novo com elas. Status de cada uma:
+> - **M1** feita: pela renda, a chance de déficit é de 6,9% (Classe 2) e 9,6% (Classe 3), contra 50% e 30% supostos; o total quase não muda (R$ 34,5 mi × R$ 36,9 mi). **Levada à base pela D-046** (premissas v3), depois de conferir as 50 obrigadas com saldo ≤ 0.
+> - **M2** feita: com a M1, sinistralidade de 12% a 46% e lucro técnico; sem ela, prejuízo. O B2 e o B3 entraram (índice combinado; 243 apólices, prêmio médio de R$ 1,5 mil).
+> - **M3** feita em parte: (b) teste desde 2012: o SARIMA ganha no longo prazo, a tendência na janela recente (mantida); (c) faixa da arrecadação com 86% de cobertura; a da contagem, calibrada (60%, contra 27%). (a) **fora** (D-046): o autor decidiu não usar a coleta de 28/10.
+> - **M4** feita e **rejeitada**: o desvio condicionado não melhora; o erro das subidas vem da previsão de MG.
+> - **M5** feita: passivo +14,6% em 2026 e +28,5% em 2027 (só no notebook 10; a tabela da projeção atualizada saiu com a coleta de 28/10, D-046).
+> - **M6** feita: (a) faixa do universo de 894 a 1.121; (b) **regra do salto decidida (D-046)**: valor declarado na classe, aviso no pipeline e sensibilidade "sem os saltos"; (c) **fora** (D-046, sem coleta nova).
+> - **M7** feita: prêmio por cenário do STF; andamento da ADI conferido em 28/10 (sem liminar).
+> - **M8** feita: a SES não publica a importância segurada; grade taxa × adesão.
+> - **M9** **fora** (D-046): dependia da coleta de 28/10, que o autor decidiu não usar.
+> - **M10** feita: pela M1, as providas grandes têm 85% do déficit.
 
 Da validação de todos os notebooks (`diario.md`, 2026-10-27). Nenhuma muda os 10 números sozinha: cada uma entra como sensibilidade ou projeção e, se for para a base, vira decisão nova (D-043 em diante). Todas usam dado público e gratuito; as que pedem coleta nova só rodam a pedido do autor (regra do `CLAUDE.md`).
 
@@ -122,7 +132,7 @@ Da validação de todos os notebooks (`diario.md`, 2026-10-27). Nenhuma muda os 
 | M9 | **Vacância** (05a e 05c): o cadastro só tem a situação atual | **Segunda coleta do cadastro do CNJ** (mesma API) para medir as mudanças de situação entre duas datas | API do Justiça Aberta | baixo | médio: melhora a P(fim) do M2 |
 | M10 | **Grupos** (04): "o grupo 6 tem 55% do déficit" depende das suposições | Reescrever a leitura também em passivo (dado) e refazê-la com o M1 | — | baixo | baixo |
 
-**Ordem sugerida:** M1 → M2 (juntos respondem a pergunta 9 e reduzem a incerteza dos passos 5 e 6), M5 e M4 (sem coleta), M7 e M10 (só texto e gráfico), depois M3, M6 e M9, quando o autor pedir a coleta nova. O notebook 09 já foi feito (2026-10-28) e é rodado de novo com o que entrar.
+**Ordem sugerida (de 27/10):** M1 → M2 (juntos respondem a pergunta 9 e reduzem a incerteza dos passos 5 e 6), M5 e M4 (sem coleta), M7 e M10 (só texto e gráfico), depois M3, M6 e M9, quando o autor pedir a coleta nova. A coleta foi feita em 28/10 a pedido da colaboradora, gratuita e só de conferência (o `config/escopo.yaml` não mudou).
 
 ---
 
@@ -133,6 +143,7 @@ Da validação de todos os notebooks (`diario.md`, 2026-10-27). Nenhuma muda os 
 | ✅ **A** (2026-10-22) | Checagem do Ollama; base de `src/analise/`; notebooks **01** e **02** | feito e revisado |
 | ✅ **B** (2026-10-23) | Notebooks **03, 04, 05 e 06** | notebooks; PNGs; métricas de cada modelo contra a referência e contra o resultado do teste; desenho de `analise_regras`, `analise_grupos` e `analise_clt_modelo` |
 | ✅ **C** (2026-10-28) | Notebooks **07, 08 e 09** | notebooks; PNGs; desenho de `analise_previsao`, `analise_tornado` e `analise_monte_carlo`; achados; tabela de lacunas; recomendação para o painel |
+| ✅ **Melhorias** (2026-10-28) | Notebook **10** (M1 a M10) e o 09 rodado de novo | notebook; PNGs `10_*`; desenho das seis tabelas da D-045 |
 
 A geração das tabelas `gold.analise_*` no pipeline e a atualização do `gerar_publico.py` são da Etapa 2 do plano do projeto.
 

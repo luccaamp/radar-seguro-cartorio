@@ -93,20 +93,31 @@ c1.caption(md_seguro(f"**Decisão parcial:** cenário hipotético: o STF suspend
               "havia liminar."))
 
 aj: dict = {}
-with st.expander("Premissas do déficit e da escolha da garantia (suposições, D-016)", expanded=True):
+with st.expander("Premissas do déficit (capacidade de pagar, D-046) e da escolha da garantia (suposição, D-016)",
+                 expanded=True):
     a, b, c = st.columns(3)
-    def pct_slider(col, rotulo, valor, maximo=100, **kw):
-        """Controle em % inteiro; devolve fração."""
-        return col.slider(rotulo, 0, maximo, int(round(100 * valor)), 5, format="%d%%", **kw) / 100
+    def pct_slider(col, rotulo, valor, maximo=100, casas=0, **kw):
+        """Controle em % (inteiro, ou com `casas` decimais para premissa calculada); devolve fração. O valor inicial é
+        o da semente na mesma precisão, para o simulador padrão repetir a base do painel."""
+        if not casas:
+            return col.slider(rotulo, 0, maximo, int(round(100 * valor)), 5, format="%d%%", **kw) / 100
+        passo = 10 ** -casas
+        return col.slider(rotulo, 0.0, float(maximo), round(100 * valor, casas), passo, format=f"%.{casas}f%%",
+                          **kw) / 100
 
     def txt_faixa(nome, classe):
         v = faixa_de(nome, classe)
-        return f"Faixa da semente: {pct(v['min'], 0)} a {pct(v['max'], 0)} (fonte: suposição)"
+        fonte = "suposição" if P[nome]["fonte"] == "suposição" else "BI do CNJ, capacidade de pagar"
+        return f"Faixa da semente: {pct(v['min'], 1)} a {pct(v['max'], 1)} (fonte: {fonte})"
 
-    pd2 = pct_slider(a, "Prob. de déficit — Classe 2", pb["prob_deficit"]["classe_2"], help=txt_faixa("prob_deficit", "classe_2"))
-    pd3 = pct_slider(a, "Prob. de déficit — Classe 3", pb["prob_deficit"]["classe_3"], help=txt_faixa("prob_deficit", "classe_3"))
-    pc2 = pct_slider(b, "Parte descoberta — Classe 2", pb["pct_descoberto"]["classe_2"], help=txt_faixa("pct_descoberto", "classe_2"))
-    pc3 = pct_slider(b, "Parte descoberta — Classe 3", pb["pct_descoberto"]["classe_3"], help=txt_faixa("pct_descoberto", "classe_3"))
+    pd2 = pct_slider(a, "Prob. de déficit — Classe 2", pb["prob_deficit"]["classe_2"], casas=1,
+                     help=txt_faixa("prob_deficit", "classe_2"))
+    pd3 = pct_slider(a, "Prob. de déficit — Classe 3", pb["prob_deficit"]["classe_3"], casas=1,
+                     help=txt_faixa("prob_deficit", "classe_3"))
+    pc2 = pct_slider(b, "Parte descoberta — Classe 2", pb["pct_descoberto"]["classe_2"], casas=1,
+                     help=txt_faixa("pct_descoberto", "classe_2"))
+    pc3 = pct_slider(b, "Parte descoberta — Classe 3", pb["pct_descoberto"]["classe_3"], casas=1,
+                     help=txt_faixa("pct_descoberto", "classe_3"))
     seg = pct_slider(c, "Escolhe seguro-garantia", pb["escolha_garantia"]["seguro"])
     resto = int(round(100 * (1 - seg)))
     fia = pct_slider(c, "Escolhe fiança bancária (S1/S2)", min(pb["escolha_garantia"]["fianca"], 1 - seg), maximo=resto) \

@@ -50,7 +50,7 @@ Ficam fora da norma (art. 19):
 
 **ADI 8015.** A ANOREG/BR ajuizou a ação contra os **arts. 8º a 17**. Situação em 17/10/2026:
 
-- protocolada e distribuída em 08/09/2026; relator Min. Flávio Dino;
+- protocolada e distribuída a um relator em 08/09/2026;
 - em 18/09, o relator adotou o **rito do art. 12 da Lei 9.868/1999**, ou seja, sem liminar separada e com julgamento direto do mérito;
 - informações do CNJ em 30/09; manifestação da AGU em 07/10; processo com vista à PGR;
 - em 13/10, foi indeferido o pedido de amicus curiae da Ad Notare;
@@ -147,11 +147,11 @@ A estrutura atual está na seção "Estrutura do projeto" do `README.md` da raiz
 - **Versões salvas**: ficam na tabela `premissas_versoes` do DuckDB local. Cada versão guarda o número, o diff sobre a anterior, o autor, a data e a origem. Desde a D-034, só o pipeline cria versões, a partir das sementes (como um evento do radar entra numa versão fica para o Radar, opcional; ver `docs/historico/ROADMAP.md`). O app lê a versão vigente do banco e cai para a semente se o banco estiver vazio.
 - **Cenários**: `cenarios_stf.yaml` tem as definições fixas (`mantem`, `suspende_8_17`, `parcial`). As combinações que o usuário salva no simulador vão para `data/painel_estado.json` (`src/cenarios.py`), com a versão vigente das premissas e o diff das que ele alterou (D-034).
 
-Cada premissa tem `valor` (ou `min`/`base`/`max`), `unidade`, `fonte` (URL ou "suposição"), `data_referencia` e `justificativa`. Exemplo real: `config/premissas/premissas_v002.yaml`. A IA não deve inventar valores; onde não houver fonte, marcar `fonte: suposição` e pedir validação ao autor.
+Cada premissa tem `valor` (ou `min`/`base`/`max`), `unidade`, `fonte` (URL ou "suposição"), `data_referencia` e `justificativa`. Exemplo real: `config/premissas/premissas_v003.yaml` (a semente vigente desde a D-046). A IA não deve inventar valores; onde não houver fonte, marcar `fonte: suposição` e pedir validação ao autor.
 
 Premissas previstas, além dos parâmetros legais do passivo:
 
-- `prob_deficit` e `pct_descoberto`, por faixa;
+- `prob_deficit` e `pct_descoberto`, por faixa (desde a D-046, pela capacidade de pagar do titular no BI do CNJ; a chance é ponderada pelo passivo);
 - `escolha_garantia`, com três parcelas que somam 1 (regulariza com bens próprios, fiança, seguro);
 - `taxa_seguro_anual`;
 - `market_share_hipotetico` (`fonte: suposição`);
@@ -231,7 +231,7 @@ Funções puras, sem I/O, cada uma com teste. Todas recebem as premissas de form
 - o prêmio emitido é monotônico na taxa;
 - o mercado total é sempre maior ou igual à visão da seguradora hipotética.
 
-**Análises da mineração (Etapa 2, 2026-10-28).** Depois do gold, o pipeline grava oito tabelas `gold.analise_*` (regras, grupos e o perfil agregado deles, CLT pela receita, previsão 2026–27, tornado, Monte Carlo e as sensibilidades de método da D-042; D-043, D-044, `docs/dicionario_dados.md`) com as funções de `src/analise/tabelas.py`, que repetem os notebooks 03, 04, 06, 07 e 08 com a semente de `config/analise.yaml`. Elas usam as funções do modelo acima (o prêmio projetado e o do Monte Carlo saem de `universo` e de `resumo_por_totais`), mas não mudam nenhuma das 25 tabelas do modelo nem os 10 números: a previsão é sempre rotulada "projeção", e o resto, sensibilidade. Testes em `tests/test_analise_tabelas.py` e nos testes de cada módulo de `src/analise/`.
+**Análises da mineração (Etapa 2, 2026-10-28).** Depois do gold, o pipeline grava treze tabelas `gold.analise_*` (regras, grupos e o perfil agregado deles, CLT pela receita, previsão 2026–27, tornado, Monte Carlo, as sensibilidades de método da D-042 e da regra do salto e, desde a D-045, as melhorias de confiança: capacidade de pagar, sinistro, prêmio por cenário do STF e por taxa × adesão; D-043 a D-046, `docs/dicionario_dados.md`) com as funções de `src/analise/tabelas.py`, que repetem os notebooks 03, 04, 06, 07 e 08 com a semente de `config/analise.yaml`. Elas usam as funções do modelo acima (o prêmio projetado e o do Monte Carlo saem de `universo` e de `resumo_por_totais`), mas não mudam nenhuma das 25 tabelas do modelo nem os 10 números: a previsão é sempre rotulada "projeção", e o resto, sensibilidade. Testes em `tests/test_analise_tabelas.py` e nos testes de cada módulo de `src/analise/`.
 
 ## 4. Qualidade de dados (prioridade do projeto)
 

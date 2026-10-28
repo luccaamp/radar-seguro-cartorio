@@ -703,3 +703,27 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Como foi detectado:** pela própria IA, logo depois; o `git diff` do arquivo foi conferido e só tem as 6 trocas pretendidas.
 - **Correção:** os outros documentos da sessão (`plano_projeto.md`, `ESTADO_ATUAL.md`, `dicionario_dados.md`, `SPEC.md`) foram editados com a ferramenta de edição.
 - **Bom para os slides?** não
+
+## 2026-10-28 — Tabela nova do pipeline dependia de um arquivo opcional do bronze
+- **Onde:** `src/analise/tabelas.py`, `sensibilidade_metodo` (`gold.analise_sensibilidade_metodo`, D-044).
+- **O que aconteceu:** a linha da receita líquida lê o CSV do BI do CNJ no bronze, que é opcional (README) e não vai no pacote público. Com isso, o `pipeline.py --a-partir-de silver` passou a falhar onde não há bronze, contra a D-029 ("gold a partir do silver, sem bronze"). No banco oficial não houve efeito, porque o CSV existe: a tabela gravada está certa.
+- **Como foi detectado:** `tests/test_saida_utf8.py::test_pipeline_com_saida_redirecionada` (`dados_reais`), que roda o pipeline numa cópia do projeto sem o bronze. Ele só rodou depois da carga oficial: antes, a IA tinha rodado os `dados_reais` de 3 arquivos, e não de todos.
+- **Causa provável:** a função copiou o cálculo do notebook 08, que roda com o bronze, sem conferir de onde vinha cada entrada.
+- **Correção:** sem o CSV, a linha sai com um aviso, e o resto da tabela é gravado. Com o CSV, o resultado é idêntico ao do banco oficial (mesmo hash). Teste novo: `test_sensibilidade_metodo_sem_o_bi_nao_para`. Lição: antes de uma carga oficial, rodar **todos** os testes `dados_reais`, não só os do código mudado.
+- **Bom para os slides?** sim
+
+## 2026-10-28 — Código acrescentado por comando de terminal
+- **Onde:** `src/analise/melhorias.py` (funções da M3, M4 e M5) e `config/analise.yaml` (seção `melhorias`).
+- **O que aconteceu:** a IA acrescentou o código ao fim dos arquivos com `cat >> arquivo <<EOF` no terminal, e não com a ferramenta de edição, contra a regra do `CLAUDE.md`.
+- **Como foi detectado:** pela própria IA, logo depois do comando.
+- **Causa provável:** pressa num trabalho longo; o atalho do terminal pareceu equivalente para "acrescentar no fim".
+- **Correção:** o conteúdo foi conferido (ruff sem erro; testes `tests/test_analise_melhorias.py`). As edições seguintes de código e de config usaram só a ferramenta de edição.
+- **Bom para os slides?** não
+
+## 2026-10-28 — Premissa nova com casas decimais e o simulador que arredonda
+- **Onde:** `app/pages/2_Simulador.py` (controles da chance de déficit e da parte descoberta), depois das premissas v3 (D-046).
+- **O que aconteceu:** as premissas v3 têm valores como 10,8% e 90,7%. O simulador mostrava esses controles em porcentagem inteira, com passo de 5, e começava em 11% e 91%: o simulador padrão deixou de repetir a base do painel (≈ 151 com déficit, contra ≈ 148).
+- **Como foi detectado:** `tests/test_app_demo.py::test_simulador_padrao_igual_ao_cenario_base_do_painel`, depois da carga oficial.
+- **Causa provável:** a IA trocou os valores da semente sem procurar onde eles são mostrados ou arredondados; as premissas da v1 e da v2 eram todas redondas.
+- **Correção:** esses quatro controles passaram a ter uma casa decimal e a começar no valor exato da semente; a dica mostra a fonte certa (BI do CNJ, e não "suposição"). Teste passando. O banco não precisou ser refeito (o erro era só da tela). O mesmo descuido apareceu em 4 testes `dados_reais` que fixavam números da v2 (Monte Carlo, receita líquida, tornado do T7, linhas da sensibilidade): atualizados, com a v2 mantida só onde o teste confere o método do T7.
+- **Bom para os slides?** sim

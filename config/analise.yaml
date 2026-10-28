@@ -89,3 +89,21 @@ vacancia:           # notebook 05c: as datas do cadastro do Justiça Aberta
   inicio_confiavel: 2011   # fonte: notebook 05c, §1 (983 das 2.525 serventias ativas de MG têm decisão em 12/07/2010
                            # ou 27/08/2010; tratadas como data de carga do sistema, motivo: suposição)
   ano_recadastro: 2024     # fonte: docs/decisoes.md, D-025 (nota de 2026-10-18: ingressos de 2024 são recadastramento)
+melhorias:         # notebook 10: melhorias de confiança M1 a M10 (docs/plano_mineracao.md)
+  capacidade:      # M1: o titular paga o passivo com o saldo anual (arrecadação − repasse − custeio, BI do CNJ)?
+    ano: 2025              # fonte: docs/decisoes.md, D-010 (mesmo exercício da receita de referência)
+    cortes_meses: [3, 12]  # fonte: docs/diario.md, 2026-10-18, F6 (faixas < 3, 3 a 12 e > 12 meses de saldo)
+    horizonte_meses: 12    # fonte: suposição (o titular consegue dedicar ao passivo até 12 meses de saldo; saldo é
+                           # renda, não patrimônio: serve para calibrar a chance de déficit, não para trocar a regra)
+    horizontes: [6, 12, 24]   # fonte: suposição (sensibilidade do horizonte)
+  sinistro:        # M2: sinistro por frequência × severidade (D-025)
+    p_fim: {min: 0.02, base: 0.04, max: 0.075}   # fonte: notebook 05c, §5 (taxa de vacância observada: 2% em
+                           # 2021–23, ≈ 4% nas Classes 2 e 3 em 2025 e em 2026 anualizado, 7,5% em MG em 2025);
+                           # aprovada pelo autor em 2026-10-28 (D-047), com a limitação do viés de sobrevivência
+  previsao:        # M3: teste no passado mais longo e faixa calibrada
+    origens_longas: ["2012-2", "2013-2", "2014-2", "2015-2", "2016-2", "2017-2", "2018-2", "2019-2", "2020-2",
+                     "2021-2", "2022-2", "2023-2"]   # fonte: docs/plano_mineracao.md, M3 (b) (origens desde 2012-2)
+    janela_recente: 5      # fonte: suposição (escolha do método pelas 5 origens mais recentes, as do T2)
+    cobertura_alvo: 0.80   # fonte: docs/plano_mineracao.md, M3 (c) (alargar a faixa até cobrir ≈ 80%)
+  subidas:         # M4: desvio condicionado ao crescimento recente da serventia
+    grupos_crescimento: 3  # fonte: suposição (tercis do crescimento do ano anterior ao ano-base)

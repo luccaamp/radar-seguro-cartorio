@@ -5,7 +5,7 @@ import duckdb
 import pytest
 import yaml
 
-from src.quality.contratos import controle_arrecadacao_mg
+from src.quality.contratos import controle_arrecadacao_mg, saltos_arrecadacao
 
 CONFIG = Path(__file__).resolve().parents[1] / "config"
 
@@ -33,3 +33,24 @@ def test_conferencia_com_o_bi_e_aviso():
     bi = [x for x in c if "BI do CNJ" in x.checagem]
     assert len(bi) == 2 and all(x.severidade == "aviso" for x in bi)
     assert all(x.violacoes == 0 for x in bi)   # +0,24% (tol. 1%) e +2,16% (tol. 3%)
+
+
+def test_salto_grosseiro_e_aviso_so_no_ano_de_enquadramento():
+    """Regra do salto (D-046), série SINTÉTICA: 'a' salta 10× em 2025-1 (conta); 'b' salta em 2024-2 (fora do ano);
+    'c' fica 9× acima (abaixo do corte); o zero de 'a' em 2024-1 não entra na mediana; 'd' está inativa."""
+    ano = yaml.safe_load((CONFIG / "escopo.yaml").read_text(encoding="utf-8"))["ano_enquadramento"]
+    assert ano == 2025
+    con = duckdb.connect()
+    con.execute("CREATE SCHEMA silver")
+    con.execute("CREATE TABLE silver.serventia AS SELECT * FROM (VALUES ('a', 'Ativo'), ('b', 'Ativo'), ('c', 'Ativo'), "
+                "('d', 'Inativo')) t(cns, status)")
+    con.execute("CREATE TABLE silver.serventia_arrecadacao (cns VARCHAR, ano INT, semestre DOUBLE, versao INT, arrecadacao DOUBLE)")
+    periodos = [(2022, 2), (2023, 1), (2023, 2), (2024, 1), (2024, 2), (2025, 1), (2025, 2)]
+    series = {"a": [100, 100, 100, 0, 100, 1000, 100], "b": [100, 100, 100, 100, 1000, 100, 100],
+              "c": [100, 100, 100, 100, 100, 900, 100], "d": [100, 100, 100, 100, 100, 5000, 100]}
+    for cns, valores in series.items():
+        for (a, s), v in zip(periodos, valores):
+            con.execute("INSERT INTO silver.serventia_arrecadacao VALUES (?, ?, ?, 1, ?)", [cns, a, float(s), v])
+    c = saltos_arrecadacao(con)
+    assert c.severidade == "aviso" and c.violacoes == 1
+    assert "1 semestres em 1 serventias" in c.detalhe and "D-046" in c.detalhe

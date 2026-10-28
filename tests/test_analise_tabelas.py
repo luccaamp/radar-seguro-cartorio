@@ -112,12 +112,12 @@ def test_carregar_le_do_banco_quando_existe(tmp_path, monkeypatch):
     banco = tmp_path / "x.duckdb"
     with duckdb.connect(str(banco)) as con:
         con.execute("CREATE SCHEMA gold")
-        for t in NOMES_ANALISE:
+        for t in cc.NOMES_09:
             con.execute(f"CREATE TABLE gold.{t} AS SELECT 1 AS x")
     monkeypatch.setattr(tabelas, "construir", lambda con: pytest.fail("não devia recalcular"))
     with duckdb.connect(str(banco), read_only=True) as con:
         tabs, origem = cc.carregar(con)
-    assert set(tabs) == set(NOMES_ANALISE) and origem.startswith("banco")
+    assert set(tabs) == set(cc.NOMES_09) and set(NOMES_ANALISE) <= set(tabs) and origem.startswith("banco")
     with duckdb.connect(str(banco)) as con:
         con.execute("DROP TABLE gold.analise_regras")
     monkeypatch.setattr(tabelas, "construir", lambda con: {"calculado": pd.DataFrame()})
@@ -144,7 +144,8 @@ def test_etapa_analise_grava_as_tabelas_sem_parquet(tmp_path, monkeypatch):
 @pytest.mark.dados_reais
 def test_tabelas_rapidas_e_numeros_oficiais(_copia_real):
     """Numa CÓPIA do banco: os números oficiais do 09 são os do gold, e as tabelas rápidas repetem os notebooks 03,
-    06 e 08 (10 regras; MAE da floresta 1,86; P5–P95 do prêmio R$ 206–736 mil)."""
+    06 e 08 (10 regras; MAE da floresta 1,86; P5–P95 do prêmio R$ 215–687 mil com as premissas v3, D-046; com a v2,
+    R$ 206–736 mil)."""
     with duckdb.connect(str(_copia_real["copia"]), read_only=True) as con:
         of = cc.numeros_oficiais(con)
         premio = con.execute("SELECT mercado_premio_emitido FROM gold.fato_mercado_uf WHERE nivel = 'base' AND "
@@ -157,20 +158,33 @@ def test_tabelas_rapidas_e_numeros_oficiais(_copia_real):
     assert len(regras) == 10 and (regras.entao == "obrigada").all()
     assert cc.erro_clt(clt)[0].loc["floresta aleatória", "MAE"] == pytest.approx(1.86, abs=0.005)
     p = mc[(mc.variante == "independentes") & (mc.medida == "premio")].iloc[0]
-    assert p.p05 == pytest.approx(206_100, rel=1e-3) and p.p95 == pytest.approx(736_200, rel=1e-3)
+    assert p.p05 == pytest.approx(215_000, rel=1e-3) and p.p95 == pytest.approx(687_100, rel=1e-3)
     assert tor.iloc[0].suposicao == "taxa" and len(tor) == 11
 
 
 @pytest.mark.dados_reais
 def test_sensibilidade_metodo_repete_o_notebook_08(_copia_real):
     """Numa CÓPIA do banco: a gold.analise_sensibilidade_metodo (D-042, D-044) tem a base igual aos números oficiais e
-    as variações do notebook 08 (receita líquida: universo −20%, prêmio −8,5%; T5 +0,6%; T6 −1,6%; MG inteiro +5,9%)."""
+    as variações do notebook 08 (receita líquida: universo −20%; T5 +0,6%; T6 −1,6%; MG inteiro +5,9% no passivo) e a
+    regra do salto (D-046: −11,3 obrigadas, como no notebook 01). O prêmio da receita líquida cai 2,7% com as premissas v3
+    (−8,5% com a v2, no notebook 08)."""
     with duckdb.connect(str(_copia_real["copia"]), read_only=True) as con:
         s = tabelas.sensibilidade_metodo(con).set_index("chave")
         of = cc.numeros_oficiais(con)
     assert s.loc["base", "mercado_premio_emitido"] == pytest.approx(of.loc["prêmio anual", "base"])
     assert s.loc["receita_liquida", "n_universo"] == pytest.approx(893.6, abs=0.05)
-    assert s.loc["receita_liquida", "var_mercado_premio_emitido"] == pytest.approx(-0.085, abs=0.0005)
+    assert s.loc["receita_liquida", "var_mercado_premio_emitido"] == pytest.approx(-0.027, abs=0.0005)
+    assert s.loc["sem_saltos", "n_universo"] - s.loc["base", "n_universo"] == pytest.approx(-11.3, abs=0.05)
     assert s.loc["t5_salario_estimado", "var_passivo_todas"] == pytest.approx(0.006, abs=0.0005)
     assert s.loc["t6_encolhimento", "var_passivo_todas"] == pytest.approx(-0.016, abs=0.0005)
     assert s.loc["sem_regiao", "var_passivo_todas"] == pytest.approx(0.059, abs=0.0005)
+
+
+@pytest.mark.dados_reais
+def test_sensibilidade_metodo_sem_o_bi_nao_para(_copia_real, tmp_path, monkeypatch):
+    """O CSV do BI é opcional (fica no bronze, fora do pacote público): sem ele, só a linha da receita líquida sai, com
+    aviso, e o pipeline a partir do silver não para (docs/erros_ia.md, 2026-10-28)."""
+    monkeypatch.setattr(tabelas.dados, "arquivo_bi", lambda: tmp_path / "nao_existe.csv")
+    with duckdb.connect(str(_copia_real["copia"]), read_only=True) as con, pytest.warns(UserWarning, match="BI"):
+        s = tabelas.sensibilidade_metodo(con)
+    assert list(s.chave) == ["base", "sem_saltos", "t5_salario_estimado", "t6_encolhimento", "sem_regiao"]
