@@ -3,8 +3,9 @@
 Tabelas públicas (o painel lê só estas):
 - gold.dim_municipio, gold.fato_passivo_municipio, gold.fato_mercado_municipio_publico (agregação LGPD),
   gold.fato_mercado_uf (níveis × regra de classe × cenário do STF), gold.sensibilidade_rateio,
-  gold.diferenca_regra_classe, gold.execucao (versão das premissas e parâmetros da carga).
-Tabelas internas (nunca exibidas por serventia, SPEC §6): gold.interno_serventia, gold.interno_insumo_*.
+  gold.diferenca_regra_classe, gold.execucao (versão das premissas e parâmetros da carga),
+  gold.serventia_publico (resultado do modelo por serventia, nível e regra base; D-038, fase 1).
+Tabelas internas (todos os níveis e regras, insumos e auditoria): gold.interno_serventia, gold.interno_insumo_*.
 """
 import datetime as dt
 
@@ -15,7 +16,9 @@ import yaml
 from src import estado
 from src.model.distribuicao import fator_correcao_inpc
 from src.model import simulador
+from src.model.cenario import aplicar_cenario_stf
 from src.model.lgpd import agregar_lgpd
+from src.model.mercado import demanda_seguro
 from src.model.supressao import Celula
 from src.model.premissas import NIVEIS, validar
 from src.model.rateio import METODOS
@@ -58,6 +61,30 @@ def _gravar(con, nome: str, df: pd.DataFrame) -> int:
     if _EXPORTAR_PARQUET and not nome.startswith("interno_"):
         con.execute(f"COPY gold.{nome} TO '{(GOLD / f'{nome}.parquet').as_posix()}' (FORMAT parquet)")
     return len(df)
+
+
+COLUNAS_SERVENTIA_PUBLICO = ["cns", "uf", "cod_ibge", "situacao_juridica", "tipo_cartorio", "atribuicoes", "clt",
+                             "receita_ref", "origem_receita", "semestres_validos", "classe", "classificacao_aproximada",
+                             "motivo", "peso_universo", "passivo", "passivo_medio_vinculo", "n_deficit",
+                             "valor_descoberto"]
+
+
+def serventia_publico(interno: pd.DataFrame, p_base: dict, cenarios: dict, regra_base: str,
+                      municipios: pd.DataFrame) -> pd.DataFrame:
+    """gold.serventia_publico (D-038, fase 1): o resultado do modelo por serventia ativa, no nível base e na regra
+    base, com o município e as regiões. O cartório é identificado pelo CNS e pelo município, nunca pelo nome do
+    responsável (que o silver nem lê). IS e prêmio no cenário do STF "mantém", pelas funções do mercado: somados, dão
+    os de gold.fato_mercado_uf."""
+    s = interno[(interno["nivel"] == "base") & (interno["regra_classe"] == regra_base)]
+    outras = interno[(interno["nivel"] == "base") & (interno["regra_classe"] != regra_base)]
+    pc = aplicar_cenario_stf(p_base, cenarios, "mantem")
+    is_por_real = demanda_seguro(1.0, pc).importancia_segurada   # a IS é proporcional ao déficit
+    out = s[COLUNAS_SERVENTIA_PUBLICO].merge(municipios, on="cod_ibge", how="left")
+    for regra, g in outras.groupby("regra_classe"):
+        out[f"classe_{regra}"] = out["cns"].map(g.set_index("cns")["classe"])
+    out["importancia_segurada"] = out["valor_descoberto"] * is_por_real
+    out["premio_emitido"] = out["importancia_segurada"] * pc["taxa_seguro_anual"]
+    return out.sort_values("cns").reset_index(drop=True)
 
 
 def _metricas(df: pd.DataFrame) -> dict:
@@ -232,6 +259,8 @@ def construir(con: duckdb.DuckDBPyConnection, exportar_parquet: bool = True) -> 
         execucao.append({"regra_classe": regra, "peso_classe_indeterminada_base": peso})
         for nivel in NIVEIS:
             p = premissas_nivel(semente, nivel, peso)
+            if regra == regras["versao_base"] and nivel == "base":
+                p_base = p
             serv, medio = calcular_serventias(ins, p, limites, limites_faixa=lim_base)
             servs.append(serv.assign(nivel=nivel, regra_classe=regra))
             if regra == REGRAS[0]:  # o passivo médio não depende da regra de classe
@@ -242,6 +271,10 @@ def construir(con: duckdb.DuckDBPyConnection, exportar_parquet: bool = True) -> 
 
     interno = pd.concat(servs, ignore_index=True)
     cont = {"interno_serventia": _gravar(con, "interno_serventia", interno)}
+    mun_reg = con.sql("SELECT cod_ibge, nome AS municipio, regiao_imediata, regiao_intermediaria "
+                      "FROM silver.municipio_ibge").df()
+    cont["serventia_publico"] = _gravar(con, "serventia_publico",
+                                        serventia_publico(interno, p_base, cenarios, regras["versao_base"], mun_reg))
 
     # municípios: agregação de todas as serventias ativas, depois agrupamento LGPD para exibição
     por_mun = (interno.assign(_pu=interno["passivo"] * interno["peso_universo"])

@@ -1,6 +1,7 @@
-# Conjunto público (D-029): o que scripts/gerar_publico.py copia do banco para data/publico/ (versionado no
-# repositório público). Só tabelas que o painel lê, já agregadas e auditadas. Nunca interno_*, nunca dado por
-# serventia, nunca nome, CPF ou e-mail de pessoa.
+# Conjunto público (D-029; D-038 e D-048): o que scripts/gerar_publico.py copia do banco para data/publico/ (versionado
+# no repositório público). Desde a D-048 (fase 1 da D-038), entram também os resultados por serventia, identificada
+# pelo CNS e pelo município. Nunca nome, CPF, e-mail ou outro dado de pessoa física. As tabelas interno_* ficam fora
+# (todos os níveis e regras, insumos e auditoria); a supressão de áreas pequenas sai na fase 2 (Etapa 3).
 pasta: data/publico
 limite_mb: 20
 
@@ -38,8 +39,11 @@ tabelas:
     sql: SELECT * FROM estado.premissas_versoes ORDER BY versao DESC LIMIT 1
     sem_hash: [criada_em]
     comparar: false          # o estado não é recalculado pelo pipeline (cada banco tem o seu histórico)
-  # análises agregadas da mineração (D-043, D-044; carga 2026-10-28). Fora: analise_grupos e analise_clt_modelo
-  # (uma linha por serventia; no público vai só o perfil agregado dos grupos)
+  # resultado do modelo por serventia (D-038, fase 1; D-048)
+  gold.serventia_publico: {}
+  # análises da mineração (D-043, D-044; carga 2026-10-28); as duas por serventia desde a D-048
+  gold.analise_grupos: {}
+  gold.analise_clt_modelo: {}
   gold.analise_regras: {}
   gold.analise_grupos_perfil: {}
   gold.analise_previsao: {}
@@ -53,6 +57,10 @@ tabelas:
   gold.analise_premio_cenarios: {}
   gold.analise_premio_grade: {}
 
+# tabelas com uma linha por serventia (D-048): nelas o CNS é esperado; nas outras, um CNS continua sendo erro (uma
+# tabela agregada não deveria trazer código de serventia)
+por_serventia: [gold.serventia_publico, gold.analise_grupos, gold.analise_clt_modelo]
+
 # colunas que contam serventias de uma célula publicada: valor entre 1 e limiar - 1 bloqueia a publicação,
 # salvo exceção abaixo
 contagem_de_serventias: [n_serventias, n_serventias_ativas, n_cnj]
@@ -63,8 +71,9 @@ excecoes_limiar:
       removido). O painel usa para dizer que um município pequeno aparece somado à sua região (D1, D-026).
     status: aprovada pelo autor em 2026-10-19 (D-029)
 
-# D-030 (regra corrigida pelo autor, 2026-10-19): no público, nenhuma ESTIMATIVA do modelo por serventia. Colunas do
-# silver com estes nomes saem do pacote público (o empacotador avisa qual). Os prêmios e sinistros da SUSEP
+# D-030 (regra corrigida pelo autor, 2026-10-19; substituída pela D-038/D-048 no data/publico, que agora traz
+# gold.serventia_publico): vale só para o pacote do silver. Colunas do silver com estes nomes saem do pacote
+# público (o empacotador avisa qual); hoje o silver não tem nenhuma. Os prêmios e sinistros da SUSEP
 # (susep_garantia) são dado de origem, não estimativa do modelo, e não casam com a expressão.
 estimativas_do_modelo: '(^|_)(passivo|deficit|descoberto|peso_universo|prob_deficit|pct_descoberto|importancia_segurada|receita_ref|classe(_v\d)?|n_deficit|valor_descoberto|mercado_premio\w*|seguradora_\w+)($|_)'
 
@@ -75,5 +84,6 @@ estimativas_do_modelo: '(^|_)(passivo|deficit|descoberto|peso_universo|prob_defi
 silver_publico_remover:
   rais_vinculo: [ano_base, tipo_estabelecimento, horas_contratadas, mes_admissao, mes_desligamento, cbo]
 
-# nomes de coluna proibidos no público (expressão regular, sem diferenciar maiúsculas)
-colunas_proibidas: '(^|_)(cns|cpf|email|e_mail|telefone|responsavel|substitutos?|titular|delegatario|endereco|cep)($|_)'
+# nomes de coluna proibidos no público (expressão regular, sem diferenciar maiúsculas): dados de pessoa física. O CNS
+# identifica o cartório e é permitido desde a D-048 (D-038).
+colunas_proibidas: '(^|_)(cpf|email|e_mail|telefone|responsavel|substitutos?|titular|delegatario|endereco|cep)($|_)'

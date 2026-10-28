@@ -154,6 +154,34 @@ def reconciliar(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
     return df
 
 
+def _regra_base() -> str:
+    return yaml.safe_load((CONFIG / "regras_classificacao.yaml").read_text(encoding="utf-8"))["versao_base"]
+
+
+def classe_api_x_bi(con: duckdb.DuckDBPyConnection) -> Checagem:
+    """Aviso (D-048; caso da serventia 035030): serventias ativas cuja classe (regra base) mudaria se a
+    receita de 2025 viesse do BI do CNJ, e não da API do Justiça Aberta. A classe continua pela API (D-010); a
+    checagem só mostra quantas dependem da fonte. O CSV do BI é opcional (bronze): sem ele, sai com 0 e o motivo."""
+    from src.analise import dados, enquadramento
+    from src.analise.sensibilidade import receita_ref_bi
+    nome = "classe pela API × pelo BI do CNJ (receita de 2025, regra base)"
+    if not dados.arquivo_bi().exists():
+        return Checagem("gold.interno_serventia", nome, "aviso", 0, "sem o CSV do BI do CNJ no bronze: não conferido")
+    regra = _regra_base()
+    api = con.execute("SELECT cns, classe FROM gold.interno_serventia WHERE nivel = 'base' AND regra_classe = ? "
+                      "AND classe IN ('1', '2', '3')", [regra]).df()
+    bi = receita_ref_bi(dados.arrecadacao_bi(con), 2025)
+    m = api.merge(bi[["cns", "arrecadacao_bi"]], on="cns")
+    m["classe_bi"] = enquadramento.classe_pela_receita(m["arrecadacao_bi"], regra)
+    dif = m[m["classe"] != m["classe_bi"]]
+    para_1 = int((dif["classe_bi"] == "1").sum())
+    da_1 = int((dif["classe"] == "1").sum())
+    return Checagem("gold.interno_serventia", nome, "aviso", len(dif),
+                    f"{len(dif)} de {len(m)} serventias com as duas fontes mudariam de classe: {para_1} iriam para a "
+                    f"Classe 1, {da_1} sairiam dela e {len(dif) - para_1 - da_1} trocariam entre a 2 e a 3; a classe "
+                    "segue a API (D-010)" if len(dif) else "")
+
+
 def contratos_gold(con: duckdb.DuckDBPyConnection) -> list[Checagem]:
     g = "gold"
     return [
@@ -172,6 +200,14 @@ def contratos_gold(con: duckdb.DuckDBPyConnection) -> list[Checagem]:
                  f"n_serventias < (SELECT max(limiar_lgpd) FROM {g}.execucao)"),
         condicao(con, f"{g}.geo_area_municipio", "mapa: todo município com serventia pertence a uma área",
                  f"cod_ibge IN (SELECT cod_ibge FROM {g}.dim_municipio WHERE n_serventias > 0) AND area_id IS NULL"),
+        classe_api_x_bi(con),
+        chave_unica(con, f"{g}.serventia_publico", "cns"),
+        condicao(con, f"{g}.fato_mercado_uf", "por serventia (D-038): a soma de gold.serventia_publico dá o total de MG "
+                 "(nível e regra base, STF mantém)",
+                 f"nivel = 'base' AND regra_classe = '{_regra_base()}' AND cenario_stf = 'mantem' AND (abs(n_serventias_ativas - "
+                 f"(SELECT count(*) FROM {g}.serventia_publico)) > 0 OR abs(valor_descoberto - (SELECT sum(valor_descoberto) "
+                 f"FROM {g}.serventia_publico)) > 0.01 OR abs(mercado_premio_emitido - (SELECT sum(premio_emitido) "
+                 f"FROM {g}.serventia_publico)) > 0.01)"),
         condicao(con, f"{g}.fato_mercado_uf", "mercado ≥ seguradora hipotética",
                  "mercado_premio_emitido < seguradora_premio_emitido"),
         condicao(con, f"({g}.fato_mercado_uf v1 JOIN {g}.fato_mercado_uf v2 USING (nivel, cenario_stf))",

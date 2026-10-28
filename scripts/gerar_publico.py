@@ -80,8 +80,9 @@ def main(banco: Path = BANCO, destino: Path = publico.PASTA) -> None:
         a["bytes"] = p.stat().st_size
         a["sha256_arquivo"] = publico.sha256_arquivo(p)
     executado = pd.Timestamp(exe["executado_em"].iloc[0])
-    man = {"descricao": "Conjunto público do Radar Seguro-Garantia Cartórios (D-029): tabelas agregadas e auditadas "
-                        "que o painel lê. Sem dado por serventia e sem dado pessoal.",
+    man = {"descricao": "Conjunto público do Radar Seguro-Garantia Cartórios (D-029, D-038, D-048): as tabelas que o "
+                        "painel lê e o resultado do modelo por serventia (identificada pelo CNS e pelo município). "
+                        "Sem dado de pessoa física.",
            "carga": executado.strftime("%Y-%m-%d"), "executado_em": executado.isoformat(),
            "versao_premissas": int(exe["versao_premissas"].iloc[0]), "limiar_lgpd": limiar,
            **commit_atual(), "gerado_em": dt.datetime.now().replace(microsecond=0).isoformat(),

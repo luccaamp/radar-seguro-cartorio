@@ -46,6 +46,24 @@ def test_ferramentas_devolvem_os_numeros_do_gold(con):
     assert r["premio_anual_mercado"].startswith("R$ 0 no cenário base")
 
 
+def test_consultar_serventia_por_cns_e_por_municipio(con):
+    """D-048 (D-038): o resultado por serventia sai de gold.serventia_publico, pelo CNS ou pelo município, e a soma
+    dos prêmios bate com o total da UF."""
+    s = con.execute("SELECT * FROM gold.serventia_publico WHERE premio_emitido > 0 ORDER BY premio_emitido DESC "
+                    "LIMIT 1").df().iloc[0]
+    r = ferramentas.executar(con, "consultar_serventia", {"uf": "MG", "cns": s["cns"]})
+    assert r["premio_anual"] == ferramentas.brl(s["premio_emitido"]) and r["municipio"] == s["municipio"]
+    assert r["obrigada_prov_227"] == "sim" and "nome" not in " ".join(r)
+    r = ferramentas.executar(con, "consultar_serventia", {"uf": "MG", "municipio": s["municipio"].lower()})
+    assert any(x["cns"] == s["cns"] for x in r["serventias"])
+    assert "erro" in ferramentas.executar(con, "consultar_serventia", {"uf": "MG", "cns": "000000"})
+    assert "erro" in ferramentas.executar(con, "consultar_serventia", {"uf": "MG"})
+    total, uf = con.execute("SELECT (SELECT sum(premio_emitido) FROM gold.serventia_publico), mercado_premio_emitido "
+                            "FROM gold.fato_mercado_uf WHERE nivel = 'base' AND regra_classe = 'v2' "
+                            "AND cenario_stf = 'mantem'").fetchone()
+    assert total == pytest.approx(uf)
+
+
 def test_filtros_uf_sem_dados_e_erros_viram_resposta(con):
     for recorte in ("vago", "interino", "Vago (interino)"):
         assert ferramentas.executar(con, "contar_serventias", {"uf": "MG", "recorte": recorte})[

@@ -199,3 +199,19 @@ O autor decidiu os três pontos que a D-045 deixou abertos, seguindo a recomenda
 **Carga oficial** (pedido do autor): cópia conferida antes; backup em `~/radar_arquivo/antes_carga_2026-10-28_d046/`; banco novo idêntico à cópia; 38 tabelas no gold; `data/publico/` com 36 tabelas e auditor sem vazamento; linha de base em `~/radar_arquivo/baseline_2026-10-28_d046/`.
 
 **Também:** nome do relator da ADI tirado do diário, do SPEC e da página inicial do painel; simulador com uma casa decimal na chance e na parte descoberta (erro da IA achado pelo teste do painel); README e gabarito do chat com os valores novos; notebooks 09 e 10 refeitos; nota da D-046 no fim de 01 a 08.
+
+## 14. D-048: pendências do pipeline antes da Etapa 3
+
+A colaboradora pediu para resolver as pendências do pipeline antes do painel; o autor pediu a D-038 no pipeline.
+
+| Pendência | Decisão | Efeito |
+|---|---|---|
+| D-038 (resultado por cartório público) | fase 1 agora, fase 2 na Etapa 3 | tabela pública `gold.serventia_publico` (2.525 linhas, pelo CNS e pelo município, soma igual ao total de MG); `analise_grupos` e `analise_clt_modelo` públicas; chat com `consultar_serventia` |
+| 035030 (classe pela API ou pelo BI) | classe pela API, com aviso | aviso `classe_api_x_bi`: 10 serventias mudariam de classe pelo BI, 6 para a Classe 1 |
+| Nomes de pessoa no silver público | conferido | nenhum dos 4.441 nomes do cadastro |
+
+**Carga oficial** (pedido do autor): igual à cópia; 39 tabelas no gold e no `data/publico/`; os 10 números sem mudança; backup em `~/radar_arquivo/antes_carga_2026-10-28_d048/`.
+
+**Testes:** suíte padrão com 247 testes passando; `dados_reais` com 80 passando, 3 pulados e 1 falha. A falha era um teste de LGPD que ainda cobrava o limiar de 3 serventias (erro da IA, corrigido).
+
+**Fica para a Etapa 3:** fase 2 da D-038 (sem limiar de 3 serventias, sem áreas agregadas, mapa e ranking por município).

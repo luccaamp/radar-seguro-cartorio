@@ -727,3 +727,11 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** a IA trocou os valores da semente sem procurar onde eles são mostrados ou arredondados; as premissas da v1 e da v2 eram todas redondas.
 - **Correção:** esses quatro controles passaram a ter uma casa decimal e a começar no valor exato da semente; a dica mostra a fonte certa (BI do CNJ, e não "suposição"). Teste passando. O banco não precisou ser refeito (o erro era só da tela). O mesmo descuido apareceu em 4 testes `dados_reais` que fixavam números da v2 (Monte Carlo, receita líquida, tornado do T7, linhas da sensibilidade): atualizados, com a v2 mantida só onde o teste confere o método do T7.
 - **Bom para os slides?** sim
+
+## 2026-10-28 — Teste de LGPD esquecido na D-048
+- **Onde:** `tests/test_app.py::test_lgpd_tabelas_publicas_do_gold_e_da_qualidade`, depois da tabela `gold.serventia_publico` (D-048).
+- **O que aconteceu:** a tabela nova mostra o município de cada cartório, como a D-038 permite. O teste ainda cobrava a regra antiga (nenhum município com menos de 3 serventias em tabela pública) e falhou com 532 municípios.
+- **Como foi detectado:** rodada dos testes `dados_reais`, depois da carga oficial.
+- **Causa provável:** a IA ajustou as travas do `publico.py` e o `test_publico.py`, mas não procurou outros testes que conferem a mesma regra.
+- **Correção:** a `serventia_publico` entrou na lista `EXCECOES_LGPD` do teste, com o motivo (D-038, D-048). O teste passou. Banco e `data/publico/` não mudaram. O teste some ou muda de vez na fase 2 da D-038 (Etapa 3).
+- **Bom para os slides?** não

@@ -47,6 +47,22 @@ def test_checagem_pega_os_casos_errados(tmp_path):
         assert esperado in texto, (esperado, problemas)
 
 
+def test_cns_so_nas_tabelas_por_serventia(tmp_path):
+    """Dados SINTÉTICOS (D-048): o CNS é esperado nas tabelas por serventia e continua erro numa tabela agregada; nome
+    de pessoa é erro nas duas."""
+    assert "gold.serventia_publico" in publico.CONFIG["por_serventia"]
+    with duckdb.connect(str(tmp_path / "x.duckdb")) as con:
+        con.execute("CREATE SCHEMA gold")
+        con.execute("CREATE TABLE gold.serventia_publico AS SELECT '999999' AS cns, 'BELO HORIZONTE' AS municipio")
+        con.execute("CREATE TABLE gold.agregada AS SELECT '999999' AS area")
+        problemas, _ = publico.checar(con, 3, cns={"999999"})
+        assert problemas == ["gold.agregada.area: código CNS de serventia"], problemas
+        con.execute("CREATE OR REPLACE TABLE gold.serventia_publico AS SELECT '999999' AS cns, 'FULANO DE TAL' AS obs")
+        con.execute("DROP TABLE gold.agregada")
+        problemas, _ = publico.checar(con, 3, cns={"999999"}, nomes={"FULANO DE TAL"})
+    assert len(problemas) == 1 and "nome de pessoa" in problemas[0]
+
+
 @pytest.mark.skipif(not BANCO_REAL.exists(), reason="sem banco local: nada a comparar")
 def test_publico_coerente_com_o_gold_local():
     """Se o gold local existir, o conjunto público tem de bater com ele (hash de conteúdo)."""

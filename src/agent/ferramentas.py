@@ -4,8 +4,9 @@ Regras (CLAUDE.md, D-026 a D-030):
 - só leem tabelas do conjunto público já auditado (`config/publico.yaml`), por uma conexão só de leitura recebida de
   fora (a do painel); nenhuma tabela interna, nada de SQL livre (testado em tests/test_chat.py);
 - sempre com a UF como parâmetro; hoje só MG tem dados (expansão na E7);
-- regra v1 e mínimo/máximo só nos totais da UF (D-027): nenhuma ferramenta desce abaixo da UF, exceto as contagens por
-  filtro que o auditor publicou (`publicado`);
+- regra v1 e mínimo/máximo só nos totais da UF (D-027); abaixo da UF, as contagens por filtro que o auditor publicou
+  (`publicado`) e, desde a D-048 (D-038), o resultado por serventia (`consultar_serventia`, pelo CNS ou pelo
+  município; nunca nome de pessoa);
 - cada resultado traz os valores já formatados e a linha `citar` (fonte, carga e versão das premissas).
 """
 import json
@@ -197,6 +198,53 @@ def simular(con: duckdb.DuckDBPyConnection, uf: str, taxa: float | None = None, 
             "citar": _citar(con, "gold.fato_mercado_uf e premissas vigentes")}
 
 
+def _obrigada(peso: float) -> str:
+    if peso >= 1:
+        return "sim"
+    return "não" if peso <= 0 else f"talvez (classe indeterminada; peso {_br(peso, 2)} no universo)"
+
+
+def consultar_serventia(con: duckdb.DuckDBPyConnection, uf: str, cns: str | None = None,
+                        municipio: str | None = None) -> dict:
+    """Resultado do modelo para um cartório (pelo CNS) ou a lista dos cartórios de um município (D-038, D-048):
+    situação, classe aproximada, se é obrigado, passivo, déficit esperado, IS e prêmio (nível base, regra v2, STF
+    mantém). Identifica o cartório pelo CNS e pelo município; não há nome de pessoa na tabela."""
+    if not _uf(uf):
+        return _sem_uf(uf)
+    citar = _citar(con, "gold.serventia_publico")
+    if cns:
+        codigo = re.sub(r"\D", "", str(cns)).zfill(6)
+        df = con.execute("SELECT * FROM gold.serventia_publico WHERE cns = ?", [codigo]).df()
+        if df.empty:
+            return {"erro": f"CNS {cns!r} não é de uma serventia ativa de MG nesta carga"}
+        s = df.iloc[0]
+        return {"uf": "MG", "cns": s["cns"], "municipio": s["municipio"], "regiao_imediata": s["regiao_imediata"],
+                "situacao": s["situacao_juridica"], "atribuicoes": s["atribuicoes"],
+                "empregados_clt": "não declarado" if s["clt"] != s["clt"] else _br(s["clt"], 0),
+                "receita_semestral_2025": "sem receita válida" if s["receita_ref"] != s["receita_ref"]
+                else brl(s["receita_ref"]),
+                "classe": s["classe"], "obrigada_prov_227": _obrigada(float(s["peso_universo"])),
+                "passivo_trabalhista": brl(s["passivo"]), "deficit_esperado": brl(s["valor_descoberto"]),
+                "importancia_segurada": brl(s["importancia_segurada"]), "premio_anual": brl(s["premio_emitido"]),
+                "observacao": "estimativas do modelo (nível base, regra v2, STF mantém); classe aproximada; o déficit "
+                              "é um valor esperado (chance × parte descoberta), não o déficit real do cartório",
+                "citar": citar}
+    if municipio:
+        df = con.execute("SELECT * FROM gold.serventia_publico ORDER BY cns").df()
+        df = df[df["municipio"].map(lambda m: _sem_acento(str(m))) == _sem_acento(municipio)]
+        if df.empty:
+            return {"erro": f"município {municipio!r} sem serventia ativa em MG (confira a grafia)"}
+        linhas = [{"cns": r["cns"], "situacao": r["situacao_juridica"], "classe": r["classe"],
+                   "obrigada": _obrigada(float(r["peso_universo"])), "premio_anual": brl(r["premio_emitido"])}
+                  for _, r in df.head(30).iterrows()]
+        return {"uf": "MG", "municipio": df["municipio"].iloc[0], "serventias_ativas": _br(len(df), 0),
+                "obrigadas": aprox(df["peso_universo"].sum()), "premio_anual_do_municipio": brl(df["premio_emitido"].sum()),
+                "serventias": linhas, **({"observacao": "lista com as 30 primeiras, pela ordem do CNS"}
+                                         if len(df) > 30 else {}),
+                "citar": citar}
+    return {"erro": "informe o CNS ou o município"}
+
+
 # palavras da pergunta que o texto da norma diz de outro jeito (busca simples, sem embeddings; SPEC §5.2)
 SINONIMOS_NORMA = {"fora": ["nao se aplicam"], "excluidas": ["nao se aplicam"], "isentas": ["nao se aplicam"],
                    "limite": ["nao superior"], "teto": ["nao superior"], "valor": ["corresponder"],
@@ -248,7 +296,8 @@ RECORTES = ["total", "classe 1", "classe 2", "classe 3", "classe indeterminada",
             "sob intervencao", "conversao em diligencia", "notas", "registro civil", "registro de imoveis", "protesto",
             "titulos e documentos"]
 FERRAMENTAS = {"contar_serventias": contar_serventias, "passivo_e_obrigadas": passivo_e_obrigadas,
-               "deficit_e_mercado": deficit_e_mercado, "simular": simular, "buscar_norma": buscar_norma}
+               "deficit_e_mercado": deficit_e_mercado, "simular": simular, "buscar_norma": buscar_norma,
+               "consultar_serventia": consultar_serventia}
 SEM_CONEXAO = {"buscar_norma"}
 
 _UF = {"type": "string", "description": "sigla da UF; hoje só MG tem dados"}
@@ -281,6 +330,15 @@ ESQUEMAS = [
             "uf": _UF, "taxa": {"type": "number", "description": "taxa anual em %, ex.: 3 para 3%"},
             "market_share": {"type": "number", "description": "market share da seguradora hipotética em %, ex.: 10"},
             "cenario_stf": _CENARIO}, "required": ["uf"]}}},
+    {"type": "function", "function": {
+        "name": "consultar_serventia",
+        "description": "Resultado do modelo para um cartório, pelo CNS (código de 6 dígitos), ou a lista dos cartórios "
+                       "de um município: situação, classe, se é obrigado pelo Provimento 227, passivo, déficit "
+                       "esperado, importância segurada e prêmio. Não traz nome de pessoa.",
+        "parameters": {"type": "object", "properties": {
+            "uf": _UF, "cns": {"type": "string", "description": "CNS do cartório, ex.: 012345"},
+            "municipio": {"type": "string", "description": "nome do município, ex.: Belo Horizonte"}},
+            "required": ["uf"]}}},
     {"type": "function", "function": {
         "name": "buscar_norma",
         "description": "Busca trechos (artigos) dos Provimentos CNJ 227/2026, 213/2026 e 243/2026 que respondem a "

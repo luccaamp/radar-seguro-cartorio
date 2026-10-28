@@ -180,8 +180,10 @@ def checar(con: duckdb.DuckDBPyConnection, limiar: int, cns: set[str] | None = N
            nomes: set[str] | None = None) -> tuple[list[str], list[str]]:
     """Contratos de "sem dado pessoal" e de limiar sobre um banco montado só com o conjunto público.
 
-    Devolve (problemas, exceções usadas). `cns` e `nomes` (opcionais, só na máquina de quem gera): códigos de serventia
-    e nomes de pessoas do cadastro, procurados em todo texto do conjunto (nada é impresso, só contado)."""
+    Devolve (problemas, exceções usadas). `nomes` (opcional, só na máquina de quem gera): nomes de pessoas do cadastro,
+    procurados em todo texto do conjunto (nada é impresso, só contado). `cns` (códigos de serventia): só nas tabelas
+    agregadas, fora de `por_serventia` (config/publico.yaml); o CNS identifica o cartório e é público desde a D-048."""
+    por_serventia = set(CONFIG.get("por_serventia") or [])
     problemas, excecoes = [], []
     proibida = re.compile(CONFIG["colunas_proibidas"], re.IGNORECASE)
     contagens = set(CONFIG["contagem_de_serventias"])
@@ -210,13 +212,13 @@ def checar(con: duckdb.DuckDBPyConnection, limiar: int, cns: set[str] | None = N
                     problemas.append(f"{t}.{c}: texto com formato de CPF")
                 if any(EMAIL.search(x) for x in textos):
                     problemas.append(f"{t}.{c}: texto com formato de e-mail")
-                if cns and any(x.strip() in cns for x in textos):
+                if cns and t not in por_serventia and any(x.strip() in cns for x in textos):
                     problemas.append(f"{t}.{c}: código CNS de serventia")
                 if nomes and c != "geometria":
                     achou = sum(1 for x in textos for n in nomes if n in x.upper())
                     if achou:
                         problemas.append(f"{t}.{c}: {achou} ocorrências de nome de pessoa do cadastro")
-            elif tipo in ("BIGINT", "INTEGER") and cns:
+            elif tipo in ("BIGINT", "INTEGER") and cns and t not in por_serventia:
                 valores = {str(x) for (x,) in con.execute(f'SELECT DISTINCT "{c}" FROM {t}').fetchall()}
                 if c not in ("cod_ibge", "cod_ibge6") and len(valores & cns) > 5:
                     problemas.append(f"{t}.{c}: valores que coincidem com códigos CNS")

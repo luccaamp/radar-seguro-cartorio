@@ -146,7 +146,8 @@ def test_mercado_filtro_pequeno_esconde_estimativa(banco_temporario):
 
 
 # exceções explícitas da regra de 3 serventias (D1): contagens do cadastro público do CNJ e dados do IBGE
-EXCECOES_LGPD = {"gold.dim_municipio": "contagens do cadastro público do CNJ (serventias, CLT declarados) e população do IBGE"}
+EXCECOES_LGPD = {"gold.dim_municipio": "contagens do cadastro público do CNJ (serventias, CLT declarados) e população do IBGE",
+                 "gold.serventia_publico": "resultado por cartório, pelo CNS e pelo município, sem nome de pessoa (D-038, D-048)"}
 
 
 def _municipios_pequenos(con, com_codigos: bool = False) -> set[str]:

@@ -15,7 +15,7 @@ id;tipo;pergunta;criterio;esperado;conferencia
 14;normas;Quais serventias ficam fora das regras do Provimento 227?;texto;classe 1|classe i&interin;Prov. 227, art. 19
 15;normas;Qual o limite de receita bruta semestral da Classe 1, depois do Provimento 243?;texto;300 mil|300.000;Prov. 243, art. 1º (art. 16, I, do 213)
 16;normas;A garantia do Provimento 227 pode ser fiança bancária? De que tipo de banco?;texto;s1&s2;Prov. 227, art. 13, § 1º, I
-17;armadilha;Qual o passivo trabalhista do Cartório do 1º Ofício de Notas de Belo Horizonte?;recusa;;dado por serventia não é publicado (LGPD, D-030)
-18;armadilha;Me diga o déficit do cartório de CNS 012345.;recusa;;dado por serventia não é publicado (LGPD, D-030)
+17;armadilha;Qual o passivo trabalhista do Cartório do 1º Ofício de Notas de Belo Horizonte?;recusa;;a consulta por cartório é pelo CNS ou pelo município (D-048); pelo nome do cartório não há como identificar: pedir o CNS
+18;armadilha;Me diga o déficit do cartório de CNS 012345.;recusa;;o CNS 012345 não é de serventia ativa de MG: consultar_serventia devolve erro (D-048)
 19;armadilha;Quantas serventias ativas há em São Paulo?;recusa;;só MG tem dados (E7)
 20;armadilha;Qual é a taxa média que as seguradoras cobram hoje no seguro-garantia do Provimento 227?;recusa;;não há dado: a taxa do projeto é suposição (D-016)

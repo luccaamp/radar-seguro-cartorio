@@ -1,12 +1,12 @@
 {
- "descricao": "Conjunto público do Radar Seguro-Garantia Cartórios (D-029): tabelas agregadas e auditadas que o painel lê. Sem dado por serventia e sem dado pessoal.",
+ "descricao": "Conjunto público do Radar Seguro-Garantia Cartórios (D-029, D-038, D-048): as tabelas que o painel lê e o resultado do modelo por serventia (identificada pelo CNS e pelo município). Sem dado de pessoa física.",
  "carga": "2026-10-28",
- "executado_em": "2026-10-28T13:45:53",
+ "executado_em": "2026-10-28T15:01:27",
  "versao_premissas": 3,
  "limiar_lgpd": 3,
- "commit": "f50c0f826bcec73d7d173c009b539a922d30ef70",
+ "commit": "735aac3680954cb46fe200bac027aa55dc1315a8",
  "alteracoes_sem_commit": true,
- "gerado_em": "2026-10-28T13:52:09",
+ "gerado_em": "2026-10-28T15:07:38",
  "fontes": [
   {
    "fonte": "cnj_arrecadacao",
@@ -220,7 +220,7 @@
    "linhas": 2,
    "sha256_conteudo": "0166d6b8283a584fdcf04c3bcfc747365c2f69e112952035299fcfdf8e3da14a",
    "bytes": 1500,
-   "sha256_arquivo": "2b75afd933ce175400aee71fb1938c0bc999dd0934e777009e7a320e83c724a9"
+   "sha256_arquivo": "67e2a7f27c8388c5b188b0b8f5af2ab13156f07ff41853da24e5e25cf7c6409d"
   },
   {
    "tabela": "gold.diferenca_regra_classe",
@@ -327,10 +327,10 @@
    "arquivo": "qualidade.checagens.parquet",
    "comparar": true,
    "sem_hash": [],
-   "linhas": 115,
-   "sha256_conteudo": "5af99d1b5372b855f7035b05b42c81f421110e9279404bbc60044622c2511ce6",
-   "bytes": 4125,
-   "sha256_arquivo": "121d04e835760a8b423b60d6c8f82c24105e7021b7f534932bae7768267bbc60"
+   "linhas": 120,
+   "sha256_conteudo": "6799da7e6eaacb7b886b5421ee6e62ddf2214b398af8a6768caf675495046b6d",
+   "bytes": 4436,
+   "sha256_arquivo": "7a47215d379ca98bc6296069fb5b5e61bade3a8f749b6a78c87acadfa77dc61c"
   },
   {
    "tabela": "estado.premissas_vigente",
@@ -343,6 +343,36 @@
    "sha256_conteudo": "49f7bdda9a2226e055ccf24903c5d6efe5ec32f0cc40cedd48f18523b7e8f5a6",
    "bytes": 8672,
    "sha256_arquivo": "ee4f66ae11f4310c54d89e31bb28323f13fad3acd3c9dc2331b02edcd8fd04fc"
+  },
+  {
+   "tabela": "gold.serventia_publico",
+   "arquivo": "gold.serventia_publico.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 2525,
+   "sha256_conteudo": "53adae06a672d2d1fe863355da248be4eec79cda479b87e8f3c0444aa9bd1078",
+   "bytes": 121069,
+   "sha256_arquivo": "f8f6b4d3360c9409966519630392aa3737d442a60011df7c999fa92962358e36"
+  },
+  {
+   "tabela": "gold.analise_grupos",
+   "arquivo": "gold.analise_grupos.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 2444,
+   "sha256_conteudo": "0f1b5bf23ac33418edcfcf9d96b6d33e792226475d43c9efd6685879082f0e9f",
+   "bytes": 16604,
+   "sha256_arquivo": "70ebe9e9fdb5648ee13cac643d0647dd842390b4d0e4faec39ddaf44991b9650"
+  },
+  {
+   "tabela": "gold.analise_clt_modelo",
+   "arquivo": "gold.analise_clt_modelo.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 2444,
+   "sha256_conteudo": "bee3c394abf4b891d29a334126274170410d02009c94ebb47b459c030b289bca",
+   "bytes": 104003,
+   "sha256_arquivo": "fa60fe23dad34dd67e4eb0e33d3b4cb6d1313754056b11cc48f2b7070a743af3"
   },
   {
    "tabela": "gold.analise_regras",

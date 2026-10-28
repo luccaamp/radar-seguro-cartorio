@@ -83,13 +83,14 @@ fonte, arquivo, sha256, bytes, url, coletado_em, **data_referencia** (exibida no
 
 Calculado por `src/motor.py` com a versão vigente das premissas. Níveis: `min`, `base`, `max` (todas as premissas no mesmo nível). Regras de classe: `v2` (R$ 300 mil, base) e `v1` (R$ 100 mil). Valores em R$ por ano.
 
-O gold tem 25 tabelas do modelo (20 sem o prefixo `interno_` e 5 internas) e, a partir da Etapa 2 (2026-10-28), mais 13 tabelas `analise_*` da mineração (6 da D-043, 2 da D-044 e 5 das melhorias de confiança, D-045 e D-046): 38 no total. "Pública" = está no conjunto público (`config/publico.yaml`, `data/publico/`) e o painel lê; as 18 públicas passaram pelo auditor de ataque por diferença e pelos contratos de LGPD (D-026 a D-030). Conferido contra o banco em 2026-10-21; as `analise_*`, contra um pipeline do zero numa cópia em 2026-10-28.
+O gold tem 26 tabelas do modelo (21 sem o prefixo `interno_`, entre elas a `serventia_publico` da D-048, e 5 internas) e, a partir da Etapa 2 (2026-10-28), mais 13 tabelas `analise_*` da mineração (6 da D-043, 2 da D-044 e 5 das melhorias de confiança, D-045 e D-046): 39 no total. "Pública" = está no conjunto público (`config/publico.yaml`, `data/publico/`) e o painel lê; as 18 públicas passaram pelo auditor de ataque por diferença e pelos contratos de LGPD (D-026 a D-030). Conferido contra o banco em 2026-10-21; as `analise_*`, contra um pipeline do zero numa cópia em 2026-10-28.
 
 ### Totais, sensibilidades e execução
 | Tabela | Grão | Colunas principais | Pública? |
 |---|---|---|---|
 | `gold.fato_mercado_uf` | UF × nível × regra × cenário do STF (18 linhas) | n_serventias_ativas, clt, passivo_todas, n_universo, n_indeterminadas_universo, passivo_universo, n_deficit, valor_descoberto, bens_proprios, fianca, `mercado_*` e `seguradora_*` (importancia_segurada, premio_emitido, sinistro_esperado, comissao, despesa_administrativa, resultado_tecnico) | sim |
 | `gold.sensibilidade_rateio` | método de rateio (4) | os mesmos totais de `fato_mercado_uf` (base, v2, mantém) | sim |
+| `gold.serventia_publico` | serventia ativa (2.525) | cns, uf, cod_ibge, municipio, regiao_imediata, regiao_intermediaria, situacao_juridica, tipo_cartorio, atribuicoes, clt, receita_ref, origem_receita, semestres_validos, classe (regra base), classe_v1, classificacao_aproximada, motivo, peso_universo, passivo, passivo_medio_vinculo, n_deficit, valor_descoberto, importancia_segurada, premio_emitido (nível base, STF mantém). Somada, dá o `fato_mercado_uf` (contrato do gold). Sem nome de pessoa | sim (D-038, D-048) |
 | `gold.sensibilidade_premissas` | variação (6): base, INPC, reserva da distribuição = MG, três leituras do art. 16, § 1º (D-023) | chave, variacao, providos_acima_limite, peso_classe_indeterminada_base e os mesmos totais de `fato_mercado_uf` | sim |
 | `gold.diferenca_regra_classe` | nível | universo, passivo, IS e prêmio em v2 e v1 | sim |
 | `gold.execucao` | regra (v1, v2) | regra_classe, peso_classe_indeterminada_base, versao_premissas, executado_em, fator_inpc e mes_inpc_final (a correção pelo INPC saiu da base na D-020; os dois campos continuam e alimentam só a linha "INPC" da sensibilidade e o texto do Início), ano_enquadramento, metodo_rateio, limiar_lgpd | sim |
@@ -129,9 +130,9 @@ Gravadas pela etapa `etapa_analise` do `pipeline.py`, depois do gold, com as fun
 | Tabela | Grão | Colunas principais | Notebook | Pública? |
 |---|---|---|---|---|
 | `gold.analise_regras` | regra (10) | posicao, se, entao (`obrigada`), n_itens_se, serventias_com_se, serventias_com_se_e_entao, suporte, confianca, lift, referencia, ganho_sobre_referencia, melhoria, reamostragens_com_a_regra | 03 | proposta (agregada) |
-| `gold.analise_grupos` | serventia agrupada (2.444) | cns, grupo, nome_grupo, grupo_alvo, k, semente | 04 | não (por serventia) |
+| `gold.analise_grupos` | serventia agrupada (2.444) | cns, grupo, nome_grupo, grupo_alvo, k, semente | 04 | sim (por serventia, D-048) |
 | `gold.analise_grupos_perfil` | grupo (6) | grupo, nome_grupo, grupo_alvo, n_serventias, receita_mediana, clt_mediano, atribuicoes_medianas, pct_vagas, obrigadas, passivo, passivo_obrigadas, com_deficit, deficit, pct_obrigadas, pct_deficit_mg, deficit_por_obrigada, pct_<atribuição> (6), pct_serventias, pct_obrigadas_mg, pct_passivo_obrigadas_mg | 04 e 09 | proposta (agregada, D-044) |
-| `gold.analise_clt_modelo` | serventia do recorte do T1 (2.444) | cns, cod_ibge, regiao_intermediaria, receita_ref, n_atribuicoes, clt_declarado, clt_previsto_floresta, clt_previsto_poisson, clt_previsto_referencia, residuo_floresta, validacao | 06a | não (por serventia) |
+| `gold.analise_clt_modelo` | serventia do recorte do T1 (2.444) | cns, cod_ibge, regiao_intermediaria, receita_ref, n_atribuicoes, clt_declarado, clt_previsto_floresta, clt_previsto_poisson, clt_previsto_referencia, residuo_floresta, validacao | 06a | sim (por serventia, D-048) |
 | `gold.analise_previsao` | bloco × período × variante × cenário do limite × medida (107) | bloco (`arrecadacao_mg`: semestres de 2026–27, 5 variantes; `mercado`: anos 2026–27, 2 variantes × 2 cenários do limite × 11 medidas), p10, central, p90, realizado, rotulo (sempre `projeção`) | 07 | proposta (agregada) |
 | `gold.analise_tornado` | premissa (11) | suposicao, rotulo, grupo, valor_min, valor_base, valor_max (sim/não como 1/0), premio_no_min, premio_base, premio_no_max, amplitude, ordem | 08 | proposta (agregada) |
 | `gold.analise_monte_carlo` | variante × medida (6) | variante (`independentes`, `patrimônio junto`), medida (deficit, importancia_segurada, premio), media, p05, p25, p50, p75, p95, canto_min, valor_base, canto_max, n_sorteios, semente, distribuicao | 08 | proposta (agregada) |
@@ -162,7 +163,7 @@ As tabelas da M1 e da M2 usam o CSV do BI do CNJ no bronze, que é opcional: sem
 ## Qualidade
 
 ### `qualidade.checagens`
-tabela, checagem, severidade (erro / aviso), violacoes, detalhe, camada (silver / gold). Erro interrompe o pipeline. Desde a D-046, um aviso conta os semestres do ano de enquadramento com salto grosseiro (10 vezes acima ou abaixo da mediana dos 4 semestres anteriores da serventia); a classe continua com o valor declarado.
+tabela, checagem, severidade (erro / aviso), violacoes, detalhe, camada (silver / gold). Erro interrompe o pipeline. Desde a D-046, um aviso conta os semestres do ano de enquadramento com salto grosseiro (10 vezes acima ou abaixo da mediana dos 4 semestres anteriores da serventia); a classe continua com o valor declarado. Desde a D-048, outro aviso conta as serventias cuja classe mudaria se a receita de 2025 viesse do BI do CNJ, e não da API (10 na carga de 2026-10-28, entre elas a 035030); a classe continua pela API (D-010). Sem o CSV do BI no bronze, esse aviso sai com 0 e o motivo.
 
 ### `qualidade.reconciliacoes`
 checagem, fonte_a, valor_a, fonte_b, valor_b, indicador (diferença % ou valor), tolerancia (`config/qualidade.yaml`), status (ok / aviso), detalhe. Valores arredondados a 10 casas a partir de 2026-10-28 (D-044), para o hash não mudar com a ordem das linhas; o status usa o valor sem arredondar.
@@ -171,6 +172,6 @@ checagem, fonte_a, valor_a, fonte_b, valor_b, indicador (diferença % ou valor),
 Por município: n_cnj, n_cnpj, clt_cnj, vinc_rais, dif_serventias, dif_empregados.
 
 ## Conjunto público (`data/publico/`, D-029)
-- 36 Parquet com as tabelas públicas (18 do gold, 11 `analise_*` agregadas desde as cargas de 2026-10-28, 2 do silver, 4 da qualidade e a versão vigente das premissas, `estado.premissas_vigente`), mais o `manifesto.json`. Versionado no git; gerado por `scripts/gerar_publico.py` (auditor, contratos de "sem dado pessoal" e de limiar, limite de tamanho).
+- 39 Parquet com as tabelas públicas (19 do gold, entre elas a `serventia_publico`; 13 `analise_*`, duas delas por serventia desde a D-048; 2 do silver, 4 da qualidade e a versão vigente das premissas, `estado.premissas_vigente`), mais o `manifesto.json`. Versionado no git; gerado por `scripts/gerar_publico.py` (auditor, contratos de "sem dado pessoal" e de limiar, limite de tamanho).
 - `manifesto.json`: carga, data e hora da execução, versão das premissas, limiar de LGPD, commit, fontes (data de referência, data de coleta e SHA-256 do bronze), exceções ao limiar e, por tabela, o arquivo, as linhas, o SHA-256 do arquivo e o **hash de conteúdo** (linhas ordenadas, sem os carimbos de execução). O `tests/test_publico.py` compara o gold local com esse hash.
 - Sem banco local, o painel monta um banco temporário a partir desses arquivos (modo demonstração).
