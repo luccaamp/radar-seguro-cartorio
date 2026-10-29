@@ -29,7 +29,8 @@ def _usadas_pelas_paginas() -> dict[str, set[str]]:
 
 def test_toda_analise_das_paginas_chega_ao_chat():
     usadas = _usadas_pelas_paginas()
-    assert len(usadas) >= 15, "não achei as chamadas comum.analise(...) nas páginas: o padrão mudou?"
+    # piso de 5 desde a D-051 (o painel enxuto usa 7 análises; antes eram 21): mudança do Lucca, com recado
+    assert len(usadas) >= 5, "não achei as chamadas comum.analise(...) nas páginas: o padrão mudou?"
     faltam = {n: sorted(p) for n, p in usadas.items() if n not in ferramentas.alcancaveis() and n not in EXCECOES}
     assert not faltam, (f"análises que o painel mostra e o chat não alcança: {faltam}. Acrescente em "
                         "src/agent/ferramentas.py (CONSULTAS) ou em EXCECOES deste teste, com o motivo.")

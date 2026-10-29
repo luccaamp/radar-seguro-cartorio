@@ -5,18 +5,24 @@ o texto escapado e o "$" trocado por entidade (senão o Streamlit lê "R$ ... R$
 """
 import html
 from pathlib import Path
+from urllib.parse import quote
 
-import pandas as pd
 import streamlit as st
 
 ESTILO = Path(__file__).with_name("estilo.css")
 SELOS = {"dado": "dado", "suposicao": "suposição", "projecao": "projeção", "faixa": "faixa provável",
          "sensibilidade": "sensibilidade", "comparacao": "comparação", "alerta": "alerta"}
+CHAT = "Chat"   # endereço da página do chat (app/pages/5_Chat.py, da Letícia)
 
 
 def _t(texto) -> str:
     """Texto seguro para o HTML: escapado e sem "$" (vira &#36;)."""
     return html.escape(str(texto)).replace("$", "&#36;")
+
+
+def _negrito(texto: str) -> str:
+    """Texto seguro em que **trecho** vira negrito."""
+    return "".join(f"<b>{p}</b>" if i % 2 else p for i, p in enumerate(_t(texto).split("**")))
 
 
 def _html(conteudo: str) -> None:
@@ -37,73 +43,46 @@ def _chips(chips: list[tuple[str, str]]) -> str:
                                                  for r, v in chips) + "</div>"
 
 
-def cabecalho(sobre: str, titulo: str, manchete: str, numero: tuple[str, str] | None = None,
-              chips: list[tuple[str, str]] | None = None) -> None:
-    """Faixa colorida do topo: sobretítulo, título, a manchete de 10 segundos e, à direita, o número principal da página
-    (`numero` = (valor, o que ele é)); embaixo, os selos de contexto. Na manchete, **trecho** vira negrito."""
-    partes = _t(manchete).split("**")
-    m = "".join(f"<b>{p}</b>" if i % 2 else p for i, p in enumerate(partes))
-    hero = (f'<div class="rd-hero"><div class="rd-hero-num">{_t(numero[0])}</div>'
-            f'<div class="rd-hero-rot">{_t(numero[1])}</div></div>') if numero else ""
-    _html(f'<div class="rd-topo"><div class="rd-topo-linha"><div class="rd-cab"><div class="rd-sobre">{_t(sobre)}</div>'
-          f'<h1>{_t(titulo)}</h1><div class="rd-manchete">{m}</div></div>{hero}</div>'
-          f'{_chips(chips) if chips else ""}</div>')
-
-
 def contexto(chips: list[tuple[str, str]]) -> None:
-    """Faixa com o estado de uma página (filtros ativos etc.): [(rótulo, valor), ...]."""
+    """Etiquetas de estado [(rótulo, valor), ...]. Fora do painel da história; só a página do chat usa."""
     _html(_chips(chips))
 
 
-def secao(nome: str, tom: str = "clara"):
-    """Bloco da página com fundo próprio (tom "clara" ou "tinta"), para separar as seções por cor e não só por espaço.
-    Uso: `with ui.secao("numeros"): ...`. O CSS pega a classe que o Streamlit gera pela chave (st-key-rd-<tom>-<nome>)."""
-    return st.container(key=f"rd-{tom}-{nome}")
+def termo(texto: str, explicacao: str) -> str:
+    """Termo com a explicação curta ao passar o mouse (o glossário "Termos em uma linha" virou isto)."""
+    return f'<span class="rd-termo" title="{_t(explicacao)}">{_t(texto)}</span>'
 
 
-def _card(classe: str, rotulo: str, valor: str, selo_html: str = "", miolo: str = "", nota: str = "",
-          titulo: str = "") -> str:
-    dica = f' title="{_t(titulo)}"' if titulo else ""
-    return (f'<div class="rd-card {classe}"{dica}><div class="rd-rot">{_t(rotulo)}{selo_html}</div>'
-            f'<div class="rd-num">{_t(valor)}</div>{miolo}'
-            + (f'<div class="rd-nota">{_t(nota)}</div>' if nota else "") + "</div>")
+def cabecalho(titulo: str, subtitulo: str, sobre: str = "") -> None:
+    """Título escuro sobre o fundo claro e uma linha de subtítulo; sem etiquetas. `sobre`: rótulo pequeno acima."""
+    _html(f'<div class="rd-cab">{f"<div class=rd-sobre>{_t(sobre)}</div>" if sobre else ""}<h1>{_t(titulo)}</h1>'
+          f'<div class="rd-sub">{_negrito(subtitulo)}</div></div>')
+
+
+def resposta(rotulo: str, valor: str, unidade: str, faixa: str, frase: str) -> None:
+    """A resposta principal do Início: número grande, a faixa provável logo abaixo e a frase de quão certo é."""
+    _html(f'<div class="rd-resposta"><div class="rd-rot">{_t(rotulo)}</div>'
+          f'<div class="rd-num">{_t(valor)} <small>{_t(unidade)}</small></div>'
+          f'<div class="rd-faixa">{_negrito(faixa)}</div><div class="rd-frase">{_negrito(frase)}</div></div>')
+
+
+def kpi(rotulo: str, valor: str, nota: str = "", projecao: bool = False, dica: str = "") -> str:
+    """Cartão de número (HTML, para `grade`): rótulo pequeno em cima, número grande e uma linha de contexto. O selo
+    "projeção" só onde houver projeção. `dica`: explicação ao passar o mouse no rótulo."""
+    rot = termo(rotulo, dica) if dica else _t(rotulo)
+    return (f'<div class="rd-card"><div class="rd-rot">{rot}{selo("projecao") if projecao else ""}</div>'
+            f'<div class="rd-num">{_t(valor)}</div>' + (f'<div class="rd-nota">{_negrito(nota)}</div>' if nota else "")
+            + "</div>")
 
 
 def grade(cartoes: list[str], colunas: int) -> None:
+    """Cartões numa linha da grade, com a mesma altura (no celular, um por linha)."""
     _html(f'<div class="rd-grade c{colunas}">' + "".join(cartoes) + "</div>")
 
 
-def kpi(rotulo: str, valor: str, natureza: str | None = None, nota: str = "", titulo: str = "") -> str:
-    """Cartão simples (HTML, para `grade`). `natureza`: 'dado' ou 'suposicao' (dá o selo e a cor da borda). `titulo`
-    vira a dica do mouse."""
-    return _card(natureza or "", rotulo, valor, selo(natureza) if natureza else "", nota=nota, titulo=titulo)
-
-
-def _barrinha(v: dict) -> str:
-    """Barra da D-042 em escala linear, dos extremos teóricos (trilho) à faixa provável (banda) e ao valor base (ponto)."""
-    lo, hi = v["extremo_min"], v["extremo_max"]
-    pos = lambda x: 100 * (x - lo) / (hi - lo) if hi > lo else 50  # noqa: E731
-    return (f'<div class="rd-barra"><span class="trilho"></span>'
-            f'<span class="banda" style="left:{pos(v["p05"]):.1f}%;width:{pos(v["p95"]) - pos(v["p05"]):.1f}%"></span>'
-            f'<span class="ponto" style="left:{pos(v["base"]):.1f}%"></span></div>')
-
-
-def kpi_d042(r: dict, rotulo: str | None = None) -> str:
-    """D-042: valor base em destaque > faixa provável P5–P95 logo abaixo (texto e barrinha) > extremos teóricos em nota
-    secundária."""
-    faixa = (f'<div class="rd-faixa"><small>{_t(r["rotulo_faixa"])} · {_t(r["subrotulo_faixa"])}</small>'
-             f'{_t(r["faixa_provavel"])}{_barrinha(r["valores"])}</div>')
-    ext = f'<div class="rd-ext">{_t(r["rotulo_extremos"])}: {_t(r["extremos"])}</div>'
-    return _card("d042", rotulo or r["medida"], r["valor_base"], selo("suposicao", "valor base"), faixa + ext,
-                 titulo=r["nota_mediana"])
-
-
-def kpi_projecao(rotulo: str, valor: str, faixa: str, nota: str = "") -> str:
-    return _card("proj", rotulo, valor, selo("projecao"), f'<div class="rd-faixa">{_t(faixa)}</div>', nota)
-
-
-def kpi_comparacao(rotulo: str, valor: str, nota: str = "") -> str:
-    return _card("comp", rotulo, valor, selo("comparacao"), nota=nota)
+def frase(texto: str) -> None:
+    """Frase de conclusão de um bloco (no máximo duas frases). **trecho** vira negrito."""
+    _html(f'<div class="rd-frase-bloco">{_negrito(texto)}</div>')   # div: o <p> do Markdown impõe o tamanho
 
 
 def grafico(fig) -> None:
@@ -112,31 +91,32 @@ def grafico(fig) -> None:
     st.plotly_chart(finalizar(fig), width="stretch", theme=None, config={"displayModeBar": False})
 
 
-def achado(titulo: str, texto: str, tipo: str = "") -> None:
-    _html(f'<div class="rd-achado {tipo}"><div class="rd-tit">{_t(titulo)}</div>'
-          f'<div class="rd-txt">{_t(texto)}</div></div>')
+def tabela(colunas: list[str], linhas: list[list[str]], numericas: set[int] = frozenset(),
+           mudas: set[int] = frozenset()) -> None:
+    """Tabela compacta em HTML. `numericas`: índices das colunas de número (alinhadas à direita, classe rd-num);
+    `mudas`: colunas de texto secundário."""
+    def cel(i, v):
+        classe = "rd-num" if i in numericas else "rd-mudo" if i in mudas else ""
+        return f'<td class="{classe}">{_t(v)}</td>' if classe else f"<td>{_t(v)}</td>"
+    cab = "".join(f"<th>{_t(c)}</th>" for c in colunas)
+    corpo = "".join("<tr>" + "".join(cel(i, v) for i, v in enumerate(ln)) + "</tr>" for ln in linhas)
+    _html(f'<table class="rd-tabela"><thead><tr>{cab}</tr></thead><tbody>{corpo}</tbody></table>')
 
 
-def fonte(r: dict, extra: str = "") -> None:
-    """Rodapé curto de um bloco: fonte, data de referência, carga e versão das premissas."""
-    partes = [f"Fonte: {r['fonte']}"]
-    if r.get("carga"):
-        partes.append(f"carga {r['carga']}")
-    if r.get("versao_premissas"):
-        partes.append(f"premissas v{r['versao_premissas']}")
-    if r.get("data_referencia"):   # a data de referência de cada fonte vai na dica do mouse (e no rodapé da página)
-        partes.append("data de referência dos dados: passe o mouse")
-    dica = f' title="Data de referência: {_t(r["data_referencia"])}"' if r.get("data_referencia") else ""
-    _html(f'<div class="rd-fonte"{dica}>{_t(" · ".join(partes) + (". " + extra if extra else ""))}</div>')
+def fonte(texto: str) -> None:
+    """Fonte de um bloco numa linha pequena: só a fonte e a data."""
+    _html(f'<div class="rd-fonte">{_t(texto)}</div>')
 
 
-def baixar(r: dict, nome: str, chave: str = "tabela") -> None:
-    """Botão "Baixar dados (CSV)" com a tabela agregada do resultado, mais fonte, carga e premissas em colunas."""
-    df = pd.DataFrame(r.get(chave) or [])
-    if df.empty:
-        return
-    for k in ("fonte", "carga", "versao_premissas", "rotulo"):
-        if r.get(k) is not None:
-            df[k] = r[k]
-    st.download_button("Baixar dados (CSV)", df.to_csv(index=False, sep=";", decimal=",").encode("utf-8-sig"),
-                       file_name=f"{nome}.csv", mime="text/csv", key=f"baixar_{nome}_{chave}")
+def link_chat(pergunta: str) -> str:
+    """Endereço relativo da página do chat com a pergunta no parâmetro ?pergunta= (a página do chat precisa lê-lo:
+    recado em docs/recados_leticia.md). Link HTML, e não st.page_link: este só acha a página quando o painel roda pela
+    Início, e cada página também roda sozinha (testes)."""
+    return f"{CHAT}?pergunta={quote(pergunta)}"
+
+
+def sugestoes(perguntas: list[str]) -> None:
+    """De 2 a 3 perguntas para o chat, ligadas ao que a página mostra; cada uma abre o chat com a pergunta."""
+    links = "".join(f'<a class="rd-sugestao" href="{link_chat(p)}" target="_self">{_t(p)}</a>' for p in perguntas)
+    _html(f'<div class="rd-sugestoes"><div class="rd-sugestoes-tit">Pergunte ao chat</div>'
+          f'<div class="rd-sugestoes-links">{links}</div></div>')

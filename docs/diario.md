@@ -970,3 +970,24 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
   - passo a passo para criar o `.env` com a própria chave, com os comandos de Windows e WSL, no `CONTRIBUTING.md` (seção "Chat com o Gemini") e com link no README;
   - `uv run pytest`: 296 passed, 2 skipped, sem chave e sem rede;
   - ficaram fora do commit `eval/respostas/` e `eval/resultado_avaliacao.md`, da rodada de 5 perguntas com o prompt v2, que não vale para o v3.
+
+## 2026-10-29 — Etapa 3, terceira rodada: o painel em torno de uma pergunta só (D-051)
+- **Pedido** (autor, modo autônomo): o painel tinha informação demais e não informava nada. Refazer em torno da pergunta "quanto dinheiro o seguro obrigatório dos cartórios pode movimentar em MG, e quão certo é esse número?"; o que não responde "quanto" ou "quão certo" sai do painel e fica no chat.
+- **Escada usada:** cartórios ativos (2.525) → obrigados (≈ 1.121) → sem bens suficientes (≈ 148) → déficit (R$ 34,1 mi) → vira seguro (R$ 17,1 mi) → **prêmio anual (R$ 341,1 mil)**; quão certo: faixa provável R$ 215 mil a R$ 687 mil, taxa e adesão com 58,4% da incerteza; até 2027: prêmio ≈ R$ 349,0 mil com a dívida de 2025, e a dívida +28,5%. O passivo, o CLT e o teto ficam só na tabela de "Sobre os dados".
+- **Corte** (`docs/painel/corte.md`): 71 elementos: 17 ficam, 8 vão para "Sobre os dados", 31 para o chat, 15 saem. 7 itens do chat ainda sem ferramenta: recado à Letícia.
+- **Páginas e manchetes:**
+
+  | Página | Manchete | Números em destaque | Gráficos | Teste dos 5 segundos (o que um leigo entende) |
+  |---|---|---|---|---|
+  | A resposta (Início) | "Quanto dinheiro o seguro obrigatório dos cartórios pode movimentar em Minas Gerais, e quão certo é esse número?" | 1 (o prêmio, com a faixa embaixo) | 1 (funil) | "As seguradoras ganhariam uns R$ 341 mil por ano, provavelmente entre 215 e 687 mil; poucos cartórios precisam do seguro." ✓ |
+  | Quão certo é | "Quão certo é o número?" | 2 | 2 (faixa; 5 suposições) | "O número é incerto porque ninguém sabe a taxa nem quantos vão escolher seguro." ✓ |
+  | Onde está o mercado | "Onde está o dinheiro?" | 3 | 1 (mapa) | "Um quarto está em Belo Horizonte; o resto se espalha pelas cidades maiores." ✓ |
+  | Para onde vai | "Para onde vai o mercado até 2027?" | 2 (projeção) | 1 | "Até 2027 o prêmio quase não muda, a não ser que a dívida trabalhista cresça." ✓ |
+  | Sobre os dados | "Sobre os dados" | 0 (tabelas) | 0 | "De onde vêm os números e o que eles não sabem." ✓ |
+
+  Texto: no máximo 2 frases por bloco em todas. Limites, ausência de termos técnicos fora de "Sobre os dados" (carga, versão, nível, UF, STF, IDs, tabelas, notebooks) e número repetido entre páginas testados em `tests/test_app_demo.py`.
+- **Visual** (terceira rodada do `docs/painel/padrao_visual.md`): sem a faixa azul-escura; fundo `#f7f8fa`, cartões brancos com borda fina, destaque `#3366e6`, comparação `#e08a1e` (validados com o script da skill de visualização e em escala de cinza), grade de 12 colunas, espaçamento em múltiplos de 8 px, navegação branca com o item ativo em fundo leve. Títulos de gráfico quebrados para caber no celular; no tornado, o nome da suposição fica acima da barra.
+- **Capturas:** `docs/qa/painel/rodada3_antes/` (31 estados da segunda rodada, 1280/1366/1920 px, tiradas de uma cópia exata do último commit) e `docs/qa/painel/rodada3_depois/` (9 estados em 390, 1280, 1366 e 1920 px; `checagens.md` com **0 falhas**). O verificador de layout (`scripts/qa_painel.py`) passou a comparar os rótulos sem as marcas `<b>` e a contar barras só em gráficos de uma série.
+- **Conferências:** os 10 números iguais aos da tabela de referência (lidos do banco real só para leitura; SHA-256 igual ao do início da sessão); pipeline, premissas, gold, `data/publico/` e `data/completo/` sem mudança; modo demonstração abre sem o banco (todas as páginas, na suíte padrão).
+- **Erros da IA** (no `docs/erros_ia.md`): o erro de direção da segunda rodada; um script de substituição de texto no `app/comum.py`; capturas "antes" contaminadas por rodar junto com a reescrita; contagem do corte escrita antes de contar.
+- **Branch:** feita na `etapa-5-chat` (a ativa na sessão). Nada foi commitado.

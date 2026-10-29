@@ -175,7 +175,25 @@ As três peças já existem em versão de MG; aqui elas recebem os resultados da
 
 **Etapa 3 — Painel (Streamlit, só leitura)**
 
-Objetivo: um painel informativo, interativo e legível, que reúna todos os achados importantes do projeto. O essencial deve ser entendido em segundos; o detalhe fica disponível para quem quiser aprofundar.
+Objetivo (desde 29/10/2026, D-051): **o painel responde a uma pergunta só**, a do projeto: *quanto dinheiro o seguro obrigatório dos cartórios (Prov. CNJ 227/2026) pode movimentar em Minas Gerais, e quão certo é esse número?* Todo o resto existe só para contar a história por trás da resposta. **O painel é a história; o chat é o detalhe:** um elemento que não ajuda a responder "quanto" ou "quão certo" sai do painel e fica no chat. (Até 28/10 o objetivo era "reunir todos os achados importantes"; o painel mostrava tudo e não informava nada: erro de direção registrado no `docs/erros_ia.md`.)
+
+**Estrutura (terceira rodada, D-051; corte elemento a elemento em `docs/painel/corte.md`):**
+
+| Página | Manchete | O que mostra |
+|---|---|---|
+| A resposta (Início) | "Quanto dinheiro o seguro obrigatório dos cartórios pode movimentar em Minas Gerais, e quão certo é esse número?" | o prêmio anual (valor base) em número grande, a faixa provável logo abaixo, uma frase de quão certo é e o funil da escada (cartórios ativos → obrigados → sem bens suficientes → déficit → vira seguro → prêmio) |
+| Quão certo é | "Quão certo é o número?" | 2 números (parte da incerteza que vem da taxa e da adesão; o máximo que o dado público mexe), a faixa provável num gráfico (base, P5–P95 e extremos discretos) e as 5 suposições que mais pesam, com o valor na ponta |
+| Onde está o mercado | "Onde está o dinheiro?" | um filtro (município), até 3 números, o mapa do déficit na largura da página e a concentração numa frase |
+| Para onde vai | "Para onde vai o mercado até 2027?" | 2 números com o selo "projeção" (obrigados em 2027; dívida trabalhista em 2027), o prêmio projetado num gráfico com a faixa P10–P90 e uma frase de conclusão |
+| Sobre os dados | "Sobre os dados" | os 10 números oficiais numa tabela compacta, fontes e datas, como foi calculado (carga, versão das premissas, regra de classe, nível) e 5 limitações |
+| Chat | — | a página da Etapa 5 (Letícia); recebe as perguntas sugeridas das outras páginas pelo link `Chat?pergunta=` |
+
+Regras da terceira rodada:
+* Por página: uma manchete, no máximo 3 números em destaque, no máximo 2 gráficos, no máximo 2 frases por bloco e de 2 a 3 perguntas sugeridas para o chat. Nenhum número em destaque em duas páginas.
+* **A fonte de cada número numa linha discreta** (só a fonte e a data); carga, versão das premissas, nível, regra de classe e UF ficam só em "Sobre os dados".
+* **O STF e a ADI 8015 saem do painel inteiro** (etiquetas, cenários, cartões e textos); o assunto fica no chat. O painel supõe a regra do Provimento como publicada.
+* O Simulador saiu da navegação (não responde "quão certo" melhor que o gráfico das sensibilidades); o arquivo continua em `app/simulador.py`, para a Etapa 4.
+* As listas "Páginas" e a primeira regra abaixo são da segunda rodada (28/10) e ficam como histórico.
 
 Antes de construir
 * **Inventário de achados** (docs/painel/inventario_achados.md): todos os achados relevantes dos notebooks 01 a 09 e da Etapa 2. Para cada um: origem, número-chave, fonte e data, importância, onde entra no painel e em que formato. Achado de importância alta que ficar de fora precisa de justificativa.
@@ -190,7 +208,7 @@ Antes de construir
   * título que diz a conclusão, eixos com unidade, rodapé com fonte e data, formato brasileiro de números;
   * padrão único para faixa P5–P95 e para os rótulos da D-042.
 
-Páginas
+Páginas (segunda rodada, 28/10/2026; substituídas pela estrutura da D-051, acima)
 * **Início:**
   * os 10 números;
   * a "faixa provável" P5–P95 logo abaixo do déficit, da IS e do prêmio;
@@ -212,7 +230,7 @@ Páginas
   * tudo com os rótulos da D-042.
 
 Regras
-* Todo número com fonte, data de referência e versão das premissas; projeção sempre rotulada.
+* Todo número com fonte e data de referência numa linha discreta (a versão das premissas fica em "Sobre os dados", D-051); projeção sempre rotulada.
 * Números vêm do banco, de config/ ou dos artefatos das etapas anteriores, nunca fixos no código.
 * Nenhum dado de pessoa física em tela, tooltip, download, log ou dado de demonstração.
 * Interatividade com propósito: filtros, tooltips, expansores de metodologia e download dos dados agregados.

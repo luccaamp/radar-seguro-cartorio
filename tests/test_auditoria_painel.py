@@ -1,6 +1,10 @@
-"""Auditoria do painel (docs/historico/revisao_painel_filtros.md, seção 5): percorre os estados do Mercado (métricas, cada valor de
-cada filtro, municípios de exemplo, as duas regras) e do Simulador (3 cenários) com o AppTest e checa mapa, ranking,
-tabelas, LGPD, consistência numérica e formato. Roda na cópia temporária do banco (fixture banco_temporario).
+"""Auditoria do painel (docs/historico/revisao_painel_filtros.md, seção 5): percorre os estados do Mercado e do Simulador
+(3 cenários) com o AppTest e checa mapa, LGPD, consistência numérica e formato. Roda na cópia temporária do banco
+(fixture banco_temporario).
+
+Desde a D-051 (terceira rodada do painel), a página "Onde está o mercado" tem um filtro só (município) e o mapa do
+déficit: os estados por métrica, por atribuição/situação/classe e pela regra v1 saíram da tela (o chat responde). As
+conferências das tabelas públicas filtradas e do auditor continuam, porque as tabelas seguem no conjunto público.
 """
 import json
 import re
@@ -13,14 +17,9 @@ from apoio_painel import RAIZ
 
 # dados_reais: lê silver.serventia e interno_celulas_publicadas (banco completo); fora da suíte padrão
 pytestmark = [pytest.mark.dados_reais, pytest.mark.usefixtures("banco_temporario")]
-MERCADO = str(RAIZ / "app/pages/1_Mercado.py")
-FILTROS = {"atribuicao": ["notas", "rcpn", "ri", "rtd_rcpj", "protesto"],
-           "situacao": ["PROVIDO", "VAGO", "SOB INTERVENÇÃO", "CONVERSÃO EM DILIGÊNCIA"],
-           "classe": ["1", "2", "3", "indeterminada"]}
-METRICAS = ["valor_descoberto", "passivo", "n_serventias", "clt"]
-CINZA, SEM_SERV, CONTORNO = "#c9c8c4", "#f3f2ee", "#55534e"
-COL_UF = {"valor_descoberto": "valor_descoberto", "passivo": "passivo_todas", "n_serventias": "n_serventias_ativas",
-          "clt": "clt"}
+MERCADO = str(RAIZ / "app/pages/2_Onde_está_o_mercado.py")
+SIMULADOR = str(RAIZ / "app/simulador.py")
+SEM_SERV, CONTORNO = "#f9fafb", "#4b5563"
 
 
 # ------------------------------------------------------------------ apoio
@@ -42,28 +41,22 @@ def pequenos(db):
     return {n for n, _ in linhas} | {str(c) for _, c in linhas}
 
 
-def mercado(tipo=None, valor=None, metrica=None, municipio=None, regra=None):
+def mercado(municipio=None):
     from streamlit.testing.v1 import AppTest
     at = AppTest.from_file(MERCADO, default_timeout=120).run()
-    if regra:
-        at.radio(key="f_regra").set_value(regra).run()
     if municipio:
         at.selectbox(key="f_mun").set_value(municipio).run()
-    if tipo:
-        at.selectbox(key="f_tipo").set_value(tipo).run()
-        at.selectbox(key="f_valor").set_value(valor).run()
-    if metrica:
-        [r for r in at.radio if r.label.startswith("Métrica")][0].set_value(metrica).run()
     assert not at.exception, at.exception
     return at
 
 
+def html(at) -> str:
+    return "\n".join(m.value for m in at.markdown).replace("&#36;", "$")
+
+
 def figuras(at):
     specs = [json.loads(g.proto.spec) for g in at.get("plotly_chart")]
-    mapa = next((s for s in specs if any(t.get("type") == "choroplethmap" for t in s["data"])), None)
-    # o ranking é o gráfico "15 maiores" (desde a Etapa 3 o Mercado tem outros gráficos de barras, dos grupos)
-    ranking = next((s for s in specs if "15 maiores" in str(s["layout"].get("title", {}).get("text", ""))), None)
-    return mapa, ranking
+    return next((s for s in specs if any(t.get("type") == "choroplethmap" for t in s["data"])), None)
 
 
 def vetor(v) -> list:
@@ -93,70 +86,36 @@ def textos_tabelas(at) -> list[str]:
     return out
 
 
-ESTADOS = ([("geral", None, None, m) for m in METRICAS]
-           + [(f"{t}={v}", t, v, m) for t, vs in FILTROS.items() for v in vs for m in ("valor_descoberto", "n_serventias")])
-
-
-# ------------------------------------------------------------------ mapa, ranking e tabelas em cada estado
-@pytest.mark.parametrize("nome, tipo, valor, metrica", ESTADOS, ids=[f"{e[0]}-{e[3]}" for e in ESTADOS])
-def test_estado_do_mercado(nome, tipo, valor, metrica, db, pequenos):
-    at = mercado(tipo, valor, metrica)
-    mapa, ranking = figuras(at)
-    if tipo:
-        areas = db.execute("SELECT * FROM gold.mercado_filtro_area WHERE visao = ?", [nome]).df()
-        uf = db.execute("SELECT * FROM gold.mercado_filtro_uf WHERE visao = ? AND regra_classe = 'v2' AND nivel = 'base'",
-                        [nome]).df().iloc[0]
-        total = float(uf[COL_UF[metrica]])
-    else:
-        areas = db.execute("SELECT *, tipo AS nivel_area FROM gold.mercado_area_publico").df()
-        total = float(areas[metrica].sum())
-    if not (areas[metrica].abs() > 0).any():   # E6: métrica zero em todas as áreas -> mensagem, sem gráfico
-        assert mapa is None and ranking is None
-        assert any("zero em todas as áreas" in i.value for i in at.info)
-        return
+# ------------------------------------------------------------------ mapa na visão geral
+def test_estado_do_mercado(db, pequenos):
+    at = mercado()
+    mapa = figuras(at)
+    areas = db.execute("SELECT * FROM gold.mercado_area_publico").df()
     assert mapa is not None
     dados = traco_dados(mapa)
-    # E3: escala de cores com rótulos formatados (R$ para valores)
+    # E3: escala de cores com rótulos em R$
     cb = dados["colorbar"]
     assert cb.get("tickvals") and cb.get("ticktext")
-    if metrica in ("valor_descoberto", "passivo"):
-        assert all(t.lstrip("≥ ").startswith("R$") for t in cb["ticktext"])
-    # E5: três estados distintos (valor, cinza, sem serventia com contorno) e nenhum branco puro
+    assert all(t.lstrip("≥ ").startswith("R$") for t in cb["ticktext"])
+    # E5: sem serventia com contorno; nenhum branco puro como cor fixa
     fixas = [cor_fixa(t) for t in mapa["data"] if cor_fixa(t)]
-    assert CINZA in fixas and SEM_SERV in fixas
-    assert not any(c and c.lower() in ("#ffffff", "white") for c in fixas)
+    assert SEM_SERV in fixas and not any(c and c.lower() in ("#ffffff", "white") for c in fixas)
     sem = next(t for t in mapa["data"] if cor_fixa(t) == SEM_SERV)
     assert sem["marker"]["line"]["color"] == CONTORNO
     # LGPD no texto do mouse e nos identificadores
     valores = {str(x) for t in mapa["data"] for campo in ("locations", "hovertext") for x in (t.get(campo) or [])}
     valores |= {str(x) for t in mapa["data"] for linha in (t.get("customdata") or []) for x in linha}
     assert not (valores & pequenos)
-    # as áreas do mapa (+ "outras regiões", que não tem mapa) somam o total da visão
-    soma = sum(dados["z"]) + float(areas.loc[areas["nivel_area"] == "outras", metrica].sum())
-    assert soma == pytest.approx(total, rel=0.005)
-    # área agregada nunca leva o nome de um município sozinho
+    # as áreas do mapa somam o déficit de MG; área agregada nunca leva o nome de um município sozinho
+    assert sum(dados["z"]) == pytest.approx(float(areas["valor_descoberto"].sum()), rel=0.005)
+    tipo = dict(zip(areas["area_nome"], areas["tipo"]))
     for linha in dados["customdata"]:
-        nome_area, tipo_area = linha[0], linha[1]
-        if tipo_area != "município":
-            assert nome_area.startswith(("Região", "Município ")) and ("—" in nome_area or "+" in nome_area or
-                                                                         nome_area.startswith("Região imediata de"))
-    # E2: ranking com rótulo em todas as barras, eixo com folga e as mesmas áreas do mapa
-    if ranking is not None:
-        bar = next(t for t in ranking["data"] if t.get("type") == "bar")
-        xs = vetor(bar["x"])
-        assert all(bar["text"]) and len(bar["text"]) == len(xs)
-        assert ranking["layout"]["xaxis"]["range"][1] >= max(xs) * 1.1
-        assert {c[0] for c in bar["customdata"]} <= {c[0] for c in dados["customdata"]}
-    # E4, E7, E8: tabelas cabem (até 7 colunas), "≈ " com espaço, 1 casa abaixo de 10, zero como "R$ 0"
-    for d in at.dataframe:
-        assert len(d.value.columns) <= 7, list(d.value.columns)
-    for txt in textos_tabelas(at):
-        assert "R$ 0,00" not in txt
-        if txt.startswith("≈"):
-            assert re.fullmatch(r"≈ [\d.]+(,\d)?", txt), txt
-            num = float(txt[2:].replace(".", "").replace(",", "."))
-            assert ("," in txt) == (num < 10), txt
-        assert not txt.endswith("…")
+        if tipo[linha[0]] != "municipio":
+            assert linha[0].startswith(("Região", "Município ")) and ("—" in linha[0] or "+" in linha[0] or
+                                                                      linha[0].startswith("Região imediata de"))
+    # E7, E8: números dos cartões no formato do painel
+    for v in re.findall(r'<div class="rd-num">([^<]+)<', html(at)):
+        assert "R$ 0,00" not in v and not v.endswith("…")
 
 
 @pytest.mark.parametrize("municipio_sql, rotulo", [
@@ -164,37 +123,24 @@ def test_estado_do_mercado(nome, tipo, valor, metrica, db, pequenos):
     ("SELECT municipio FROM gold.dim_municipio WHERE n_serventias BETWEEN 3 AND 5 ORDER BY municipio LIMIT 1", "medio"),
     ("SELECT municipio FROM gold.dim_municipio WHERE n_serventias BETWEEN 1 AND 2 ORDER BY municipio LIMIT 1", "pequeno")])
 def test_filtro_de_municipio_destaque_com_contexto(municipio_sql, rotulo, db, pequenos):
-    """U1: MG inteiro em cinza, destaque com contorno forte, zoom na intermediária; pequeno -> área agregada."""
+    """U1: MG inteiro como contexto, destaque com contorno forte, zoom na intermediária; pequeno -> área agregada."""
     nome = db.execute(municipio_sql).fetchone()[0]
     at = mercado(municipio=nome)
-    mapa, ranking = figuras(at)
-    assert ranking is None                                   # ranking com 1 item vira tabela de posições
-    dados = traco_dados(mapa)
-    assert len(dados["locations"]) == 1 and dados["marker"]["line"]["width"] >= 2
-    assert any(cor_fixa(t) == CINZA for t in mapa["data"])   # contexto
-    assert mapa["layout"]["map"]["zoom"] > 5.1               # enquadra a região intermediária
+    mapa = figuras(at)
+    destaque = [t for t in mapa["data"] if t.get("type") == "choroplethmap" and
+                (t.get("marker", {}).get("line", {}).get("width") or 0) >= 2]
+    assert len(destaque) == 1 and len(destaque[0]["locations"]) == 1
+    assert len(traco_dados(mapa)["locations"]) > 300          # contexto: MG inteiro
+    assert mapa["layout"]["map"]["zoom"] > 5.4                # enquadra a região intermediária
     valores = {str(x) for t in mapa["data"] for x in (t.get("locations") or [])}
     valores |= {str(x) for t in mapa["data"] for linha in (t.get("customdata") or []) for x in linha}
     assert not (valores & pequenos)
+    tela = html(at)
     if rotulo == "pequeno":
         assert any("agregado" in i.value for i in at.info)
+        assert f"Déficit em {nome}" not in tela               # o município pequeno nunca aparece sozinho
     else:
-        posicoes = [d.value for d in at.dataframe if "Posição" in d.value.columns]
-        assert posicoes and len(posicoes[0]) == 4
-
-
-def test_municipio_mais_filtro_mostra_so_o_nivel_regional(db, pequenos):
-    nome = db.execute("SELECT municipio FROM gold.dim_municipio ORDER BY n_serventias DESC LIMIT 1").fetchone()[0]
-    at = mercado("classe", "3", municipio=nome)
-    assert any("nível regional" in i.value for i in at.info) or any("publicável" in w.value for w in at.warning)
-    assert not [m for m in at.metric if m.label == "Serventias ativas" and m.value == "34"]
-
-
-def test_regra_v1_so_nos_totais(db):
-    at = mercado(regra="v1")
-    assert not at.exception
-    at = mercado("classe", "indeterminada", regra="v1")   # v1 suprimida neste filtro pelo auditor
-    assert any("regra v1 não é exibida" in w.value for w in at.warning)
+        assert f"Déficit em {nome}" in tela and "Parte do déficit de MG" in tela
 
 
 # ------------------------------------------------------------------ LGPD: ataque por diferença
@@ -264,26 +210,23 @@ def test_faixas_ordenadas_em_cada_filtro(db):
             assert vals == sorted(vals), (visao, regra, col)
 
 
-def test_kpis_iguais_entre_inicio_mercado_e_simulador():
+def test_kpis_iguais_entre_sobre_os_dados_e_simulador():
+    """D-051: os 10 números ficam na tabela de "Sobre os dados"; o Simulador (fora da navegação) bate com ela."""
     from streamlit.testing.v1 import AppTest
-    ini = AppTest.from_file(str(RAIZ / "app/Inicio.py"), default_timeout=120).run()
-    mer = mercado()
-    sim = AppTest.from_file(str(RAIZ / "app/pages/4_Simulador.py"), default_timeout=120).run()
+    sob = AppTest.from_file(str(RAIZ / "app/pages/4_Sobre_os_dados.py"), default_timeout=120).run()
+    sim = AppTest.from_file(SIMULADOR, default_timeout=120).run()
     v = lambda at, rot: [m.value for m in at.metric if m.label == rot]  # noqa: E731
-    # Etapa 3: o Início mostra os números em cartões HTML (src/painel/ui.py), não em st.metric
-    tela = "\n".join(m.value for m in ini.markdown).replace("&#36;", "$")
-    cartao = lambda rot: re.search(rf'{re.escape(rot)}<span[^>]*>[^<]*</span></div><div class="rd-num">([^<]+)<',  # noqa: E731
-                                   tela).group(1)
-    assert [cartao("5. Passivo trabalhista (obrigadas)")] == v(mer, "Passivo (obrigados)") == \
-        v(sim, "Passivo dos obrigados")
-    assert [cartao("4. Passivo trabalhista (todas)")] == v(mer, "Passivo (todas)")
-    assert [cartao("6. Com déficit (esperado)")] == v(mer, "Com déficit (esperado)") == v(sim, "Com déficit (esperado)")
+    tela = html(sob)
+    linha = lambda rot: re.search(rf'<td>{re.escape(rot)}</td><td class="rd-num">([^<]+)<', tela).group(1)  # noqa: E731
+    assert [linha("Passivo trabalhista (obrigadas)")] == v(sim, "Passivo dos obrigados")
+    assert [linha("Com déficit (esperado)")] == v(sim, "Com déficit (esperado)")
+    assert [linha("Déficit de cobertura")] == v(sim, "Déficit de cobertura")
 
 
 @pytest.mark.parametrize("cenario", ["mantem", "suspende_8_17", "parcial"])
 def test_simulador_nos_tres_cenarios(cenario):
     from streamlit.testing.v1 import AppTest
-    at = AppTest.from_file(str(RAIZ / "app/pages/4_Simulador.py"), default_timeout=120).run()
+    at = AppTest.from_file(SIMULADOR, default_timeout=120).run()
     at.radio[0].set_value(cenario).run()
     assert not at.exception
     premio = [m.value for m in at.metric if m.label == "Prêmio emitido"][0]
@@ -292,14 +235,13 @@ def test_simulador_nos_tres_cenarios(cenario):
 
 
 def test_desempenho_da_troca_de_filtro():
-    """Troca de filtro: medida no AppTest (inclui renderizar); alvo de ~2 s."""
+    """Troca de município: medida no AppTest (inclui renderizar); alvo de ~2 s."""
     from streamlit.testing.v1 import AppTest
     at = AppTest.from_file(MERCADO, default_timeout=120).run()
     tempos = []
-    for tipo, valor in (("classe", "3"), ("situacao", "VAGO"), ("atribuicao", "notas")):
+    for nome in ("Belo Horizonte", "Uberaba", "Todos"):
         t0 = time.perf_counter()
-        at.selectbox(key="f_tipo").set_value(tipo).run()
-        at.selectbox(key="f_valor").set_value(valor).run()
+        at.selectbox(key="f_mun").set_value(nome).run()
         tempos.append(time.perf_counter() - t0)
-    print("tempos de troca de filtro (s):", [round(t, 2) for t in tempos])
+    print("tempos de troca de município (s):", [round(t, 2) for t in tempos])
     assert max(tempos) < 4.0

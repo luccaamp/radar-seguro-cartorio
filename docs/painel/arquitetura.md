@@ -1,5 +1,7 @@
 # Arquitetura da informação do painel (Etapa 3)
 
+> **Substituída em 29/10/2026 pela D-051** (terceira rodada): o painel responde a uma pergunta só, em cinco páginas (A resposta → Quão certo é → Onde está o mercado → Para onde vai → Sobre os dados → Chat). A estrutura nova está no `docs/plano_projeto.md` (Etapa 3) e o corte elemento a elemento em `docs/painel/corte.md`. O texto abaixo é da segunda rodada e fica como histórico.
+
 28/10/2026 · Fase 2 da Etapa 3. Base: o inventário (`inventario_achados.md`) e a Etapa 3 do `plano_projeto.md`.
 
 ## A pergunta do projeto, dividida em páginas

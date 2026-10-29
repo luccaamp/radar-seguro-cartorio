@@ -23,7 +23,7 @@ import httpx
 
 RAIZ = Path(__file__).resolve().parents[1]
 BANCO_REAL = RAIZ / "data" / "radar.duckdb"
-LARGURAS = {1280: 800, 1366: 768, 1920: 1080}   # 1366: tela de notebook (Etapa 3, "pronto quando")
+LARGURAS = {390: 844, 1280: 800, 1366: 768, 1920: 1080}   # 1366: notebook (Etapa 3, "pronto quando"); 390: celular
 
 
 # ------------------------------------------------------------------ servidor
@@ -128,42 +128,20 @@ def municipio_pequeno(copia: Path) -> str:
 
 
 def estados(copia: Path) -> list[Estado]:
+    """Estados da terceira rodada (D-051): as cinco páginas da história e o município no mapa. O Simulador saiu da
+    navegação (app/simulador.py roda à parte) e o Mercado não tem mais filtros por atribuição, situação e classe."""
     pequeno = municipio_pequeno(copia)
-    filtro = lambda tipo, valor: (lambda p: (escolher(p, "Filtrar por", tipo), escolher(p, "Valor", valor)))  # noqa: E731
     mun = lambda nome: (lambda p: escolher(p, "Município", nome))  # noqa: E731
-    out = [Estado("01_inicio", "")]
-    for i, (rot, opc) in enumerate([("deficit", "Déficit (base)"), ("passivo", "Passivo de todas as ativas (base)"),
-                                    ("serventias", "Serventias ativas"), ("empregados", "Empregados CLT")]):
-        out.append(Estado(f"02_mercado_{rot}", "Mercado", (lambda o: lambda p: marcar(p, o))(opc)))
-    for c in ("1", "2", "3", "Indeterminada"):
-        valor = f"Classe {c}" if c != "Indeterminada" else c
-        out.append(Estado(f"03_classe_{c.lower()}", "Mercado", filtro("Classe (Prov. 213, regra base)", valor)))
-    out += [Estado("04_situacao_provida", "Mercado", filtro("Situação", "Provida (titular)")),
-            Estado("04_situacao_vaga", "Mercado", filtro("Situação", "Vaga (interino)")),
-            Estado("05_atribuicao_notas", "Mercado", filtro("Atribuição", "Notas")),
-            Estado("05_atribuicao_ri", "Mercado", filtro("Atribuição", "Registro de Imóveis")),
-            Estado("06_municipio_bh", "Mercado", mun("Belo Horizonte"), municipio=True),
-            Estado("06_municipio_almenara", "Mercado", mun("Almenara"), municipio=True),
-            Estado("06_municipio_pequeno", "Mercado", mun(pequeno), municipio=True),
-            Estado("06_municipio_campo_azul", "Mercado", mun("Campo Azul")),
-            Estado("07_bh_classe_3", "Mercado", lambda p: (mun("Belo Horizonte")(p),
-                                                          filtro("Classe (Prov. 213, regra base)", "Classe 3")(p))),
-            Estado("08_regra_100_mil", "Mercado", lambda p: marcar(p, "R$ 100 mil")),
-            Estado("09_simulador_padrao", "Simulador"),
-            Estado("09_simulador_taxa_3", "Simulador",
-                   lambda p: deslizar(p, "Taxa anual (% da importância segurada)", 10)),
-            Estado("09_simulador_stf_suspende", "Simulador", lambda p: marcar(p, "STF suspende arts. 8º a 17")),
-            Estado("09_simulador_decisao_parcial", "Simulador", lambda p: marcar(p, "Decisão parcial")),
-            Estado("11_analises_incerteza", "Análises"),
-            Estado("11_analises_projecao", "Análises", lambda p: aba(p, "Projeção 2026–27")),
-            Estado("11_analises_projecao_corrigido", "Análises",
-                   lambda p: (aba(p, "Projeção 2026–27"), marcar(p, "limite corrigido pelo IPCA (comparação)"))),
-            Estado("11_analises_concentracao", "Análises", lambda p: aba(p, "Concentração")),
-            Estado("11_analises_pergunta_9", "Análises", lambda p: aba(p, "A seguradora tem lucro?")),
-            Estado("10_qualidade_topo", "Qualidade_dos_dados"),
-            Estado("10_qualidade_grafico", "Qualidade_dos_dados", rolar_ate="Conferência entre fontes"),
-            Estado("10_qualidade_limitacoes", "Qualidade_dos_dados", rolar_ate="Limitações declaradas")]
-    return out
+    mercado = "Onde_está_o_mercado"
+    return [Estado("01_resposta", ""),
+            Estado("02_quao_certo", "Quão_certo_é"),
+            Estado("03_mercado", mercado),
+            Estado("03_mercado_bh", mercado, mun("Belo Horizonte"), municipio=True),
+            Estado("03_mercado_almenara", mercado, mun("Almenara"), municipio=True),
+            Estado("03_mercado_pequeno", mercado, mun(pequeno), municipio=True),
+            Estado("03_mercado_campo_azul", mercado, mun("Campo Azul")),
+            Estado("04_para_onde_vai", "Para_onde_vai"),
+            Estado("05_sobre_os_dados", "Sobre_os_dados")]
 
 
 def abrir(page, url: str, estado: Estado, erros_console: list) -> None:
@@ -172,13 +150,6 @@ def abrir(page, url: str, estado: Estado, erros_console: list) -> None:
     esperar(page, 2500)
     estado.acoes(page)
     esperar(page, 2000)
-    if estado.pagina == "Mercado":   # abre a tabela por área/região (expansor) para entrar no print e nas checagens
-        for s in page.locator('[data-testid="stExpander"] details:not([open]) > summary').all():
-            try:
-                s.click(timeout=3000)
-            except Exception:   # expansor que mudou de lugar ao abrir o anterior: segue sem ele
-                pass
-        page.wait_for_timeout(800)
 
 
 def altura_conteudo(page) -> int:
@@ -226,15 +197,19 @@ JS_CHECAGENS = r"""
     const tipos = gd._fullData.map(t => t.type);
     // 3) ranking: toda barra com rótulo, rótulo inteiro dentro da área do gráfico (só nos gráficos de barra com
     //    rótulo de valor; os de grupos e o tornado da Etapa 3 usam a dica do mouse e a tabela de download)
+    //    Terceira rodada: o texto esperado é comparado sem as marcas HTML (<b>), e a contagem só vale para gráficos de
+    //    uma série de barras (o tornado tem duas, cada uma com os seus rótulos).
     if (tipos.includes('bar') && gd._fullData[tipos.indexOf('bar')].text) {
       const ib = tipos.indexOf('bar'), bar = gd._fullData[ib];
+      const uma = tipos.filter(t => t === 'bar').length === 1;
       const nbarras = (gd.calcdata && gd.calcdata[ib]) ? gd.calcdata[ib].length : 0;
       const textos = [...gd.querySelectorAll('.bartext')];
-      if (textos.length !== nbarras) falhas.push(['ranking com barra sem rótulo', `${textos.length} rótulos para ${nbarras} barras`]);
+      if (uma && textos.length !== nbarras) falhas.push(['ranking com barra sem rótulo', `${textos.length} rótulos para ${nbarras} barras`]);
+      const limpo = s => String(s).replace(/<[^>]+>/g, '');
       textos.forEach((t, i) => { const r = t.getBoundingClientRect();
         if (r.right > caixa.right + 1 || r.left < caixa.left - 1) falhas.push(['rótulo do ranking fora do gráfico', t.textContent]);
-        if (bar.text && bar.text[i] !== undefined && t.textContent !== String(bar.text[i]))
-          falhas.push(['rótulo do ranking truncado', `${t.textContent} ≠ ${bar.text[i]}`]); });
+        if (uma && bar.text && bar.text[i] !== undefined && t.textContent !== limpo(bar.text[i]))
+          falhas.push(['rótulo do ranking truncado', `${t.textContent} ≠ ${limpo(bar.text[i])}`]); });
     }
     // 4) mapa: escala de cores existe e está visível dentro da figura
     if (tipos.includes('choroplethmap')) {

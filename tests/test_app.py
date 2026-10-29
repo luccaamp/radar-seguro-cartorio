@@ -8,6 +8,7 @@ em qualquer clone, está em test_app_demo.py.
 """
 import hashlib
 import os
+import re
 import shutil
 import stat
 from pathlib import Path
@@ -15,7 +16,7 @@ from pathlib import Path
 import duckdb
 import pytest
 
-from apoio_painel import BANCO_REAL, PAGINAS, RAIZ, assinatura_real as _assinatura
+from apoio_painel import BANCO_REAL, HISTORIA, MERCADO, PAGINAS, RAIZ, SIMULADOR, SOBRE, assinatura_real as _assinatura
 
 # a cópia temporária do banco (fixture `banco_temporario`, em conftest.py) vale para todos os testes deste módulo
 pytestmark = [pytest.mark.dados_reais, pytest.mark.skipif(not BANCO_REAL.exists(), reason="rode uv run pipeline.py antes"),
@@ -27,6 +28,12 @@ def test_pagina_roda_e_tem_rodape(pagina):
     from streamlit.testing.v1 import AppTest
     at = AppTest.from_file(str(RAIZ / pagina), default_timeout=120).run()
     assert not at.exception, at.exception
+    if pagina in HISTORIA and pagina != SOBRE:   # D-051: só a linha de fonte (fonte e data)
+        import json   # o JSON do gráfico escapa os acentos: lê as anotações já decodificadas
+        textos = "\n".join(m.value for m in at.markdown) + "".join(
+            a["text"] for g in at.get("plotly_chart") for a in json.loads(g.proto.spec)["layout"].get("annotations", []))
+        assert "Fonte: CNJ, Justiça Aberta (" in textos
+        return
     rodapes = [c.value for c in at.caption if "Fontes:" in c.value]
     assert rodapes and all("Premissas:" in r and "ref." in r for r in rodapes)
 
@@ -40,7 +47,7 @@ def test_app_usa_a_copia(banco_temporario):
 
 def test_simulador_suspende_zera_premio():
     from streamlit.testing.v1 import AppTest
-    at = AppTest.from_file(str(RAIZ / "app/pages/4_Simulador.py"), default_timeout=120).run()
+    at = AppTest.from_file(str(RAIZ / SIMULADOR), default_timeout=120).run()
     at.radio[0].set_value("suspende_8_17").run()
     assert not at.exception
     premios = [m.value for m in at.metric if m.label == "Prêmio emitido"]
@@ -53,7 +60,7 @@ def _sha256(p: Path) -> str:
 
 def _salvar_pelo_simulador(nome: str):
     from streamlit.testing.v1 import AppTest
-    at = AppTest.from_file(str(RAIZ / "app/pages/4_Simulador.py"), default_timeout=120).run()
+    at = AppTest.from_file(str(RAIZ / SIMULADOR), default_timeout=120).run()
     at.text_input[0].set_value(nome).run()
     at.button[0].click().run()
     assert not at.exception and any("salvo" in s.value for s in at.success)
@@ -61,7 +68,7 @@ def _salvar_pelo_simulador(nome: str):
 
 def _nomes_na_tabela_de_salvos() -> list[str]:
     from streamlit.testing.v1 import AppTest
-    at = AppTest.from_file(str(RAIZ / "app/pages/4_Simulador.py"), default_timeout=120).run()
+    at = AppTest.from_file(str(RAIZ / SIMULADOR), default_timeout=120).run()
     assert not at.exception
     return [n for df in (d.value for d in at.dataframe) if "nome" in df.columns for n in df["nome"]]
 
@@ -129,7 +136,7 @@ def test_painel_com_banco_marcado_somente_leitura(banco_temporario, tmp_path):
 
 def test_mercado_filtro_pequeno_esconde_estimativa(banco_temporario):
     from streamlit.testing.v1 import AppTest
-    at = AppTest.from_file(str(RAIZ / "app/pages/1_Mercado.py"), default_timeout=120).run()
+    at = AppTest.from_file(str(RAIZ / MERCADO), default_timeout=120).run()
     # um município com 1 ou 2 serventias: as estimativas não podem aparecer (LGPD)
     with duckdb.connect(str(banco_temporario["copia"]), read_only=True) as con:  # mesma configuração da conexão do app
         nome = con.sql("SELECT municipio FROM gold.dim_municipio WHERE n_serventias = 1 ORDER BY municipio LIMIT 1"
@@ -141,7 +148,8 @@ def test_mercado_filtro_pequeno_esconde_estimativa(banco_temporario):
     assert not at.exception
     # U1: o município pequeno nunca aparece sozinho; os números são os da área agregada a que ele pertence
     assert any("agregado" in i.value and "LGPD" in i.value for i in at.info)
-    serv = [m.value for m in at.metric if m.label == "Serventias ativas"]
+    tela = "\n".join(m.value for m in at.markdown)   # D-051: cartão "Cartórios na área" em HTML
+    serv = re.findall(r'Cartórios na área</div><div class="rd-num">([^<]+)<', tela)
     assert serv == [str(area)] and area >= 3
 
 
@@ -237,7 +245,7 @@ def test_etapa_3_no_banco_completo(banco_temporario):
         tp.test_d042_bate_com_as_tabelas_e_segue_a_ordem(banco, medida)
     tp.test_sensibilidades_da_d042_batem_com_a_tabela(banco)
     tp.test_05b_vem_do_notebook_e_aparece_como_faixa_de_comparacao(banco)
-    tp.test_analises_rotula_projecao_e_a_leitura_do_limite()
+    tp.test_analises_rotula_projecao_e_a_leitura_do_limite(banco)
     tp.test_adi_8015_com_data_da_conferencia()
 
 

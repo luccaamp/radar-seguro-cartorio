@@ -17,7 +17,8 @@ import pytest
 from apoio_painel import RAIZ
 
 pytestmark = pytest.mark.usefixtures("painel_demo")
-INICIO, ANALISES, QUALIDADE = "app/Inicio.py", "app/pages/2_Análises.py", "app/pages/3_Qualidade_dos_dados.py"
+# terceira rodada (D-051): os 10 números foram para "Sobre os dados"; a projeção, para "Para onde vai"
+INICIO, SOBRE, PROJECAO = "app/Inicio.py", "app/pages/4_Sobre_os_dados.py", "app/pages/3_Para_onde_vai.py"
 CPF = re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b")
 
 
@@ -80,14 +81,15 @@ def test_ferramentas_do_chat_nao_mudaram():
 
 # ------------------------------------------------------------------ Início: 10 números e D-042
 def test_inicio_mostra_os_10_numeros_do_estado_atual(painel_demo):
+    """Desde a D-051, os 10 números ficam na tabela de "Sobre os dados" (o nome do teste ficou o mesmo)."""
     from src.painel import analises
     esperado = numeros_do_estado_atual()
-    at = rodar(INICIO)
+    at = rodar(SOBRE)
     tela = html(at)
     with con_demo(painel_demo) as con:
         oficiais = analises.numeros_oficiais(con)["numeros"]
     for n, ref in zip(oficiais, esperado):
-        assert f'<div class="rd-num">{n["valor"]}</div>' in tela, n   # o valor está na tela, num cartão
+        assert f'<td class="rd-num">{n["valor"]}</td>' in tela, n   # o valor está na tela, na tabela
         # e bate com o ESTADO_ATUAL na precisão em que ele está escrito (ex.: "R$ 4,76 mi" = ± R$ 5 mil)
         miolo = ref.replace("R$", "").replace("≈", "").split()[0]
         casas = len(miolo.split(",")[1]) if "," in miolo else 0
@@ -112,12 +114,16 @@ def test_d042_bate_com_as_tabelas_e_segue_a_ordem(painel_demo, medida):
     assert v["base_mc"] == pytest.approx(v["base"])   # o Monte Carlo parte da mesma base
     assert r["valor_base"] == brl(f["base"]) and r["extremos"] == f"{brl(f['min'])} a {brl(f['max'])}"
     assert r["rotulo_faixa"] == "faixa provável (P5–P95)" and r["subrotulo_faixa"] == "faixa dentro das suposições"
-    for pagina in (INICIO, ANALISES):
-        tela = html(rodar(pagina))
-        card = tela[tela.index(f'<div class="rd-rot">{r["medida"]}'):]
-        i_base, i_faixa, i_ext = (card.index(r["valor_base"]), card.index(r["faixa_provavel"]),
-                                  card.index(r["extremos"]))
-        assert i_base < i_faixa < i_ext, pagina   # base > faixa provável > extremos (D-042)
+    # D-042 na tela (D-051): na tabela de "Sobre os dados", o valor base vem antes dos extremos; no Início, o prêmio
+    # base vem antes da faixa provável, e os extremos não aparecem
+    tela = html(rodar(SOBRE))
+    linha = tela[tela.index(f'<td class="rd-num">{r["valor_base"]}</td>'):]
+    assert linha.index(r["valor_base"]) < linha.index(r["extremos"])
+    if medida == "premio":
+        inicio = html(rodar(INICIO))
+        valor, unidade = r["valor_base"].rsplit(" ", 1)
+        i_base = inicio.index(f'<div class="rd-num">{valor} <small>{unidade}')
+        assert i_base < inicio.index(r["faixa_provavel"]) and r["extremos"] not in inicio
 
 
 def test_sensibilidades_da_d042_batem_com_a_tabela(painel_demo):
@@ -129,8 +135,9 @@ def test_sensibilidades_da_d042_batem_com_a_tabela(painel_demo):
     assert {r["chave"]: r["efeito_passivo"] for r in met["tabela"]} == \
         s.loc[s["bloco"] == "passivo: escolhas de método", "var_passivo_todas"].to_dict()
     assert lit["valores"]["var_universo"] == s.at["receita_liquida", "var_n_universo"]
-    tela = html(rodar(QUALIDADE)) + "\n".join(c.value for c in rodar(QUALIDADE).caption)
-    assert analises.LEITURA_LITERAL in tela.replace("\\$", "$")
+    # desde a D-051 as sensibilidades de método saíram do painel: ficam no chat
+    from src.agent import ferramentas
+    assert {"escolhas_metodo_passivo", "leitura_literal_receita"} <= ferramentas.alcancaveis()
 
 
 # ------------------------------------------------------------------ projeção, 05b e limite
@@ -149,23 +156,33 @@ def test_05b_vem_do_notebook_e_aparece_como_faixa_de_comparacao(painel_demo):
             assert not re.search(rf"(?<![\d.,]){round(x)}(?![\d.,])", arq.read_text(encoding="utf-8")), (arq, x)
 
 
-def test_analises_rotula_projecao_e_a_leitura_do_limite():
-    at = rodar(ANALISES)
+def test_analises_rotula_projecao_e_a_leitura_do_limite(painel_demo):
+    """D-051: a projeção fica em "Para onde vai", com o selo nos cartões, "PROJEÇÃO" no título do gráfico e
+    "projeção, não número oficial" na fonte; a leitura do limite é a principal do config (a outra fica no chat)."""
+    from src.painel import analises
+    at = rodar(PROJECAO)
     tela = html(at)
-    assert "PROJEÇÃO para 2027 · leitura do limite em uso: limite fixo" in tela
-    assert "comparação" in tela and 'class="rd-selo projecao"' in tela
-    at.radio(key="a_limite").set_value("limite corrigido pelo IPCA").run()
-    assert not at.exception
-    assert "leitura do limite em uso: limite corrigido pelo IPCA" in html(at)
+    assert tela.count('class="rd-selo projecao"') >= 2
     figs = [json.loads(g.proto.spec) for g in at.get("plotly_chart")]
-    titulos = [f["layout"]["title"]["text"] for f in figs]
-    assert sum("PROJEÇÃO" in t for t in titulos) >= 3, titulos
+    assert len(figs) == 1 and figs[0]["layout"]["title"]["text"].startswith("<b>PROJEÇÃO")
+    assert any("projeção, não número oficial" in a["text"] for a in figs[0]["layout"]["annotations"])
+    with con_demo(painel_demo) as con:
+        pm = analises.previsao_mercado(con, "MG", ano=2027)
+    assert pm["leitura_do_limite"] == analises.config()["projecao"]["leitura_limite_principal"]
+    assert pm["principal"]["Obrigadas"].split(" (")[0] in tela
 
 
 def test_adi_8015_com_data_da_conferencia():
+    """A situação da ADI 8015 continua no chat, com a data; o STF saiu do painel inteiro (D-051)."""
+    from src.agent import ferramentas
     from src.painel import analises
     adi = analises.situacao_adi()
-    assert f"conferido em {adi['conferido_em']}" in html(rodar(INICIO))
+    assert adi["conferido_em"] and {"situacao_adi", "premio_por_cenario_stf"} <= ferramentas.alcancaveis()
+    from apoio_painel import HISTORIA
+    for pagina in HISTORIA:
+        at = rodar(pagina)
+        textos = html(at) + "\n".join(c.value for c in at.caption) + "".join(g.proto.spec for g in at.get("plotly_chart"))
+        assert not re.search(r"\bSTF\b|ADI 8015", textos), pagina
 
 
 # ------------------------------------------------------------------ dados pessoais

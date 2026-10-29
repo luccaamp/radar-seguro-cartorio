@@ -9,10 +9,9 @@ import re
 import duckdb
 import pytest
 
-from apoio_painel import PAGINAS, RAIZ
+from apoio_painel import HISTORIA, MERCADO, PAGINAS, RAIZ, SIMULADOR, SOBRE
 
 pytestmark = pytest.mark.usefixtures("painel_demo")
-SIMULADOR = str(RAIZ / "app/pages/4_Simulador.py")
 
 
 def rodar(pagina: str):
@@ -29,19 +28,72 @@ def ler(painel_demo, sql: str, params: list | None = None):
         return con.execute(sql, params or []).df()
 
 
+def html(at) -> str:
+    return "\n".join(m.value for m in at.markdown).replace("&#36;", "$")
+
+
+def figuras(at) -> list[dict]:
+    return [json.loads(g.proto.spec) for g in at.get("plotly_chart")]
+
+
 @pytest.mark.parametrize("pagina", PAGINAS)
 def test_pagina_roda_com_faixa_e_carga_no_rodape(pagina):
+    """D-051: o aviso do modo demonstração e o rodapé com versão e carga ficam em "Sobre os dados" (e no chat e no
+    Simulador, que não mudaram); as páginas da história têm só a linha de fonte (fonte e data)."""
     at = rodar(pagina)
     import comum
     assert comum.modo() == "demonstracao"
+    if pagina in HISTORIA and pagina != SOBRE:
+        textos = html(at) + "".join(a["text"] for f in figuras(at) for a in f["layout"].get("annotations", []))
+        assert "Fonte: CNJ, Justiça Aberta (" in textos
+        return
     assert any("Modo demonstração" in c.value and "Como rodar" in c.value for c in at.caption)
     rodapes = [c.value for c in at.caption if "Fontes:" in c.value]
     assert rodapes and all("Premissas:" in r and "· demonstração" in r for r in rodapes)
 
 
+# ------------------------------------------------------------------ terceira rodada do painel (D-051)
+TECNICO = re.compile(r"premissas v\d|versão \d|\bv\d\b|\bD-0\d\d\b|gold\.|silver\.|notebook|\bcarga\b|\bnível\b|"
+                     r"\bUF\b|\bSTF\b|ADI 8015", re.I)
+
+
+@pytest.mark.parametrize("pagina", [p for p in HISTORIA if p != SOBRE])
+def test_nada_tecnico_fora_de_sobre_os_dados(pagina):
+    """Etiquetas técnicas (carga, versão de premissas, nível, UF), IDs de decisão, nomes de tabela e de notebook e o
+    STF só aparecem em "Sobre os dados" (ou no chat)."""
+    at = rodar(pagina)
+    textos = [html(at)] + [c.value for c in at.caption] + [
+        f["layout"].get("title", {}).get("text", "") + " ".join(a["text"] for a in f["layout"].get("annotations", []))
+        for f in figuras(at)]
+    achados = [m.group(0) for t in textos for m in TECNICO.finditer(re.sub(r"<style>.*?</style>", "", t, flags=re.S))]
+    assert not achados, achados
+
+
+@pytest.mark.parametrize("pagina", HISTORIA)
+def test_limites_da_pagina(pagina):
+    """Uma manchete (h1), no máximo 3 números em destaque, no máximo 2 gráficos e de 2 a 3 perguntas para o chat,
+    cada uma com o link para o chat com a pergunta preenchida."""
+    at = rodar(pagina)
+    tela = html(at)
+    assert tela.count("<h1>") == 1
+    destaque = tela.count('<div class="rd-card">') + tela.count('<div class="rd-resposta">')
+    assert destaque <= 3 and len(figuras(at)) <= 2, (destaque, len(figuras(at)))
+    links = re.findall(r'href="Chat\?pergunta=([^"]+)"', tela)
+    assert 2 <= len(links) <= 3
+
+
+def test_nenhum_cartao_repete_numero_entre_paginas():
+    """Nenhum número em destaque (cartão ou resposta) aparece em duas páginas da história."""
+    vistos: dict[str, str] = {}
+    for pagina in HISTORIA:
+        for v in re.findall(r'<div class="rd-num">([^<]+)', html(rodar(pagina))):
+            assert v.strip() not in vistos, (v, pagina, vistos.get(v.strip()))
+            vistos[v.strip()] = pagina
+
+
 def test_simulador_padrao_igual_ao_cenario_base_do_painel(painel_demo):
     """Nas premissas padrão, o Simulador de demonstração mostra os números do gold (sem seta de diferença)."""
-    at = rodar("app/pages/4_Simulador.py")
+    at = rodar(SIMULADOR)
     from comum import aprox, brl
     ref = ler(painel_demo, "SELECT * FROM gold.fato_mercado_uf WHERE nivel = 'base' AND regra_classe = 'v2' "
                            "AND cenario_stf = 'mantem'").iloc[0]
@@ -54,7 +106,7 @@ def test_simulador_padrao_igual_ao_cenario_base_do_painel(painel_demo):
 
 
 def test_simulador_suspende_zera_premio():
-    at = rodar("app/pages/4_Simulador.py")
+    at = rodar(SIMULADOR)
     at.radio[0].set_value("suspende_8_17").run()
     assert not at.exception
     premios = [m.value for m in at.metric if m.label == "Prêmio emitido"]
@@ -63,7 +115,7 @@ def test_simulador_suspende_zera_premio():
 
 def test_simulador_uma_premissa_do_passivo_usa_a_grade(painel_demo):
     from comum import brl
-    at = rodar("app/pages/4_Simulador.py")
+    at = rodar(SIMULADOR)
     fap = next(s for s in at.select_slider if s.label.startswith("FAP"))
     fap.set_value(2.0).run()
     assert not at.exception and not at.warning
@@ -74,7 +126,7 @@ def test_simulador_uma_premissa_do_passivo_usa_a_grade(painel_demo):
 
 
 def test_simulador_duas_premissas_do_passivo_avisa_e_nao_calcula():
-    at = rodar("app/pages/4_Simulador.py")
+    at = rodar(SIMULADOR)
     next(s for s in at.select_slider if s.label.startswith("FAP")).set_value(2.0).run()
     next(s for s in at.select_slider if s.label.startswith("Férias")).set_value(1.0).run()
     assert not at.exception
@@ -83,7 +135,7 @@ def test_simulador_duas_premissas_do_passivo_avisa_e_nao_calcula():
 
 
 def test_salvar_cenario_desativado():
-    at = rodar("app/pages/4_Simulador.py")
+    at = rodar(SIMULADOR)
     assert at.button[0].disabled and at.text_input[0].disabled
     assert any("Desativado no modo demonstração" in c.value for c in at.caption)
 
@@ -100,11 +152,12 @@ def test_mercado_municipio_pequeno_aparece_agregado(painel_demo):
     d = ler(painel_demo, """SELECT d.municipio, p.n_serventias FROM gold.dim_municipio d JOIN gold.geo_area_municipio a
                             USING (cod_ibge) JOIN gold.mercado_area_publico p USING (area_id)
                             WHERE d.n_serventias = 1 ORDER BY d.municipio LIMIT 1""").iloc[0]
-    at = rodar("app/pages/1_Mercado.py")
+    at = rodar(MERCADO)
     at.selectbox(key="f_mun").set_value(d["municipio"]).run()
     assert not at.exception
     assert any("agregado" in i.value and "LGPD" in i.value for i in at.info)
-    assert [m.value for m in at.metric if m.label == "Serventias ativas"] == [str(d["n_serventias"])]
+    tela = html(at)   # o cartão "Cartórios na área" mostra a área agregada, nunca o município pequeno
+    assert f'Cartórios na área</div><div class="rd-num">{d["n_serventias"]}</div>' in tela
 
 
 def test_lgpd_nenhum_municipio_pequeno_nas_tabelas_e_graficos(painel_demo):

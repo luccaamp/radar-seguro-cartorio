@@ -840,3 +840,32 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
   - teste novo. Os números não mudaram.
 - **Resultado depois da correção:** prêmio e déficit respondidos com a faixa certa no teste real.
 - **Bom para os slides?** sim (o número estava certo, e o rótulo errado mudava o sentido)
+
+## 2026-10-29 — Erro de direção: o painel mostrava tudo em vez de responder à pergunta
+- **Onde:** painel da Etapa 3, segunda rodada (D-049): todas as páginas
+- **O que aconteceu:** o plano pedia "um painel que reúna todos os achados importantes", e a IA seguiu ao pé da letra: inventário de 34 achados, cada um com lugar no painel. O Início ficou com 13 cartões, a ADI, o glossário e a escada; os 3 cartões D-042 se repetiam na Análises; a Análises tinha 4 abas e 8 gráficos. Nada respondia, em 5 segundos, à pergunta do projeto ("quanto dinheiro, e quão certo"), que estava escrita no próprio plano.
+- **Como foi detectado:** revisão do autor ("o painel tem informação demais e, por isso, não informa nada").
+- **Correção:** D-051. O painel responde a uma pergunta; cada elemento passou pela regra de corte (`docs/painel/corte.md`: de 71, ficaram 17 e 8 foram para "Sobre os dados"); o detalhe foi para o chat. Limites por página testados.
+- **Lição:** antes de inventariar o que mostrar, escrever a pergunta que a tela responde e cortar o que não a responde.
+- **Bom para os slides?** sim (antes × depois em `docs/qa/painel/rodada3_antes/` e `rodada3_depois/`)
+
+## 2026-10-29 — Script de substituição de texto para editar código
+- **Onde:** `app/comum.py` (função `pagina` e a nova `fonte_linha`)
+- **O que aconteceu:** a IA trocou o fim do arquivo com um script Python (`read_text`/`write_text`), contra a regra do `CLAUDE.md` ("edite código só com a ferramenta de edição de arquivos").
+- **Como foi detectado:** a própria IA, logo depois.
+- **Correção:** o resultado foi conferido (o trecho substituído era só a função `pagina`, no fim do arquivo); o resto da sessão usou só a ferramenta de edição.
+- **Bom para os slides?** não
+
+## 2026-10-29 — Capturas "antes" tiradas enquanto as páginas mudavam
+- **Onde:** `docs/qa/painel/rodada3_antes/`
+- **O que aconteceu:** a IA rodou o script de capturas em segundo plano e, ao mesmo tempo, começou a reescrever as páginas. O Streamlit lê os arquivos a cada execução: parte das capturas "antes" já pegava código novo, e o script quebrou no meio (o filtro "Filtrar por" não existia mais).
+- **Como foi detectado:** o script terminou com erro.
+- **Correção:** as capturas "antes" foram refeitas a partir de uma cópia exata do último commit (`git archive HEAD`, numa pasta temporária, com uma cópia do banco).
+- **Bom para os slides?** não
+
+## 2026-10-29 — Contagem do corte escrita antes de contar
+- **Onde:** `docs/painel/corte.md` e D-051
+- **O que aconteceu:** a IA escreveu "81 elementos: 20 ficam, 7 Sobre, 38 chat, 16 saem" antes de contar as linhas da tabela; a contagem real dava 71 (17, 8, 31, 15).
+- **Como foi detectado:** a IA contou as linhas com um script antes de fechar.
+- **Correção:** números corrigidos nos dois documentos, com a regra de contagem escrita.
+- **Bom para os slides?** não

@@ -12,8 +12,12 @@ import duckdb
 
 RAIZ = Path(__file__).resolve().parents[1]
 BANCO_REAL = RAIZ / "data" / "radar.duckdb"
-PAGINAS = ["app/Inicio.py", "app/pages/1_Mercado.py", "app/pages/2_Análises.py", "app/pages/3_Qualidade_dos_dados.py",
-           "app/pages/4_Simulador.py", "app/pages/5_Chat.py"]
+# painel da terceira rodada (D-051): as cinco páginas da história e o chat. O Simulador saiu da navegação e roda à
+# parte (app/simulador.py), mas continua testado.
+HISTORIA = ["app/Inicio.py", "app/pages/1_Quão_certo_é.py", "app/pages/2_Onde_está_o_mercado.py",
+            "app/pages/3_Para_onde_vai.py", "app/pages/4_Sobre_os_dados.py"]
+SOBRE, MERCADO, SIMULADOR = HISTORIA[4], HISTORIA[2], "app/simulador.py"
+PAGINAS = HISTORIA + ["app/pages/5_Chat.py", SIMULADOR]
 
 
 def assinatura_real(p: Path = BANCO_REAL) -> tuple:

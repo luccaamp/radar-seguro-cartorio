@@ -229,15 +229,32 @@ def analise(nome: str, **kw) -> dict:
     return _analise(nome, f"{modo()}:{caminho_banco()}", tuple(sorted(kw.items())))
 
 
-def pagina(titulo_aba: str, icone: str, sobre: str, titulo: str, manchete: str,
-           numero: tuple[str, str] | None = None) -> None:
-    """Abre uma página no padrão visual: configuração, CSS único, faixa do topo (manchete, número principal e selos de
-    contexto) e o aviso do modo demonstração."""
+def pagina(titulo_aba: str, icone: str, titulo: str, subtitulo: str, sobre: str = "") -> None:
+    """Abre uma página no padrão visual (terceira rodada): configuração, CSS único e o cabeçalho (título escuro e uma
+    linha de subtítulo, sem etiquetas). Carga, premissas e modo ficam na página "Sobre os dados"."""
     from src.painel import ui
     st.set_page_config(page_title=titulo_aba, page_icon=icone, layout="wide")
     ui.estilo()
-    e = execucao()
-    ui.cabecalho(sobre, titulo, manchete, numero,
-                 [("Dados", carga_em_uso()), ("Premissas", f"v{int(e.versao_premissas)}"),
-                  ("Classe 1", "até R$ 300 mil (Prov. 243)"), ("Nível", "base"), ("STF", "regra mantida"), ("UF", "MG")])
-    aviso_modo()
+    ui.cabecalho(titulo, subtitulo, sobre)
+
+
+def _data_ref(texto: str) -> str:
+    """'2026-10-17' → '17/10/2026'; '202608' → '08/2026'; texto livre → a parte antes do ';' (sem 'classe:')."""
+    t = str(texto).split(";")[0].replace("classe:", "").strip()
+    if len(t) == 10 and t[4] == t[7] == "-":
+        return f"{t[8:]}/{t[5:7]}/{t[:4]}"
+    if len(t) == 6 and t.isdigit():
+        return f"{t[4:]}/{t[:4]}"
+    return t
+
+
+FONTES_CURTAS = {"cnj_serventias": "CNJ, Justiça Aberta", "rais_vinculos": "RAIS", "susep_ses_garantia": "SUSEP",
+                 "ibge_malha": "IBGE, malha municipal"}
+
+
+def fonte_linha(fontes: list[str], extra: str = "") -> str:
+    """Rodapé de uma página ou gráfico, numa linha: só a fonte e a data de referência (sem versão nem tabela)."""
+    f = consulta("SELECT fonte, data_referencia FROM silver.fonte_metadados WHERE fonte IN (SELECT unnest(?))", [fontes])
+    ref = dict(zip(f["fonte"], f["data_referencia"]))
+    partes = [f"{FONTES_CURTAS[k]} ({_data_ref(ref[k])})" for k in fontes if k in ref and k in FONTES_CURTAS]
+    return "Fonte: " + "; ".join(partes) + (f". {extra}" if extra else ".")
