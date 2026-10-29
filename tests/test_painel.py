@@ -70,10 +70,12 @@ def test_funcoes_no_formato_das_ferramentas_do_chat(painel_demo):
 
 
 def test_ferramentas_do_chat_nao_mudaram():
-    """As 6 ferramentas atuais continuam as mesmas (as novas ficam em src/painel/analises.py, para a Etapa 5)."""
+    """As 6 consultas antigas do chat continuam as mesmas (desde a D-062 elas ficam em `PROPRIAS`, dentro das 5
+    ferramentas da Etapa 5; as análises do painel ficam em src/painel/analises.py)."""
     from src.agent import ferramentas
-    assert set(ferramentas.FERRAMENTAS) == {"contar_serventias", "passivo_e_obrigadas", "deficit_e_mercado", "simular",
-                                            "buscar_norma", "consultar_serventia"}
+    assert set(ferramentas.PROPRIAS) == {"contar_serventias", "passivo_e_obrigadas", "deficit_e_mercado", "simular",
+                                         "buscar_norma", "consultar_serventia"}
+    assert set(ferramentas.PROPRIAS) <= ferramentas.alcancaveis()
 
 
 # ------------------------------------------------------------------ Início: 10 números e D-042

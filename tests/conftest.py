@@ -22,6 +22,32 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(pular)
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _sem_gemini():
+    """A suíte padrão nunca chama a API do Gemini (D-060): a chave fica vazia (vale mais que o .env e o st.secrets) e
+    a rede do src/llm.py é trocada por um transporte que falha. Os testes do chat usam um modelo falso ou um
+    servidor simulado (tests/test_chat.py)."""
+    import os
+
+    import httpx
+
+    from src import llm
+
+    def sem_rede(request):
+        raise httpx.ConnectError("a suíte de testes não usa a rede", request=request)
+    nome = llm.config()["variavel_chave"]
+    anterior, transporte = os.environ.get(nome), llm._transporte
+    os.environ[nome] = ""
+    llm._transporte = httpx.MockTransport(sem_rede)
+    yield
+    llm._transporte = transporte
+    llm._principal_fora_ate = 0.0
+    if anterior is None:
+        os.environ.pop(nome, None)
+    else:
+        os.environ[nome] = anterior
+
+
 @pytest.fixture(scope="session")
 def _copia_real(tmp_path_factory):
     """Cópia do banco real com o gold refeito pelo código atual (uma vez por sessão). Confere no fim que o banco real

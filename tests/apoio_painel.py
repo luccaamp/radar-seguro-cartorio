@@ -14,7 +14,6 @@ RAIZ = Path(__file__).resolve().parents[1]
 BANCO_REAL = RAIZ / "data" / "radar.duckdb"
 PAGINAS = ["app/Inicio.py", "app/pages/1_Mercado.py", "app/pages/2_Análises.py", "app/pages/3_Qualidade_dos_dados.py",
            "app/pages/4_Simulador.py", "app/pages/5_Chat.py"]
-OLLAMA_AUSENTE = "http://127.0.0.1:9"   # porta sem servidor: nos testes do painel, o chat fica sempre "sem Ollama"
 
 
 def assinatura_real(p: Path = BANCO_REAL) -> tuple:
@@ -35,7 +34,7 @@ def preparar_copia(destino_dir: Path) -> Path:
     return copia
 
 
-VARIAVEIS = ("RADAR_BANCO", "RADAR_PUBLICO", "RADAR_ESTADO", "RADAR_OLLAMA_URL")
+VARIAVEIS = ("RADAR_BANCO", "RADAR_PUBLICO", "RADAR_ESTADO", "GEMINI_API_KEY")
 PASTAS_FORA_DO_GIT = {".git", ".venv", "data", "conversas", "qa", "saidas", "modelos", "__pycache__",
                       ".pytest_cache", ".ruff_cache", ".agents", ".claude", ".ipynb_checkpoints"}
 
@@ -44,10 +43,11 @@ def arquivos_versionaveis(padrao: str) -> list[Path]:
     """Arquivos que o git versionaria (`git ls-files`); sem repositório git (cópia ou zip do GitHub), varre o disco
     pulando as pastas ignoradas pelo .gitignore."""
     import subprocess
-    r = subprocess.run(["git", "-C", str(RAIZ), "ls-files", "-co", "--exclude-standard", padrao],
+    # -z: sem ele, o git põe entre aspas os nomes com acento ("app/pages/2_An\303\241lises.py") e eles se perdem
+    r = subprocess.run(["git", "-C", str(RAIZ), "ls-files", "-z", "-co", "--exclude-standard", padrao],
                        capture_output=True, text=True, encoding="utf-8")
-    if r.returncode == 0 and r.stdout.strip():
-        return [RAIZ / a for a in r.stdout.splitlines() if (RAIZ / a).is_file()]
+    if r.returncode == 0 and r.stdout.strip("\0"):
+        return [RAIZ / a for a in r.stdout.split("\0") if a and (RAIZ / a).is_file()]
     return sorted(p for p in RAIZ.rglob(padrao) if p.is_file()
                   and not PASTAS_FORA_DO_GIT & set(p.relative_to(RAIZ).parts[:-1]))
 
@@ -69,7 +69,7 @@ def apontar_painel(copia: Path, publico: Path | None = None) -> dict:
     anterior = {v: os.environ.get(v) for v in VARIAVEIS}
     os.environ["RADAR_BANCO"] = str(copia)
     os.environ["RADAR_ESTADO"] = str(copia.with_name("painel_estado.json"))   # cenários salvos ao lado da cópia (D-034)
-    os.environ["RADAR_OLLAMA_URL"] = OLLAMA_AUSENTE
+    os.environ["GEMINI_API_KEY"] = ""   # sem chave: nos testes do painel, o chat fica sempre sem o modelo (D-063)
     if publico is not None:
         os.environ["RADAR_PUBLICO"] = str(publico)
     _limpar_caches()

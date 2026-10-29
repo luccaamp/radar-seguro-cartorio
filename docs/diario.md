@@ -879,3 +879,94 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Feito:** `scripts/exportar_completo.py` grava `data/completo/` (13 MB): silver sem as 6 colunas da RAIS da D-031 (contrato "sem dado pessoal": 0 problemas, 3.840 nomes procurados), as 39 tabelas do gold e o CSV do BI do CNJ em gzip; `--instalar` põe o silver e o CSV em `data/` conferindo o SHA-256. `tests/test_completo.py` (5 testes). README seção 1b, `CLAUDE.md` (exceção na seção Git).
 - **Dependência achada no teste:** a primeira rodada do clone (só silver) gravou 36 tabelas: sem o CSV do BI, saem `analise_capacidade_calibracao`, `analise_capacidade_faixas`, `analise_sinistro` e a linha da receita líquida da `analise_sensibilidade_metodo` (páginas Análises: M1 e pergunta 9). O CSV entrou.
 - **Conferência num clone** (só os arquivos do git, sem bronze, silver nem banco): `--instalar` + `pipeline.py --a-partir-de silver` em 7 min; 39 de 39 tabelas do gold com o mesmo conteúdo de `data/completo/gold` (a `execucao` só difere na hora); `dados_reais` de `test_app` e `test_painel` no clone: 18 passed. Suíte padrão aqui: 265 passed, 2 skipped. Banco real intacto (SHA-256 `c0919011…`).
+
+## 2026-10-28 — Etapa 5: chat com o Gemini (nível gratuito), parte de código (D-060 a D-066)
+- **Pedido** (`leticia-ribeirom`, que controla o plano do chat com a autorização do autor): chat com o Gemini no nível gratuito, para o link público e a demo dos dois PCs; o Ollama sai. Respostas dela ao plano: meta de acerto de 85%; limite de 20 perguntas por sessão; `.env` lido com `python-dotenv`.
+- **O que foi feito:**
+  - `src/llm.py` reescrito para o Gemini: REST com `httpx`, chave no cabeçalho, reserva em caso de 429 ou erro, mensagens sem a chave;
+  - `config/llm.yaml` com modelo, reserva, limite por sessão, perguntas prontas, meta e hash do gabarito, cada valor com fonte;
+  - 5 ferramentas em `src/agent/ferramentas.py` sobre as funções de `src/painel/analises.py`, mais as consultas próprias do chat;
+  - `src/agent/chat.py` com as versões (a), (b) e (c) e a resposta sem modelo;
+  - página `app/pages/5_Chat.py`: aviso de dados pessoais, perguntas prontas, limite, cota;
+  - normas em `data/normas/` (`scripts/exportar_normas.py`);
+  - gabarito de 52 perguntas e `scripts/avaliar_chat.py`;
+  - testes: `tests/test_chat.py` (22) e `tests/test_chat_cobertura.py` (5 na suíte padrão e 1 `dados_reais`);
+  - a avaliação antiga do Ollama foi para `eval/historico/`.
+- **Prompt do agente:** salvo em `config/prompts/agente_sistema.md` (versão 1). Troca dos nomes entre colchetes: `[ferramenta_numeros]` → `consultar_numeros`, `[ferramenta_mercado]` → `consultar_mercado`, `[ferramenta_analises]` → `consultar_analises`, `[ferramenta_qualidade]` → `consultar_qualidade`, `[ferramenta_decisoes]` → `consultar_decisoes`. A pedido da colaboradora ("acrescente as regras aqui em cima"), o fim do prompt ganhou o bloco "Regras do projeto". Fora isso, o texto ficou como ela escreveu. Os placeholders da linha "Fonte: [fonte] · referência: [data] · premissas: [versão]" ficaram, porque são instruções de formato para o modelo, não nomes de ferramenta.
+- **Modelo (conferido na documentação do Google em 2026-10-28):** `gemini-3.8-flash` (estável, nível gratuito, chama ferramentas; raciocínio low, medium ou high) e a reserva `gemini-3.5-flash-lite` (nível gratuito). Os limites de uso do nível gratuito não estão na documentação: cada conta vê os seus no AI Studio. No nível gratuito, o conteúdo pode ser usado pelo Google; por isso a página tem o aviso.
+- **Decisões:** D-060 (Gemini no lugar do Ollama; Ollama removido, não aposentado); D-061 (exceção ao "100% gratuito", também no `CLAUDE.md`); D-062 (5 ferramentas e teste de cobertura); D-063 (perguntas prontas e 20 por sessão); D-064 (normas versionadas sem assinatura); D-065 (gabarito congelado, meta de 85% e nenhum número inventado nas armadilhas); D-066 (prompt v1).
+- **Conferências:**
+  - as 30 consultas rodam sem erro no modo demonstração e, numa cópia do banco, no modo completo (`-m dados_reais`, 1 passed);
+  - todo número esperado do gabarito sai de uma ferramenta;
+  - `analises.py` sem mudança; banco real com o mesmo SHA-256 antes e depois;
+  - a página abre sem chave (aviso e perguntas prontas), com um modelo falso, no limite da sessão e com a cota esgotada.
+- **Suposições** (`fonte: suposição` no `config/llm.yaml`): temperatura 0, `timeout_s` 60, histórico de 6 mensagens, pausa de 15 s entre perguntas da avaliação e espera de 65 s depois de um 429.
+- **Limitações:**
+  - a IA não tem chave do Gemini, então **nenhuma rodada com a API real foi feita**. O formato da chamada e das ferramentas está testado contra um servidor simulado, não contra o Google;
+  - a primeira rodada da colaboradora é que confirma, por exemplo, se o esquema das ferramentas é aceito como está.
+- **Próximo passo:** a colaboradora roda `uv run python scripts/avaliar_chat.py --versoes c --limite 5` com a chave dela, depois a avaliação inteira; se a meta não for cumprida, ajustar o prompt (nova versão) ou as ferramentas e registrar.
+- **Testes rodados (2026-10-28, WSL):**
+  - antes das mudanças: `uv run pytest` com 265 passed e 2 skipped;
+  - depois: `uv run pytest` com **286 passed, 2 skipped**, sem chave e sem rede (a `GEMINI_API_KEY` vazia e a rede do `src/llm.py` trocada por uma que falha, em `tests/conftest.py`); `uv run pytest -m dados_reais tests/test_chat_cobertura.py` com 1 passed, numa cópia do banco;
+  - a primeira rodada da suíte inteira teve 2 falhas: (1) `test_painel.py::test_ferramentas_do_chat_nao_mudaram`, a trava da Etapa 3 sobre as 6 ferramentas antigas, que agora são `PROPRIAS` (o teste foi ajustado para o nome novo e confere também que as 6 continuam alcançáveis); (2) `scripts/exportar_normas.py` sem `sys.stdout.reconfigure` (corrigido);
+  - `ruff`: só o aviso antigo em `scripts/arquivo/`.
+- **Para o Lucca:**
+  - `tests/test_painel.py` (função `test_ferramentas_do_chat_nao_mudaram`) e `tests/apoio_painel.py` (variável do Ollama trocada pela `GEMINI_API_KEY` vazia; `git ls-files -z`) mudaram nesta branch: na hora de juntar, a versão da `etapa-5-chat` é a que vale nesses trechos;
+  - `analises.py` e `comum.py` não mudaram;
+  - o commit `ee9278a` ("fiz o começo do prompt mas não terminei") não tem nada do prompt do chat: é uma segunda rodada do visual (tema novo em `.streamlit/config.toml`, faixa do topo com o número principal em `comum.pagina`/`ui.cabecalho`, `ui.secao`, cores novas em `graficos.py` e `estilo.css`). Ficou com o Lucca. O que falta nele: o `docs/painel/padrao_visual.md` ainda traz as cores antigas (`#184f95`), só o Início usa `ui.secao` e as capturas de `docs/qa/painel/` são da primeira rodada.
+
+## 2026-10-28 — Chat: primeiro uso com a chave real, demora do Gemini e prompt v2 (D-067, D-068)
+- **O que aconteceu:** com a chave dela, a colaboradora rodou o teste curto da avaliação. A pergunta 1 deu certo (7,2 s, ferramenta certa, 2.525 com fonte), o que confirma que o formato da chamada e das ferramentas é aceito pelo Google. Depois, no painel, uma pergunta sem dado devolveu "Não foi possível falar com o Gemini (ReadTimeout)".
+- **Diagnóstico** (poucas chamadas, com a chave do `.env`, sem imprimir a chave):
+  - a rede está boa: o host do Google respondeu em 0,4 s;
+  - o `gemini-3.8-flash` não respondeu nem a um "oi" em 150 s; o `gemini-3.5-flash-lite` respondeu em 1,9 s. O problema era o principal travado no nível gratuito, não a pergunta;
+  - depois, o principal passou a devolver erro e cota esgotada (429).
+- **Feito:**
+  - reserva também em caso de demora, com tempo-limite de 30 s e só a reserva por 10 minutos depois de uma falha (D-068);
+  - prompt v2 (D-067): "Não possuo esse dado no momento." e nenhuma linha de fonte sem ferramenta.
+- **Teste real depois:**
+  - "inflação de 2027" (4,1 s) e "prêmio em 2030" (23,8 s) começam com "Não possuo esse dado no momento."; a segunda oferece 2027 rotulado como projeção;
+  - "qntos cartorio tem em minas??": 2.525, com a fonte certa (12,1 s).
+  - Observação para a avaliação: na resposta de 2030, a faixa P10–P90 da projeção foi chamada de "faixa provável", o nome que a D-042 reserva para o P5–P95.
+- **Testes:** `uv run pytest` com 288 passed e 2 skipped, sem chave e sem rede.
+- **Próximo passo:** a colaboradora troca a chave (ver `docs/erros_ia.md`, mesmo dia) e roda a avaliação completa com o prompt v2. Com o principal fora, a avaliação mede a reserva: o relatório diz o modelo de cada rodada só pelo `config/llm.yaml`, então vale anotar no diário qual modelo respondeu.
+
+## 2026-10-28/29 — Chat: perguntas prontas em aba, frase sem dado, interface e velocidade (D-069)
+- **Pedido** (`leticia-ribeirom`, modo autônomo): perguntas prontas como aba própria, resposta sem dado ("Não foi possível encontrar essa resposta nos dados do painel."), interface (9 problemas da captura) e velocidade (medir, corrigir, medir de novo).
+- **Feito:**
+  - **Abas** Chat e Perguntas prontas. As prontas são 16, em 5 temas, em expansores, com selos e a fonte numa linha pequena. A frase única de indisponível aparece na tela e o motivo vai para o log.
+  - **Prompt v3** com a frase nova e "P10–P90 não é faixa provável"; o detector de "não sei" aceita a frase e variações. O gabarito e a meta não mudaram.
+  - **Página nova:**
+    - cabeçalho compacto e campo em destaque, com o CSS em `src/agent/chat.css`;
+    - aviso de uma linha e contador só no modo demonstração;
+    - 4 sugestões na conversa vazia;
+    - expansor "Fontes e datas", com o modelo e a versão do prompt.
+  - **Velocidade:**
+    - primeira chamada sem streaming e as seguintes em streaming;
+    - cliente HTTP único;
+    - ferramentas com cache e em paralelo;
+    - tempo-limite de 10 s no principal;
+    - tabelas formatadas antes de irem ao modelo.
+  - **Correções achadas no caminho:**
+    - os extremos teóricos agora têm o nome certo para o modelo, e a consulta de mercado traz a faixa provável do painel;
+    - a resposta interrompida por uma pergunta nova não se perde mais;
+    - a "mágica" do Streamlit mostrava um objeto interno na tela.
+  - **Ferramentas novas:** `scripts/medir_latencia_chat.py` (latência por etapa) e `scripts/prints_chat.py` (capturas em 1366 px e 390 px, nos dois modos, mais o contraste pelo axe).
+- **Latência** (5 perguntas de fumaça, API real, quem respondeu foi sempre a reserva, porque o principal estava com a cota esgotada):
+
+  | Medida | Antes | Depois | Meta |
+  |---|---|---|---|
+  | Primeiro texto (mediana) | 4,6 s | 2,7 s | 3 s |
+  | Resposta completa (mediana) | 4,6 s | 3,0 s | 10 s |
+
+  Na tela, as respostas levaram de 3,6 a 5,7 s antes e de 2,4 a 6,3 s depois. A primeira pergunta de um servidor novo pode levar mais 10 s, quando o principal está travado.
+  
+  O serviço oscila muito: no mesmo dia, a reserva respondeu a mesma chamada em 0,7 s e em 12 s. Por isso as metas só valem na mediana e dependem da hora.
+- **Contraste:** 0 textos abaixo de 4,5:1 nos 8 estados (dois modos × vazia, prontas, conversa, indisponível). Antes, a legenda das prontas e a da fonte tinham 3:1.
+- **Testes rodados (2026-10-29, WSL):** `uv run pytest` com 296 passed e 2 skipped, sem chave e sem rede; `uv run pytest -m dados_reais tests/test_chat_cobertura.py tests/test_painel.py tests/test_app.py` com 19 passed, numa cópia do banco (os 10 números conferidos contra o ESTADO_ATUAL). O banco real continua com o mesmo SHA-256. `data/publico`, `data/completo`, `src/painel` e `config/premissas` sem mudança. `ruff`: só o aviso antigo de `scripts/arquivo/`.
+- **Chamadas reais gastas:** cerca de 150 no dia, entre medições, capturas e diagnósticos, todas na chave do `.env` da colaboradora.
+- **Próximo passo:** **refazer a avaliação com o prompt v3** (`uv run python scripts/avaliar_chat.py`); as respostas guardadas da v1 não valem.
+- **Antes do push (2026-10-29):**
+  - passo a passo para criar o `.env` com a própria chave, com os comandos de Windows e WSL, no `CONTRIBUTING.md` (seção "Chat com o Gemini") e com link no README;
+  - `uv run pytest`: 296 passed, 2 skipped, sem chave e sem rede;
+  - ficaram fora do commit `eval/respostas/` e `eval/resultado_avaliacao.md`, da rodada de 5 perguntas com o prompt v2, que não vale para o v3.

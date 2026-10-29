@@ -6,7 +6,7 @@
 Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito e local.
 - **Painel:** cartórios de Minas Gerais, com dados públicos reais.
 - **Simulador:** mercado de seguro-garantia criado pelo Provimento CNJ 227/2026.
-- **Chat com fontes:** versão reduzida no painel (página Chat, Ollama local, `qwen3:8b`; D-036).
+- **Chat com fontes:** página Chat do painel, com o Gemini no nível gratuito (D-060 a D-066; o Ollama da D-036 saiu). Funciona no link público e nos dois PCs; sem a chave, responde as perguntas prontas.
 - **Para leigos:** [`entenda_o_projeto.md`](entenda_o_projeto.md) (problema, seguro-garantia, perguntas do projeto e glossário), com link no README e no `CONTRIBUTING.md`.
 
 ## Etapa atual
@@ -32,13 +32,31 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito e local.
 - **Próximo passo concreto:** o autor revisa o painel e as questões da Etapa 3 (abaixo); depois, **Etapa 4 (simulador)**: controles novos (ano, limite fixo × corrigido, faixa por sorteio), tornado ao vivo e o redesenho da página no padrão visual da Etapa 3.
 - **D-050, dados do painel no git (2026-10-28):** a pedido de `leticia-ribeirom`, para o Lucca rodar do GitHub: `data/completo/` (≈ 13 MB) traz o silver da carga oficial sem dado pessoal (D-031), o gold completo (39 tabelas) e o CSV do BI do CNJ em gzip (dependência da M1 e da pergunta 9), gerados por `scripts/exportar_completo.py` e conferidos por `tests/test_completo.py`. Modo completo a partir de um clone: README, seção 1b. **Depois de cada carga oficial, rodar `uv run python scripts/exportar_completo.py`** (o teste de coerência falha se a pasta ficar velha).
 - **Ramo atual:** `etapa-3-painel` (a partir de `b0b5f90`, D-048), com a Etapa 3 e a D-050 no GitHub. Nada juntado na `main`.
+- **Divisão do trabalho desde 2026-10-28:** o Lucca cuida do visual do painel na `etapa-3-painel` (decisões D-051 a D-059); `leticia-ribeirom` cuida do chat na `etapa-5-chat`, criada a partir da `etapa-3-painel` em `4ab4500` (decisões D-060 a D-069). Arquivos do chat: `src/agent/`, `src/llm.py`, `config/llm.yaml`, `config/prompts/`, `app/pages/5_Chat.py`, `eval/`, `scripts/avaliar_chat.py`, `scripts/exportar_normas.py`, `data/normas/`, `tests/test_chat*.py`. Compartilhados (só acrescentar; mudar uma função existente exige avisar o Lucca): `src/painel/analises.py` e `app/comum.py`. **Ordem para juntar:** o painel entra na `main` primeiro; depois a `main` vem para a `etapa-5-chat`, o chat é conferido contra os números do painel (`tests/test_chat_cobertura.py` e `test_gabarito_bate_com_as_ferramentas`) e só então é juntado.
+- **Etapa 5 (chat), parte de código feita em 2026-10-28** (D-060 a D-066), na `etapa-5-chat`, **sem commit**:
+  - Gemini (`gemini-3.8-flash`, reserva `gemini-3.5-flash-lite`) pela API REST, chave em `GEMINI_API_KEY`;
+  - 5 ferramentas sobre as mesmas funções das páginas, com teste de cobertura;
+  - perguntas prontas sem o modelo e limite de 20 perguntas ao modelo por sessão;
+  - normas versionadas em `data/normas/`;
+  - gabarito de 52 perguntas congelado (SHA-256 `7f7f471d…`) e meta de 85% fixada **antes** de qualquer rodada;
+  - `scripts/avaliar_chat.py` com as versões (a), (b) e (c).
+  
+  `src/painel/analises.py`, o pipeline, as premissas, o gold, `data/publico/` e `data/completo/` não mudaram; os 10 números iguais; o banco real só lido (mesmo SHA-256). **Falta:** rodar a avaliação com a API real e publicar no Cloud com a chave em *Secrets*.
+- **Chat: ajustes de 2026-10-28 e 29** (D-067 a D-069), **sem commit**:
+  - prompt **v3**: sem dado, "Não foi possível encontrar essa resposta nos dados do painel.";
+  - reserva do Gemini em caso de demora;
+  - abas Chat e Perguntas prontas (16 perguntas, em 5 temas);
+  - interface nova, com o CSS em `src/agent/chat.css`; capturas em `docs/qa/chat/` e 0 problemas de contraste;
+  - velocidade medida antes e depois (mediana de 4,6 s → 3,0 s; primeiro texto em 2,7 s).
+  
+  Recados ao Lucca em [`recados_lucca.md`](recados_lucca.md). A faixa de decisões do chat (D-060 a D-069) acabou: a próxima precisa de uma faixa nova combinada com o Lucca.
 - **Regras de publicação (D-038):** estudo público; tudo pode ir para o git, inclusive resultados por cartório e notebooks com saídas. Só não pode nome nem CPF de pessoa física. Pipeline, auditor e `gerar_publico.py` já seguem a D-038 na fase 1 (D-048); o limiar de 3 serventias e as áreas agregadas saem na fase 2, na Etapa 3.
 
 ## Onde estamos
 - **Fase 1 (MG) concluída em 2026-10-20** (`21303e2`), em `C:\projetos\radar-seguro-cartorio` (D-033); `main` protegida (`docs/publicacao.md`, seção 4); painel só leitura (D-034).
 - **Releases:** `dados-2026-10-19` (público), `carga-2026-10-19` e `originais-2026` (privados); o download dos privados foi testado em 2026-10-20 (25/25 tabelas, os 10 números e os 25 originais por SHA-256).
 - **Linha de base:** `~/radar_arquivo/baseline_2026-10-28_d048/linha_de_base.json` (WSL, carga 2026-10-28 com as premissas v3 e a `serventia_publico`, 39 tabelas do gold); as anteriores, `~/radar_arquivo/baseline_2026-10-28_d046/` (38 tabelas), `~/radar_arquivo/baseline_2026-10-28/` (premissas v2) e `C:\radar_arquivo\baseline_2026-10-20\linha_de_base.json`.
-- **Chat (D-036):** 5 ferramentas sobre o conjunto público; avaliação em `eval/resultado_avaliacao.md`.
+- **Chat (D-060 a D-066):** Gemini no nível gratuito; 5 ferramentas sobre as funções do painel; avaliação com a API real por `scripts/avaliar_chat.py` (relatório em `eval/resultado_avaliacao.md` depois da primeira rodada; a avaliação antiga, do Ollama, está em `eval/historico/`).
 
 ## Números de referência
 Carga **2026-10-28 (tarde)** (refeita do silver da carga 2026-10-19: dados coletados em 17 e 18/10), premissas **v3** (D-046), regra base (Classe 1 até R$ 300 mil, Prov. 243), nível base, regra do STF mantida. Esta tabela é a fonte dos valores.
@@ -53,14 +71,22 @@ Carga **2026-10-28 (tarde)** (refeita do silver da carga 2026-10-19: dados colet
 
 Com as premissas v2 (até a D-046): ≈ 486, R$ 36,9 mi, R$ 18,4 mi e R$ 368,7 mil nos números 6 a 9. Faixa provável do prêmio (P5–P95): R$ 215 a 687 mil. Valores exatos na linha de base. O conjunto público (`data/publico/manifesto.json`) traz o hash de cada tabela. "Recalcular dá o mesmo" foi provado em 2026-10-19, em 2026-10-20 e em 2026-10-28 (carga oficial a partir do silver, idêntica à da cópia).
 
-**Última decisão:** D-050 (silver sem dado pessoal e gold completo no git, em `data/completo/`). **Próxima:** D-051 (ver [`decisoes.md`](decisoes.md)).
+**Última decisão:** D-050 (silver sem dado pessoal e gold completo no git, em `data/completo/`) na `etapa-3-painel`; D-069 (ajustes do chat: abas, frase sem dado, interface e velocidade) na `etapa-5-chat`. **Próximas:** D-051 (Lucca); para o chat, combinar uma faixa nova (a D-060 a D-069 acabou) (ver [`decisoes.md`](decisoes.md)).
+
+## O que depende de `leticia-ribeirom` (chat, Etapa 5)
+- **Refazer a avaliação com o prompt v3:** `uv run python scripts/avaliar_chat.py --versoes c --limite 5` primeiro (para ver a cota), depois sem `--limite`. Se a cota acabar no meio, rode de novo mais tarde: só o que falta é perguntado. A meta (85% e nenhum número inventado nas armadilhas) já está fixada. Hoje quem responde é a reserva (`gemini-3.5-flash-lite`): o principal está com a cota esgotada ou travado; anote o modelo que respondeu.
+- Aprovar a D-069, decidida pela IA em modo autônomo, em especial: o contador só no modo demonstração; o aviso do modo demonstração mantido no topo; o desenho misto do streaming.
+- Conferir no AI Studio (`aistudio.google.com/rate-limit`) os limites da sua chave e, se precisar, ajustar a `avaliacao.pausa_s` em `config/llm.yaml`.
+- Aprovar a D-064 (normas versionadas sem a assinatura), decidida pela IA.
+- Publicar no Streamlit Community Cloud com `GEMINI_API_KEY` em *Settings → Secrets*, depois que o painel entrar na `main` e a `main` vier para a `etapa-5-chat`.
+- **Trocar a chave do Gemini** (revogar a atual e criar outra no AI Studio): a atual apareceu na saída de um comando da IA em 2026-10-28 (`docs/erros_ia.md`).
+- Commit e push da `etapa-5-chat` (a IA só faz com pedido seu).
 
 ## O que depende do autor agora
 - **Etapa 3 (D-049, proposta):** (a) aprovar o limite fixo como leitura principal da projeção (resolve a questão (c) do notebook 07, abaixo); (b) confirmar os extremos da D-042 como os cantos oficiais (a tabela `analise_monte_carlo` tem os cantos do Monte Carlo, que ficam só em nota); (c) a fase 2 da D-038 (sem o limiar de 3 serventias no mapa) continua pendente: exige premissas v4, mudança no pipeline e carga oficial; (d) conferir a ADI 8015 de novo na véspera da demo e atualizar `config/painel.yaml`; (e) a página Simulador só recebeu o tema (redesenho na Etapa 4); (f) o teto aparece como "R$ 4,8 mi" (uma casa, padrão do painel), e esta lista tem R$ 4,76 mi: manter uma casa ou mostrar duas só no teto; (g) a fonte Inter vem do Google Fonts: sem internet na demo, o painel usa a sans do sistema (dá para embutir a fonte no repositório, licença OFL).
 - **Etapa 2 (2026-10-28; D-043 e D-044):** carga oficial feita a pedido do autor. Falta só confirmar as decisões da D-044 (tomadas pela colaboradora). Sem Release nova, por decisão da colaboradora: os dados de origem continuam os da `carga-2026-10-19`, e o banco recalculado (premissas v3) fica só nas máquinas que rodarem `uv run pipeline.py --a-partir-de silver`.
 - **Melhorias de confiança (D-045, D-046):** decididas em 2026-10-28 (premissas v3, regra do salto, sem coleta nova). Falta só aprovar as premissas novas de `config/analise.yaml`, `melhorias` (horizonte de 12 meses de saldo, que é a base das premissas v3, e tercis da M4, `fonte: suposição`). Se um dia quiser o 2026-1 completo e a M9, é preciso uma coleta nova (gratuita) e outra carga.
 - **Aprovar ou não o `plano_projeto.md` (D-039)** no pull request da branch `plano-nome-do-plano`. As decisões do autor, com a etapa em que cada uma precisa ser tomada, estão no fim do plano.
-- Revisar o gabarito-rascunho do chat (`eval/gabarito_chat.csv`).
 - Aprovar ou não a **D-042** (proposta pela colaboradora em 2026-10-23, a partir dos notebooks 06 e 08; nenhum número muda): faixa do prêmio com a hierarquia base > P5–P95 (R$ 210–740 mil) > cantos; receita líquida do repasse como sensibilidade com a faixa de déficit da base (universo −20%, prêmio −8,5%); T5 e T6 só na tabela de sensibilidade; CLT de outros estados só como total estadual, com ±10% como piso e a RAIS como conferência.
 - Achados da parte A: decididos (regra do salto na D-046; 035030 na D-048, classe pela API com aviso).
 - Questões da parte B (notebooks 03 a 05): (a), (c) e (d) decididas na D-047 (subidas do 05b como faixa de 105 a 145; `analise_grupos` por serventia; P(fim) de 2% / 4% / 7,5%, sem coleta nova). Falta só (b): aprovar as premissas novas com `fonte: suposição` em `config/analise.yaml` (cortes do Apriori, `n_init`, limiar 0,5, repetições da permutação, bootstrap, faixa P10–P90).
@@ -72,4 +98,4 @@ Com as premissas v2 (até a D-046): ≈ 486, R$ 36,9 mi, R$ 18,4 mi e R$ 368,7 m
 - Preencher a seção "Linha de base" do `docs/diario.md`.
 - Apagar a pasta antiga do projeto no OneDrive, depois de 1 a 2 semanas de uso da pasta nova.
 
-As demais pendências técnicas (Parquet com troca no fim, `estado.cenarios_salvos` na próxima carga, ruff, texto da página Qualidade com o caminho antigo do `viabilidade.md`, ajustes do painel e o resto do chat) estão em `docs/historico/ROADMAP.md`, §7 e E4/E5.
+As demais pendências técnicas (Parquet com troca no fim, `estado.cenarios_salvos` na próxima carga, ruff, texto da página Qualidade com o caminho antigo do `viabilidade.md` e ajustes do painel) estão em `docs/historico/ROADMAP.md`, §7 e E4. O chat (E5) segue a Etapa 5 do `plano_projeto.md` (D-060 a D-066).

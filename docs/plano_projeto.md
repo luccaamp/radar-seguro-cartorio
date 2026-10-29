@@ -237,12 +237,15 @@ Pronto quando
 - Os três cenários do STF (mantém, suspende os arts. 8º a 17, meio-termo), com o "suspende" zerando a demanda.
 - **Pronto quando:** os testes do SPEC §3 passam (prêmio monotônico na taxa, suspende zera a demanda, mercado ≥ seguradora) e o simulador recalcula em menos de 1 segundo.
 
-**Etapa 5 — Chat (Ollama local, `qwen3:8b`)**
+**Etapa 5 — Chat (Gemini, nível gratuito; D-060 a D-066)** — responsável: `leticia-ribeirom`, branch `etapa-5-chat`
 
-- Completar a E5: gabarito de 40 a 60 perguntas rotulado pelo autor e congelado com hash; as duas ferramentas que faltam (qualidade das fontes e decisões) e uma nova para as análises (previsão e tornado).
-- Comparar as versões (a) sem ferramentas, (b) normas no prompt e (c) com ferramentas: acertos, alucinações, respostas sem fonte, "não sei" corretos e latência.
-- Regra mantida: o modelo não calcula; todo número vem de uma ferramenta, com conta e fonte.
-- **Pronto quando:** a versão (c) atinge a meta de acerto que o autor fixar no gabarito, sem número inventado nas armadilhas.
+- **Modelo:** só o Gemini, no nível gratuito do Google AI Studio, com o faturamento desligado (D-061, única exceção ao "100% gratuito"); nome do modelo em `config/llm.yaml`. O Ollama saiu do projeto (D-060, substitui a D-036). Funciona no link público (Streamlit Community Cloud, modo demonstração, lendo `data/publico/`) e na demo local dos dois PCs; a chave vem de `GEMINI_API_KEY` (ambiente, `.env` ou `st.secrets`).
+- **O chat vê o que o painel vê:** 5 ferramentas (números, mercado, análises, qualidade, decisões e normas) que chamam as mesmas funções de `src/painel/analises.py` que as páginas; `tests/test_chat_cobertura.py` falha quando o painel ganha uma análise que o chat não alcança (D-062).
+- **Sem Gemini, o chat não quebra:** perguntas prontas respondidas direto pelas ferramentas; até 20 perguntas ao modelo por sessão no link público (D-063).
+- Gabarito de 52 perguntas (informais, com erro de digitação, ambíguas, fora do escopo, armadilhas, normas, gráficos e dados pessoais), congelado com hash; meta fixada antes da avaliação (D-065).
+- Comparar as versões (a) sem ferramentas, (b) normas no prompt e (c) com ferramentas: acertos, alucinações, respostas sem fonte, "não sei" corretos e latência (`scripts/avaliar_chat.py`, com a API real, fora da suíte de testes).
+- Regra mantida: o modelo não calcula; todo número vem de uma ferramenta, com conta e fonte. A suíte padrão (`uv run pytest`) passa sem chave e sem internet.
+- **Pronto quando:** a versão (c) acerta pelo menos 85% do gabarito congelado e não inventa número em nenhuma armadilha.
 
 ## Etapa 6 — Validação final, demo e entrega
 
@@ -275,5 +278,5 @@ A entrega é a demo de 5 minutos com 5 slides, rodando no computador do autor, c
 | [ ] Decidir a regra para semestre com salto grosseiro e conferir as serventias 042986 e 035030 no Justiça Aberta | **Etapa 1**, antes da parte C (notebook 07) | o 07 testa a quebra de nível em 2025-2, que depende da 042986; a regra pode mudar os 10 números (até −11 obrigadas), então precisa estar decidida antes do pipeline |
 | [ ] Aprovar as propostas da Etapa 2 (faixa P5–P95, sensibilidades T5 e T6, previsão rotulada) | **Portão 1**, no fim da Etapa 1 | o pipeline só gera as tabelas `gold.analise_*` aprovadas |
 | [ ] Decidir se a D-038 chega ao pipeline, ao auditor e ao `gerar_publico.py` | **Etapa 2**, antes do passo 4 (`gerar_publico.py`) | o painel novo da Etapa 3 lê o conjunto público gerado aqui |
-| [ ] Fixar a meta de acerto do chat no gabarito congelado | **Início da Etapa 5**, antes da avaliação | a meta é o critério de pronto do chat e não pode ser fixada depois de ver o resultado |
+| [x] Fixar a meta de acerto do chat no gabarito congelado (85%, D-065, 2026-10-28) | **Início da Etapa 5**, antes da avaliação | a meta é o critério de pronto do chat e não pode ser fixada depois de ver o resultado |
 | [ ] Confirmar se a expansão para outros estados entra antes ou depois da entrega | **Portão 3**, antes da Etapa 6 | se entrar antes, muda o escopo da entrega e dos slides |

@@ -129,7 +129,7 @@ O painel cruza várias fontes, porque nenhuma traz tudo sozinha. A qualidade dos
 | Transformações | Python (pandas) com SQL do DuckDB, nos módulos de `src/transform/` | sem arquivos `.sql` e sem dbt |
 | Orquestração | `uv run pipeline.py [etapa]` | substitui o `make` |
 | Validação de dados | contratos e reconciliações próprios em `src/quality/` (`contratos.py`, `reconciliacao.py`), com resultado em `qualidade.checagens` e `qualidade.reconciliacoes` | sem Pandera; erro faz o pipeline falhar, aviso só registra |
-| LLM do chat (e do radar, se houver) | **Ollama**, rodando no computador do autor, com um modelo aberto que suporte *tool calling* | escolhido na Fase 0 conforme a RAM e a GPU disponíveis. O código acessa o LLM por uma interface única (`src/llm.py`), para dar para trocar de modelo sem reescrever o chat |
+| LLM do chat (e do radar, se houver) | **Gemini, nível gratuito do Google AI Studio, com o faturamento desligado** (D-060 e D-061; até 2026-10-28 era o Ollama local, D-036) | funciona no link público (Streamlit Community Cloud) e nos dois PCs; modelo em `config/llm.yaml`. O código acessa o LLM por uma interface única (`src/llm.py`), para dar para trocar de modelo sem reescrever o chat |
 | Saída estruturada do LLM | Pydantic | removido na limpeza da Fase 1; o chat (D-036) usa só `httpx`; trazê-lo de volta fica para quando o chat for completado (`docs/historico/ROADMAP.md`, E5) |
 | Interface | Streamlit, rodando localmente | |
 | Agendamento do radar (se houver) | execução manual (`uv run pipeline.py radar`); opcionalmente o Agendador de Tarefas do Windows | |
@@ -262,7 +262,7 @@ Desde a Etapa 3 (D-049), a arquitetura das páginas está em `docs/painel/arquit
 2. **Análises**: incerteza do prêmio (faixa D-042 e tornado), projeção 2026–27 (notebook 07, limite fixo principal e corrigido como comparação; 05b como comparação), concentração (Gini) e a pergunta 9.
 3. **Qualidade dos dados**: lacunas do notebook 09, "Passivo: escolhas de método", leitura literal do art. 2º, XXIV, saltos de declaração; data de referência de cada fonte, conferências entre fontes, contratos e limitações.
 4. **Simulador**: controles para cada premissa, seletor de cenário do STF, receita do mercado total e da seguradora hipotética lado a lado; botão para salvar o cenário (Etapa 4).
-5. **Chat**: dentro do painel (D-036); sem Ollama instalado, aparece desativado, com uma explicação (Etapa 5).
+5. **Chat**: dentro do painel (D-036, D-060); sem a chave do Gemini, sem internet ou com a cota esgotada, explica o motivo e responde as perguntas prontas direto pelas ferramentas (D-063).
 6. **Radar** (só se for feito; etapa opcional, descrita em `docs/historico/ROADMAP.md`).
 
 ### 5.2 Chat (`src/agent`)
@@ -289,7 +289,7 @@ Regras do prompt do chat:
 - **"Não sei"** quando a informação não estiver na base. Nunca completar com conhecimento geral sobre números do setor.
 - **Perguntas jurídicas** (ex.: "fiança substitui o seguro?"): responder citando o texto da norma e deixar claro que não é parecer jurídico.
 
-As normas (227, 213, 243) são poucas e curtas. Primeiro, testar colocar o texto inteiro do artigo relevante no prompt. RAG com embeddings locais (também pelo Ollama) só entra se o eval mostrar ganho.
+As normas (227, 213, 243) são poucas e curtas. Primeiro, testar colocar o texto inteiro do artigo relevante no prompt. RAG com embeddings só entra se o eval mostrar ganho (a versão (b) da avaliação põe o texto inteiro das três normas no prompt; D-065).
 
 ### 5.3 Radar (`src/radar`): opcional
 

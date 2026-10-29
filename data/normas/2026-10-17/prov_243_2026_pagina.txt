@@ -1,0 +1,106 @@
+Identificação
+Provimento Nº 243 de 21/07/2026
+Apelido
+---
+Temas
+Assuntos
+-->
+Ementa
+Altera o Provimento n. 213, de 20 de fevereiro de 2026, que dispõe sobre os padrões mínimos de tecnologia da informação e comunicação dos serviços notariais e de registro, para modificar os critérios de enquadramento das serventias e os prazos de implementação, e dá outras providências.
+Situação
+Vigente
+Situação STF
+---
+Origem
+Corregedoria
+Fonte
+DJe/CNJ n. 172/2026, de 23 de julho de 2026, p. 18-22.
+Alteração
+Legislação Correlata
+Provimento CN n. 213, de 20 de fevereiro de 2026
+Observação / CUMPRDEC / CONSULTA
+SEI n. 09274/2024
+Texto
+Texto Original
+Texto Compilado
+O CORREGEDOR NACIONAL DE JUSTIÇA, no uso de suas atribuições constitucionais, legais e regimentais, e
+CONSIDERANDO o poder de fiscalização e o poder normativo do Poder Judiciário sobre os atos praticados por seus órgãos ( art. 103-B, § 4º, I, II e III, da Constituição Federal );
+CONSIDERANDO a competência do Poder Judiciário para fiscalizar os serviços notariais e de registro ( arts. 103-B, § 4º, I e III, e 236, § 1º, da Constituição Federal );
+CONSIDERANDO a competência do Corregedor Nacional de Justiça para expedir provimentos e outros atos normativos destinados ao aperfeiçoamento das atividades dos serviços notariais e de registro ( art. 8º, X, do Regimento Interno do Conselho Nacional de Justiça );
+CONSIDERANDO a diretriz de progressividade e de proporcionalidade regulatória que orienta o Provimento n. 213, de 20 de fevereiro de 2026 , e a necessidade de que o enquadramento das serventias reflita a sua efetiva capacidade econômica, excluídos os valores que não integram a receita própria da delegação;
+CONSIDERANDO que os investimentos em tecnologia da informação exigidos pelo Provimento n. 213/2026 caracterizam aplicação de capital e não constituem despesa dedutível na apuração do imposto de renda dos titulares de serventia, na forma da legislação de regência e das orientações da Receita Federal, de modo a ser inadequada a adoção de base de cálculo de natureza fiscal para fins de enquadramento;
+CONSIDERANDO o que consta do Processo SEI n. 09274/2024,
+RESOLVE:
+Art. 1º O Provimento n. 213, de 20 de fevereiro de 2026 , passa a vigorar com as seguintes alterações:
+...................................................................
+Art. 2º ................................................................................................
+.............................................................................................................
+III - classe da serventia: categoria de enquadramento econômico definida com base na receita bruta semestral da serventia, na forma do inciso XXIV, utilizada como critério de proporcionalidade regulatória para a gradação de prazos, exigências técnicas e níveis mínimos de controle;
+.............................................................................................................
+XXIV - receita bruta semestral da serventia: o somatório dos valores percebidos a título de emolumentos, e outras receitas, no semestre em razão da prestação do serviço delegado, inclusive o ressarcimento por atos gratuitos e a complementação de renda mínima, deduzidos, exclusivamente, os valores arrecadados por conta de terceiros e os repasses legais obrigatórios; não se deduzem, para esse fim, as despesas de custeio, de pessoal ou de investimento da serventia, nem os tributos devidos pelo delegatário;
+XXV - valores arrecadados por conta de terceiros: valores acrescidos aos emolumentos para ressarcimento de despesas (envio de documentos, entrega de intimação, tarifas bancárias, publicação de edital etc.) ou para repasse a outras serventias;
+XXVI - repasses legais obrigatórios: as parcelas que, por força de lei estadual ou distrital, se destinem ao Estado ou ao Distrito Federal e Territórios, ao Poder Judiciário, ao Ministério Público, a fundos de compensação de atos gratuitos, a fundos de renda mínima ou congêneres, bem como a taxa de fiscalização judiciária.
+................................................................................................” (NR)
+................................................................................................
+Art. 4º ....................................................................................
+................................................................................................
+§3º Não será admitida, para fins de cumprimento dos requisitos deste Provimento, a utilização de tecnologias cujo ciclo de suporte oficial pelo fabricante tenha sido encerrado (End of Life - EOL), ressalvado o regime de transição do art. 20-A, devendo a serventia manter evidência documental atualizada da vigência do suporte técnico e das atualizações de segurança.
+................................................................................................” (NR)
+Art. 12..................................................................................
+............................................................................................
+§12. Constitui meta técnica de excelência, para ambientes de maior criticidade, a capacidade de recuperação de dados com defasagem inferior a 30 (trinta) minutos, quando tecnicamente viável e economicamente proporcional, nos termos definidos nos Anexos e observado o art. 20-A, aferida a proporcionalidade em função da classe e da subclasse em que enquadrada a serventia, da criticidade dos dados e do custo da solução disponível no mercado.
+................................................................................................” (NR)
+“Art. 14. A adoção de solução própria, contratada, compartilhada ou coletiva não afasta nem mitiga a autonomia jurídica da serventia extrajudicial, permanecendo íntegra a responsabilidade do delegatário, interino ou interventor quanto aos atos praticados e ao cumprimento das obrigações legais e regulamentares.
+§1º A centralização material de controles técnicos, quando admitida nos termos deste Provimento, não implica transferência de responsabilidade funcional nem exoneração do dever de governança local, de supervisão, de fiscalização interna e de conformidade normativa.
+§2º A responsabilidade do delegatário, interino ou interventor compreende a seleção, a contratação e a supervisão de fornecedores, plataformas e assessorias de tecnologia da informação e comunicação, devendo adotar medidas objetivas, proporcionais e eficazes destinadas a assegurar o cumprimento das exigências legais e deste Provimento.
+................................................................................................” (NR)
+Art. 16. Para os fins deste Provimento e dos demais atos normativos correlatos, as serventias extrajudiciais serão enquadradas segundo a receita bruta semestral da unidade de serviço, apurada na forma do art. 2º, XXIV, adotando-se como referência os limites estabelecidos para cada classe e respectivas subclasses
+I - Classe 1 receita bruta semestral não superior a R$ 300.000,00 (trezentos mil reais), organizando-se em três faixas equivalentes, calculadas sobre esse montante: Subclasse A, até um terço do teto; Subclasse B, acima de um terço e até dois terços; Subclasse C, acima de dois terços e até o valor integral estabelecido para a classe;
+II - Classe 2: receita bruta semestral superior ao teto da Classe 1 e não superior a R$ 1.500.000,00 (um milhão e quinhentos mil reais), distribuindo-se igualmente em três segmentos proporcionais ao respectivo teto: Subclasse D, até um terço do limite da classe; Subclasse E, acima de um terço e até dois terços; Subclasse F, acima de dois terços e até o valor integral estabelecido para a classe;
+III - Classe 3: receita bruta semestral superior ao teto da Classe 2, sendo suas subdivisões definidas por múltiplos daquele valor: Subclasse G, até três vezes esse valor; Subclasse H, acima de três e até seis vezes; Subclasse I, acima de seis e até doze vezes esse valor; e Subclasse J, acima de doze vezes o mesmo referencial.
+§1º O enquadramento da serventia será reavaliado anualmente, com base na média das receitas brutas semestrais do exercício imediatamente anterior, produzindo efeitos para o período subsequente, observados os prazos de adaptação previstos neste Provimento.
+§2º Os limites monetários definidos neste artigo serão automaticamente atualizados a cada ano de vigência deste Provimento, cabendo à Corregedoria Nacional de Justiça divulgar os valores atualizados.
+§3º A migração de classe ou de subclasse não produzirá efeitos imediatos quando a variação da receita bruta semestral da serventia não ultrapassar dez por cento do limite superior da faixa anterior, hipótese em que será exigida consolidação por dois ciclos consecutivos, aplicando-se a regra tanto à migração ascendente quanto à descendente.
+§4º As serventias da Classe 1, em especial as da Subclasse A, serão destinatárias prioritárias das medidas de apoio técnico e dos programas de adequação instituídos pela Corregedoria Nacional de Justiça, bem como dos recursos assistências eventualmente disponíveis, nos Operadores Nacionais, que, na forma da lei e dos atos que os disciplinam, venham a ser disponibilizados para essa finalidade.
+§5º A Corregedoria Nacional de Justiça monitorará, a cada ciclo anual, a distribuição das serventias entre as classes e publicará relatório com os resultados apurados, do qual poderá resultar proposta fundamentada de revisão dos limites monetários, instruída com estudo técnico e submetida a consulta prévia às Corregedorias dos Tribunais de Justiça dos Estados e do Distrito Federal, sem prejuízo do disposto no § 2º.
+................................................................................................” (NR)
+“Art. 20. A implementação inicial obrigatória dos requisitos previstos neste Provimento, correspondente à conclusão das Etapas 1 e 2 do Anexo IV, relativas à governança, à conformidade legal, à infraestrutura e à continuidade operacional, deverá ocorrer nos seguintes prazos, contados da data de entrada em vigor do Provimento n. 243, de 21 de julho de 2026:
+I - 180 (cento e oitenta) dias, para as serventias enquadradas na Classe 3;
+II - 240 (duzentos e quarenta) dias, para as serventias enquadradas na Classe 2;
+III - 300 (trezentos) dias, para as serventias enquadradas na Classe 1.
+.............................................................................................................
+§2º .............................................................................................................:
+.............................................................................................................
+II - a postergação dos requisitos estruturais mínimos das Etapas 1 e 2, ressalvado o regime de transição do art. 20-A;
+............................................................................................................. (NR)”
+.............................................................................................................
+Art. 20-A. As metas e os níveis de serviço definidos neste Provimento são exigíveis de todas as serventias extrajudiciais, presumindo-se, para a classe e a subclasse em que enquadrada a unidade, a viabilidade técnica e a proporcionalidade econômica de seu cumprimento, sem prejuízo do disposto nos arts. 4.º, § 5º, 20, 21 e 23.
+§1º Excepcionalmente, a Corregedoria competente poderá, mediante requerimento da serventia e decisão fundamentada, autorizar o cumprimento de determinada exigência em nível técnico diverso, quando a unidade de serviço demonstrar, por documentação idônea, inclusive orçamentos de, no mínimo, três fornecedores, e por laudo técnico subscrito por profissional habilitado, que, no caso concreto:
+I - a solução exigida não se encontra disponível no mercado em condições de implantação tempestiva; ou
+II - o custo de sua implantação e manutenção é manifestamente desproporcional à receita bruta semestral da serventia, apurada na forma do art. 2º, XXIV.
+§2º A ressalva prevista no §1º não é automática, não decorre de simples alegação da serventia e não produz efeitos antes da decisão da Corregedoria competente, permanecendo a unidade integralmente obrigada ao cumprimento da exigência até o deferimento do pedido.
+§3º O deferimento observará, cumulativamente:
+I - prazo certo, não superior a um ciclo anual, renovável mediante nova e atualizada demonstração;
+II - a fixação, na própria decisão, do nível de serviço efetivamente exigível no período e das medidas compensatórias de segurança e de continuidade a serem adotadas;
+III - a apresentação de plano de convergência ao padrão previsto neste Provimento, com cronograma e previsão orçamentária;
+IV - o registro da decisão perante a Corregedoria Nacional de Justiça, na forma por ela disciplinada, para fins de monitoramento e de eventual revisão deste Provimento.
+§4º Não são suscetíveis da ressalva de que trata este artigo as exigências que constituam padrão mínimo indispensável de proteção do acervo e dos dados pessoais, notadamente as relativas à realização e à custódia de cópias de segurança, à integridade e à autenticidade dos atos praticados, ao controle de acesso e ao registro de auditoria, bem como as obrigações decorrentes de lei.
+§5º A prestação de informação falsa ou a omissão de dado relevante no requerimento acarretará a revogação imediata da autorização, com restabelecimento integral da exigência e do prazo originários, sem prejuízo da responsabilidade disciplinar do delegatário, interino ou interventor.
+§6º A Corregedoria competente poderá, a qualquer tempo, determinar inspeção ou perícia para aferir a subsistência dos fundamentos da autorização, revogando-a quando cessados.
+Art. 21. As Corregedorias dos Tribunais de Justiça dos Estados e do Distrito Federal e Territórios poderão, excepcionalmente e mediante decisão fundamentada, prorrogar os prazos previstos no art. 20, em uma ou mais oportunidades, quando demonstrada inviabilidade temporária de adequação de natureza técnica ou financeira, desde que a serventia:
+I - apresente plano formal de adequação com cronograma definido e indicação de responsáveis; e descrição das causas que impediram o cumprimento do prazo originalmente previsto, bem como das medidas de aperfeiçoamento da gestão que serão adotadas para evitar a recorrência daquelas causas; e
+II - implemente imediatamente medidas compensatórias mínimas de redução de risco, conforme orientação técnica da Corregedoria competente.
+§1º Para as serventias enquadradas na Classe 1, a Corregedoria competente poderá dispensar, mediante decisão fundamentada, parte da documentação prevista no §2º deste artigo, desde que permaneçam suficientemente demonstradas a inviabilidade temporária da adequação e a adoção das medidas compensatórias previstas no inciso II do caput.
+§2º As serventias enquadradas nas Classes 2 e 3 instruirão o requerimento previsto no caput com os elementos probatórios pertinentes, inclusive documentação técnica, orçamentos e demais documentos necessários à demonstração objetiva da inviabilidade temporária alegada.
+§3º O somatório dos períodos de prorrogação concedidos nos termos do caput não poderá ultrapassar 180 (cento e oitenta) dias.
+§4º O deferimento de qualquer prorrogação prevista neste artigo obriga a Corregedoria do Tribunal de Justiça competente a instituir regime especial de acompanhamento da serventia, com monitoramento periódico da execução do plano de adequação e adoção das medidas de fiscalização necessárias para assegurar o pleno cumprimento das disposições deste Provimento ao término do prazo concedido.
+§5º Transcorrido o prazo máximo de prorrogação previsto no §3º sem a integral adequação da serventia às disposições deste Provimento, a Corregedoria competente abrirá prazo de regularização, durante o qual serão aplicadas, observado o regime especial de acompanhamento instituído nos termos do §4º, as medidas correicionais cabíveis, graduadas de acordo com a natureza, a gravidade e a extensão das irregularidades remanescentes, sem prejuízo da adoção de outras providências legalmente previstas." (NR)
+“Art. 22. .............................................................................................................
+§1º .............................................................................................................
+.............................................................................................................
+III – submetam-se à primeira avaliação técnica no prazo máximo de 12 (doze) meses, contados da data de entrada em vigor do Provimento n. 243, de 21 de julho de 2026.
+............................................................................................................." (NR)
+“Art. 23. A implementação cumulativa e integral de todas as etapas previstas no Anexo IV deverá estar concluída nos seguintes prazos máximos, contados da data de entrada em vigor do Provimento n. 243, de 21 de julho de 2026, observada a implementação inicial obrigatória prevista no art. 20 como fase integrante e indissociável do cronograma global:
+.............................................................................................................” (NR)
+.............................................................................................................
+Art. 2º Este Provimento entra em vigor 30 (trinta) dias após a data de sua publicação.

@@ -9,6 +9,7 @@ Regras (CLAUDE.md, D-026 a D-030):
   município; nunca nome de pessoa);
 - cada resultado traz os valores já formatados e a linha `citar` (fonte, carga e versão das premissas).
 """
+import inspect
 import json
 import re
 import unicodedata
@@ -17,7 +18,9 @@ from pathlib import Path
 import duckdb
 
 RAIZ = Path(__file__).resolve().parents[2]
-NORMAS_DIR = RAIZ / "data" / "bronze" / "normas" / "2026-10-17"
+# texto oficial das normas, versionado sem a assinatura (D-064; scripts/exportar_normas.py copia do bronze)
+NORMAS_DIR = RAIZ / "data" / "normas" / "2026-10-17"
+NORMAS_BRONZE = RAIZ / "data" / "bronze" / "normas" / "2026-10-17"
 UFS_COM_DADOS = ("MG",)
 CENARIOS = {"mantem": "regra mantida", "suspende_8_17": "STF suspende os arts. 8º a 17",
             "parcial": "decisão parcial (fração do déficit exigida = suposição)"}
@@ -93,9 +96,11 @@ def _uf_linhas(con, cenario: str, regra: str = "v2") -> dict:
 
 
 def _com_faixa(niveis: dict, coluna: str, fmt) -> str:
-    """Valor base primeiro e a faixa depois, num texto só (o modelo copia os dois juntos)."""
+    """Valor base primeiro e os extremos depois, num texto só (o modelo copia os dois juntos). São os extremos teóricos
+    da D-042 (todas as premissas no mínimo ou no máximo), não a faixa provável: no teste real de 2026-10-28, o rótulo
+    antigo "faixa" levou o modelo a chamá-los de "faixa provável (P5–P95)" (D-069)."""
     base, minimo, maximo = (fmt(niveis[n][coluna]) for n in ("base", "min", "max"))
-    return f"{base} no cenário base (faixa: {minimo} a {maximo})"
+    return f"{base} no cenário base (extremos teóricos: {minimo} a {maximo}; não é a faixa provável)"
 
 
 def _premissas(con) -> dict:
@@ -103,7 +108,7 @@ def _premissas(con) -> dict:
     return json.loads(conteudo)["premissas"]
 
 
-# ------------------------------------------------------------------ as 5 ferramentas
+# ------------------------------------------------------------------ consultas próprias do chat (D-036, D-048)
 def _recorte(texto: str) -> tuple[str, str] | None:
     """'vago', 'Classe 3', 'interino', 'registro de imóveis'... -> (filtro, valor) da visão publicada; None se não achar."""
     for parte in re.split(r"[/,(]| ou ", _sem_acento(texto)):
@@ -163,12 +168,24 @@ def deficit_e_mercado(con: duckdb.DuckDBPyConnection, uf: str, cenario_stf: str 
         return {"erro": f"cenário {cenario_stf!r} não existe; use {list(CENARIOS)}"}
     n = _uf_linhas(con, c)
     faixa = lambda col, fmt: _com_faixa(n, col, fmt)  # noqa: E731
-    return {"uf": "MG", "cenario_stf": CENARIOS[c], "serventias_com_deficit": faixa("n_deficit", aprox),
-            "deficit": faixa("valor_descoberto", brl),
-            "importancia_segurada_mercado": faixa("mercado_importancia_segurada", brl),
-            "premio_anual_mercado": faixa("mercado_premio_emitido", brl),
-            "premio_anual_seguradora_hipotetica": faixa("seguradora_premio_emitido", brl),
-            "citar": _citar(con, "gold.fato_mercado_uf")}
+    r = {"uf": "MG", "cenario_stf": CENARIOS[c], "serventias_com_deficit": faixa("n_deficit", aprox),
+         "deficit": faixa("valor_descoberto", brl),
+         "importancia_segurada_mercado": faixa("mercado_importancia_segurada", brl),
+         "premio_anual_mercado": faixa("mercado_premio_emitido", brl),
+         "premio_anual_seguradora_hipotetica": faixa("seguradora_premio_emitido", brl),
+         "citar": _citar(con, "gold.fato_mercado_uf")}
+    if c == "mantem":
+        # D-042 (D-069): base > faixa provável P5–P95 > extremos só se pedirem. A faixa provável é a mesma do painel
+        # (analises.faixa_d042); os extremos ficam à parte (no teste real, o modelo os chamou de "faixa provável")
+        from src.painel import analises
+        for chave, (col, medida) in {"deficit": ("valor_descoberto", "deficit"),
+                                     "importancia_segurada_mercado": ("mercado_importancia_segurada",
+                                                                      "importancia_segurada"),
+                                     "premio_anual_mercado": ("mercado_premio_emitido", "premio")}.items():
+            f = analises.faixa_d042(con, "MG", medida)
+            r[chave] = f"{brl(n['base'][col])} no cenário base; faixa provável (P5–P95): {f['faixa_provavel']}"
+            r[f"{chave}_extremos_teoricos_so_se_pedirem"] = f"{brl(n['min'][col])} a {brl(n['max'][col])}"
+    return r
 
 
 def simular(con: duckdb.DuckDBPyConnection, uf: str, taxa: float | None = None, market_share: float | None = None,
@@ -265,7 +282,7 @@ def buscar_norma(pergunta: str, provimento: str | None = None) -> dict:
     citados = [n for n in NORMAS if n in str(provimento or "") + " " + str(pergunta)]
     escolhidos = citados or list(NORMAS)
     if not all((NORMAS_DIR / NORMAS[n][0]).exists() for n in escolhidos):
-        return {"erro": "o texto das normas não está nesta instalação (bronze ausente); diga que não sabe"}
+        return {"erro": "o texto das normas não está nesta instalação (data/normas ausente); diga que não sabe"}
     termos = [t for t in re.findall(r"\w{4,}", _sem_acento(pergunta)) if t not in
               {"qual", "quais", "como", "para", "pelo", "pela", "sobre", "provimento", "cartorio", "cartorios",
                "serventia", "serventias", "artigo", "norma", "isso", "esse", "essa", "pode", "quem", "deve"}]
@@ -295,74 +312,214 @@ def buscar_norma(pergunta: str, provimento: str | None = None) -> dict:
 RECORTES = ["total", "classe 1", "classe 2", "classe 3", "classe indeterminada", "provido", "vago",
             "sob intervencao", "conversao em diligencia", "notas", "registro civil", "registro de imoveis", "protesto",
             "titulos e documentos"]
-FERRAMENTAS = {"contar_serventias": contar_serventias, "passivo_e_obrigadas": passivo_e_obrigadas,
-               "deficit_e_mercado": deficit_e_mercado, "simular": simular, "buscar_norma": buscar_norma,
-               "consultar_serventia": consultar_serventia}
-SEM_CONEXAO = {"buscar_norma"}
+# consultas próprias do chat (anteriores à Etapa 3); as do painel vêm de src/painel/analises.py
+PROPRIAS = {"contar_serventias": contar_serventias, "passivo_e_obrigadas": passivo_e_obrigadas,
+            "deficit_e_mercado": deficit_e_mercado, "simular": simular, "buscar_norma": buscar_norma,
+            "consultar_serventia": consultar_serventia}
+PROPRIAS_SEM_CONEXAO = {"buscar_norma"}
 
-_UF = {"type": "string", "description": "sigla da UF; hoje só MG tem dados"}
-_CENARIO = {"type": "string", "enum": list(CENARIOS),
-            "description": "cenário do STF: mantem (regra mantida), suspende_8_17 (arts. 8º a 17 suspensos), parcial"}
-ESQUEMAS = [
-    {"type": "function", "function": {
-        "name": "contar_serventias",
-        "description": "Conta as serventias (cartórios) ativas e os empregados CLT de uma UF, no total ou num recorte "
-                       "(classe, situação jurídica ou atribuição). Contagens são totais, não dados de um cartório. "
-                       "Use recorte 'total' quando a pergunta não pedir recorte; 'vago' = interino.",
-        "parameters": {"type": "object", "properties": {
-            "uf": _UF, "recorte": {"type": "string", "enum": RECORTES, "description": "total ou um recorte da lista"}},
-            "required": ["uf", "recorte"]}}},
-    {"type": "function", "function": {
-        "name": "passivo_e_obrigadas",
-        "description": "Passivo trabalhista estimado (de todas as serventias ativas e só das obrigadas) e quantas "
-                       "serventias são obrigadas pelo Provimento 227, com a faixa mínimo a máximo.",
-        "parameters": {"type": "object", "properties": {"uf": _UF}, "required": ["uf"]}}},
-    {"type": "function", "function": {
-        "name": "deficit_e_mercado",
-        "description": "Serventias com déficit, valor do déficit, importância segurada (IS) e prêmio anual do "
-                       "mercado e da seguradora hipotética, num cenário do STF, com a faixa mínimo a máximo.",
-        "parameters": {"type": "object", "properties": {"uf": _UF, "cenario_stf": _CENARIO}, "required": ["uf"]}}},
-    {"type": "function", "function": {
-        "name": "simular",
-        "description": "Simula o prêmio anual do mercado e da seguradora hipotética com outra taxa (% da importância "
-                       "segurada) e outro market share (%). Sem um deles, usa o valor das premissas.",
-        "parameters": {"type": "object", "properties": {
-            "uf": _UF, "taxa": {"type": "number", "description": "taxa anual em %, ex.: 3 para 3%"},
-            "market_share": {"type": "number", "description": "market share da seguradora hipotética em %, ex.: 10"},
-            "cenario_stf": _CENARIO}, "required": ["uf"]}}},
-    {"type": "function", "function": {
-        "name": "consultar_serventia",
-        "description": "Resultado do modelo para um cartório, pelo CNS (código de 6 dígitos), ou a lista dos cartórios "
-                       "de um município: situação, classe, se é obrigado pelo Provimento 227, passivo, déficit "
-                       "esperado, importância segurada e prêmio. Não traz nome de pessoa.",
-        "parameters": {"type": "object", "properties": {
-            "uf": _UF, "cns": {"type": "string", "description": "CNS do cartório, ex.: 012345"},
-            "municipio": {"type": "string", "description": "nome do município, ex.: Belo Horizonte"}},
-            "required": ["uf"]}}},
-    {"type": "function", "function": {
-        "name": "buscar_norma",
-        "description": "Busca trechos (artigos) dos Provimentos CNJ 227/2026, 213/2026 e 243/2026 que respondem a "
-                       "uma pergunta sobre as regras: garantia e seguro, fiança, solvência, prazos, classes e limites de "
-                       "receita das classes, quem está fora do 227.",
-        "parameters": {"type": "object", "properties": {
-            "pergunta": {"type": "string"}, "provimento": {"type": "string", "enum": list(NORMAS)}},
-            "required": ["pergunta"]}}},
-]
+
+# ------------------------------------------------------------------ as 5 ferramentas do chat (Etapa 5; D-062)
+# Cada ferramenta agrupa consultas pelo tema do prompt (config/prompts/agente_sistema.md). As do painel chamam as
+# mesmas funções que as páginas usam (src/painel/analises.py), para chat e painel mostrarem os mesmos números;
+# tests/test_chat_cobertura.py falha se uma análise do painel ficar fora daqui.
+CONSULTAS = {
+    "consultar_numeros": {
+        "numeros_oficiais": "os 10 números principais do painel (Início), com os extremos teóricos (não são a faixa "
+                            "provável; para a faixa provável do déficit, da IS ou do prêmio, use faixa_d042)",
+        "escada": "do passivo ao prêmio: cada degrau como parte do anterior (Início)",
+        "faixa_d042": "déficit, importância segurada ou prêmio: valor base, faixa provável P5–P95, extremos e "
+                      "sensibilidade (use `medida`)",
+        "contar_serventias": "serventias ativas e empregados CLT, no total ou num recorte (use `recorte`)",
+        "passivo_e_obrigadas": "passivo trabalhista (todas e obrigadas) e quantas são obrigadas pelo Prov. 227",
+        "deficit_e_mercado": "serventias com déficit, déficit, importância segurada e prêmio num cenário do STF",
+        "simular": "prêmio com outra taxa (%) e outro market share (%) (use `taxa` e `market_share`)",
+    },
+    "consultar_mercado": {
+        "grupos": "os seis tipos de cartório (k-means, notebook 04) e o grupo-alvo do seguro (Mercado)",
+        "quem_e_obrigado": "que parte é obrigada, por atribuição e por porte (Mercado)",
+        "concentracao": "Gini e parte dos 10% maiores no passivo e no déficit (Análises)",
+        "capacidade_pagar": "obrigadas por meses de saldo para cobrir o passivo (M1, Análises)",
+        "consultar_serventia": "resultado do modelo para um cartório pelo CNS, ou a lista de um município "
+                               "(use `cns` ou `municipio`)",
+    },
+    "consultar_analises": {
+        "previsao_mercado": "projeção de 2026 ou 2027: obrigadas, subidas, passivo, déficit, IS e prêmio (use `ano` "
+                            "e, se pedirem, `leitura_limite`)",
+        "previsao_arrecadacao": "projeção da arrecadação semestral de MG 2026–27 com P10–P90",
+        "subidas_comparacao": "subidas da Classe 1 para a 2: projeção principal e a recalibração (105 a 145) como "
+                              "comparação",
+        "passivo_m5": "quanto o passivo das obrigadas cresce em 2026 e 2027 (M5)",
+        "tornado": "sensibilidade do prêmio a cada suposição (gráfico tornado)",
+        "grade_taxa_adesao": "prêmio numa grade de taxa × parte do déficit que escolhe seguro",
+        "premio_por_cenario_stf": "prêmio base e faixa em cada cenário do STF",
+        "pergunta_9": "a seguradora tem lucro? sinistralidade por frequência × severidade",
+    },
+    "consultar_qualidade": {
+        "qualidade_fontes": "data de referência de cada fonte, conferências entre fontes e contratos das tabelas",
+        "lacunas": "o que os dados não respondem e a fonte que resolveria (notebook 09)",
+        "escolhas_metodo_passivo": "passivo: escolhas de método (T5, T6, reserva no estado inteiro)",
+        "leitura_literal_receita": "leitura literal do art. 2º, XXIV, do Prov. 213 (receita líquida)",
+        "saltos_declaracao": "semestres com salto grosseiro na declaração e a sensibilidade sem eles",
+        "clt_outros_estados": "erro do modelo de empregados CLT pela receita, para outros estados",
+    },
+    "consultar_decisoes": {
+        "decisoes": "título das decisões de método que mudam a leitura do painel",
+        "situacao_adi": "situação da ADI 8015 no STF e a data da conferência",
+        "buscar_norma": "trechos dos Provimentos CNJ 227, 213 e 243 (use `pergunta` e, se souber, `provimento`)",
+    },
+}
+DESCRICOES = {
+    "consultar_numeros": "Números gerais e os 10 indicadores do painel: serventias, CLT, obrigadas, passivo, déficit, "
+                         "importância segurada, prêmio, teto, contagens por recorte e simulação de taxa.",
+    "consultar_mercado": "Mercado: tipos de cartório (grupos), grupo-alvo, quem é obrigado, concentração, capacidade "
+                         "de pagar e o resultado por cartório (pelo CNS ou pelo município).",
+    "consultar_analises": "Projeções 2026–27, sensibilidades (tornado), cenários do STF, grade de taxa e o lucro da "
+                          "seguradora.",
+    "consultar_qualidade": "Qualidade e lacunas dos dados: datas de referência das fontes, conferências, escolhas de "
+                           "método, saltos na declaração, o que os dados não respondem.",
+    "consultar_decisoes": "Decisões de método do projeto, normas (Provimentos 227, 213 e 243) e situação da ADI 8015.",
+}
+PARAMETROS = {   # parâmetro → (esquema, ferramentas que o aceitam)
+    "uf": ({"type": "string", "description": "sigla da UF; hoje só MG tem dados (padrão MG)"},
+           ("consultar_numeros", "consultar_mercado", "consultar_analises", "consultar_qualidade")),
+    "medida": ({"type": "string", "enum": ["premio", "deficit", "importancia_segurada"],
+                "description": "para faixa_d042"}, ("consultar_numeros",)),
+    "recorte": ({"type": "string", "enum": RECORTES, "description": "para contar_serventias; 'vago' = interino"},
+                ("consultar_numeros",)),
+    "cenario_stf": ({"type": "string", "enum": list(CENARIOS), "description": "mantem, suspende_8_17 ou parcial"},
+                    ("consultar_numeros",)),
+    "taxa": ({"type": "number", "description": "para simular: taxa anual em %, ex.: 3 para 3%"}, ("consultar_numeros",)),
+    "market_share": ({"type": "number", "description": "para simular: market share em %, ex.: 10"},
+                     ("consultar_numeros",)),
+    "cns": ({"type": "string", "description": "CNS do cartório (6 dígitos)"}, ("consultar_mercado",)),
+    "municipio": ({"type": "string", "description": "nome do município de MG"}, ("consultar_mercado",)),
+    "ano": ({"type": "integer", "description": "para previsao_mercado: 2026 ou 2027"}, ("consultar_analises",)),
+    "leitura_limite": ({"type": "string", "description": "para previsao_mercado: leitura do limite de classe (fixo "
+                                                         "ou corrigido); sem ela, usa a principal"},
+                       ("consultar_analises",)),
+    "pergunta": ({"type": "string", "description": "para buscar_norma: a pergunta sobre a norma"},
+                 ("consultar_decisoes",)),
+    "provimento": ({"type": "string", "enum": list(NORMAS), "description": "para buscar_norma"},
+                   ("consultar_decisoes",)),
+}
+FERRAMENTAS = list(CONSULTAS)
+
+
+def _esquema(nome: str) -> dict:
+    opcoes = CONSULTAS[nome]
+    props = {"analise": {"type": "string", "enum": list(opcoes),
+                         "description": "; ".join(f"{k}: {v}" for k, v in opcoes.items())}}
+    props |= {p: esquema for p, (esquema, onde) in PARAMETROS.items() if nome in onde}
+    return {"name": nome, "description": DESCRICOES[nome],
+            "parameters": {"type": "object", "properties": props, "required": ["analise"]}}
+
+
+ESQUEMAS = [_esquema(n) for n in FERRAMENTAS]   # functionDeclarations do Gemini
+
+
+def _funcao(analise: str):
+    """(função, recebe conexão e UF?) de uma consulta."""
+    from src.painel import analises
+    if analise in analises.PARA_O_CHAT:
+        return analises.PARA_O_CHAT[analise], True
+    if analise in analises.SEM_CONEXAO:
+        return analises.SEM_CONEXAO[analise], False
+    if analise == "passivo_m5":
+        return analises.passivo_m5, False
+    return PROPRIAS[analise], analise not in PROPRIAS_SEM_CONEXAO
+
+
+def alcancaveis() -> set[str]:
+    """Nomes de todas as funções que o chat alcança pelas 5 ferramentas."""
+    return {a for opcoes in CONSULTAS.values() for a in opcoes}
 
 
 def executar(con: duckdb.DuckDBPyConnection, nome: str, argumentos: dict | str | None) -> dict:
     """Executa uma chamada de ferramenta do modelo; erro vira resposta, nunca exceção."""
-    if nome not in FERRAMENTAS:
-        return {"erro": f"ferramenta {nome!r} não existe"}
     if isinstance(argumentos, str):
         try:
             argumentos = json.loads(argumentos or "{}")
         except ValueError:
             argumentos = {}
-    funcao = FERRAMENTAS[nome]
-    aceitos = funcao.__code__.co_varnames[:funcao.__code__.co_argcount]
-    args = {k: v for k, v in (argumentos or {}).items() if k in aceitos and k != "con"}
+    argumentos = dict(argumentos or {})
+    if nome in PROPRIAS and "analise" not in argumentos:   # nome antigo (D-036), aceito nos testes e no gabarito
+        nome, argumentos["analise"] = next(f for f, o in CONSULTAS.items() if nome in o), nome
+    if nome not in CONSULTAS:
+        return {"erro": f"ferramenta {nome!r} não existe; use {FERRAMENTAS}"}
+    analise = argumentos.pop("analise", None)
+    if analise not in CONSULTAS[nome]:
+        return {"erro": f"analise {analise!r} não existe em {nome}; use {list(CONSULTAS[nome])}"}
+    funcao, com_conexao = _funcao(analise)
+    aceitos = set(inspect.signature(funcao).parameters) - {"con"}
+    args = {k: v for k, v in argumentos.items() if k in aceitos and v not in (None, "")}
+    if com_conexao:
+        args.setdefault("uf", "MG")
+    if "ano" in args:
+        try:
+            args["ano"] = int(args["ano"])
+        except (TypeError, ValueError):
+            return {"erro": f"ano {args['ano']!r} inválido"}
     try:
-        return funcao(**args) if nome in SEM_CONEXAO else funcao(con, **args)
-    except (TypeError, ValueError, KeyError, duckdb.Error) as e:
-        return {"erro": f"falha na ferramenta {nome}: {e}"}
+        return funcao(con, **args) if com_conexao else funcao(**args)
+    except (TypeError, ValueError, KeyError, LookupError, OSError, duckdb.Error) as e:
+        return {"erro": f"falha na consulta {analise}: {e}"}
+
+
+LINHAS_TABELA = 25   # linhas de `tabela` que vão para o modelo (o resto fica no painel e no download)
+
+
+# nome da coluna → formato (a ordem importa: "prob_deficit" é fração, não R$; "com_deficit" é contagem)
+FRACOES = ("pct", "prob", "p_fim", "sinistralidade", "indice", "taxa", "adesao", "erro", "parte", "fracao", "efeito")
+CONTAGENS = ("n_", "com_", "obrigadas", "serventias")
+MONETARIAS = ("passivo", "deficit", "premio", "receita", "valor", "importancia", "p05", "p95", "p10", "p90", "central",
+              "realizado", "resultado", "custo", "sinistro", "amplitude")
+
+
+def _formatar_celula(coluna: str, v, linha: dict):
+    """Número cru de uma linha de tabela → texto pt-BR, pelo nome da coluna (ou pela `medida` da linha), com as
+    mesmas funções do painel. O modelo copia o texto: não converte fração em % nem arredonda (regra "não calcula")."""
+    if isinstance(v, bool) or not isinstance(v, (int, float)):
+        return v
+    nome = coluna.lower()
+    medida = str(linha.get("medida", "")).lower()
+    if nome in ("valor_min", "valor_base", "valor_max"):   # valor da suposição no tornado (taxa, chance, fração…)
+        return _br(v, 3)
+    if nome.startswith(FRACOES) or nome.endswith("_pct") or "fracao" in nome:
+        return pct(v)
+    if medida and nome in ("p10", "central", "p90", "p05", "p95", "base", "minimo", "maximo"):
+        return aprox(v) if medida.startswith("n_") else brl(v)
+    if nome.startswith(CONTAGENS):
+        return _br(v, 0) if float(v).is_integer() else aprox(v)
+    if any(m in nome for m in MONETARIAS):
+        return brl(v)
+    if isinstance(v, int) or float(v).is_integer():
+        return _br(v, 0)
+    return _br(v, 2)
+
+
+# nomes que o modelo confundia com a faixa provável P5–P95 da D-042 (teste real de 2026-10-28; D-069)
+NOMES_PARA_O_MODELO = {"minimo": "extremo_teorico_minimo", "maximo": "extremo_teorico_maximo"}
+
+
+def _linha_para_o_modelo(linha: dict) -> dict:
+    """Sem as colunas cruas que já têm a versão formatada (`*_txt`, `*_cru`), com os demais números formatados e com
+    "mínimo" e "máximo" chamados pelo que são: extremos teóricos."""
+    return {NOMES_PARA_O_MODELO.get(c, c): _formatar_celula(c, x, linha) for c, x in linha.items()
+            if not c.endswith("_cru") and f"{c}_txt" not in linha}
+
+
+def para_o_modelo(resultado: dict) -> dict:
+    """O que o modelo recebe: sem os números crus (`valores`, colunas `*_cru` e as que têm `*_txt`; os outros números
+    das tabelas vão formatados em pt-BR), sem a `tabela` quando ela repete outro campo e com as listas cortadas em
+    LINHAS_TABELA linhas (a curva de um gráfico tem milhares de pontos: fica no painel e no download)."""
+    r = {}
+    for k, v in resultado.items():
+        if k == "valores" or (k == "tabela" and any(v == outro for c, outro in resultado.items() if c != k)):
+            continue
+        if isinstance(v, list):
+            v = [_linha_para_o_modelo(linha) if isinstance(linha, dict) else linha for linha in v[:LINHAS_TABELA]]
+            if len(resultado[k]) > LINHAS_TABELA:
+                v.append({"observacao": f"mais {len(resultado[k]) - LINHAS_TABELA} linhas no painel"})
+        r[k] = v
+    return r

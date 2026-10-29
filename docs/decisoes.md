@@ -665,3 +665,107 @@ Formato:
 - **Efeito nos 10 números:** nenhum (só cópia de dados).
 - **Consequências / onde aparece:** `scripts/exportar_completo.py` (novo; regrava a pasta depois de cada carga oficial), `data/completo/`, `tests/test_completo.py` (novo: hashes, colunas da D-031, nomes do cadastro e CPF, coerência com o gold local), `README.md`, `CLAUDE.md`.
 - **Fonte:** pedido de `leticia-ribeirom` na conversa com a IA em 2026-10-28: "Preciso que os dados que são usados no painel da etapa 3 vá para o git também, bem como suas dependencias [...] para o lucca rodar de la", com a resposta "Gold completo + silver limpo".
+
+> Numeração: D-051 a D-059 ficam com o Lucca (painel, branch `etapa-3-painel`); D-060 a D-069 com a Letícia (chat, branch `etapa-5-chat`), para não colidirem.
+
+## D-060 — Chat com o Gemini (nível gratuito) no lugar do Ollama; substitui a D-036
+- **Data:** 2026-10-28
+- **Contexto:** o chat da D-036 rodava no Ollama local (`qwen3:8b`), que não funciona no link público (Streamlit Community Cloud, sem GPU nem servidor do Ollama) e exigia instalar o Ollama e o modelo em cada PC. A Etapa 5 pede o chat no link público e na demo dos dois PCs (Windows, com `uv`).
+- **Decisão (de `leticia-ribeirom`, que controla o plano do chat com a autorização do autor):**
+  1. **O modelo é só o Gemini**, no nível gratuito do Google AI Studio (exceção ao "100% gratuito" na D-061). Principal `gemini-3.8-flash` e reserva `gemini-3.5-flash-lite`, usada quando o principal devolve cota esgotada ou erro. Fonte: documentação do Google conferida em 2026-10-28 (`ai.google.dev/gemini-api/docs/models` e `/pricing`): os dois são estáveis, têm nível gratuito e o principal chama ferramentas. Os nomes ficam em `config/llm.yaml`, nunca no código.
+  2. **O Ollama sai do projeto. Removido, não aposentado:** o código de `src/llm.py` foi reescrito para o Gemini, e saem a variável `RADAR_OLLAMA_URL`, o teste "painel abre sem Ollama" e o `OLLAMA_HOST` do `.env.example`. O código antigo fica no histórico do git (até o commit `4ab4500`). Motivo: manter dois modelos dobraria os testes e a avaliação sem uso real, e um código aposentado pode ser chamado por engano.
+  3. **Cliente:** chamada REST `models/{modelo}:generateContent` com o `httpx`, que o projeto já usa (sem SDK novo); a chave vai só no cabeçalho `x-goog-api-key`. Os testes trocam a rede por um servidor simulado (`httpx.MockTransport`). A única dependência nova é o `python-dotenv` (leitura do `.env`), adicionada com `uv add` e com o `uv.lock` versionado.
+  4. A avaliação antiga (Ollama, 2026-10-21) foi para `eval/historico/` (`git mv`).
+- **Efeito nos 10 números:** nenhum. O chat só lê.
+- **Consequências / onde aparece:** `src/llm.py`, `config/llm.yaml`, `src/agent/chat.py`, `app/pages/5_Chat.py`, `tests/apoio_painel.py`, `tests/conftest.py`, `pyproject.toml`, `uv.lock`, `.env.example`, `README.md`, `CONTRIBUTING.md`, `docs/plano_projeto.md` (Etapa 5), `docs/SPEC.md` (nota no §5).
+- **Fonte:** pedido de `leticia-ribeirom` na conversa com a IA em 2026-10-28 ("Tarefa: Etapa 5 — Chat com Gemini (nível gratuito), para o link público").
+
+## D-061 — Exceção ao "100% gratuito": nível gratuito do Gemini, com o faturamento desligado
+- **Data:** 2026-10-28
+- **Decisão (de `leticia-ribeirom`):** a única exceção à regra "100% gratuito" do `CLAUDE.md` é o nível gratuito do Gemini (Google AI Studio), **com o faturamento desligado** no projeto da chave. Nada de faturamento, cartão, Google Cloud pago nem outro serviço pago. Cada pessoa pode usar a própria chave, sempre com o mesmo nome de variável.
+- **A chave:** variável `GEMINI_API_KEY`, lida nesta ordem: ambiente, arquivo `.env` (fora do git; nome documentado no `.env.example`) e, no Cloud, `st.secrets`. Uma variável definida vazia vale como "sem chave" (é assim que a suíte de testes garante que nunca chama a API). A chave nunca vai para o git, para um log, para um print, para uma mensagem de erro nem para a resposta do chat (`tests/test_chat.py` procura chaves do Google nos arquivos versionáveis e confere que os erros não a repetem).
+- **Dados pessoais:** no nível gratuito, o Google pode usar as conversas para melhorar os produtos (página de preços, conferida em 2026-10-28). A página do chat avisa: "não digite dados pessoais".
+- **Consequências / onde aparece:** `CLAUDE.md` (seção "100% gratuito"), `src/llm.py`, `.env.example`, `.gitignore` (já tinha `.env` e `.streamlit/secrets.toml`), `README.md`.
+- **Fonte:** pedido de `leticia-ribeirom` em 2026-10-28 (item 5 da base combinada).
+
+## D-062 — Cinco ferramentas do chat sobre as funções do painel, com teste de cobertura
+- **Data:** 2026-10-28
+- **Decisão (de `leticia-ribeirom`; detalhes da IA):**
+  1. O chat tem **5 ferramentas**, com os nomes do prompt do agente: `consultar_numeros`, `consultar_mercado`, `consultar_analises`, `consultar_qualidade` e `consultar_decisoes`. Cada uma recebe o campo `analise`, que escolhe a consulta numa lista fechada (30 ao todo, `src/agent/ferramentas.py`, `CONSULTAS`).
+  2. **O chat vê o que o painel vê:** as consultas das páginas chamam as mesmas funções de `src/painel/analises.py` (`PARA_O_CHAT`, `SEM_CONEXAO` e `passivo_m5`) que as páginas usam via `comum.analise`, sem refazer contas. As 6 consultas próprias do chat (D-036, D-048) continuam e entram nas ferramentas do tema (contagens, passivo, déficit, simular → números; cartório por CNS ou município → mercado; normas → decisões). Os nomes antigos continuam aceitos por `executar`.
+  3. **O modelo recebe só valores formatados:** sem os números crus (`valores`, colunas `*_cru`), sem a `tabela` quando ela repete outro campo e com as listas cortadas em 25 linhas (a curva de Lorenz tinha 44 mil caracteres).
+  4. **Teste de cobertura** (`tests/test_chat_cobertura.py`): falha quando uma página chama `analise("x")`, ou quando surge uma função em `PARA_O_CHAT`/`SEM_CONEXAO`, que o chat não alcança e não está em `EXCECOES` com o motivo (hoje vazia: as 21 análises das páginas estão no chat). As 30 consultas rodam sem erro no modo demonstração e, com `-m dados_reais`, numa cópia do banco.
+- **`analises.py` não mudou** (nenhuma função nova nem alterada); os 10 números continuam iguais.
+- **Fonte:** pedido de `leticia-ribeirom` em 2026-10-28 (itens 2 e 3 da base combinada e o prompt do agente).
+
+## D-063 — Saída sem o modelo e limite de 20 perguntas por sessão
+- **Data:** 2026-10-28
+- **Decisão (de `leticia-ribeirom`):**
+  1. **Sem Gemini, o chat não quebra:** quando falta a chave ou a internet, a cota acaba ou a API falha, a página diz o motivo e oferece **10 perguntas prontas** (`config/llm.yaml`, `perguntas_prontas`), respondidas direto pelas ferramentas, sem modelo, com os mesmos números e fontes do painel (`chat.responder_sem_modelo`). As perguntas prontas também ficam à vista quando o modelo está disponível (não gastam cota).
+  2. **Limite de 20 perguntas ao modelo por sessão** (`limite_perguntas_sessao`). Motivo: a cota gratuita é por projeto da chave, não por pessoa; no link público, todos os visitantes dividem a mesma chave, e o limite impede que uma pessoa gaste a cota do dia de todos. Com a cota esgotada (HTTP 429, mesmo na reserva), a sessão para de chamar o modelo.
+- **Fonte:** pedido de `leticia-ribeirom` em 2026-10-28 (item 7 da base combinada), com a resposta "Se sim, deixa 20".
+
+## D-064 — Texto das normas versionado em `data/normas/`, sem a assinatura
+- **Data:** 2026-10-28
+- **Contexto:** a busca de normas lia o texto dos Provimentos 227, 213 e 243 do bronze, que fica fora do git. No Cloud e num clone, a busca não funcionaria.
+- **Decisão (da IA; vale com a aprovação de `leticia-ribeirom`):** `scripts/exportar_normas.py` copia o texto oficial (atos.cnj.jus.br, coletado em 2026-10-17) para `data/normas/2026-10-17/` (≈ 145 KB, versionado), sem nenhuma mudança além de tirar a linha de assinatura ("Ministro ..."), que traz nome de pessoa física (D-038). `tests/test_chat.py` confere que não há assinatura e que, onde houver o bronze, o texto é o oficial menos essa linha. O bronze não muda.
+- **Consequências / onde aparece:** `src/agent/ferramentas.py` (`NORMAS_DIR`), `data/normas/`, `scripts/exportar_normas.py`; a versão (b) da avaliação também lê daqui.
+
+## D-065 — Gabarito de 52 perguntas congelado, meta de 85% e avaliação (a) × (b) × (c)
+- **Data:** 2026-10-28
+- **Decisão (de `leticia-ribeirom`; gabarito redigido pela IA):**
+  1. **Meta, fixada antes de qualquer rodada com o Gemini:** a versão (c) acerta **pelo menos 85%** do gabarito e **não inventa número em nenhuma armadilha** (critério do `plano_projeto.md`). Em `config/llm.yaml`, `avaliacao.meta_acerto`.
+  2. **Gabarito** `eval/gabarito_chat.csv` (substitui o rascunho de 20 perguntas da D-036): 52 perguntas em 11 tipos, escritas como as pessoas escrevem (informais, com erro de digitação, vagas), mais as de fora do escopo, armadilhas para inventar número, normas, explicação de gráfico do painel, qualidade dos dados e dados pessoais (sem nenhum nome nem CPF no arquivo). **Congelado com SHA-256** em `config/llm.yaml` (`gabarito_sha256`); o teste e o script de avaliação recusam um gabarito diferente. `tests/test_chat.py` confere que todo número esperado sai de uma ferramenta.
+  3. **Avaliação com a API real** (`scripts/avaliar_chat.py`, fora da suíte de testes): versões (a) sem ferramentas, (b) com as normas no prompt e (c) com ferramentas; mede acertos, alucinações, respostas sem fonte, "não sei" corretos e latência. Cuida da cota: pausa de 15 s entre perguntas, uma nova tentativa depois de um 429 e as respostas guardadas em `eval/respostas/` (rodar de novo não repete chamadas).
+  4. Critério novo de correção, `recusa_com_dados`: recusa a parte pedida (o nome de uma pessoa), mas pode trazer o resultado do cartório pelo CNS.
+- **Fonte:** pedido de `leticia-ribeirom` em 2026-10-28, com a resposta "Meta de acerto é 85%".
+
+## D-066 — Prompt do agente, versão 1
+- **Data:** 2026-10-28
+- **Decisão (de `leticia-ribeirom`):** o prompt do sistema é `config/prompts/agente_sistema.md` (versão 1, `config/llm.yaml`, `versao_prompt`): o texto escrito pela colaboradora, com os nomes entre colchetes trocados pelos nomes reais das ferramentas, e um bloco final "Regras do projeto" com as regras da tarefa (só MG, cartório só por CNS ou município, normas por `buscar_norma`, "erro" vira "o painel não tem essa informação", qual consulta corresponde a cada gráfico). Qualquer outra mudança no texto gera uma versão nova, registrada na avaliação (as respostas guardadas valem só para a mesma versão). As versões (a) e (b) usam `config/prompts/sem_ferramentas.md`.
+- **Fonte:** pedido de `leticia-ribeirom` em 2026-10-28 ("Prompt do agente").
+
+## D-067 — Prompt do agente, versão 2: "Não possuo esse dado no momento"
+- **Data:** 2026-10-28
+- **Decisão (de `leticia-ribeirom`):** quando nenhuma ferramenta tem o dado, quando a ferramenta devolve erro ou quando a pergunta é de um tema fora do painel, a resposta começa com **"Não possuo esse dado no momento."**, seguida, se ajudar, do que o painel tem de mais próximo. A resposta sem modelo (perguntas prontas) usa a mesma frase. Junto, a pedido da IA: sem ferramenta usada, a resposta não traz linha de fonte (no teste real, o modelo inventou "Fonte: Painel ... referência: dados atuais").
+- **Versão:** `config/llm.yaml`, `versao_prompt: 2`. As respostas guardadas da versão 1 (1 pergunta) não valem para a v2. A correção da avaliação aceita "não possuo" como recusa (`src/agent/avaliacao.py`); o gabarito e o hash não mudaram.
+- **Fonte:** pedido de `leticia-ribeirom` em 2026-10-28: "se ele não tiver a informação, responda que não possui esse dado no momento".
+
+## D-068 — Demora do modelo principal: reserva depois de 30 s, e só a reserva por 10 minutos
+- **Data:** 2026-10-28
+- **Contexto:** no teste real, o `gemini-3.8-flash` respondeu em 7 s às 22h44 e, mais tarde, não respondeu nem a um "oi" em 150 s; a reserva `gemini-3.5-flash-lite` respondeu em 1 a 4 s. O código só ia para a reserva em cota esgotada ou erro HTTP, então a página mostrava "sem internet (ReadTimeout)". Depois que uma resposta vinha da reserva, o principal recusava o histórico (HTTP 400).
+- **Decisão (da IA, a partir do problema relatado por `leticia-ribeirom`):** demora vira motivo próprio (`lento`, com a mensagem "serviço sobrecarregado"), o tempo-limite por chamada cai de 60 para 30 s, e a demora também passa para a reserva. Depois de qualquer falha do principal, as chamadas vão direto para a reserva por 10 minutos (`reserva_por_s: 600`), sem perder 30 s a cada rodada de ferramenta. Valores com `fonte: suposição` no `config/llm.yaml`.
+- **Resultado no teste real:** perguntas respondidas em 4 a 24 s, todas pela reserva (o principal estava com a cota gratuita esgotada ou travado).
+- **Consequências / onde aparece:** `src/llm.py`, `config/llm.yaml`, `tests/test_chat.py` (`test_llm_principal_lento_vai_para_a_reserva`).
+
+## D-069 — Chat: aba de perguntas prontas, frase sem dado (prompt v3), interface e velocidade
+- **Data:** 2026-10-28
+- **Contexto:** pedido de `leticia-ribeirom` ("Etapa 5 — ajustes no chat"), em modo autônomo, para a IA decidir e registrar. É o último número da faixa do chat (D-060 a D-069): a próxima decisão do chat precisa de uma faixa nova combinada com o Lucca.
+- **Decisões:**
+  1. **Perguntas prontas numa aba própria.** A página tem duas abas, Chat e Perguntas prontas. As prontas foram de 10 para 16, em cinco temas (números gerais, mercado, previsão, qualidade dos dados, decisões e normas), cada uma num expansor com a resposta das ferramentas, a conta, os selos e a fonte numa linha pequena. Saíram da tela os termos "sem o modelo", "respondidas direto pelo painel" e parecidos. Sem o Gemini (sem chave, sem internet, cota, erro), a aba Chat mostra só "O chat está indisponível no momento. Veja as respostas na aba Perguntas prontas."; o motivo vai para o log (`logging`, `radar.chat`).
+  2. **Sem dado ou fora do escopo:** "Não foi possível encontrar essa resposta nos dados do painel." Entra no prompt **v3** (regra 3, "fora do painel" e "erro") e nas perguntas prontas, e o detector de "não sei" da avaliação passou a aceitar a frase e variações. No mesmo v3: o P10–P90 da projeção não se chama "faixa provável" (no teste real, o modelo usou o nome da D-042 para ele). O gabarito, o hash e a meta não mudaram. **A avaliação precisa ser refeita com o v3.**
+  3. **Interface** (CSS só da página, em `src/agent/chat.css`; recados em `docs/recados_lucca.md`):
+     - cabeçalho compacto, com as etiquetas de dados e premissas;
+     - campo de digitação em destaque (fundo branco, borda de 2 px na cor de marca, anel de foco, botão de enviar na cor de marca);
+     - aviso de dados pessoais numa linha acima do campo;
+     - contador "x de 20 perguntas nesta sessão" só no modo demonstração (é o modo do link público, sem banco);
+     - 4 sugestões clicáveis na conversa vazia;
+     - fonte numa linha pequena abaixo de cada resposta e selos do painel (projeção, faixa provável, sensibilidade);
+     - "Fontes e datas" num expansor no fim, com o modelo, a versão do prompt e a explicação completa sobre dados pessoais;
+     - nada técnico na tela (nomes de ferramentas, JSON, erros);
+     - contraste: nenhum texto abaixo de 4,5:1 nos 8 estados medidos com o axe.
+  4. **Velocidade** (medido antes e depois com 5 perguntas de fumaça fora do gabarito, `scripts/medir_latencia_chat.py`):
+     - **primeira chamada sem streaming e as seguintes em streaming:** a chamada que só pede a ferramenta levou 0,8 s sem streaming e 3,4 s com ele (medianas de 4 repetições); a que escreve a resposta, 1,0 s até o primeiro texto em streaming;
+     - cliente HTTP único por processo (a conexão com o Google fica aberta);
+     - cache das ferramentas por argumentos e várias ferramentas da mesma rodada em paralelo, cada uma num cursor do DuckDB;
+     - tempo-limite de leitura de 10 s no principal (`timeout_principal_s`): travado, ele custava 30 s antes da reserva;
+     - raciocínio `low` nos dois modelos: `minimal` na reserva deu mediana de 7,4 s, contra 2,3 s com `low`;
+     - saídas das ferramentas sem números crus: as tabelas vão ao modelo já formatadas pelo código (ele tinha convertido 0,2815 em "28,15%" sozinho);
+     - nenhum `st.rerun` no caminho da pergunta (só em "Limpar conversa").
+     
+     Metas em `config/llm.yaml`, `latencia` (suposição): primeiro texto em até 3 s e resposta em até 10 s, na mediana.
+  5. **Extremos com o nome certo:** as consultas antigas do chat (passivo, déficit, mercado) devolviam os extremos teóricos como "faixa: x a y", e o modelo os chamou de "faixa provável (P5–P95)" na captura do modo completo. O texto agora diz "extremos teóricos: x a y; não é a faixa provável". Os números não mudaram.
+  6. **Resposta interrompida:** a pergunta entra no histórico logo no início e a resposta no `finally`. Uma pergunta nova no meio do streaming interrompe a execução, e antes a pergunta anterior sumia da conversa.
+- **Efeito nos 10 números:** nenhum (o chat só lê; `analises.py`, o pipeline, as premissas, o gold, `data/publico/` e `data/completo/` sem mudança).
+- **Consequências / onde aparece:** `app/pages/5_Chat.py`, `src/agent/chat.py`, `src/agent/chat.css` (novo), `src/agent/ferramentas.py`, `src/agent/avaliacao.py`, `src/llm.py`, `config/llm.yaml`, `config/prompts/agente_sistema.md` (v3), `scripts/medir_latencia_chat.py` e `scripts/prints_chat.py` (novos), `docs/qa/chat/`, `docs/recados_lucca.md` (novo), `tests/test_chat.py`.
+- **Fonte:** pedido de `leticia-ribeirom` na conversa com a IA em 2026-10-28; medições em `docs/qa/chat/latencia_antes.md`, `latencia_depois.md` e `interface_*/`.

@@ -10,6 +10,7 @@ Regras de segurança para a IA que trabalha neste repositório. Em cada sessão,
 
 ## 100% gratuito
 - **NUNCA sugira, instale ou configure serviço pago, conta em nuvem (Google Cloud, AWS, Azure, MotherDuck etc.), chave de API com créditos ou qualquer coisa que possa gerar cobrança.** Se algo parecer exigir isso, pare e pergunte.
+- **Única exceção (D-061): o nível gratuito do Gemini** (Google AI Studio), para o chat, **com o faturamento desligado** no projeto da chave. Nada de faturamento, cartão, Google Cloud pago nem outro serviço pago. A chave (`GEMINI_API_KEY`) vem do ambiente, do `.env` ou do `st.secrets` e nunca vai para o git, um log, um print ou uma resposta. A suíte de testes não usa a API; a avaliação com a API real é o `scripts/avaliar_chat.py`.
 
 ## Dados
 - Os números do painel vêm de fontes oficiais públicas, com data de referência. Dados sintéticos só em `tests/`, marcados como sintéticos.

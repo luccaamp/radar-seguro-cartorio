@@ -759,3 +759,84 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** resumo feito antes de ler a lista da D-031 por inteiro.
 - **Correção:** avisado na resposta final; a escolha do usuário não muda (o silver versionado segue a lista da D-031 do `config/publico.yaml`).
 - **Bom para os slides?** não
+
+## 2026-10-28 — Teste de cobertura do chat não via a página Análises (nome com acento)
+- **Onde:** código gerado (`tests/test_chat_cobertura.py`, com o `arquivos_versionaveis` de `tests/apoio_painel.py`)
+- **O que aconteceu:** o teste que confere se o chat alcança toda análise do painel achou 14 análises nas páginas, e não 21: a página `app/pages/2_Análises.py` ficava de fora. O `git ls-files` põe entre aspas, com escapes octais, os nomes com acento (`"app/pages/2_An\303\241lises.py"`), e o caminho não existia. Um teste de cobertura que pula uma página passaria mesmo com o chat sem as análises dela.
+- **Como foi detectado:** a trava do próprio teste ("pelo menos 15 análises nas páginas"), escrita antes de rodar.
+- **Causa provável:** confiar que o `git ls-files` devolve os caminhos como estão no disco.
+- **Correção:** o teste de cobertura varre `app/` direto; o `arquivos_versionaveis` passou a usar `git ls-files -z`, que não põe aspas (hoje só lê `.md` e `.ipynb` sem acento, então nenhum outro teste tinha sido afetado).
+- **Resultado depois da correção:** 21 análises achadas, todas alcançadas pelo chat.
+- **Bom para os slides?** sim (um teste de cobertura também precisa provar que está vendo tudo)
+
+## 2026-10-28 — Critério do gabarito aceitava qualquer "não" como certo
+- **Onde:** eval (`eval/gabarito_chat.csv`, pergunta 43, "A ADI 8015 já tem liminar?")
+- **O que aconteceu:** a primeira versão do critério era `nao|sem liminar`. Como a correção procura o texto em qualquer lugar da resposta, qualquer resposta com a palavra "não" (até "não sei") contaria como acerto.
+- **Como foi detectado:** revisão do gabarito pela IA antes de congelar o hash.
+- **Causa provável:** critério de texto curto demais.
+- **Correção:** alternativas específicas (`sem liminar|nao tem liminar|nao ha liminar|nenhuma liminar|...`), antes do congelamento e de qualquer rodada com o modelo.
+- **Bom para os slides?** não
+
+## 2026-10-28 — Trava da Etapa 3 sobre as ferramentas do chat quebrada pela troca de nome
+- **Onde:** código gerado (`src/agent/ferramentas.py`, D-062), com o teste `tests/test_painel.py::test_ferramentas_do_chat_nao_mudaram`
+- **O que aconteceu:** o nome `FERRAMENTAS` passou a ser a lista das 5 ferramentas novas, e as 6 consultas antigas foram para `PROPRIAS`. O teste da Etapa 3, que conferia as 6 em `FERRAMENTAS`, falhou. Os testes do chat tinham sido rodados sozinhos, sem a suíte inteira.
+- **Como foi detectado:** a suíte inteira, rodada antes de parar.
+- **Causa provável:** reaproveitar um nome público de um módulo sem procurar quem o usa (`grep FERRAMENTAS tests/`).
+- **Correção:** o teste confere as 6 em `PROPRIAS` e que elas continuam alcançáveis pelas 5 ferramentas; o Lucca foi avisado, porque o arquivo é da Etapa 3.
+- **Resultado depois da correção:** 286 passed, 2 skipped.
+- **Bom para os slides?** não
+
+## 2026-10-28 — Chave do Gemini exposta na saída de um comando de diagnóstico
+- **Onde:** diagnóstico do chat (comando de terminal da IA)
+- **O que aconteceu:** para testar a API com o `curl`, a IA carregou o `.env` no shell (`set -a; . ./.env`). A linha da chave tinha um espaço depois do `=` (inofensivo para o `python-dotenv`), e o shell tentou executar o valor como comando. A mensagem de erro, "command not found", trouxe a chave inteira na saída do comando, dentro da conversa com a IA. A chave não foi para o git, nem para nenhum arquivo do projeto, nem para a resposta do chat.
+- **Como foi detectado:** a própria IA viu a mensagem de erro.
+- **Causa provável:** carregar um arquivo de segredo no shell em vez de ler a chave pelo código do projeto, que nunca a imprime.
+- **Correção:**
+  - o diagnóstico seguiu só pelo Python (`llm.chave()`), com a saída filtrada;
+  - a IA avisou a colaboradora para **revogar a chave e criar outra** no AI Studio;
+  - regra para os próximos diagnósticos: nunca fazer `source`, `cat` ou `echo` do `.env`; para ver o formato do arquivo, mostrar só os nomes das variáveis e o tamanho dos valores.
+- **Bom para os slides?** sim (segredo vaza pelo caminho de erro, não pelo caminho feliz)
+
+## 2026-10-28 — A reserva do chat não cobria a demora do modelo principal
+- **Onde:** código gerado (`src/llm.py`)
+- **O que aconteceu:** a reserva só entrava em cota esgotada ou erro HTTP. Quando o `gemini-3.8-flash` travou, cada pergunta esperava 60 s e terminava em "sem internet (ReadTimeout)", com a reserva funcionando.
+- **Como foi detectado:** uso real pela colaboradora, no painel.
+- **Causa provável:** o desenho tratou só os erros que o servidor responde, não a ausência de resposta; e os testes simulavam 429 e 400, não demora.
+- **Correção:** D-068, com o teste `test_llm_principal_lento_vai_para_a_reserva`.
+- **Resultado depois da correção:** respostas em 4 a 24 s, em vez de erro depois de 60 s.
+- **Bom para os slides?** sim
+
+## 2026-10-29 — "Mágica" do Streamlit mostrou um objeto interno em cada pergunta
+- **Onde:** código gerado (`app/pages/5_Chat.py`)
+- **O que aconteceu:** a linha `_mostrar(m) if ... else st.markdown(...)` é uma expressão solta. O Streamlit exibe o valor de expressões soltas ("mágica"), e cada pergunta do histórico ganhou a documentação inteira de um `DeltaGenerator` na tela.
+- **Como foi detectado:** captura da conversa com 3 perguntas (`scripts/prints_chat.py`). O AppTest não pegou.
+- **Correção:** `if`/`else` comuns, com um comentário no código.
+- **Bom para os slides?** sim (o teste automático passava; só a captura mostrou)
+
+## 2026-10-29 — Pergunta nova no meio do streaming apagava a anterior
+- **Onde:** código gerado (`app/pages/5_Chat.py`)
+- **O que aconteceu:** a pergunta e a resposta só entravam no histórico no fim do streaming. Uma pergunta nova antes disso interrompe a execução do Streamlit, e o par anterior sumia da conversa.
+- **Como foi detectado:** o script de capturas mandou a segunda pergunta cedo demais e a conversa ficou com 2 mensagens, não 4.
+- **Correção:** a pergunta entra no histórico logo no início e a resposta, mesmo parcial, no `finally`.
+- **Bom para os slides?** não
+
+## 2026-10-29 — Conclusões de velocidade tiradas de uma amostra só, e streaming em todas as chamadas
+- **Onde:** decisões de velocidade (D-069)
+- **O que aconteceu:**
+  - **raciocínio:** com uma chamada de cada nível, a IA escolheu `minimal` na reserva (1,5 s contra 2,5 s). Medido com 5 perguntas, ele foi pior: mediana de 7,4 s contra 2,3 s com `low`;
+  - **streaming:** a IA ligou o streaming em todas as chamadas, e a chamada que só pede a ferramenta ficou 4 vezes mais lenta (3,4 s contra 0,8 s);
+  - **medição:** o script de latência não registrava as chamadas que estouravam o tempo-limite, e 30 s de espera ficaram fora da tabela.
+- **Como foi detectado:** medições repetidas e alternadas (A/B), e a soma das etapas que não batia com o total.
+- **Correção:** `low` nos dois modelos; streaming só nas chamadas que escrevem a resposta; o script registra também as falhas.
+- **Bom para os slides?** sim (medir de novo antes de decidir)
+
+## 2026-10-29 — O modelo chamava os extremos teóricos de "faixa provável"
+- **Onde:** chat (saída das ferramentas para o modelo)
+- **O que aconteceu:** perguntado sobre o prêmio, o modelo respondeu "faixa provável (P5–P95) de R$ 51,7 mil a R$ 1,9 mi". Esses são os extremos teóricos; a faixa provável é de R$ 215 mil a R$ 687 mil. As consultas devolviam os extremos como "faixa" ou como "mínimo" e "máximo".
+- **Como foi detectado:** leitura das capturas da conversa.
+- **Correção:**
+  - a consulta de mercado traz a faixa provável da mesma função do painel, com os extremos num campo à parte;
+  - no que vai para o modelo, "minimo" e "maximo" viraram "extremo_teorico_minimo" e "extremo_teorico_maximo";
+  - teste novo. Os números não mudaram.
+- **Resultado depois da correção:** prêmio e déficit respondidos com a faixa certa no teste real.
+- **Bom para os slides?** sim (o número estava certo, e o rótulo errado mudava o sentido)

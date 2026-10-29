@@ -45,6 +45,39 @@ Observações:
 - Sem acesso ou sem login, o script explica como pedir.
 - Os testes que precisam desses dados são marcados `dados_reais` e ficam fora da suíte padrão. Rode com `uv run pytest -m dados_reais`.
 
+## Chat com o Gemini (D-060 a D-069)
+
+O chat usa o **Gemini no nível gratuito** do Google AI Studio. **Cada pessoa usa a própria chave**, guardada num arquivo `.env` na sua máquina. O `.env` fica fora do git, então quem clona a branch precisa criar o seu.
+
+### Passo a passo: criar o `.env` com a sua chave
+
+1. **Crie a chave (de graça):**
+   - entre em [aistudio.google.com/apikey](https://aistudio.google.com/apikey) com a sua conta Google e clique em **Create API key**;
+   - **não cadastre cartão nem ative faturamento** (D-061): se o AI Studio oferecer "billing", recuse;
+   - copie a chave e não a mande para ninguém.
+2. **Crie o `.env` a partir do modelo**, na pasta raiz do projeto:
+   - Windows (PowerShell): `copy .env.example .env`, depois `notepad .env`
+   - WSL ou Linux: `cp .env.example .env`, depois `code .env` (VS Code) ou `nano .env`
+3. **Cole a chave na última linha**, logo depois do `=`, sem espaço e sem aspas, e salve:
+   ```
+   GEMINI_API_KEY=sua_chave_aqui
+   ```
+4. **Confira sem mostrar a chave na tela:**
+   - WSL ou Linux: `grep -c "^GEMINI_API_KEY=[^ ]" .env` (tem de mostrar `1`)
+   - Windows (PowerShell): `(Select-String -Path .env -Pattern '^GEMINI_API_KEY=\S').Count` (tem de mostrar `1`)
+5. **Teste:** `uv run streamlit run app/Inicio.py`, abra a página **Chat** e faça uma pergunta. Se aparecer "O chat está indisponível no momento", feche e abra o Streamlit de novo: o `.env` só é lido quando ele abre.
+
+### Cuidados com a chave
+- Nunca cole a chave em código, log, print, issue, mensagem ou conversa com a IA. Não rode `cat .env` nem `source .env` num terminal que alguém vai ver.
+- Se a chave vazar, apague-a no AI Studio e crie outra.
+- No Streamlit Community Cloud, a mesma variável vai em **Settings → Secrets** (`GEMINI_API_KEY = "..."`), nunca no repositório.
+
+### O resto
+- Sem a chave, o painel funciona normalmente e o chat mostra só a aba Perguntas prontas.
+- `uv run pytest` **nunca** chama a API (passa sem chave e sem internet). A avaliação com a API real é um comando à parte: `uv run python scripts/avaliar_chat.py` (README, seção do chat).
+- Dependências só com `uv add` (o `uv.lock` vai para o git), sem caminho absoluto nem nada que dependa do seu usuário: o que roda num PC tem de rodar no outro.
+- Ao criar uma análise nova em `src/painel/analises.py` usada por uma página, ponha-a numa ferramenta do chat (`src/agent/ferramentas.py`, `CONSULTAS`). Se esquecer, `tests/test_chat_cobertura.py` avisa.
+
 ## Fluxo de trabalho
 
 1. **Qualquer colaborador pode dar commit e push direto na `main`, sem pull request** (D-041). Atualize antes de começar:
