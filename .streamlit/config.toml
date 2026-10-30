@@ -1,0 +1,48 @@
+# Tema do painel (docs/painel/padrao_visual.md, quarta rodada, D-052): os mesmos tokens do artefato "Raio-X do
+# Cartório", nos dois temas dele. Como o Raio-X, o painel segue o tema do sistema (claro ou escuro); o menu do
+# Streamlit também troca. Só aparência; nenhum dado.
+[theme]
+font = "IBM Plex Sans:https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+headingFont = "Newsreader:https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap"
+baseFontSize = 14
+baseRadius = "10px"
+
+# claro: --bg #eceff3, --surface-2 #f5f7fa, --ink #0f1c33, --line #dde2ea, --grid #e6e9ef, --s1 #2a78d6
+[theme.light]
+primaryColor = "#2a78d6"
+backgroundColor = "#eceff3"
+secondaryBackgroundColor = "#f5f7fa"
+textColor = "#0f1c33"
+borderColor = "#dde2ea"
+dataframeBorderColor = "#e6e9ef"
+linkColor = "#2a78d6"
+chartCategoricalColors = ["#2a78d6", "#eb6834", "#1baf7a", "#8d97ab"]
+
+[theme.light.sidebar]
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f5f7fa"
+textColor = "#0f1c33"
+borderColor = "#dde2ea"
+
+# escuro: --bg #0c1018, --surface #141a25, --surface-2 #1a2130, --ink #e9edf5, --line #262e3d, --grid #222a38, --s1 #3987e5
+[theme.dark]
+primaryColor = "#3987e5"
+backgroundColor = "#0c1018"
+secondaryBackgroundColor = "#1a2130"
+textColor = "#e9edf5"
+borderColor = "#262e3d"
+dataframeBorderColor = "#222a38"
+linkColor = "#3987e5"
+chartCategoricalColors = ["#3987e5", "#d95926", "#199e70", "#7b869b"]
+
+[theme.dark.sidebar]
+backgroundColor = "#141a25"
+secondaryBackgroundColor = "#1a2130"
+textColor = "#e9edf5"
+borderColor = "#262e3d"
+
+[client]
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false

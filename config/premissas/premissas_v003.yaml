@@ -1,0 +1,265 @@
+# Semente das premissas (versão 3: chance de déficit e parte descoberta recalibradas pela capacidade de pagar do titular,
+# D-046; igual à v2 no resto. A v001 e a v002 ficam no lugar para comparação). Versões salvas no simulador vão para a
+# tabela premissas_versoes do DuckDB.
+# Cada premissa: unidade, fonte (norma, dado público ou "suposição"), data_referencia, justificativa e
+# `valor` (único) ou `valores` {min, base, max}. Decisões em docs/decisoes.md (D-003 a D-017, D-020, D-046).
+# Textos legais conferidos em data/bronze/normas/2026-10-17 (Provimentos) e 2026-10-18 (leis do Planalto).
+
+versao: 3
+criada_em: 2026-10-28
+origem: semente (D-016, D-017 e D-020; prob_deficit e pct_descoberto da D-046, decidida pelo autor em 2026-10-28)
+
+premissas:
+
+  # ---------------- Parâmetros legais do passivo (art. 5º do Prov. 227) ----------------
+  aviso_previo_dias_base:
+    valor: 30
+    unidade: dias
+    fonte: Lei 12.506/2011, art. 1º, caput
+    data_referencia: 2011-10-11
+    justificativa: 30 dias para quem tem até 1 ano de serviço.
+  aviso_previo_dias_por_ano:
+    valor: 3
+    unidade: dias por ano completo de serviço
+    fonte: Lei 12.506/2011, art. 1º, parágrafo único
+    data_referencia: 2011-10-11
+    justificativa: acréscimo de 3 dias por ano de serviço na mesma empresa.
+  aviso_previo_dias_max:
+    valor: 90
+    unidade: dias
+    fonte: Lei 12.506/2011, art. 1º, parágrafo único
+    data_referencia: 2011-10-11
+    justificativa: até o máximo de 60 dias de acréscimo, total de até 90.
+  dias_fracao_mes_integral:
+    valor: 15
+    unidade: dias
+    fonte: Lei 4.090/1962, art. 1º, § 2º (13º); CLT art. 146, parágrafo único (férias, "fração superior a 14 dias")
+    data_referencia: 1962-07-13
+    justificativa: fração de 15 dias ou mais conta como mês inteiro (1/12 avos).
+  terco_ferias:
+    valor: 0.3333333333333333   # 1/3
+    unidade: fração da remuneração de férias
+    fonte: Prov. 227/2026, art. 5º, II ("acrescidas do terço constitucional")
+    data_referencia: 2026-06-11
+    justificativa: adicional de 1/3 sobre as férias.
+  decimo_terceiro_quitado_na_data_base:
+    valor: true
+    unidade: booleano
+    fonte: Prov. 227/2026, art. 4º (posição de 31 de dezembro); Lei 4.090/1962, art. 1º (pago em dezembro)
+    data_referencia: 2026-06-11
+    justificativa: na posição de 31/12 o 13º do ano já foi pago; resta o 13º proporcional à projeção do aviso prévio.
+  data_posicao:
+    valor: 2025-12-31
+    unidade: data
+    fonte: Prov. 227/2026, art. 4º (posição de 31 de dezembro); RAIS 2025 (vínculos e tempo de emprego em 31/12/2025)
+    data_referencia: 2025-12-31
+    justificativa: os 13º da projeção do aviso são contados pelo calendário a partir desta data (Lei 4.090, art. 1º).
+  aliquota_fgts:
+    valor: 0.08
+    unidade: fração da remuneração
+    fonte: Lei 8.036/1990, art. 15, caput
+    data_referencia: 2022-09-01
+    justificativa: depósito mensal de 8%, incluindo o 13º.
+  multa_fgts:
+    valor: 0.40
+    unidade: fração dos depósitos do contrato
+    fonte: Lei 8.036/1990, art. 18, § 1º; Prov. 227/2026, art. 5º, IV
+    data_referencia: 1997-12-10
+    justificativa: 40% de todos os depósitos do contrato na despedida sem justa causa.
+  meses_remuneracao_fgts_por_ano:
+    valor: 13.333333333333334   # 12 + 1 + 1/3
+    unidade: remunerações mensais depositadas por ano de contrato
+    fonte: Lei 8.036/1990, art. 15 (remuneração + gratificação de Natal); CF art. 7º, XVII (terço de férias gozadas, que é remuneração)
+    data_referencia: 2026-10-18
+    justificativa: 12 salários + 13º + terço das férias gozadas.
+  fator_correcao_saldo_fgts:
+    valor: 1.0
+    unidade: multiplicador do saldo estimado
+    fonte: suposição
+    data_referencia: 2026-10-18
+    justificativa: o saldo é estimado com o salário atual (o que superestima os depósitos antigos) e sem juros e atualização (o que subestima). Supõe-se que os dois efeitos se compensam.
+  inss_patronal:
+    valor: 0.20
+    unidade: fração da remuneração
+    fonte: Lei 8.212/1991, art. 22, I; art. 15, parágrafo único (contribuinte individual equiparado a empresa, caso do titular com CAEPF)
+    data_referencia: 1999-11-26
+    justificativa: contribuição patronal de 20%.
+  rat:
+    valor: 0.01
+    unidade: fração da remuneração
+    fonte: Lei 8.212/1991, art. 22, II; Decreto 3.048/1999, Anexo V (redação do Decreto 10.410/2020), CNAE 6912-5/00 Cartórios = 1%
+    data_referencia: 2020-06-30
+    justificativa: grau de risco leve para cartórios.
+  fap:
+    valores: {min: 0.5, base: 1.0, max: 2.0}
+    unidade: multiplicador do RAT
+    fonte: Decreto 3.048/1999, art. 202-A, § 1º (intervalo de 0,5 a 2,0); base = suposição (FAP neutro)
+    data_referencia: 2020-06-30
+    justificativa: o FAP é individual por empregador e não é público.
+  incidencias:
+    valores:
+      min:
+        aviso_previo_indenizado: {fgts: true, inss: false}
+        decimo_terceiro: {fgts: true, inss: true}
+        ferias_indenizadas: {fgts: false, inss: false}
+      base:
+        aviso_previo_indenizado: {fgts: true, inss: false}
+        decimo_terceiro: {fgts: true, inss: true}
+        ferias_indenizadas: {fgts: false, inss: false}
+      max:
+        aviso_previo_indenizado: {fgts: true, inss: true}   # cenário com INSS no aviso (D-017, decisão do autor)
+        decimo_terceiro: {fgts: true, inss: true}
+        ferias_indenizadas: {fgts: false, inss: false}
+    unidade: verba -> encargo incide?
+    fonte: >-
+      FGTS: Lei 8.036/1990, art. 15 e § 6º (exclui as parcelas do § 9º do art. 28 da Lei 8.212).
+      INSS: Lei 8.212/1991, art. 28, § 7º (13º integra) e § 9º, d (férias indenizadas não integram).
+      Aviso prévio indenizado sem INSS: STJ, Tema Repetitivo 478 (REsp 1.230.957/RS), tese mantida na retratação de 13/05/2026
+      (data/bronze/normas/2026-10-18/stj_tema_repetitivo_478.html). No max, o INSS incide sobre o aviso.
+    data_referencia: 2026-06-10
+    justificativa: Prov. 227, art. 5º, parágrafo único, manda incluir INSS, RAT x FAP e FGTS mensal; aplica-se onde a lei faz incidir.
+  contribuicoes_terceiros:
+    valor: 0.0
+    unidade: fração da remuneração
+    fonte: >-
+      Prov. 227/2026, art. 5º, parágrafo único (lista fechada: INSS, RAT + FAP e FGTS mensal).
+      Salário-educação: STJ, Tema Repetitivo 1228 (não exigível da pessoa física que exerce serviço notarial ou registral;
+      julgado em 20/08/2026, acórdão publicado em 09/10/2026, sem trânsito em julgado).
+      Sistema S: sem fonte oficial localizada para o titular pessoa física (limitação).
+    data_referencia: 2026-10-09
+    justificativa: terceiros não são encargos previdenciários nem fundiários, que é o que o art. 5º manda incluir (D-018).
+  fracao_ferias_vencidas_pendentes:
+    valores: {min: 0.0, base: 0.5, max: 1.0}
+    unidade: fração de um período de férias vencido e ainda não gozado (para quem tem 1 ano ou mais)
+    fonte: suposição (CLT art. 134 dá ao empregador 12 meses para conceder as férias)
+    data_referencia: 2026-10-18
+    justificativa: a RAIS não diz se as férias do último período já foram gozadas. Na média, metade dos empregados estaria dentro do prazo de concessão sem ter gozado. Aprovada pelo autor (D-017).
+  incluir_saldo_salario:
+    valor: false
+    unidade: booleano
+    fonte: Prov. 227/2026, art. 5º (o saldo de salário não está na lista)
+    data_referencia: 2026-06-11
+    justificativa: padrão do SPEC.
+  acrescimo_cct_pct:
+    valor: 0.0
+    unidade: fração do subtotal das verbas
+    fonte: suposição (limitação declarada)
+    data_referencia: 2026-10-18
+    justificativa: verbas de acordo ou convenção coletiva (art. 5º, V) não são estimáveis com dados públicos.
+
+  # ---------------- Entrada da RAIS ----------------
+  base_remuneracao_rais:
+    valor: dezembro
+    alternativas: [dezembro, media_anual]
+    unidade: categoria
+    fonte: aproximação da base do art. 6º do Prov. 227 (maior remuneração fixa + média das variáveis)
+    data_referencia: 2025-12-31
+    justificativa: a RAIS não traz a maior remuneração fixa.
+  correcao_salarial_rais:
+    indice: INPC
+    mes_inicial: 202512
+    mes_final: ultimo_disponivel
+    valores: {min: sem_correcao, base: sem_correcao, max: sem_correcao}
+    unidade: fator sobre a remuneração da RAIS
+    fonte: Prov. 227/2026, art. 4º (posição de 31 de dezembro do exercício anterior); IBGE/SIDRA, tabela 1736, variável 2289 (INPC, só na sensibilidade)
+    data_referencia: 2025-12-31
+    justificativa: data-base única 31/12/2025 (D-020); a RAIS já é de dez/2025. O INPC dez/2025 até o último mês fica só na tabela de sensibilidade ('se a data-base fosse a da 1ª declaração').
+  fator_cobertura_rais:
+    valor: 1.0
+    unidade: multiplicador
+    fonte: conferência RAIS × CNJ em MG (docs/viabilidade.md, §2)
+    data_referencia: 2026-10-17
+    justificativa: D-006. Revisar na Fase 2.
+  limiar_vinculos_distribuicao_municipal:
+    valor: 20
+    sensibilidade: [10, 30]
+    unidade: vínculos
+    fonte: suposição (D-008)
+    data_referencia: 2026-10-18
+    justificativa: abaixo do limiar, o município usa a distribuição do estado.
+
+  # ---------------- Universo ----------------
+  metodo_rateio_padrao:
+    valor: por_empregados_cnj
+    alternativas: [por_empregados_cnj, arrecadacao, uniforme, peso_por_atribuicao]
+    unidade: categoria
+    fonte: D-005
+    data_referencia: 2026-10-18
+    justificativa: usa a contagem de CLT declarada por serventia.
+  situacoes_especiais_dentro:
+    valores: {min: false, base: false, max: true}
+    unidade: booleano (SOB INTERVENÇÃO e CONVERSÃO EM DILIGÊNCIA entram no universo?)
+    fonte: D-007
+    data_referencia: 2026-10-18
+    justificativa: não são interinidade em sentido estrito, mas a situação é transitória.
+  peso_classe_indeterminada_base:
+    valores: {min: 0.0, base: calculado, max: 1.0}
+    unidade: fração
+    fonte: D-004 e D-016 (base = fração observada fora da Classe 1 entre as não vagas com receita conhecida; 65,6% na carga de 2026-10-18)
+    data_referencia: 2026-10-18
+    justificativa: no min a indeterminada fica fora, no max dentro (SPEC §3.4).
+  limiar_agregacao_lgpd:
+    valor: 3
+    unidade: serventias
+    fonte: SPEC §6
+    data_referencia: 2026-10-17
+    justificativa: municípios com menos de 3 serventias aparecem agregados.
+
+  # ---------------- Déficit e demanda (suposições aprovadas, D-016) ----------------
+  prob_deficit:
+    unidade: probabilidade (ponderada pelo passivo)
+    fonte: "CNJ, Painel de Dados Estatísticos das Serventias Extrajudiciais (saldo do titular = arrecadação − repasse − custeio de 2025, data/bronze/cnj_bi_painel/2026-10-18); método M1 do notebook 10 (D-046). Horizonte de saldo: suposição (24 / 12 / 6 meses = min / base / max)"
+    data_referencia: 2025-12-31
+    justificativa: "o patrimônio do titular não é público (art. 8º, § 1º, do 227); a renda declarada ao CNJ é o melhor dado público. Entre as obrigadas com dado do BI, a fração do passivo que fica com titulares cujo saldo de h meses não cobre o passivo (D-046). Ponderada pelo passivo, e não pela contagem, para que o déficit em reais (Σ prob × pct × passivo) seja o da M1; por isso a contagem 'com déficit' fica acima da contada pela M1 (6,9% e 9,6% das obrigadas). Antes (v2, D-016): 50% e 30%, suposição."
+    valores:
+      classe_2: {min: 0.069, base: 0.108, max: 0.213}
+      classe_3: {min: 0.185, base: 0.186, max: 0.349}
+  pct_descoberto:
+    unidade: fração do passivo
+    fonte: "CNJ, Painel de Dados Estatísticos das Serventias Extrajudiciais (saldo de 2025); método M1 do notebook 10 (D-046). Base: 12 meses de saldo (suposição); min e max: o menor e o maior valor entre 6, 12 e 24 meses"
+    data_referencia: 2025-12-31
+    justificativa: "parte do passivo que o saldo de h meses não paga, entre os titulares em que ele não cobre o passivo (D-046). Antes (v2, D-016): 50% e 40%, suposição."
+    valores:
+      classe_2: {min: 0.565, base: 0.683, max: 0.891}
+      classe_3: {min: 0.624, base: 0.907, max: 0.907}
+  escolha_garantia:
+    unidade: fração do déficit (soma 1)
+    fonte: suposição
+    data_referencia: 2026-10-18
+    justificativa: fiança só de bancos S1/S2 (art. 13, § 1º, I), que costumam pedir contragarantia de pessoa física; o seguro tende a ser a via mais acessível.
+    valores:
+      min: {bens_proprios: 0.50, fianca: 0.25, seguro: 0.25}
+      base: {bens_proprios: 0.30, fianca: 0.20, seguro: 0.50}
+      max: {bens_proprios: 0.15, fianca: 0.15, seguro: 0.70}
+
+  # ---------------- Receita ----------------
+  taxa_seguro_anual:
+    valores: {min: 0.010, base: 0.020, max: 0.035}
+    unidade: fração da importância segurada por ano
+    fonte: suposição
+    data_referencia: 2026-10-18
+    justificativa: o SES não traz importância segurada; tomador pessoa física e risco sem histórico.
+  market_share_hipotetico:
+    valores: {min: 0.039, base: 0.052, max: 0.164}
+    unidade: fração do prêmio do mercado
+    fonte: SUSEP SES, ramos 0775+0776, prêmio emitido set/2025–ago/2026 (min = 10ª seguradora, base = 5ª, max = líder atual do mercado); posição da seguradora hipotética = suposição
+    data_referencia: 2026-08
+    justificativa: o máximo é a fatia do líder atual do mercado de garantia.
+  sinistralidade:
+    valores: {min: 0.017, base: 0.109, max: 0.739}
+    unidade: sinistro ocorrido ÷ prêmio ganho
+    fonte: SUSEP SES. min = menor janela anual do ramo 0775 (set/2021–ago/2022); base = ramo 0775, set/2020–ago/2026; max = ramo 0776, set/2020–ago/2026
+    data_referencia: 2026-08
+    justificativa: base no 0775 (setor público) pelo art. 13, § 1º, do 227 (decisão do autor, D-016).
+  comissao:
+    valores: {min: 0.143, base: 0.171, max: 0.219}
+    unidade: despesa de comercialização ÷ prêmio emitido
+    fonte: SUSEP SES. min e max = menor e maior janela anual (0775 e 0776, set/2020–ago/2026); base = ramo 0775, set/2020–ago/2026
+    data_referencia: 2026-08
+    justificativa: desp_com do SES é a despesa de comercialização inteira, não só a comissão.
+  despesa_administrativa:
+    valores: {min: 0.05, base: 0.08, max: 0.12}
+    unidade: fração do prêmio emitido
+    fonte: suposição
+    data_referencia: 2026-10-18
+    justificativa: o SES não traz despesa administrativa por ramo.

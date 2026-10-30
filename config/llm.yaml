@@ -1,0 +1,140 @@
+# Chat do painel (E5; D-060): Gemini no nível gratuito do Google AI Studio, com o faturamento desligado no projeto
+# da chave (D-061). Lido só por src/llm.py, src/agent/, app/pages/5_Chat.py e os scripts do chat.
+# A chave NUNCA fica aqui: vem da variável GEMINI_API_KEY (ambiente ou .env, fora do git) ou, no Streamlit Community
+# Cloud, de st.secrets. Nome documentado no .env.example.
+
+# fonte: ai.google.dev/gemini-api/docs/models e /pricing, conferidos em 2026-10-28: gemini-3.8-flash é estável, tem
+# nível gratuito ("Free of charge") e chama ferramentas (function calling); gemini-3.5-flash-lite, também gratuito,
+# é a reserva, usada quando o principal devolve cota esgotada (429), erro (ex.: 503) ou demora mais que timeout_s.
+# Os limites de uso do nível gratuito (pedidos por minuto e por dia) não estão publicados na documentação: cada conta
+# vê os seus no AI Studio (aistudio.google.com/rate-limit). No nível gratuito, o Google pode usar as conversas para
+# melhorar os produtos: a página do chat avisa para não digitar dados pessoais.
+api: https://generativelanguage.googleapis.com/v1beta
+variavel_chave: GEMINI_API_KEY
+modelo: gemini-3.8-flash
+reserva: gemini-3.5-flash-lite
+nivel_raciocinio: low            # fonte: página do modelo (níveis low, medium, high; "minimal" dá erro): o menor
+nivel_raciocinio_reserva: low   # fonte: medição em 2026-10-28 (D-069), 5 perguntas de fumaça em cada nível: mediana
+                                 # de 2,3 s com "low" e 7,4 s com "minimal" (a reserva aceita os dois; uma chamada
+                                 # isolada sugerira o contrário). docs/qa/chat/latencia_depois.md
+temperatura: 0                   # fonte: suposição; respostas mais estáveis na avaliação
+timeout_s: 30                    # fonte: suposição; tempo máximo por chamada; passou disso, vai para a reserva (D-068).
+                                 # Em 2026-10-28 o principal respondeu em 7 s e, horas depois, travou por mais de 150 s
+                                 # (a reserva respondeu em 2 s): esperar mais não adianta
+timeout_principal_s: 10         # fonte: medição em 2026-10-28 (D-069): o principal tem até 10 s de leitura (até o
+                                 # primeiro byte e entre pedaços); saudável, respondeu em 1 a 7 s; travado, cada primeira
+                                 # pergunta esperava os 30 s do timeout_s antes da reserva
+reserva_por_s: 600              # fonte: suposição; depois de uma falha do principal, usa só a reserva por 10 minutos
+                                 # (no mesmo dia, o principal travou várias vezes seguidas, e ele recusa (HTTP 400) um
+                                 # histórico com respostas da reserva)
+max_rodadas_ferramentas: 4       # fonte: prompt do agente (config/prompts/agente_sistema.md): "no máximo 4 chamadas"
+historico_mensagens: 6           # fonte: suposição (o chat da D-036 usava as 6 últimas mensagens = 3 perguntas e
+                                 # 3 respostas); mais histórico deixa cada chamada maior e mais lenta
+
+prompt_sistema: config/prompts/agente_sistema.md
+versao_prompt: 3                 # mudou o texto do prompt? suba a versão e registre na avaliação (eval/)
+                                 # v2 (D-067): "Não possuo esse dado no momento."; sem ferramenta, sem linha de fonte
+                                 # v3 (D-069): "Não foi possível encontrar essa resposta nos dados do painel."; o P10–P90
+                                 # da projeção não se chama "faixa provável"
+
+# Link público e demo (D-063). A cota gratuita é por projeto da chave, não por pessoa: no Cloud, todos os
+# visitantes dividem a mesma chave, e o limite por sessão impede que uma pessoa gaste a cota do dia de todos.
+limite_perguntas_sessao: 20      # fonte: decisão de 2026-10-28 (D-063)
+
+# Sugestões da conversa vazia (D-069): enviam a pergunta ao modelo ao clicar.
+sugestoes:
+  - Quantos cartórios ativos há em Minas Gerais?
+  - Qual o prêmio anual do mercado de seguro-garantia?
+  - Quantas serventias serão obrigadas em 2027?
+  - Quem fica fora do Provimento 227?
+
+# Perguntas prontas (aba própria; D-063, D-069): respondidas direto pelas ferramentas, com os mesmos números, contas e
+# fontes do painel. `tema` agrupa na aba, na ordem em que aparece aqui.
+perguntas_prontas:
+  - tema: Números gerais
+    pergunta: Quais são os 10 números principais do painel?
+    ferramenta: consultar_numeros
+    argumentos: {analise: numeros_oficiais}
+  - tema: Números gerais
+    pergunta: Do passivo ao prêmio, como se chega ao valor do seguro?
+    ferramenta: consultar_numeros
+    argumentos: {analise: escada}
+  - tema: Números gerais
+    pergunta: Qual o prêmio anual do mercado, com a faixa provável?
+    ferramenta: consultar_numeros
+    argumentos: {analise: faixa_d042, medida: premio}
+  - tema: Mercado
+    pergunta: Quais são os tipos de cartório e o grupo-alvo do seguro?
+    ferramenta: consultar_mercado
+    argumentos: {analise: grupos}
+  - tema: Mercado
+    pergunta: Que cartórios são obrigados pelo Provimento 227?
+    ferramenta: consultar_mercado
+    argumentos: {analise: quem_e_obrigado}
+  - tema: Mercado
+    pergunta: O passivo é concentrado em poucos cartórios?
+    ferramenta: consultar_mercado
+    argumentos: {analise: concentracao}
+  - tema: Previsão
+    pergunta: Quantas serventias serão obrigadas em 2027?
+    ferramenta: consultar_analises
+    argumentos: {analise: previsao_mercado, ano: 2027}
+  - tema: Previsão
+    pergunta: O que acontece com o mercado em cada cenário do STF?
+    ferramenta: consultar_analises
+    argumentos: {analise: premio_por_cenario_stf}
+  - tema: Previsão
+    pergunta: Qual suposição mais mexe no prêmio?
+    ferramenta: consultar_analises
+    argumentos: {analise: tornado}
+  - tema: Previsão
+    pergunta: A seguradora teria lucro?
+    ferramenta: consultar_analises
+    argumentos: {analise: pergunta_9}
+  - tema: Qualidade dos dados
+    pergunta: O que os dados não respondem?
+    ferramenta: consultar_qualidade
+    argumentos: {analise: lacunas}
+  - tema: Qualidade dos dados
+    pergunta: Qual a data de referência de cada fonte?
+    ferramenta: consultar_qualidade
+    argumentos: {analise: qualidade_fontes}
+  - tema: Qualidade dos dados
+    pergunta: Quanto o método muda o passivo?
+    ferramenta: consultar_qualidade
+    argumentos: {analise: escolhas_metodo_passivo}
+  - tema: Decisões e normas
+    pergunta: Qual a situação da ADI 8015 no STF?
+    ferramenta: consultar_decisoes
+    argumentos: {analise: situacao_adi}
+  - tema: Decisões e normas
+    pergunta: Quem fica fora do Provimento 227?
+    ferramenta: consultar_decisoes
+    argumentos: {analise: buscar_norma, pergunta: quais serventias ficam fora do provimento 227, provimento: "227"}
+  - tema: Decisões e normas
+    pergunta: Quais decisões de método mudam a leitura do painel?
+    ferramenta: consultar_decisoes
+    argumentos: {analise: decisoes}
+
+# Velocidade (D-069). Metas na mediana das perguntas de fumaça, medidas por scripts/medir_latencia_chat.py.
+latencia:
+  meta_primeiro_texto_s: 3       # fonte: suposição; com o texto aparecendo em até 3 s, a espera parece conversa
+  meta_total_s: 10               # fonte: suposição; uma pergunta com consulta a ferramenta faz ao menos 2 chamadas
+                                 # ao modelo (pedir a ferramenta e responder), de 1 a 4 s cada no teste de 2026-10-28
+  perguntas_fumaca:              # fora do gabarito (eval/), para não gastar a avaliação nem enviesá-la
+    - quantos cartórios de protesto tem em MG?
+    - qual o prêmio anual do cartório de CNS 048256?
+    - quais são os seis tipos de cartório?
+    - qual a data de referência dos dados da RAIS?
+    - qual artigo fala do regime especial?
+
+# Avaliação com a API real (scripts/avaliar_chat.py; fora da suíte de testes). Cuida da cota gratuita.
+avaliacao:
+  # Critério de pronto da Etapa 5 (D-065), fixado em 2026-10-28 ANTES de qualquer rodada com o Gemini:
+  # a versão (c) acerta pelo menos 85% do gabarito e não inventa número em nenhuma armadilha.
+  meta_acerto: 0.85              # fonte: decisão de 2026-10-28 (D-065)
+  # gabarito congelado: mudar eval/gabarito_chat.csv exige hash novo aqui e uma decisão registrada
+  gabarito_sha256: 7f7f471d713ca1ab7d63383f2cec91824a23f674af6b8ca239d144303509da43
+  pausa_s: 15                    # fonte: suposição; espera entre perguntas (ajuste pelos limites do seu AI Studio)
+  espera_cota_s: 65              # fonte: suposição; espera depois de um 429 antes de tentar de novo (uma vez)
+  normas_no_prompt: ["227", "243", "213"]   # versão (b): o texto destas normas vai inteiro no prompt

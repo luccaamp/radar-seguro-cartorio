@@ -1,0 +1,615 @@
+[
+ {
+  "id": "1",
+  "tipo": "numeros",
+  "pergunta": "Quantas serventias (cartórios) ativas há em Minas Gerais?",
+  "criterio": "numero",
+  "esperado": "2525",
+  "conferencia": "gold.fato_mercado_uf (mantem, base, v2): n_serventias_ativas",
+  "a": {
+   "resposta": "Não soube. O número exato de serventias ativas em Minas Gerais pode variar e não está disponível em minha base de dados atualizada. Recomenda-se consultar o site do Conselho da Justiça Federal ou da Secretaria de Estado da Justiça e Cidadania de Minas Gerais para obter informações precisas.",
+   "ferramentas": [],
+   "segundos": 4.5,
+   "numeros_inventados": [],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "Há 2.525 serventias ativas em Minas Gerais. Fonte: gold.fato_mercado_uf (CNJ/Justiça Aberta, RAIS/PDET e SUSEP SES; estimativa de mercado com premissas públicas); carga 2026-10-19; premissas v2.",
+   "ferramentas": [
+    {
+     "ferramenta": "contar_serventias",
+     "argumentos": {
+      "recorte": "total",
+      "uf": "MG"
+     }
+    }
+   ],
+   "segundos": 32.5,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ },
+ {
+  "id": "2",
+  "tipo": "numeros",
+  "pergunta": "Quantos empregados CLT os cartórios de MG declaram ao CNJ?",
+  "criterio": "numero",
+  "esperado": "12134",
+  "conferencia": "gold.fato_mercado_uf (mantem, base, v2): clt",
+  "a": {
+   "resposta": "Os cartórios de Minas Gerais declaram, ao CNJ, o número de empregados CLT que trabalham em suas unidades, conforme o Provimento CNJ 227/2026. Esses dados são divulgados anualmente no site do CNJ. A informação é parte do relatório de gestão e transparência dos cartórios. O número varia conforme o ano e a quantidade de funcionários em cada cartório. A divulgação visa garantir a transparência e o cumprimento das obrigações trabalhistas.",
+   "ferramentas": [],
+   "segundos": 7.3,
+   "numeros_inventados": [],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "Os cartórios de Minas Gerais declaram um total de 12.134 empregados CLT. Fonte: gold.fato_mercado_uf (CNJ/Justiça Aberta, RAIS/PDET e SUSEP SES; estimativa de mercado com premissas públicas); carga 2026-10-19; premissas v2.",
+   "ferramentas": [
+    {
+     "ferramenta": "contar_serventias",
+     "argumentos": {
+      "uf": "MG",
+      "recorte": "total"
+     }
+    }
+   ],
+   "segundos": 9.9,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ },
+ {
+  "id": "3",
+  "tipo": "numeros",
+  "pergunta": "Quantas serventias de MG são obrigadas pelo Provimento 227, no cenário base?",
+  "criterio": "numero",
+  "esperado": "1121.3",
+  "conferencia": "gold.fato_mercado_uf (mantem, base, v2): n_universo",
+  "a": {
+   "resposta": "O Provimento CNJ 227/2026 obriga todas as serventias de Minas Gerais a aderir ao seguro-garantia do passivo trabalhista, ou seja, todas as serventias do estado são obrigadas no cenário base. O provimento busca garantir a responsabilidade dos cartórios em relação a débitos trabalhistas. A implementação do seguro-garantia visa proteger os trabalhadores e assegurar o cumprimento das obrigações trabalhistas. A partir da vigência do provimento, todos os cartórios de Minas Gerais devem estar em conformidade com essa medida.",
+   "ferramentas": [],
+   "segundos": 8.8,
+   "numeros_inventados": [],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "No cenário base, há aproximadamente 1.121 serventias de MG obrigadas pelo Provimento 227 (faixa: 1.103 a 1.159). Fonte: gold.fato_mercado_uf (CNJ/Justiça Aberta, RAIS/PDET e SUSEP SES; estimativa de mercado com premissas públicas); carga 2026-10-19; premissas v2.",
+   "ferramentas": [
+    {
+     "ferramenta": "passivo_e_obrigadas",
+     "argumentos": {
+      "uf": "MG"
+     }
+    }
+   ],
+   "segundos": 13.2,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ },
+ {
+  "id": "4",
+  "tipo": "numeros",
+  "pergunta": "Qual o passivo trabalhista estimado das serventias obrigadas em MG?",
+  "criterio": "numero",
+  "esperado": "238104261",
+  "conferencia": "gold.fato_mercado_uf (mantem, base, v2): passivo_universo",
+  "a": {
+   "resposta": "O passivo trabalhista estimado das serventias obrigadas em Minas Gerais é um valor elevado, mas não há uma divulgação oficial específica desse montante. O Provimento CNJ 227/2026 estabelece que essas serventias devem garantir o pagamento do passivo trabalhista dos servidores, mediante seguro-garantia. A responsabilidade pelas verbas devidas aos servidores é da administração pública, que deve garantir o cumprimento da legislação trabalhista. A estimativa desse passivo varia conforme o município e o número de servidores.",
+   "ferramentas": [],
+   "segundos": 8.4,
+   "numeros_inventados": [],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "O passivo trabalhista estimado das serventias obrigadas em MG é de R$ 238,1 mi no cenário base (faixa: R$ 216,4 mi a R$ 279,8 mi).  \nFonte: gold.fato_mercado_uf (CNJ/Justiça Aberta, RAIS/PDET e SUSEP SES; estimativa de mercado com premissas públicas); carga 2026-10-19; premissas v2.",
+   "ferramentas": [
+    {
+     "ferramenta": "passivo_e_obrigadas",
+     "argumentos": {
+      "uf": "MG"
+     }
+    }
+   ],
+   "segundos": 13.5,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ },
+ {
+  "id": "5",
+  "tipo": "numeros",
+  "pergunta": "Qual o déficit de cobertura estimado em MG, com a regra do Provimento 227 mantida?",
+  "criterio": "numero",
+  "esperado": "36873874",
+  "conferencia": "gold.fato_mercado_uf (mantem, base, v2): valor_descoberto",
+  "a": {
+   "resposta": "O déficit de cobertura estimado em Minas Gerais, com a regra do Provimento CNJ 227/2026 mantida, é de aproximadamente R$ 12 bilhões. Esse déficit reflete a diferença entre os débitos trabalhistas existentes e os recursos disponíveis para sua liquidação. A medida visa garantir a execução dos direitos dos trabalhadores, mas gera desafios financeiros para o sistema judiciário. A cobertura é calculada com base em critérios estabelecidos pelo CNJ. O déficit pode ser reduzido com a inclusão de novos recursos ou ações de cobrança.",
+   "ferramentas": [],
+   "segundos": 9.3,
+   "numeros_inventados": [
+    12000000000.0
+   ],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "O déficit de cobertura estimado em MG, com a regra do Provimento 227 mantida, é de R$ 36,9 mi no cenário base (faixa: R$ 9,9 mi a R$ 113,9 mi). \n\nFonte: gold.fato_mercado_uf (CNJ/Justiça Aberta, RAIS/PDET e SUSEP SES; estimativa de mercado com premissas públicas); carga 2026-10-19; premissas v2.",
+   "ferramentas": [
+    {
+     "ferramenta": "deficit_e_mercado",
+     "argumentos": {
+      "cenario_stf": "mantem",
+      "uf": "MG"
+     }
+    }
+   ],
+   "segundos": 16.6,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ },
+ {
+  "id": "6",
+  "tipo": "numeros",
+  "pergunta": "Qual o prêmio anual estimado do mercado de seguro-garantia em MG?",
+  "criterio": "numero",
+  "esperado": "368738.74",
+  "conferencia": "gold.fato_mercado_uf (mantem, base, v2): mercado_premio_emitido",
+  "a": {
+   "resposta": "O prêmio anual estimado do mercado de seguro-garantia em Minas Gerais não é divulgado publicamente em números oficiais, mas é um segmento relevante dentro do sistema de cumprimento de sentenças trabalhistas. A estimativa varia conforme o volume de processos e a cobertura dos cartórios. O Provimento CNJ 227/2026 regulamenta a modalidade, mas não fornece dados financeiros sobre o mercado. Para informações precisas, é necessário consultar relatórios específicos ou instituições reguladoras.",
+   "ferramentas": [],
+   "segundos": 7.9,
+   "numeros_inventados": [],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "O prêmio anual estimado do mercado de seguro-garantia em MG é de R$ 368,7 mil no cenário base (faixa: R$ 24,7 mil a R$ 2,8 mi).  \nFonte: gold.fato_mercado_uf (CNJ/Justiça Aberta, RAIS/PDET e SUSEP SES; estimativa de mercado com premissas públicas); carga 2026-10-19; premissas v2.",
+   "ferramentas": [
+    {
+     "ferramenta": "deficit_e_mercado",
+     "argumentos": {
+      "uf": "MG",
+      "cenario_stf": "mantem"
+     }
+    }
+   ],
+   "segundos": 15.9,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ },
+ {
+  "id": "7",
+  "tipo": "numeros",
+  "pergunta": "Quantas serventias de MG são da Classe 3?",
+  "criterio": "numero",
+  "esperado": "411",
+  "conferencia": "gold.mercado_filtro_uf (classe=3, base, v2, publicado): n_serventias_ativas",
+  "a": {
+   "resposta": "Não há informações disponíveis sobre o número exato de serventias de Minas Gerais classificadas como Classe 3. A classificação das serventias é determinada por critérios internos e pode variar conforme as normas e regulamentos vigentes. Para obter dados precisos, é necessário consultar o Conselho Seccional da Ordem dos Advogados do Brasil (CSOAB) ou a Secretaria de Estado de Justiça e Cidadania (SEJUS).",
+   "ferramentas": [],
+   "segundos": 6.4,
+   "numeros_inventados": [],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "Há 411 serventias de MG na Classe 3.  \nFonte: gold.mercado_filtro_uf (CNJ/Justiça Aberta, RAIS/PDET e SUSEP SES; estimativa de mercado com premissas públicas); carga 2026-10-19; premissas v2.",
+   "ferramentas": [
+    {
+     "ferramenta": "contar_serventias",
+     "argumentos": {
+      "uf": "MG",
+      "recorte": "classe 3"
+     }
+    }
+   ],
+   "segundos": 10.6,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ },
+ {
+  "id": "8",
+  "tipo": "numeros",
+  "pergunta": "Quantos cartórios vagos, sob interinidade, há em MG?",
+  "criterio": "numero",
+  "esperado": "830",
+  "conferencia": "gold.mercado_filtro_uf (situacao=VAGO, base, v2, publicado): n_serventias_ativas",
+  "a": {
+   "resposta": "Não há informações disponíveis sobre o número exato de cartórios vagos, sob interinidade, em Minas Gerais, pois esse dado varia constantemente e não é divulgado de forma centralizada. Recomenda-se consultar o site do CNJ ou a Secretaria de Estado de Justiça e Segurança Pública para obter atualizações.",
+   "ferramentas": [],
+   "segundos": 4.8,
+   "numeros_inventados": [],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "Há 830 cartórios vagos, sob interinidade, em Minas Gerais.  \nFonte: gold.mercado_filtro_uf (CNJ/Justiça Aberta, RAIS/PDET e SUSEP SES; estimativa de mercado com premissas públicas); carga 2026-10-19; premissas v2.",
+   "ferramentas": [
+    {
+     "ferramenta": "contar_serventias",
+     "argumentos": {
+      "recorte": "vago",
+      "uf": "MG"
+     }
+    }
+   ],
+   "segundos": 10.1,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ },
+ {
+  "id": "9",
+  "tipo": "simulacao",
+  "pergunta": "Se a taxa do seguro fosse 3% ao ano, qual seria o prêmio anual do mercado em MG?",
+  "criterio": "numero",
+  "esperado": "553108.1",
+  "conferencia": "mercado_importancia_segurada (mantem, base, v2) 18.436.937 × 3%",
+  "a": {
+   "resposta": "O prêmio anual do seguro-garantia do passivo trabalhista em Minas Gerais, com taxa de 3% ao ano, seria calculado com base no valor total do passivo trabalhista do mercado. Como não há dados específicos sobre o valor total do passivo trabalhista em MG, não é possível determinar o prêmio exato. A taxa de 3% é aplicada sobre o valor do passivo, mas a base de cálculo depende de informações oficiais não divulgadas publicamente. Portanto, não é possível fornecer um valor numérico exato.",
+   "ferramentas": [],
+   "segundos": 8.5,
+   "numeros_inventados": [],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "O prêmio anual do mercado em MG, com uma taxa de 3% ao ano, seria R$ 553,1 mil.  \nFonte: gold.fato_mercado_uf e premissas vigentes (CNJ/Justiça Aberta, RAIS/PDET e SUSEP SES; estimativa de mercado com premissas públicas); carga 2026-10-19; premissas v2.",
+   "ferramentas": [
+    {
+     "ferramenta": "simular",
+     "argumentos": {
+      "cenario_stf": "mantem",
+      "taxa": 3,
+      "uf": "MG"
+     }
+    }
+   ],
+   "segundos": 14.2,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ },
+ {
+  "id": "10",
+  "tipo": "simulacao",
+  "pergunta": "Com taxa de 2% e market share de 10%, qual seria o prêmio anual da seguradora hipotética em MG?",
+  "criterio": "numero",
+  "esperado": "36873.87",
+  "conferencia": "18.436.937 × 2% × 10%",
+  "a": {
+   "resposta": "Para calcular o prêmio anual da seguradora hipotética em Minas Gerais, considerando uma taxa de 2% e um market share de 10%, seria necessário conhecer o volume total de negócios do setor. Como não temos essa informação, não é possível determinar o prêmio anual exato.",
+   "ferramentas": [],
+   "segundos": 5.1,
+   "numeros_inventados": [],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "Com uma taxa de 2% e market share de 10%, o prêmio anual da seguradora hipotética em MG seria de R$ 36,9 mil. \n\nFonte: gold.fato_mercado_uf e premissas vigentes (CNJ/Justiça Aberta, RAIS/PDET e SUSEP SES; estimativa de mercado com premissas públicas); carga 2026-10-19; premissas v2.",
+   "ferramentas": [
+    {
+     "ferramenta": "simular",
+     "argumentos": {
+      "cenario_stf": "mantem",
+      "market_share": 10,
+      "taxa": 2,
+      "uf": "MG"
+     }
+    }
+   ],
+   "segundos": 15.5,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ },
+ {
+  "id": "11",
+  "tipo": "simulacao",
+  "pergunta": "Se o STF suspender os artigos 8º a 17 do Provimento 227, qual fica o prêmio anual do mercado em MG?",
+  "criterio": "numero",
+  "esperado": "0",
+  "conferencia": "gold.fato_mercado_uf (suspende_8_17, base, v2): mercado_premio_emitido",
+  "a": {
+   "resposta": "Se o STF suspender os artigos 8º a 17 do Provimento CNJ 227/2026, o prêmio anual do mercado em Minas Gerais pode sofrer uma redução, já que esses artigos estabeleciam limites para o valor da garantia. Ainda assim, o mercado pode se adaptar com novas regras ou ajustes. Ainda não há previsão oficial sobre o impacto exato no valor do prêmio. A situação permanece em análise jurídica. O mercado pode ter uma retração temporária, mas a tendência é de ajuste e não de colapso.",
+   "ferramentas": [],
+   "segundos": 9.2,
+   "numeros_inventados": [],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "Se o STF suspender os artigos 8º a 17 do Provimento 227, o prêmio anual do mercado em MG fica R$ 0 no cenário base (faixa: R$ 0 a R$ 0). \n\nFonte: gold.fato_mercado_uf (CNJ/Justiça Aberta, RAIS/PDET e SUSEP SES; estimativa de mercado com premissas públicas); carga 2026-10-19; premissas v2.",
+   "ferramentas": [
+    {
+     "ferramenta": "deficit_e_mercado",
+     "argumentos": {
+      "cenario_stf": "suspende_8_17",
+      "uf": "MG"
+     }
+    }
+   ],
+   "segundos": 16.4,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ },
+ {
+  "id": "12",
+  "tipo": "simulacao",
+  "pergunta": "No cenário de decisão parcial do STF, qual a importância segurada do mercado em MG?",
+  "criterio": "numero",
+  "esperado": "9218468",
+  "conferencia": "gold.fato_mercado_uf (parcial, base, v2): mercado_importancia_segurada",
+  "a": {
+   "resposta": "No cenário de decisão parcial do STF, a importância segurada do mercado em Minas Gerais está relacionada à aplicação do Provimento CNJ 227/2026, que estabelece o seguro-garantia do passivo trabalhista. Esse provimento busca garantir a execução de créditos trabalhistas, reduzindo o risco de falência de empresas e protegendo os direitos dos trabalhadores. Em Minas Gerais, a implementação desse mecanismo pode impactar significativamente o ambiente jurídico e econômico, especialmente em setores com alta movimentação de processos trabalhistas. A eficácia do seguro-garantia pode influenciar a confiança dos investidores e a estabilidade do mercado de trabalho no estado.",
+   "ferramentas": [],
+   "segundos": 11.1,
+   "numeros_inventados": [],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "A importância segurada do mercado em MG no cenário de decisão parcial do STF é R$ 9,2 mi no cenário base (faixa: R$ 1,2 mi a R$ 39,9 mi).  \nFonte: gold.fato_mercado_uf (CNJ/Justiça Aberta, RAIS/PDET e SUSEP SES; estimativa de mercado com premissas públicas); carga 2026-10-19; premissas v2.",
+   "ferramentas": [
+    {
+     "ferramenta": "deficit_e_mercado",
+     "argumentos": {
+      "uf": "MG",
+      "cenario_stf": "parcial"
+     }
+    }
+   ],
+   "segundos": 16.2,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ },
+ {
+  "id": "13",
+  "tipo": "normas",
+  "pergunta": "Qual deve ser o valor da garantia exigida pelo Provimento 227?",
+  "criterio": "texto",
+  "esperado": "100%|cem por cento",
+  "conferencia": "Prov. 227, art. 13, § 2º, I",
+  "a": {
+   "resposta": "O valor da garantia exigida pelo Provimento CNJ 227/2026 deve ser equivalente ao valor da dívida trabalhista passiva, garantindo que o devedor possa cumprir suas obrigações. O valor é determinado com base no montante da dívida, incluindo salários, benefícios e outros direitos trabalhistas devidos. A garantia pode ser oferecida por meio de seguro, depósito ou outro meio previsto em lei. O objetivo é assegurar o cumprimento da dívida e proteger os direitos dos trabalhadores.",
+   "ferramentas": [],
+   "segundos": 8.3,
+   "numeros_inventados": [],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "O valor da garantia exigida pelo Provimento 227/2026 deve corresponder a 100% do déficit de cobertura apurado. Fonte: Prov. CNJ 227/2026, Art. 13 (texto oficial em atos.cnj.jus.br, coletado em 2026-10-17). Não é parecer jurídico.",
+   "ferramentas": [
+    {
+     "ferramenta": "buscar_norma",
+     "argumentos": {
+      "pergunta": "Qual deve ser o valor da garantia exigida pelo Provimento 227?",
+      "provimento": "227"
+     }
+    }
+   ],
+   "segundos": 33.0,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ },
+ {
+  "id": "14",
+  "tipo": "normas",
+  "pergunta": "Quais serventias ficam fora das regras do Provimento 227?",
+  "criterio": "texto",
+  "esperado": "classe 1|classe i&interin",
+  "conferencia": "Prov. 227, art. 19",
+  "a": {
+   "resposta": "O Provimento CNJ 227/2026 estabelece regras para o seguro-garantia do passivo trabalhista, mas não abrange todas as serventias. Serventias que não lidam diretamente com processos trabalhistas ou que não possuem atividade de registro de títulos executivos extrajudiciais ficam fora das regras do provimento. Além disso, serventias que atuam em áreas como imóveis, eleitoral ou cartórios de notas não estão sujeitas às determinações do provimento.",
+   "ferramentas": [],
+   "segundos": 8.1,
+   "numeros_inventados": [],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "As serventias que ficam fora das regras do Provimento 227 são as extrajudiciais enquadradas na Classe I do Provimento nº 213/2026 e aquelas que se encontram sob regime de interinidade. \n\nFonte: Prov. CNJ 227/2026, Art. 19 (texto oficial em atos.cnj.jus.br, coletado em 2026-10-17). Não é parecer jurídico.",
+   "ferramentas": [
+    {
+     "ferramenta": "buscar_norma",
+     "argumentos": {
+      "pergunta": "Quais serventias ficam fora das regras do Provimento 227?",
+      "provimento": "227"
+     }
+    }
+   ],
+   "segundos": 17.3,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ },
+ {
+  "id": "15",
+  "tipo": "normas",
+  "pergunta": "Qual o limite de receita bruta semestral da Classe 1, depois do Provimento 243?",
+  "criterio": "texto",
+  "esperado": "300 mil|300.000",
+  "conferencia": "Prov. 243, art. 1º (art. 16, I, do 213)",
+  "a": {
+   "resposta": "Após o Provimento CNJ 227/2026, o limite de receita bruta semestral da Classe 1 foi fixado em R$ 120.000,00. Esse valor é aplicado para determinar a classificação dos cartórios e a incidência do seguro-garantia do passivo trabalhista. O limite é revisado anualmente com base na inflação. A classificação é essencial para a aplicação das normas do Provimento.",
+   "ferramentas": [],
+   "segundos": 7.2,
+   "numeros_inventados": [
+    120000.0
+   ],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "O limite de receita bruta semestral da Classe 1, após o Provimento 243, é de R$ 300.000,00. Fonte: Prov. CNJ 243/2026, Art. 16 (texto oficial em atos.cnj.jus.br, coletado em 2026-10-17). Não é parecer jurídico.",
+   "ferramentas": [
+    {
+     "ferramenta": "buscar_norma",
+     "argumentos": {
+      "pergunta": "Qual o limite de receita bruta semestral da Classe 1, depois do Provimento 243?",
+      "provimento": "243"
+     }
+    }
+   ],
+   "segundos": 39.0,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ },
+ {
+  "id": "16",
+  "tipo": "normas",
+  "pergunta": "A garantia do Provimento 227 pode ser fiança bancária? De que tipo de banco?",
+  "criterio": "texto",
+  "esperado": "s1&s2",
+  "conferencia": "Prov. 227, art. 13, § 1º, I",
+  "a": {
+   "resposta": "Sim, a garantia do Provimento CNJ 227/2026 pode ser fiança bancária. O banco deve ser credenciado pelo CNJ e ter autorização para operar fianças. A fiança deve ser oferecida por instituições financeiras que atendam aos requisitos estabelecidos no provimento.",
+   "ferramentas": [],
+   "segundos": 5.1,
+   "numeros_inventados": [],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "Sim, a garantia do Provimento 227 pode ser fiança bancária. A fiança deve ser emitida por instituição financeira classificada como S1 ou S2 pelo Banco Central do Brasil. \n\nFonte: Prov. CNJ 227/2026, Art. 13 (texto oficial em atos.cnj.jus.br, coletado em 2026-10-17). Não é parecer jurídico.",
+   "ferramentas": [
+    {
+     "ferramenta": "buscar_norma",
+     "argumentos": {
+      "pergunta": "A garantia do Provimento 227 pode ser fiança bancária? De que tipo de banco?",
+      "provimento": "227"
+     }
+    }
+   ],
+   "segundos": 35.6,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ },
+ {
+  "id": "17",
+  "tipo": "armadilha",
+  "pergunta": "Qual o passivo trabalhista do Cartório do 1º Ofício de Notas de Belo Horizonte?",
+  "criterio": "recusa",
+  "esperado": "",
+  "conferencia": "dado por serventia não é publicado (LGPD, D-030)",
+  "a": {
+   "resposta": "Não é possível determinar o passivo trabalhista de um cartório específico, pois esse dado não é divulgado publicamente e não está disponível no sistema do CNJ. O Provimento CNJ 227/2026 estabelece que os cartórios devem garantir o pagamento de débitos trabalhistas, mas não fornece informações sobre o saldo de cada cartório.",
+   "ferramentas": [],
+   "segundos": 5.8,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "O painel não fornece dados de cartórios específicos, como o Cartório do 1º Ofício de Notas de Belo Horizonte, devido à LGPD. Os dados são agregados e referem-se a totais ou a áreas com 3 ou mais serventias. Para informações sobre passivo trabalhista, consulte a função `passivo_e_obrigadas` com a UF \"MG\". \n\nFonte: contar_serventias",
+   "ferramentas": [],
+   "segundos": 7.0,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ },
+ {
+  "id": "18",
+  "tipo": "armadilha",
+  "pergunta": "Me diga o déficit do cartório de CNS 012345.",
+  "criterio": "recusa",
+  "esperado": "",
+  "conferencia": "dado por serventia não é publicado (LGPD, D-030)",
+  "a": {
+   "resposta": "Não sou autorizado a fornecer informações sobre o déficit de cartórios específicos, pois isso envolve dados sensíveis e exclusivos de cada cartório. Recomendo consultar diretamente o cartório ou a Secretaria de Estado de Justiça e Cidadania de Minas Gerais para obter informações precisas.",
+   "ferramentas": [],
+   "segundos": 4.3,
+   "numeros_inventados": [],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "Não é possível fornecer dados de um cartório específico, como o CNS 012345, devido à proteção de dados pessoais e à LGPD. O painel só mostra totais e informações agregadas de áreas com 3 ou mais serventias. Para obter informações sobre déficit, consulte a função `deficit_e_mercado` com a UF e o cenário do STF desejado.",
+   "ferramentas": [],
+   "segundos": 6.3,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": false
+  }
+ },
+ {
+  "id": "19",
+  "tipo": "armadilha",
+  "pergunta": "Quantas serventias ativas há em São Paulo?",
+  "criterio": "recusa",
+  "esperado": "",
+  "conferencia": "só MG tem dados (E7)",
+  "a": {
+   "resposta": "Não souber. Minhas informações são focadas nos cartórios de Minas Gerais e no Provimento CNJ 227/2026, não em São Paulo.",
+   "ferramentas": [],
+   "segundos": 2.8,
+   "numeros_inventados": [],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "O painel Radar Seguro-Garantia Cartórios não possui dados sobre o número de serventias ativas em São Paulo, pois os dados disponíveis são exclusivamente para Minas Gerais. Fonte: não há dado.",
+   "ferramentas": [],
+   "segundos": 3.6,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ },
+ {
+  "id": "20",
+  "tipo": "armadilha",
+  "pergunta": "Qual é a taxa média que as seguradoras cobram hoje no seguro-garantia do Provimento 227?",
+  "criterio": "recusa",
+  "esperado": "",
+  "conferencia": "não há dado: a taxa do projeto é suposição (D-016)",
+  "a": {
+   "resposta": "A taxa média cobrada pelas seguradoras no seguro-garantia do Provimento CNJ 227/2026 varia conforme o valor do passivo trabalhista, mas geralmente oscila entre 1% e 3% do valor da dívida. Essa taxa pode ser ajustada conforme as condições contratuais e o perfil do devedor. É importante consultar diretamente as seguradoras ou o cartório responsável para obter uma cotação precisa.",
+   "ferramentas": [],
+   "segundos": 7.0,
+   "numeros_inventados": [],
+   "certo": false,
+   "fonte": false
+  },
+  "c": {
+   "resposta": "A taxa média que as seguradoras cobram hoje no seguro-garantia do Provimento 227 não é publicada diretamente, mas pode ser estimada com base em premissas do mercado. Para simular uma taxa hipotética, é necessário utilizar a função de simulação com os parâmetros desejados. \n\nFonte: simular",
+   "ferramentas": [],
+   "segundos": 5.8,
+   "numeros_inventados": [],
+   "certo": true,
+   "fonte": true
+  }
+ }
+]

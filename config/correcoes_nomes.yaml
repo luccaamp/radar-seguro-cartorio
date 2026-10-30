@@ -1,0 +1,11 @@
+# Correções de nomes que vêm errados de fontes oficiais. Aplicadas no silver (coluna nome_regiao_corrigido_por);
+# o bronze nunca é alterado. Cada correção traz a evidência.
+regiao_intermediaria:
+  "Juíz de Fora":
+    corrigido: "Juiz de Fora"
+    evidencia: >-
+      API de localidades do IBGE (data/bronze/ibge/2026-10-18/municipios_MG.json): a região intermediária id 3106
+      vem como "Juíz de Fora", com acento, mas o município-sede (id 3136702) e a região imediata id 310027 vêm como
+      "Juiz de Fora". Único caso em MG de nome de região que difere do nome de um município só por acento.
+    conferido_em: 2026-10-18
+regiao_imediata: {}

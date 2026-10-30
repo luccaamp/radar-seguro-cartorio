@@ -1,0 +1,54 @@
+.env
+
+# Dados
+data/bronze/
+data/silver/
+data/gold/
+*.duckdb
+*.duckdb.wal
+*.duckdb.novo
+# data/publico/ É versionado (conjunto público, D-029); as pastas de troca do gerar_publico, não
+data/publico.novo/
+data/publico.antigo/
+data/carga_atual.json
+# cenários salvos pelo painel (D-034): pessoais, fora do git, dos pacotes e do conjunto público
+data/painel_estado.json
+data/painel_estado.json.*
+# pacotes de dados para os Releases (D-030): gerados por scripts/empacotar_dados.py, publicados pelo autor
+pacotes/
+
+# Transcrições das conversas com a IA (uso pessoal do autor)
+conversas/
+# configurações locais do Claude Code (permissões e caminhos desta máquina; o repositório é público)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+# links simbólicos para o guia de Streamlit dentro do .venv (refeitos em cada máquina)
+.agents/
+.claude/skills/
+
+# Notebooks: todos vão para o git, com as saídas (D-038); só arquivos grandes e modelos treinados ficam fora
+notebooks/saidas/
+modelos/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Sistema e editores
+.DS_Store
+.vscode/
+.idea/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# QA visual (prints, galeria e relatório de acessibilidade gerados por scripts); os gráficos da mineração vão (D-038)
+docs/qa/*
+!docs/qa/analises/
+# chat (D-069): só os relatórios de latência vão; as capturas (≈ 5 MB) ficam na máquina, como as do painel
+!docs/qa/chat/
+docs/qa/chat/*
+!docs/qa/chat/latencia_*.md

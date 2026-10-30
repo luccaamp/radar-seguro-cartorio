@@ -1,0 +1,34 @@
+# Parâmetros de exibição do painel (Etapa 3; docs/painel/). Nenhum resultado do modelo fica aqui: os números vêm do
+# banco (gold.*, qualidade.*) ou da saída gravada dos notebooks (artefatos, abaixo). Lido por src/painel/analises.py.
+
+adi_8015:   # situação da ação no STF; conferir de novo na véspera da demo (plano_projeto.md, Etapa 6, passo 1)
+  conferido_em: 2026-10-28
+  liminar: false
+  situacao: >-
+    Rito do art. 12 da Lei 9.868/1999 (julgamento direto do mérito, sem liminar separada). Informações do CNJ e da AGU
+    prestadas e vista à PGR; em 22/10/2026, duas decisões admitiram terceiros interessados (não são liminar); em
+    27/10/2026, concluso ao relator.
+  fonte: >-
+    Portal do STF, andamento processual da ADI 8015 (consulta só de leitura em 28/10/2026; docs/diario.md, M7, e
+    docs/SPEC.md §0)
+
+projecao:
+  # D-049 (proposta): leitura principal do limite da Classe 1 na projeção 2026–27. "limite fixo" = os R$ 300 mil do
+  # Prov. 243, que é a regra em vigor (a atualização anual do art. 16, § 2º, ainda não foi divulgada e a redação do
+  # Prov. 243 não nomeia índice); "limite corrigido pelo IPCA" = comparação. Valores de gold.analise_previsao.
+  leitura_limite_principal: limite fixo
+  leitura_limite_comparacao: limite corrigido pelo IPCA
+  variante_principal: tendência do T2 (principal)
+
+artefatos:   # tabelas que só existem na saída gravada de um notebook (src/painel/artefatos.py)
+  subidas_05b:
+    notebook: notebooks/05_classificacao.ipynb
+    marcador: "entrega = cl.tabela_subidas"
+    ano: 2026
+    recorte: todas
+  lacunas_09:
+    notebook: notebooks/09_conclusoes_lacunas.ipynb
+    marcador: "lacunas = pd.DataFrame("
+  passivo_m5:
+    notebook: notebooks/10_melhorias_confianca.ipynb
+    marcador: "mh.passivo_projetado("

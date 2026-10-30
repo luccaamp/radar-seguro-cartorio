@@ -1,0 +1,199 @@
+/* Estilo único do painel (docs/painel/padrao_visual.md, quarta rodada, D-052). Os tokens, as medidas e os componentes
+   são os do artefato "Raio-X do Cartório", com os mesmos valores, para que uma página dele caiba no painel sem emenda:
+   fundo #eceff3, superfícies brancas, texto #0f1c33, faixa azul-marinho em degradê (#0f2447 → #183564) com o traço
+   dourado, cartões de 14 px de raio com sombra, quadro azul-claro dos agregados, veredito dourado-claro, selos e a
+   paleta de série (#2a78d6, #eb6834, #1baf7a, #8d97ab). Carregado por src/painel/ui.estilo(), uma vez por página. As
+   cores de dado são as mesmas de src/painel/graficos.py (COR). */
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap");
+:root {
+  /* tokens do Raio-X (nomes originais entre parênteses) */
+  --fundo: #eceff3;            /* (--bg) */
+  --superficie: #ffffff;       /* (--surface) */
+  --superficie-2: #f5f7fa;     /* (--surface-2) */
+  --titulo: #0f1c33; --texto: #0f1c33;   /* (--ink) */
+  --texto-2: #45506a;          /* (--ink-2) */
+  --mudo: #6b7590;             /* (--muted) */
+  --linha: #dde2ea;            /* (--line) */
+  --grade: #e6e9ef; --grade-forte: #c2c9d6;   /* (--grid, --grid-strong) */
+  --marinho: #0f2447; --marinho-2: #183564; --sobre-marinho: #f2f5fb; --sobre-marinho-2: #b9c5dd;   /* (--navy …) */
+  --ouro: #c9992e; --ouro-tinta: #7a5a10; --ouro-claro: #fbf3df;   /* (--gold, --gold-ink, --gold-tint) */
+  --agregado: #e8eef8; --agregado-linha: #c3d1e8;   /* (--agg, --agg-line) */
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --ref: #8d97ab;   /* séries dos gráficos */
+  --bom: #17794a; --bom-claro: #e2f4ea; --alerta: #8f5f00; --alerta-claro: #fdf0d2; --ruim: #b42318; --ruim-claro: #fde7e4;
+  --sombra: 0 1px 2px rgba(15, 28, 51, .06), 0 6px 20px rgba(15, 28, 51, .05);
+  --f-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-titulo: "Newsreader", Georgia, "Times New Roman", serif;
+  --destaque: var(--s1); --comparacao: var(--s2);
+  color-scheme: light;
+}
+/* tema escuro do Raio-X, com os mesmos valores. Vale quando o Streamlit está no escuro (marcador .rd-tema-escuro, posto
+   por ui.estilo a partir de st.context.theme) ou, sem marcador, quando o sistema está no escuro (como o Raio-X). */
+:root:has(.rd-tema-escuro) {
+  --fundo: #0c1018; --superficie: #141a25; --superficie-2: #1a2130;
+  --titulo: #e9edf5; --texto: #e9edf5; --texto-2: #b2bccd; --mudo: #8793a8;
+  --linha: #262e3d; --grade: #222a38; --grade-forte: #3a4558;
+  --marinho: #0a1630; --marinho-2: #12244a;
+  --ouro: #e0b44e; --ouro-tinta: #e8c46a; --ouro-claro: #2a2414;
+  --agregado: #1d2840; --agregado-linha: #2c3d62;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #7b869b;
+  --bom: #4cc38a; --bom-claro: #12301f; --alerta: #e2b04a; --alerta-claro: #33270c; --ruim: #ff8a7a; --ruim-claro: #3a1a17;
+  --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 20px rgba(0, 0, 0, .25);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) { :root:not(:has(.rd-tema-claro)) {
+  --fundo: #0c1018; --superficie: #141a25; --superficie-2: #1a2130;
+  --titulo: #e9edf5; --texto: #e9edf5; --texto-2: #b2bccd; --mudo: #8793a8;
+  --linha: #262e3d; --grade: #222a38; --grade-forte: #3a4558;
+  --marinho: #0a1630; --marinho-2: #12244a;
+  --ouro: #e0b44e; --ouro-tinta: #e8c46a; --ouro-claro: #2a2414;
+  --agregado: #1d2840; --agregado-linha: #2c3d62;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #7b869b;
+  --bom: #4cc38a; --bom-claro: #12301f; --alerta: #e2b04a; --alerta-claro: #33270c; --ruim: #ff8a7a; --ruim-claro: #3a1a17;
+  --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 20px rgba(0, 0, 0, .25);
+  color-scheme: dark;
+} }
+
+/* página: fundo, corpo de 14 px e largura de 1.180 px úteis com 16 px de margem, como o .wrap do Raio-X */
+html, body, .stApp, [data-testid="stAppViewContainer"] { background: var(--fundo); color: var(--texto); font-family: var(--f-ui);
+  font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+.block-container, [data-testid="stMainBlockContainer"] { max-width: 1212px; padding: 0 16px 48px; }
+[data-testid="stApp"]:not(:has(.rd-cab)) [data-testid="stMainBlockContainer"] { padding-top: 72px; }   /* Chat */
+#MainMenu, footer, [data-testid="stDecoration"] { display: none; }
+[data-testid="stHeader"] { background: var(--fundo); }
+[data-testid="stApp"]:has(.rd-cab) [data-testid="stHeader"] { background: var(--marinho); }
+h1, h2, h3 { color: var(--titulo); }
+h2 { font-family: var(--f-titulo) !important; font-size: 18px !important; font-weight: 600 !important; line-height: 1.25 !important;
+  margin: 8px 0 0 !important; padding: 0 !important; }
+h3 { font-size: 14px !important; font-weight: 600 !important; }
+[data-testid="stCaptionContainer"], .stCaption { color: var(--mudo) !important; opacity: 1 !important; font-size: 12.5px !important; }
+[data-testid="stVerticalBlock"] { gap: 18px; }
+
+/* faixa do topo (.top do Raio-X): degradê azul-marinho de ponta a ponta, rótulo, título em serifa, texto e traço dourado */
+/* o degradê vai num border-image com recuo lateral: pinta até as bordas sem criar rolagem horizontal (um pseudo-elemento
+   largo fazia o contêiner do Streamlit rolar para o lado e esconder a navegação) */
+.rd-cab { color: var(--sobre-marinho); padding: 76px 0 56px; margin: 0;
+  border-image: linear-gradient(180deg, var(--marinho) 0%, var(--marinho-2) 100%) fill 0 / 0 / 0 100vmax; }
+.rd-cab .rd-sobre { font-size: 12px; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; color: var(--sobre-marinho-2); }
+.rd-cab h1 { font-family: var(--f-titulo) !important; font-size: clamp(30px, 5vw, 42px) !important; font-weight: 600 !important;
+  line-height: 1.1 !important; margin: 6px 0 6px !important; padding: 0 !important; color: var(--sobre-marinho) !important;
+  max-width: 52rem; text-wrap: balance; }
+.rd-cab .rd-sub { margin: 0; color: var(--sobre-marinho-2); max-width: 62ch; }
+.rd-cab .rd-sub b { color: var(--sobre-marinho); }
+.rd-cab .rd-ouro { width: 44px; height: 3px; background: var(--ouro); border-radius: 2px; margin: 14px 0 0; }
+/* o primeiro bloco depois da faixa sobe sobre ela (main { margin-top: -30px } do Raio-X) */
+[data-testid="stElementContainer"]:has(.rd-cab) + :not(:has(h2)) { margin-top: -30px; position: relative; z-index: 1; }
+[data-testid="stElementContainer"]:has(.rd-cab):has(+ :has(h2)) .rd-cab { padding-bottom: 32px; }
+[data-testid="stElementContainer"]:has(.rd-cab) + * [data-testid="stSelectbox"] { background: var(--superficie);
+  border: 1px solid var(--linha); border-radius: 14px; padding: 14px 20px 18px; box-shadow: var(--sombra); }
+
+/* resposta principal (só no Início): .card com a chave colorida, o quadro do agregado (.cagr) e o veredito */
+.rd-resposta { background: var(--superficie); border: 1px solid var(--linha); border-radius: 14px; padding: 20px;
+  box-shadow: var(--sombra); }
+.rd-resposta .rd-rot { font-weight: 600; color: var(--texto); display: flex; align-items: center; gap: 8px; }
+.rd-resposta .rd-rot::before { content: ""; width: 14px; height: 4px; border-radius: 2px; background: var(--s1); }
+.rd-resposta .rd-num { font-size: clamp(40px, 6vw, 54px); font-weight: 600; line-height: 1.05; color: var(--texto);
+  letter-spacing: -.02em; margin: 14px 0 0; white-space: nowrap; font-variant-numeric: tabular-nums; display: inline-block;
+  background: var(--agregado); border: 1px solid var(--agregado-linha); border-radius: 12px; padding: 16px 18px; }
+.rd-resposta .rd-num small { font-size: 15px; font-weight: 500; color: var(--texto-2); letter-spacing: 0; }
+.rd-resposta .rd-faixa { font-size: 13px; color: var(--texto-2); margin-top: 6px; }
+.rd-resposta .rd-faixa b { color: var(--texto); }
+.rd-resposta .rd-frase { margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: var(--ouro-claro);
+  color: var(--texto); font-size: 13.5px; line-height: 1.5; }
+.rd-resposta .rd-frase b { color: var(--ouro-tinta); }
+@media (max-width: 640px) { .rd-resposta .rd-num { white-space: normal; } }
+
+/* cartões de número (.tile do Raio-X, como cartão solto: com a sombra do .card) */
+.rd-grade { display: grid; gap: 12px; margin: 0; align-items: stretch; }
+.rd-grade.c1 { grid-template-columns: 1fr; }
+.rd-grade.c2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rd-grade.c3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 760px) { .rd-grade.c2, .rd-grade.c3 { grid-template-columns: 1fr; } }
+.rd-card { background: var(--superficie); border: 1px solid var(--linha); border-radius: 12px; padding: 12px 14px; min-width: 0;
+  height: 100%; box-sizing: border-box; display: flex; flex-direction: column; box-shadow: var(--sombra); }
+.rd-card .rd-rot { font-size: 12px; color: var(--mudo); line-height: 1.4; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.rd-card .rd-num { font-size: 24px; font-weight: 600; line-height: 1.2; color: var(--texto); margin-top: 2px;
+  font-variant-numeric: tabular-nums; }
+.rd-card .rd-nota { font-size: 12.5px; color: var(--texto-2); margin-top: 2px; line-height: 1.45; }
+
+/* selos (.badge do Raio-X) */
+.rd-selo { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 2px 10px; font-size: 12px;
+  font-weight: 500; white-space: nowrap; background: var(--superficie-2); border: 1px solid var(--linha); color: var(--texto-2); }
+.rd-selo.dado, .rd-selo.faixa { background: var(--bom-claro); color: var(--bom); border-color: transparent; }
+.rd-selo.projecao, .rd-selo.suposicao, .rd-selo.sensibilidade, .rd-selo.comparacao { background: var(--alerta-claro);
+  color: var(--alerta); border-color: transparent; }
+.rd-selo.alerta { background: var(--ruim-claro); color: var(--ruim); border-color: transparent; }
+
+/* etiquetas de contexto (só a página do chat usa, por ui.contexto): .badge neutro */
+.rd-contexto { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+.rd-chip { font-size: 12px; font-weight: 500; color: var(--texto-2); background: var(--superficie-2); border: 1px solid var(--linha);
+  border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+.rd-chip b { color: var(--texto); font-weight: 600; }
+
+/* termo com explicação ao passar o mouse */
+.rd-termo { border-bottom: 1px dotted var(--mudo); cursor: help; }
+
+/* conclusão de um bloco (.verdict do Raio-X) */
+.rd-frase-bloco { position: relative; margin: 0; padding: 10px 14px 10px 34px; border-radius: 10px; background: var(--ouro-claro);
+  color: var(--texto); font-size: 13.5px; line-height: 1.5; }
+.rd-frase-bloco::before { content: "✓"; position: absolute; left: 14px; top: 10px; font-weight: 700; color: var(--ouro-tinta); }
+.rd-frase-bloco b { color: var(--texto); }
+
+/* tabela compacta (table.st do Raio-X: cabeçalho surface-2, linhas da grade, valores em quadro azul-claro) */
+.rd-tabela { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; background: var(--superficie);
+  border: 1px solid var(--linha); border-radius: 10px; overflow: hidden; }
+.rd-tabela th { padding: 7px 9px; text-align: left; font-weight: 600; background: var(--superficie-2); color: var(--texto);
+  border-bottom: 1px solid var(--linha); white-space: nowrap; }
+.rd-tabela td { padding: 7px 9px; border-bottom: 1px solid var(--grade); color: var(--texto); vertical-align: top; }
+.rd-tabela tr:last-child td { border-bottom: 0; }
+.rd-tabela td.rd-num { font-weight: 700; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums;
+  background: var(--agregado); }
+.rd-tabela td.rd-mudo { color: var(--mudo); }
+
+/* perguntas sugeridas para o chat: .card com título em serifa e botões .btn2 do Raio-X */
+.rd-sugestoes { margin-top: 0; padding: 20px; background: var(--superficie); border: 1px solid var(--linha); border-radius: 14px;
+  box-shadow: var(--sombra); }
+.rd-sugestoes-tit { font-family: var(--f-titulo); font-size: 18px; font-weight: 600; line-height: 1.25; color: var(--titulo);
+  margin: 0 0 12px; }
+.rd-sugestoes-links { display: flex; flex-wrap: wrap; gap: 8px; }
+a.rd-sugestao { display: inline-flex; align-items: center; min-height: 34px; padding: 0 14px; border-radius: 8px;
+  border: 1px solid var(--linha); background: var(--superficie-2); font-size: 14px; font-weight: 500; color: var(--texto) !important;
+  text-decoration: none !important; }
+a.rd-sugestao::before { content: "→\00a0"; color: var(--s1); }
+a.rd-sugestao:hover { background: var(--agregado); }
+
+/* rodapé de fonte (.foot do Raio-X) */
+.rd-fonte { font-size: 12.5px; line-height: 1.5; color: var(--mudo); margin: 0; }
+
+.rd-resposta, .rd-grade, .rd-tabela { margin-bottom: 0; }
+
+/* componentes nativos: gráficos como .card; seleção e alertas como no Raio-X */
+[data-testid="stPlotlyChart"] { background: var(--superficie); border: 1px solid var(--linha); border-radius: 14px; overflow: hidden;
+  box-shadow: var(--sombra); }
+[data-testid="stSelectbox"] label p { font-size: 12px !important; font-weight: 400; color: var(--mudo) !important; }
+[data-testid="stSelectbox"] [data-baseweb="select"] > div { background: var(--superficie-2); border: 1px solid var(--linha);
+  border-radius: 8px; min-height: 34px; }
+[data-testid="stAlertContainer"] { border-radius: 10px; font-size: 13px; }
+[data-testid="stAlertContentInfo"], [data-testid="stAlert"] [data-baseweb="notification"] { background: var(--agregado); color: var(--texto-2); }
+[data-testid="stExpander"] details { background: var(--superficie); border: 1px solid var(--linha); border-radius: 14px; }
+[data-testid="stExpander"] summary p { font-weight: 600; color: var(--s1); }
+
+/* navegação lateral: superfície branca com a linha do Raio-X, marca em serifa, item ativo no azul-claro do agregado */
+[data-testid="stSidebar"] { border-right: 1px solid var(--linha); background: var(--superficie); }
+[data-testid="stSidebarHeader"] { align-items: center; }
+[data-testid="stLogoSpacer"]::before { content: "Radar Seguro-Garantia\A Cartórios de MG"; white-space: pre; display: block;
+  font-family: var(--f-titulo); font-weight: 600; font-size: 18px; line-height: 1.25; color: var(--titulo); }
+[data-testid="stLogoSpacer"] { height: auto !important; }
+[data-testid="stSidebarNavLink"] { border-radius: 8px; padding: 8px 12px; gap: 12px; }
+[data-testid="stSidebarNavLink"] span p { font-size: 14px; font-weight: 500; color: var(--texto-2); }
+[data-testid="stSidebarNavLink"]:hover { background: var(--superficie-2); }
+[data-testid="stSidebarNavLink"][aria-current="page"] { background: var(--agregado); box-shadow: inset 3px 0 0 var(--ouro); }
+[data-testid="stSidebarNavLink"][aria-current="page"] span p { color: var(--texto); font-weight: 600; }
+[data-testid="stSidebarNavLink"]::before { content: ""; flex: none; width: 18px; height: 18px; background: var(--mudo);
+  -webkit-mask: var(--icone) center / contain no-repeat; mask: var(--icone) center / contain no-repeat; }
+[data-testid="stSidebarNavLink"][aria-current="page"]::before { background: var(--s1); }
+[data-testid="stSidebarNavItems"] li:nth-child(1) a { --icone: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M3 11l9-8 9 8'/><path d='M5 10v10h5v-6h4v6h5V10'/></svg>"); }
+[data-testid="stSidebarNavItems"] li:nth-child(2) a { --icone: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M3 12h18'/><path d='M7 8v8'/><path d='M17 8v8'/><circle cx='12' cy='12' r='2'/></svg>"); }
+[data-testid="stSidebarNavItems"] li:nth-child(3) a { --icone: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z'/><circle cx='12' cy='10' r='2.5'/></svg>"); }
+[data-testid="stSidebarNavItems"] li:nth-child(4) a { --icone: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M3 17l6-6 4 4 8-8'/><path d='M15 7h6v6'/></svg>"); }
+[data-testid="stSidebarNavItems"] li:nth-child(5) a { --icone: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M12 11v5'/><path d='M12 8h.01'/></svg>"); }
+[data-testid="stSidebarNavItems"] li:nth-child(6) a { --icone: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M4 5h16v11H9l-5 4z'/></svg>"); }

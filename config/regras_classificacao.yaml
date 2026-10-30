@@ -1,0 +1,32 @@
+# Limites de classe das serventias (Prov. CNJ 213/2026, art. 16) por versão e vigência.
+# Usado por src/model/universo(): o Prov. 227 (art. 19) exclui a Classe 1 (ver docs/decisoes.md, D-001 e D-002).
+# Classificação sempre APROXIMADA: a arrecadação das fontes públicas não é igual à
+# receita bruta semestral do art. 2º, XXIV do 213.
+
+versao_base: v2
+versao_sensibilidade: v1
+
+versoes:
+  v1:
+    norma: Provimento CN-CNJ 213, de 20/02/2026 (redação original)
+    fonte: https://atos.cnj.jus.br/atos/detalhar/6734
+    publicacao: 2026-02-23            # DJe/CNJ n. 40/2026
+    vigencia_inicio: 2026-04-09       # interpretação: o 213 não tem cláusula de vigência; LINDB art. 1º (45 dias). A confirmar.
+    vigencia_fim: 2026-08-21
+    base_calculo: arrecadação bruta semestral
+    unidade: BRL por semestre
+    limites:
+      classe_1_max: 100000.00
+      classe_2_max: 500000.00
+  v2:
+    norma: Provimento CN-CNJ 243, de 21/07/2026 (altera o art. 16 do 213)
+    fonte: https://atos.cnj.jus.br/atos/detalhar/6936
+    publicacao: 2026-07-23            # DJe/CNJ n. 172/2026
+    vigencia_inicio: 2026-08-22       # art. 2º do 243: 30 dias após a publicação
+    vigencia_fim: null
+    base_calculo: receita bruta semestral (art. 2º, XXIV); enquadramento pela média semestral do exercício anterior (art. 16, §1º)
+    unidade: BRL por semestre
+    limites:
+      classe_1_max: 300000.00
+      classe_2_max: 1500000.00
+    observacao: limites atualizados a cada ano de vigência, com divulgação pela Corregedoria Nacional (art. 16, §2º). Cada atualização vira uma nova versão.

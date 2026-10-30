@@ -1,0 +1,109 @@
+# Parâmetros da mineração de dados (docs/plano_mineracao.md), lidos por src/analise/. Não mudam os 10 números oficiais.
+outliers:
+  k_iqr: 1.5        # fonte: Tukey (1977), Exploratory Data Analysis: as "cercas" do boxplot ficam a 1,5 × IQR dos quartis
+  escala: log10     # fonte: suposição (receita e passivo variam em várias ordens de grandeza; no log a cerca não marca
+                    # metade da cauda como atípica)
+saltos:             # semestre muito fora do histórico da própria serventia (provável erro de declaração)
+  janela: 4         # fonte: suposição (os 4 semestres anteriores = 2 anos de histórico)
+  fator: 10         # fonte: suposição (10 vezes acima ou abaixo da mediana da janela; corte largo, para só pegar o grosseiro)
+semente: 20261022   # fonte: suposição (qualquer inteiro fixo; só garante que o resultado se repete)
+regressao:          # notebook 06 (teste T1 em docs/qa/analises/testes_metodos.md)
+  floresta:         # fonte: scripts/testes_metodos.py, T1 (os mesmos parâmetros do método vencedor)
+    n_arvores: 400
+    min_folha: 5
+  poisson_alpha: 0.0001   # fonte: scripts/testes_metodos.py, T1 (penalização quase nula: só estabiliza a conta)
+  faixas_referencia: 10   # fonte: scripts/testes_metodos.py, T1 (referência = mediana por decil de receita)
+  margem_total: 0.10      # fonte: testes_metodos.md, T1 (erro do total de uma região não vista de ~9%: publicar ±10%)
+  dobras_passivo: 10      # fonte: docs/plano_mineracao.md, 06b (validação em 10 dobras)
+sensibilidade:      # notebook 08 (testes T5, T6 e T7 em docs/qa/analises/testes_metodos.md)
+  sorteios: 200000        # fonte: scripts/testes_metodos.py, T7 (200 mil sorteios)
+  percentis: [0.05, 0.25, 0.50, 0.75, 0.95]   # fonte: docs/plano_mineracao.md, 08 (faixa P5–P95)
+  topo_concentracao: 0.10 # fonte: docs/plano_mineracao.md, 08 ("quanto os 10% maiores concentram")
+previsao:           # notebook 07 (teste T2 em docs/qa/analises/testes_metodos.md)
+  ultimo_periodo: "2025-2"  # fonte: testes_metodos.md, T2 (o 2026-1 está incompleto: só conferência)
+  origens: ["2019-2", "2020-2", "2021-2", "2022-2", "2023-2"]   # fonte: idem (origem móvel)
+  horizonte: 4              # fonte: idem (4 semestres à frente)
+  faixa: [0.10, 0.90]       # fonte: idem (P10–P90 dos erros do teste no passado)
+  ano_base: 2025            # fonte: docs/decisoes.md, D-010 (receita de referência = média dos semestres de 2025)
+  anos: [2026, 2027]        # fonte: docs/plano_mineracao.md, notebook 07
+  quebra: "2025-2"          # fonte: idem (testar uma quebra de nível em 2025-2)
+  completar_com: "2025-1"   # fonte: suposição (quem não informou o 2026-1 recebe o próprio 2025-1 × o crescimento de
+                            # quem informou; só na sensibilidade da quebra)
+  desvios:                  # crescimento de cada serventia em relação ao de MG (dispersão da projeção)
+    banda: 3                # fonte: suposição (só serventias entre L/3 e 3 × L no ano-base: as que podem cruzar o limite)
+    anos: 6                 # fonte: suposição (os 6 anos-base mais recentes com resposta)
+  sorteios: 500             # fonte: suposição (sorteios da projeção do mercado)
+  inflacao_meses: 12        # fonte: suposição (o IPCA dos últimos 12 meses do banco, repetido em cada ano). O índice é o
+                            # da redação original do art. 16, § 2º, do Prov. 213; a redação do Prov. 243 não nomeia índice
+  consolidacao: 0.10        # fonte: Prov. 213, art. 16, § 3º (redação do Prov. 243): variação de até 10% do limite
+                            # precisa de dois ciclos
+graficos:
+  pasta: docs/qa/analises   # PNGs dos notebooks (D-038: vão para o git)
+  dpi: 150
+padroes:            # notebook 03: regras de associação (Apriori)
+  porte_clt: [0, 2, 9]   # faixas de empregados CLT: 0 | 1 a 2 | 3 a 9 | 10 ou mais. fonte: 2 = mediana de CLT das
+                         # serventias de MG (notebook 02); 9 = teto da microempresa de comércio e serviços no critério
+                         # de porte por pessoas ocupadas do SEBRAE (micro até 9; pequena de 10 a 49)
+  suporte_min: 0.03      # fonte: suposição (regra que vale para pelo menos 3% das serventias, ≈ 73 delas)
+  confianca_min: 0.5     # fonte: suposição (a regra acerta em pelo menos metade dos casos)
+  max_itens: 4           # fonte: suposição (até 3 itens no "se" e 1 no "então": regras que se leem numa frase)
+  melhoria_min: 0.02     # critério de "melhoria mínima" de Bayardo, Agrawal e Gunopulos (2000), Constraint-based rule
+                         # mining in large, dense databases: o item a mais precisa subir a confiança. Valor (2 pontos
+                         # percentuais): fonte: suposição
+  reamostragens: 2       # fonte: docs/plano_mineracao.md, notebook 03 (regras que se repetem em 2 reamostragens de 80%)
+  fracao: 0.8            # fonte: idem
+  n_principais: 10       # fonte: idem (as 10 regras principais)
+grupos:             # notebook 04: k-means e Ward
+  k_min: 2               # fonte: docs/plano_mineracao.md, notebook 04 (k de 2 a 8)
+  k_max: 8               # fonte: idem
+  n_init: 20             # fonte: suposição (o k-means recomeça 20 vezes e fica com a melhor; reduz o efeito do sorteio
+                         # inicial)
+  nomes:                 # fonte: notebook 04, seção 3 (nome dado pelo perfil de cada grupo, com k = 6). Só valem se o
+                         # perfil ainda for o descrito (grupos.nomes_grupos confere); senão, "grupo N"
+    1: vagas pequenas
+    2: providas pequenas (Notas e RCPN)
+    3: providas médias de uma atribuição
+    4: registro completo (RI, RTD e RCPJ)
+    5: vagas grandes
+    6: providas grandes
+classificacao:      # notebook 05: vacância (T4) e subida de classe (T3)
+  floresta:              # fonte: scripts/testes_metodos.py (mesmos parâmetros dos testes T3 e T4)
+    n_arvores: 500
+    folha_min: 10
+  logistica_c: 1.0       # fonte: scripts/testes_metodos.py (T3 e T4)
+  dobras: 5              # fonte: docs/plano_mineracao.md, notebook 05a (validação cruzada estratificada 5 × 3)
+  repeticoes: 3          # fonte: idem
+  limiar: 0.5            # fonte: suposição (probabilidade acima da qual o caso é chamado de "sim" na matriz de confusão)
+  permutacao_repeticoes: 10   # fonte: suposição (vezes que cada variável é embaralhada na importância por permutação)
+  subida:
+    ano_treino_fim: 2023     # fonte: docs/plano_mineracao.md, notebook 05b (treino até 2023, teste em 2024–25)
+    anos_teste: [2024, 2025] # fonte: idem
+    anos_calibracao: 2       # fonte: idem (recalibrar com os 2 anos anteriores ao teste: 2022–23)
+    taxa_desde: 2019         # fonte: scripts/testes_metodos.py (referência "taxa histórica 2019–2023" do T3)
+    primeiro_ano: 2011       # fonte: idem (primeiro ano previsto no T3)
+    bootstrap: 200           # fonte: suposição (reamostragens da recalibração para a faixa da contagem)
+    faixa: [0.10, 0.90]      # fonte: suposição (a mesma faixa P10–P90 da previsão da arrecadação no T2)
+vacancia:           # notebook 05c: as datas do cadastro do Justiça Aberta
+  lote_min: 10      # fonte: suposição (um dia com 10 ou mais decisões na mesma UF é tratado como "lote": ato coletivo,
+                    # como a outorga de um concurso, ou carga do sistema)
+  inicio_confiavel: 2011   # fonte: notebook 05c, §1 (983 das 2.525 serventias ativas de MG têm decisão em 12/07/2010
+                           # ou 27/08/2010; tratadas como data de carga do sistema, motivo: suposição)
+  ano_recadastro: 2024     # fonte: docs/decisoes.md, D-025 (nota de 2026-10-18: ingressos de 2024 são recadastramento)
+melhorias:         # notebook 10: melhorias de confiança M1 a M10 (docs/plano_mineracao.md)
+  capacidade:      # M1: o titular paga o passivo com o saldo anual (arrecadação − repasse − custeio, BI do CNJ)?
+    ano: 2025              # fonte: docs/decisoes.md, D-010 (mesmo exercício da receita de referência)
+    cortes_meses: [3, 12]  # fonte: docs/diario.md, 2026-10-18, F6 (faixas < 3, 3 a 12 e > 12 meses de saldo)
+    horizonte_meses: 12    # fonte: suposição (o titular consegue dedicar ao passivo até 12 meses de saldo; saldo é
+                           # renda, não patrimônio: serve para calibrar a chance de déficit, não para trocar a regra)
+    horizontes: [6, 12, 24]   # fonte: suposição (sensibilidade do horizonte)
+  sinistro:        # M2: sinistro por frequência × severidade (D-025)
+    p_fim: {min: 0.02, base: 0.04, max: 0.075}   # fonte: notebook 05c, §5 (taxa de vacância observada: 2% em
+                           # 2021–23, ≈ 4% nas Classes 2 e 3 em 2025 e em 2026 anualizado, 7,5% em MG em 2025);
+                           # aprovada pelo autor em 2026-10-28 (D-047), com a limitação do viés de sobrevivência
+  previsao:        # M3: teste no passado mais longo e faixa calibrada
+    origens_longas: ["2012-2", "2013-2", "2014-2", "2015-2", "2016-2", "2017-2", "2018-2", "2019-2", "2020-2",
+                     "2021-2", "2022-2", "2023-2"]   # fonte: docs/plano_mineracao.md, M3 (b) (origens desde 2012-2)
+    janela_recente: 5      # fonte: suposição (escolha do método pelas 5 origens mais recentes, as do T2)
+    cobertura_alvo: 0.80   # fonte: docs/plano_mineracao.md, M3 (c) (alargar a faixa até cobrir ≈ 80%)
+  subidas:         # M4: desvio condicionado ao crescimento recente da serventia
+    grupos_crescimento: 3  # fonte: suposição (tercis do crescimento do ano anterior ao ano-base)

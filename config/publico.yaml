@@ -1,0 +1,89 @@
+# Conjunto público (D-029; D-038 e D-048): o que scripts/gerar_publico.py copia do banco para data/publico/ (versionado
+# no repositório público). Desde a D-048 (fase 1 da D-038), entram também os resultados por serventia, identificada
+# pelo CNS e pelo município. Nunca nome, CPF, e-mail ou outro dado de pessoa física. As tabelas interno_* ficam fora
+# (todos os níveis e regras, insumos e auditoria); a supressão de áreas pequenas sai na fase 2 (Etapa 3).
+pasta: data/publico
+limite_mb: 20
+
+# schema.tabela -> opções: remover (colunas que não vão), sql (consulta no lugar da tabela inteira),
+# sem_hash (colunas fora do hash de conteúdo: carimbos de execução), comparar (entra na prova "hash idêntico"
+# depois de recalcular a partir do silver; padrão: sim)
+tabelas:
+  gold.fato_mercado_uf: {}
+  gold.mercado_area_publico: {}
+  gold.mercado_filtro_area: {}
+  gold.mercado_filtro_uf: {}
+  gold.mercado_filtro_regiao: {}
+  gold.ranking_municipio_publico: {}
+  gold.dim_municipio:
+    remover: [clt]          # CLT por município aparece também nos municípios com 1 ou 2 serventias
+  gold.geo_area_municipio: {}
+  gold.geo_mapa_publico: {}
+  gold.geo_mapa_filtro: {}
+  gold.geo_regiao_imediata: {}
+  gold.geo_sem_serventia: {}
+  gold.execucao:
+    sem_hash: [executado_em]
+  gold.diferenca_regra_classe: {}
+  gold.sensibilidade_rateio: {}
+  gold.sensibilidade_premissas: {}
+  gold.simulador_variantes: {}
+  gold.simulador_base_classe: {}
+  silver.fonte_metadados: {}
+  silver.municipio_ibge: {}
+  qualidade.reconciliacoes: {}
+  qualidade.resumo_publico: {}
+  qualidade.rec_municipio: {}
+  qualidade.checagens: {}
+  estado.premissas_vigente:   # só a versão vigente das premissas (conteúdo público de config/premissas)
+    sql: SELECT * FROM estado.premissas_versoes ORDER BY versao DESC LIMIT 1
+    sem_hash: [criada_em]
+    comparar: false          # o estado não é recalculado pelo pipeline (cada banco tem o seu histórico)
+  # resultado do modelo por serventia (D-038, fase 1; D-048)
+  gold.serventia_publico: {}
+  # análises da mineração (D-043, D-044; carga 2026-10-28); as duas por serventia desde a D-048
+  gold.analise_grupos: {}
+  gold.analise_clt_modelo: {}
+  gold.analise_regras: {}
+  gold.analise_grupos_perfil: {}
+  gold.analise_previsao: {}
+  gold.analise_tornado: {}
+  gold.analise_monte_carlo: {}
+  gold.analise_sensibilidade_metodo: {}
+  # melhorias de confiança (D-045, D-046; carga 2026-10-28 com as premissas v3)
+  gold.analise_capacidade_faixas: {}
+  gold.analise_capacidade_calibracao: {}
+  gold.analise_sinistro: {}
+  gold.analise_premio_cenarios: {}
+  gold.analise_premio_grade: {}
+
+# tabelas com uma linha por serventia (D-048): nelas o CNS é esperado; nas outras, um CNS continua sendo erro (uma
+# tabela agregada não deveria trazer código de serventia)
+por_serventia: [gold.serventia_publico, gold.analise_grupos, gold.analise_clt_modelo]
+
+# colunas que contam serventias de uma célula publicada: valor entre 1 e limiar - 1 bloqueia a publicação,
+# salvo exceção abaixo
+contagem_de_serventias: [n_serventias, n_serventias_ativas, n_cnj]
+excecoes_limiar:
+  gold.dim_municipio.n_serventias:
+    motivo: >-
+      Contagem de serventias por município, do cadastro público do CNJ, sem nenhum valor por serventia (o CLT foi
+      removido). O painel usa para dizer que um município pequeno aparece somado à sua região (D1, D-026).
+    status: aprovada pelo autor em 2026-10-19 (D-029)
+
+# D-030 (regra corrigida pelo autor, 2026-10-19; substituída pela D-038/D-048 no data/publico, que agora traz
+# gold.serventia_publico): vale só para o pacote do silver. Colunas do silver com estes nomes saem do pacote
+# público (o empacotador avisa qual); hoje o silver não tem nenhuma. Os prêmios e sinistros da SUSEP
+# (susep_garantia) são dado de origem, não estimativa do modelo, e não casam com a expressão.
+estimativas_do_modelo: '(^|_)(passivo|deficit|descoberto|peso_universo|prob_deficit|pct_descoberto|importancia_segurada|receita_ref|classe(_v\d)?|n_deficit|valor_descoberto|mercado_premio\w*|seguradora_\w+)($|_)'
+
+# D-031 (decisão do autor, 2026-10-19): os vínculos da RAIS vão no silver público só com as colunas que o pipeline
+# usa (id_vinculo, cod_ibge, ativo_31_12, tipo_vinculo, prazo_indeterminado, rem_dezembro, rem_media,
+# tempo_emprego_meses). Estas saem do pacote público (o silver interno fica igual): não entram em nenhuma conta e,
+# num município pequeno, ocupação e meses de admissão e desligamento ajudam a identificar a pessoa.
+silver_publico_remover:
+  rais_vinculo: [ano_base, tipo_estabelecimento, horas_contratadas, mes_admissao, mes_desligamento, cbo]
+
+# nomes de coluna proibidos no público (expressão regular, sem diferenciar maiúsculas): dados de pessoa física. O CNS
+# identifica o cartório e é permitido desde a D-048 (D-038).
+colunas_proibidas: '(^|_)(cpf|email|e_mail|telefone|responsavel|substitutos?|titular|delegatario|endereco|cep)($|_)'

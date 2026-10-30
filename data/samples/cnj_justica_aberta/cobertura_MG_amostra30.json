@@ -1,0 +1,578 @@
+{
+ "_fonte": "https://justicaabertaapi.cnj.jus.br/v1/api/serventias",
+ "_coletado_em": "2026-10-17",
+ "_semente": 2026,
+ "_obs": "amostra aleatória de serventias ativas; sem dados pessoais",
+ "dados": [
+  {
+   "cns": "047225",
+   "uf": "MG",
+   "cidade": "Itamonte",
+   "atribuicoes": "Registro de Imóveis | Registro de Títulos e Documentos | Registro Civil das Pessoas Jurídicas",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "1124599.31",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 5,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 5,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "036574",
+   "uf": "MG",
+   "cidade": "Bocaina de Minas",
+   "atribuicoes": "Registro Civil das Pessoas Naturais | Notas",
+   "situacao": "VAGO",
+   "n_semestres": 43,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "6247.40",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 1,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 1,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "058149",
+   "uf": "MG",
+   "cidade": "Serrania",
+   "atribuicoes": "Notas | Registro Civil das Pessoas Naturais",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "408376.31",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 2,
+   "quantidade_colaboradores_estatutarios": 2,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 4,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "051599",
+   "uf": "MG",
+   "cidade": "Carneirinho",
+   "atribuicoes": "Notas | Registro Civil das Pessoas Naturais",
+   "situacao": "VAGO",
+   "n_semestres": 42,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "53179.91",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 0,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 0,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "060830",
+   "uf": "MG",
+   "cidade": "Esmeraldas",
+   "atribuicoes": "Protesto de Títulos",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "528009.83",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 1,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 1,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "045179",
+   "uf": "MG",
+   "cidade": "Guidoval",
+   "atribuicoes": "Registro Civil das Pessoas Naturais | Notas",
+   "situacao": "VAGO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "NÃO INFORMADO",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 1,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 1,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "040873",
+   "uf": "MG",
+   "cidade": "Oliveira",
+   "atribuicoes": "Notas",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "741548.46",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 5,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 5,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "042630",
+   "uf": "MG",
+   "cidade": "Lima Duarte",
+   "atribuicoes": "Notas | Registro Civil das Pessoas Naturais",
+   "situacao": "VAGO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "30172.47",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 1,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 1,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "043075",
+   "uf": "MG",
+   "cidade": "Caeté",
+   "atribuicoes": "Notas | Registro Civil das Pessoas Naturais",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "248344.05",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 1,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 1,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "046789",
+   "uf": "MG",
+   "cidade": "Chalé",
+   "atribuicoes": "Registro Civil das Pessoas Naturais | Notas",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "251660.09",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 2,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 2,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "045369",
+   "uf": "MG",
+   "cidade": "Conceição das Alagoas",
+   "atribuicoes": "Notas",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "738705.73",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 9,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 9,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "036608",
+   "uf": "MG",
+   "cidade": "Pedro Leopoldo",
+   "atribuicoes": "Notas | Registro Civil das Pessoas Naturais",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "237249.96",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 3,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 3,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "036749",
+   "uf": "MG",
+   "cidade": "Aracitaba",
+   "atribuicoes": "Notas | Registro Civil das Pessoas Naturais",
+   "situacao": "VAGO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "79211.46",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 0,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 0,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "060228",
+   "uf": "MG",
+   "cidade": "Mariana",
+   "atribuicoes": "Protesto de Títulos",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "793132.16",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 2,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 2,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "040022",
+   "uf": "MG",
+   "cidade": "Guanhães",
+   "atribuicoes": "Registro de Títulos e Documentos | Registro Civil das Pessoas Jurídicas",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "117093.56",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 1,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 1,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "061382",
+   "uf": "MG",
+   "cidade": "Teófilo Otoni",
+   "atribuicoes": "Registro de Imóveis",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "2673219.84",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 15,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 4,
+   "quantidade_total_colaboradores": 19,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "037549",
+   "uf": "MG",
+   "cidade": "São Geraldo",
+   "atribuicoes": "Notas | Registro Civil das Pessoas Naturais",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "309039.93",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 3,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 3,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "034215",
+   "uf": "MG",
+   "cidade": "São Pedro dos Ferros",
+   "atribuicoes": "Registro Civil das Pessoas Naturais | Notas",
+   "situacao": "VAGO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "63153.05",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 1,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 1,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "045336",
+   "uf": "MG",
+   "cidade": "Felício dos Santos",
+   "atribuicoes": "Notas | Registro Civil das Pessoas Naturais",
+   "situacao": "VAGO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "77949.79",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 0,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 0,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "033860",
+   "uf": "MG",
+   "cidade": "Tapira",
+   "atribuicoes": "Notas | Registro Civil das Pessoas Naturais",
+   "situacao": "PROVIDO",
+   "n_semestres": 42,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "935463.06",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 3,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 3,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "039164",
+   "uf": "MG",
+   "cidade": "Perdizes",
+   "atribuicoes": "Registro de Imóveis",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "4623741.05",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 8,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 8,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "034397",
+   "uf": "MG",
+   "cidade": "São Gonçalo do Rio Preto",
+   "atribuicoes": "Notas | Registro Civil das Pessoas Naturais",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "25993.68",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 1,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 1,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "044982",
+   "uf": "MG",
+   "cidade": "Carlos Chagas",
+   "atribuicoes": "Registro de Imóveis | Registro de Títulos e Documentos | Registro Civil das Pessoas Jurídicas",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "859121.72",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 5,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 5,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "039537",
+   "uf": "MG",
+   "cidade": "Ferros",
+   "atribuicoes": "Registro de Títulos e Documentos | Registro Civil das Pessoas Jurídicas",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "37714.39",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 1,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 1,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "033308",
+   "uf": "MG",
+   "cidade": "Campo Florido",
+   "atribuicoes": "Registro Civil das Pessoas Naturais | Notas",
+   "situacao": "VAGO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "311415.16",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 2,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 2,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "050971",
+   "uf": "MG",
+   "cidade": "Presidente Olegário",
+   "atribuicoes": "Registro Civil das Pessoas Naturais",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "NÃO INFORMADO",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 3,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 3,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "042556",
+   "uf": "MG",
+   "cidade": "Belo Horizonte",
+   "atribuicoes": "Notas | Registro Civil das Pessoas Naturais",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "6523916.76",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 56,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 1,
+   "quantidade_total_colaboradores": 59,
+   "quantidade_colaboradores_terceirizados": 2
+  },
+  {
+   "cns": "044289",
+   "uf": "MG",
+   "cidade": "Entre Rios de Minas",
+   "atribuicoes": "Registro Civil das Pessoas Naturais",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "218660.18",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 1,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 1,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "043828",
+   "uf": "MG",
+   "cidade": "Paracatu",
+   "atribuicoes": "Notas",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "NÃO INFORMADO",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 5,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 5,
+   "quantidade_colaboradores_terceirizados": 0
+  },
+  {
+   "cns": "036533",
+   "uf": "MG",
+   "cidade": "Cipotânea",
+   "atribuicoes": "Notas | Registro Civil das Pessoas Naturais",
+   "situacao": "PROVIDO",
+   "n_semestres": 41,
+   "ultimo_periodo": "De 01/01/2026 até 30/06/2026",
+   "ultima_arrecadacao": "302733.83",
+   "status_http": [
+    200,
+    200
+   ],
+   "quantidade_colaboradores_clt": 2,
+   "quantidade_colaboradores_estatutarios": 0,
+   "quantidade_colaboradores_estagiarios": 0,
+   "quantidade_total_colaboradores": 2,
+   "quantidade_colaboradores_terceirizados": 0
+  }
+ ]
+}

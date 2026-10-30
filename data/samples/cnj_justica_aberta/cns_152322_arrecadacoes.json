@@ -1,0 +1,225 @@
+{
+ "_url": "https://justicaabertaapi.cnj.jus.br/v1/api/serventias/152322/arrecadacoes",
+ "_coletado_em": "2026-10-17",
+ "_obs": "campos pessoais mascarados",
+ "dados": {
+  "meta": {
+   "total": 41,
+   "per_page": 50,
+   "current_page": 1,
+   "last_page": 1,
+   "first_page": 1,
+   "first_page_url": "/?page=1",
+   "last_page_url": "/?page=1",
+   "next_page_url": null,
+   "previous_page_url": null
+  },
+  "data": [
+   {
+    "periodo": "De 01/01/2026 até 30/06/2026",
+    "atos_praticados": 5526,
+    "arrecadacao": "1021527.54"
+   },
+   {
+    "periodo": "De 01/07/2025 até 31/12/2025",
+    "atos_praticados": 5550,
+    "arrecadacao": "1038065.88"
+   },
+   {
+    "periodo": "De 01/01/2025 até 30/06/2025",
+    "atos_praticados": 5585,
+    "arrecadacao": "951796.06"
+   },
+   {
+    "periodo": "De 01/07/2024 até 31/12/2024",
+    "atos_praticados": 416,
+    "arrecadacao": "27133.80"
+   },
+   {
+    "periodo": "De 01/01/2024 até 30/06/2024",
+    "atos_praticados": 359,
+    "arrecadacao": "19214.89"
+   },
+   {
+    "periodo": "De 01/07/2023 até 31/12/2023",
+    "atos_praticados": 420,
+    "arrecadacao": "17508.29"
+   },
+   {
+    "periodo": "De 01/01/2023 até 30/06/2023",
+    "atos_praticados": 586,
+    "arrecadacao": "35432.56"
+   },
+   {
+    "periodo": "De 01/07/2022 até 31/12/2022",
+    "atos_praticados": 341,
+    "arrecadacao": "10593.76"
+   },
+   {
+    "periodo": "De 01/01/2022 até 30/06/2022",
+    "atos_praticados": 273,
+    "arrecadacao": "9804.20"
+   },
+   {
+    "periodo": "De 01/07/2021 até 31/12/2021",
+    "atos_praticados": 462,
+    "arrecadacao": "15743.87"
+   },
+   {
+    "periodo": "De 01/01/2021 até 30/06/2021",
+    "atos_praticados": 567,
+    "arrecadacao": "24369.35"
+   },
+   {
+    "periodo": "De 01/07/2020 até 31/12/2020",
+    "atos_praticados": 465,
+    "arrecadacao": "17920.03"
+   },
+   {
+    "periodo": "De 01/01/2020 até 30/06/2020",
+    "atos_praticados": 369,
+    "arrecadacao": "12892.27"
+   },
+   {
+    "periodo": "De 01/07/2019 até 31/12/2019",
+    "atos_praticados": 724,
+    "arrecadacao": "20402.97"
+   },
+   {
+    "periodo": "De 01/01/2019 até 30/06/2019",
+    "atos_praticados": 399,
+    "arrecadacao": "11070.12"
+   },
+   {
+    "periodo": "De 01/07/2018 até 31/12/2018",
+    "atos_praticados": 523,
+    "arrecadacao": "15443.70"
+   },
+   {
+    "periodo": "De 01/01/2018 até 30/06/2018",
+    "atos_praticados": 648,
+    "arrecadacao": "13890.52"
+   },
+   {
+    "periodo": "De 01/07/2017 até 31/12/2017",
+    "atos_praticados": 478,
+    "arrecadacao": "13649.77"
+   },
+   {
+    "periodo": "De 01/01/2017 até 30/06/2017",
+    "atos_praticados": 584,
+    "arrecadacao": "15432.41"
+   },
+   {
+    "periodo": "De 01/07/2016 até 31/12/2016",
+    "atos_praticados": 346,
+    "arrecadacao": "9828.91"
+   },
+   {
+    "periodo": "De 01/01/2016 até 30/06/2016",
+    "atos_praticados": 500,
+    "arrecadacao": "13176.20"
+   },
+   {
+    "periodo": "De 01/07/2015 até 31/12/2015",
+    "atos_praticados": 362,
+    "arrecadacao": "9316.27"
+   },
+   {
+    "periodo": "De 01/01/2015 até 30/06/2015",
+    "atos_praticados": 501,
+    "arrecadacao": "13629.50"
+   },
+   {
+    "periodo": "De 01/07/2014 até 31/12/2014",
+    "atos_praticados": 387,
+    "arrecadacao": "11755.55"
+   },
+   {
+    "periodo": "De 01/01/2014 até 30/06/2014",
+    "atos_praticados": 478,
+    "arrecadacao": "15041.63"
+   },
+   {
+    "periodo": "De 01/07/2013 até 31/12/2013",
+    "atos_praticados": 438,
+    "arrecadacao": "9170.38"
+   },
+   {
+    "periodo": "De 01/01/2013 até 30/06/2013",
+    "atos_praticados": 720,
+    "arrecadacao": "21064.55"
+   },
+   {
+    "periodo": "De 01/07/2012 até 31/12/2012",
+    "atos_praticados": 842,
+    "arrecadacao": "12422.16"
+   },
+   {
+    "periodo": "De 01/01/2012 até 30/06/2012",
+    "atos_praticados": 854,
+    "arrecadacao": "12669.24"
+   },
+   {
+    "periodo": "De 01/07/2011 até 31/12/2011",
+    "atos_praticados": 468,
+    "arrecadacao": "6271.04"
+   },
+   {
+    "periodo": "De 01/01/2011 até 30/06/2011",
+    "atos_praticados": 0,
+    "arrecadacao": "0.00"
+   },
+   {
+    "periodo": "De 01/07/2010 até 31/12/2010",
+    "atos_praticados": 0,
+    "arrecadacao": "0.00"
+   },
+   {
+    "periodo": "De 01/01/2010 até 30/06/2010",
+    "atos_praticados": 0,
+    "arrecadacao": "0.00"
+   },
+   {
+    "periodo": "De 01/07/2009 até 31/12/2009",
+    "atos_praticados": 0,
+    "arrecadacao": "0.00"
+   },
+   {
+    "periodo": "De 01/01/2009 até 30/06/2009",
+    "atos_praticados": 0,
+    "arrecadacao": "0.00"
+   },
+   {
+    "periodo": "De 01/07/2008 até 31/12/2008",
+    "atos_praticados": 0,
+    "arrecadacao": "0.00"
+   },
+   {
+    "periodo": "De 01/01/2008 até 30/06/2008",
+    "atos_praticados": 0,
+    "arrecadacao": "0.00"
+   },
+   {
+    "periodo": "De 01/07/2007 até 31/12/2007",
+    "atos_praticados": 0,
+    "arrecadacao": "0.00"
+   },
+   {
+    "periodo": "De 01/01/2007 até 30/06/2007",
+    "atos_praticados": 0,
+    "arrecadacao": "0.00"
+   },
+   {
+    "periodo": "De 01/01/2006 até 31/12/2006",
+    "atos_praticados": 0,
+    "arrecadacao": "0.00"
+   },
+   {
+    "periodo": "De 01/01/2005 até 31/12/2005",
+    "atos_praticados": 0,
+    "arrecadacao": "0.00"
+   }
+  ]
+ }
+}
