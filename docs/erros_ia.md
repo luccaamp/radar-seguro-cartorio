@@ -869,3 +869,27 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Como foi detectado:** a IA contou as linhas com um script antes de fechar.
 - **Correção:** números corrigidos nos dois documentos, com a regra de contagem escrita.
 - **Bom para os slides?** não
+
+## 2026-10-29 — CSS do visual novo quebrou o painel em quatro pontos antes da conferência no navegador
+- **Onde:** `src/painel/estilo.css` e `src/painel/graficos.py` (D-052).
+- **O que aconteceu:** (1) a frase de conclusão virou colunas soltas, porque o quadro usava `display: flex` e cada trecho em negrito virou um item; (2) o subtítulo dos gráficos continuou em serifa, porque o Plotly ignora `font-family` dentro do título; (3) o rótulo do topo e o título do Chat ficaram escondidos sob a barra do Streamlit; (4) o primeiro título de "Sobre os dados" subiu sobre a faixa azul-marinho, ilegível.
+- **Como foi detectado:** capturas de cada página no navegador (1366 px e 375 px), antes de entregar.
+- **Causa provável:** o CSS foi escrito pelo HTML do artefato (página estática), sem levar em conta os contêineres do Streamlit e o que o Plotly aceita no título.
+- **Correção:** quadro com o sinal em posição absoluta (sem flex); subtítulo no campo `title.subtitle` do Plotly; respiro de 72 px no topo e barra da cor certa por página; a regra de "subir sobre a faixa" não vale para títulos de seção.
+- **Bom para os slides?** sim (mostra por que a conferência visual faz parte da entrega)
+
+## 2026-10-29 — Faixa do topo com pseudo-elemento largo escondeu a navegação do painel
+- **Onde:** `src/painel/estilo.css` (D-052, segunda passada).
+- **O que aconteceu:** para pintar o degradê da faixa até as bordas, um `::before` com `left/right: -100vmax`; o contêiner principal do Streamlit (`overflow: hidden`) passou a ter conteúdo além da largura e rolou para o lado, tirando a navegação da tela.
+- **Como foi detectado:** captura no navegador sem a barra lateral; medição no DOM mostrou o `stMain` com `overflow-x: hidden` e a faixa deslocada.
+- **Causa provável:** técnica de página estática aplicada a um contêiner com rolagem própria.
+- **Correção:** o degradê vai num `border-image` com recuo lateral (`fill 0 / 0 / 0 100vmax`), que pinta fora da caixa sem criar rolagem.
+- **Bom para os slides?** não
+
+## 2026-10-29 — "Igual ao Raio-X" feito só no tema claro, e sem avisar que o painel aberto precisava reiniciar
+- **Onde:** D-052, primeira e segunda passadas (`src/painel/estilo.css`, `.streamlit/config.toml`).
+- **O que aconteceu:** o Raio-X tem tema claro e escuro e segue o sistema; a IA copiou só os tokens claros. O autor usa o sistema no escuro e via o Raio-X escuro; além disso, o painel dele estava aberto desde antes das mudanças. Resultado: "nada mudou".
+- **Como foi detectado:** capturas do autor com o fundo `#0c1018` e o terminal dele mostrando o Streamlit iniciado às 21:48.
+- **Causa provável:** a leitura do código do artefato parou no bloco `:root` e ignorou o `@media (prefers-color-scheme: dark)`; a conferência foi feita só no navegador da IA, em modo claro.
+- **Correção:** os dois temas com os tokens do artefato, escolha pelo tema do Streamlit ou do sistema, gráficos e mapa trocando de cor; conferência nos dois esquemas; aviso explícito para reiniciar o painel.
+- **Bom para os slides?** sim (o pedido era claro; faltou conferir no ambiente de quem pediu)

@@ -41,9 +41,9 @@ def modo() -> str:
 def demonstracao() -> bool:
     return modo() == "demonstracao"
 
-# paleta (skill de visualização, instância de referência): sequencial azul, série única azul, superfícies
-AZUL_SEQUENCIAL = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
-AZUL_SERIE = "#1f5bb8"   # cor "observado" de src/painel/graficos.py
+# paleta do Raio-X do Cartório (D-052): sequencial do mapa e série principal, as mesmas de src/painel/graficos.py
+AZUL_SEQUENCIAL = ["#e8eef8", "#c3d1e8", "#8fb3e6", "#5a94e0", "#2a78d6", "#2056a8", "#183564"]
+AZUL_SERIE = "#2a78d6"
 
 NOMES_FONTE = {
     "cnj_serventias": "CNJ / Justiça Aberta (cadastro)",

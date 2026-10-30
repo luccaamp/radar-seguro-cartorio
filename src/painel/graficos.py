@@ -1,11 +1,13 @@
 """Gráficos do painel (Plotly): um template único e uma função por gráfico, que recebe o resultado de
 src/painel/analises.py (nunca consulta o banco). Padrão em docs/painel/padrao_visual.md (terceira rodada).
 
-Regras do template: fonte Inter; fundo branco e grade quase invisível; título à esquerda que diz a conclusão; subtítulo
+Regras do template: fonte IBM Plex Sans e título em Newsreader (D-052); fundo branco e grade quase invisível; título à
+esquerda que diz a conclusão; subtítulo
 com o que está plotado e a unidade; rótulos diretos nos dados em vez de legenda; uma linha pequena de fonte embaixo, só
 com a fonte e a data; uma cor de destaque para a série principal e uma segunda cor só para comparação; números no
 formato brasileiro; sem eixo duplo, sem 3D, sem pizza e sem escala log.
 """
+import json
 import math
 import re
 
@@ -14,31 +16,58 @@ import plotly.io as pio
 
 from src.agent.ferramentas import brl
 
-# destaque e comparação: validadas com o scripts/validate_palette.js da skill de visualização (modo claro, todas as
-# checagens; contraste do âmbar < 3:1, por isso sempre com rótulo direto) e em escala de cinza (111 × 156)
+# tokens do "Raio-X do Cartório" (D-052), com os mesmos valores: séries s1 (azul), s2 (laranja), s3 (verde) e ref
+# (cinza); texto ink / ink-2 / muted; grade grid / grid-strong; laranja sempre com rótulo direto (contraste < 3:1)
 COR = {
-    "destaque": "#3366e6", "destaque_claro": "#c9d6f7", "comparacao": "#e08a1e",
-    "neutro": "#cbd2dc",          # degraus que levam à resposta (o destaque fica só no último)
-    "extremo": "#9ca3af",         # extremos teóricos: discretos
-    "titulo": "#111827", "texto": "#1f2937", "texto_2": "#4b5563", "mudo": "#6b7280",
-    "grade": "#f1f2f4", "eixo": "#e5e7eb", "superficie": "#ffffff",
+    "destaque": "#2a78d6", "destaque_claro": "#c3d1e8", "comparacao": "#eb6834", "terceira": "#1baf7a",
+    "neutro": "#2a78d6",          # degraus que levam à resposta: a série s1; o último (o prêmio) vai em s2
+    "extremo": "#8d97ab",         # extremos teóricos: discretos (ref)
+    "titulo": "#0f1c33", "texto": "#0f1c33", "texto_2": "#45506a", "mudo": "#6b7590",
+    "grade": "#e6e9ef", "eixo": "#c2c9d6", "superficie": "#ffffff", "linha": "#dde2ea",
 }
-FAIXA = "rgba(51,102,230,0.16)"          # faixa provável (P5–P95) e faixa da projeção (P10–P90)
-FONTE = "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif"
+FAIXA = "rgba(42,120,214,0.18)"          # faixa provável (P5–P95) e faixa da projeção (P10–P90): s1 translúcido
+BARRA = dict(line=dict(color="#ffffff", width=2), cornerradius=4)   # barras do Raio-X: borda branca de 2 px, cantos de 4 px
+# mapa: do azul-claro do agregado ao azul-marinho da faixa, passando pela série s1
+SEQUENCIAL = ["#e8eef8", "#c3d1e8", "#8fb3e6", "#5a94e0", "#2a78d6", "#2056a8", "#183564"]
+
+# tema escuro do Raio-X: cada cor clara acima e a equivalente escura (--surface, --ink, --line, --s1 … do artefato).
+# No mapa a escala se inverte em luminosidade: no escuro, o valor maior é o azul mais claro.
+ESCURO = {
+    "#ffffff": "#141a25", "#f5f7fa": "#1a2130", "#0f1c33": "#e9edf5", "#45506a": "#b2bccd", "#6b7590": "#8793a8",
+    "#dde2ea": "#262e3d", "#e6e9ef": "#222a38", "#c2c9d6": "#3a4558",
+    "#2a78d6": "#3987e5", "#eb6834": "#d95926", "#1baf7a": "#199e70", "#8d97ab": "#7b869b",
+    "#e8eef8": "#1d2840", "#c3d1e8": "#2c3d62", "#8fb3e6": "#2a5aa0", "#5a94e0": "#3373c8", "#2056a8": "#74aef0",
+    "#183564": "#b4d3f8",
+    "rgba(42,120,214,0.18)": "rgba(57,135,229,0.24)", "rgba(255,255,255,0.85)": "rgba(20,26,37,0.85)",
+}
+_COR_RE = re.compile(r"#[0-9a-fA-F]{6}\b|rgba\([^)]*\)")
+
+
+def _escurecer(fig: go.Figure) -> go.Figure:
+    """A mesma figura com as cores do tema escuro do Raio-X (troca única, sem encadear) e o fundo do mapa escuro."""
+    troca = lambda m: ESCURO.get(m.group(0).lower().replace(" ", ""), m.group(0))  # noqa: E731
+    fig = go.Figure(json.loads(_COR_RE.sub(troca, fig.to_json())))
+    if fig.layout.map and fig.layout.map.style == "white-bg":   # sem mapa de fundo: só a cor da superfície
+        fig.update_layout(map_style={"version": 8, "sources": {}, "layers": [
+            {"id": "fundo", "type": "background", "paint": {"background-color": ESCURO["#ffffff"]}}]})
+    return fig
+FONTE = "'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+FONTE_TITULO = "Newsreader, Georgia, 'Times New Roman', serif"
 BORDA = 24      # px entre a borda do cartão e o título / rodapé (múltiplo de 8)
 TOPO = 80       # px do título + subtítulo
 
 pio.templates["radar"] = go.layout.Template(layout=go.Layout(
-    font=dict(family=FONTE, size=13, color=COR["texto"]),
-    title=dict(font=dict(size=16, color=COR["titulo"]), x=0, xanchor="left", xref="container", y=1, yref="container",
+    font=dict(family=FONTE, size=12, color=COR["texto_2"]),
+    title=dict(font=dict(family=FONTE_TITULO, size=18, weight=600, color=COR["titulo"]), x=0, xanchor="left",
+               xref="container", y=1, yref="container",
                yanchor="top", pad=dict(t=BORDA, l=BORDA)),
     paper_bgcolor=COR["superficie"], plot_bgcolor=COR["superficie"], separators=",.",
-    colorway=[COR["destaque"], COR["comparacao"], COR["extremo"]],
+    colorway=[COR["destaque"], COR["comparacao"], COR["terceira"], COR["extremo"]],
     xaxis=dict(automargin=True, showgrid=False, linecolor=COR["eixo"], ticks="", zeroline=False,
-               title=dict(font=dict(size=12, color=COR["mudo"])), tickfont=dict(color=COR["mudo"], size=12)),
+               title=dict(font=dict(size=12, color=COR["texto_2"])), tickfont=dict(color=COR["texto_2"], size=12)),
     yaxis=dict(automargin=True, showgrid=True, gridcolor=COR["grade"], gridwidth=1, zeroline=False, showline=False,
-               title=dict(font=dict(size=12, color=COR["mudo"])), tickfont=dict(color=COR["mudo"], size=12)),
-    hoverlabel=dict(bgcolor="#ffffff", bordercolor=COR["eixo"], font=dict(family=FONTE, size=13, color=COR["texto"])),
+               title=dict(font=dict(size=12, color=COR["texto_2"])), tickfont=dict(color=COR["texto_2"], size=12)),
+    hoverlabel=dict(bgcolor=COR["superficie"], bordercolor=COR["linha"], font=dict(family=FONTE, size=13, color=COR["texto"])),
     margin=dict(l=BORDA, r=BORDA, t=TOPO, b=56), bargap=0.35, showlegend=False,
 ))
 pio.templates.default = "radar"
@@ -64,12 +93,13 @@ def _fig(titulo: str, subtitulo: str, fonte: str, altura: int = 360) -> go.Figur
     """Figura com título (a conclusão), subtítulo (o que está plotado e a unidade) e a linha de fonte embaixo. Os três
     textos já vêm quebrados para caber no celular; a altura cresce com as linhas a mais."""
     t, s, f = (_linhas(titulo, CABE["titulo"]), _linhas(subtitulo, CABE["subtitulo"]), _linhas(fonte, CABE["fonte"]))
-    topo = BORDA + 21 * len(t) + 18 * len(s) + 16
+    topo = BORDA + 23 * len(t) + 18 * len(s) + 16
     # template e fundo explícitos: o Streamlit troca o template padrão do Plotly ao ser importado
     fig = go.Figure(layout=dict(template="radar", paper_bgcolor=COR["superficie"], plot_bgcolor=COR["superficie"]))
+    # o subtítulo vai no campo próprio: o Plotly não aceita trocar a fonte (serifa → sem serifa) dentro do título
     fig.update_layout(height=altura + (topo - TOPO) + 15 * (len(f) - 1), margin=dict(t=topo), title=dict(
-        text=f"<b>{'<br>'.join(t)}</b><br><span style='font-size:13px;color:{COR['texto_2']}'>"
-             f"{'<br>'.join(s)}</span>"))
+        text="<br>".join(t),   # peso 600 no template (h2 do Raio-X); <b> daria 700 sintético na Newsreader
+        subtitle=dict(text="<br>".join(s), font=dict(family=FONTE, size=12.5, color=COR["mudo"]))))
     fig.add_annotation(text="<br>".join(f), name="rodape", xref="paper", yref="paper", x=0, y=0, xanchor="left",
                        yanchor="top", showarrow=False, align="left", font=dict(size=11, color=COR["mudo"]))
     fig.update_layout(meta={"linhas_fonte": len(f)})
@@ -84,7 +114,8 @@ def finalizar(fig: go.Figure) -> go.Figure:
     l_ = fig.layout.margin.l if fig.layout.margin.l is not None else BORDA
     fig.update_layout(margin=dict(b=b))
     fig.update_annotations(selector=dict(name="rodape"), yshift=-(b - 24 - extra), xshift=-(l_ - BORDA))
-    return fig
+    from src.painel.ui import tema
+    return _escurecer(fig) if tema() == "escuro" else fig
 
 
 def _margem(rotulos: list[str], px: float = 7.0) -> int:
@@ -122,8 +153,8 @@ DEGRAUS = [  # (chave de numeros_oficiais, grupo, rótulo do degrau, explicaçã
 
 def funil(oficiais: dict, fonte: str) -> go.Figure:
     """O funil da escada: cartórios (3 degraus, em serventias) e dinheiro (3 degraus, em R$). Cada grupo tem a sua
-    escala (barras proporcionais dentro do grupo), sem eixo de números: o rótulo de cada barra diz o valor. O último
-    degrau, o prêmio, leva a cor de destaque e remete ao número grande do topo (não repete o valor)."""
+    escala (barras proporcionais dentro do grupo), sem eixo de números: o rótulo de cada barra diz o valor. Os degraus
+    vão na série s1 do Raio-X; o último, o prêmio, em s2, e remete ao número grande do topo (não repete o valor)."""
     n = {x["chave"]: x for x in oficiais["numeros"]}
     ref = {"cartorios": n["serventias"]["base_cru"], "reais": n["deficit"]["base_cru"]}
     fig = _fig("Poucos cartórios precisam de garantia, e o prêmio é uma fração pequena do que falta cobrir",
@@ -137,9 +168,9 @@ def funil(oficiais: dict, fonte: str) -> go.Figure:
         larg.append(v["base_cru"] / ref[grupo])
         ultimo = chave == "premio"
         textos.append("<b>é o número acima</b>" if ultimo else f"<b>{v['valor']}</b>")
-        cores.append(COR["destaque"] if ultimo else COR["neutro"])
+        cores.append(COR["comparacao"] if ultimo else COR["neutro"])
         dicas.append([v["valor"], dica])
-    fig.add_trace(go.Bar(y=rot, x=larg, orientation="h", marker=dict(color=cores, cornerradius=4), width=0.62,
+    fig.add_trace(go.Bar(y=rot, x=larg, orientation="h", marker=dict(color=cores, **BARRA), width=0.62,
                          text=textos, textposition="outside", cliponaxis=False,
                          textfont=dict(color=COR["texto"], size=13), customdata=dicas,
                          hovertemplate="<b>%{y}</b>: %{customdata[0]}<br>%{customdata[1]}<extra></extra>"))
@@ -203,7 +234,7 @@ def tornado(r: dict, fonte: str, n: int = 5) -> go.Figure:
     hi = [max(x["premio_no_min"], x["premio_no_max"]) for x in t]
     for cor, xs in ((COR["destaque"], lo), (COR["comparacao"], hi)):
         fig.add_trace(go.Bar(y=rot, x=[x - base for x in xs], base=base, orientation="h", width=0.4,
-                             marker=dict(color=cor, cornerradius=4),
+                             marker=dict(color=cor, **BARRA),
                              text=[brl(x) if abs(x - base) / base > 0.004 else "" for x in xs],
                              textposition="outside", cliponaxis=False, textfont=dict(size=11, color=COR["texto"]),
                              customdata=[[brl(a), brl(b)] for a, b in zip(lo, hi)],

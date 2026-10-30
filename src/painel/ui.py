@@ -29,9 +29,21 @@ def _html(conteudo: str) -> None:
     st.markdown(conteudo, unsafe_allow_html=True)
 
 
+def tema() -> str:
+    """'escuro' ou 'claro', o tema que o Streamlit está mostrando (segue o sistema, como o Raio-X; o menu troca). ''
+    quando o navegador ainda não informou: o CSS cai na preferência do sistema."""
+    try:
+        t = st.context.theme.type
+    except Exception:   # fora do Streamlit (testes do módulo)
+        return ""
+    return {"dark": "escuro", "light": "claro"}.get(t or "", "")
+
+
 def estilo() -> None:
-    """Injeta o CSS único do painel. Chamado uma vez no topo de cada página."""
-    _html(f"<style>{ESTILO.read_text(encoding='utf-8')}</style>")
+    """Injeta o CSS único do painel e o marcador do tema (.rd-tema-escuro ou .rd-tema-claro), que escolhe os tokens
+    claros ou escuros do Raio-X no estilo.css. Chamado uma vez no topo de cada página."""
+    marca = f'<div class="rd-tema-{tema()}" hidden></div>' if tema() else ""
+    _html(f"<style>{ESTILO.read_text(encoding='utf-8')}</style>{marca}")
 
 
 def selo(tipo: str, texto: str | None = None) -> str:
@@ -54,9 +66,10 @@ def termo(texto: str, explicacao: str) -> str:
 
 
 def cabecalho(titulo: str, subtitulo: str, sobre: str = "") -> None:
-    """Título escuro sobre o fundo claro e uma linha de subtítulo; sem etiquetas. `sobre`: rótulo pequeno acima."""
+    """Faixa azul-marinho do topo (D-052): rótulo pequeno acima (`sobre`), título em serifa, uma linha de subtítulo e
+    o traço dourado; sem etiquetas. O primeiro bloco da página sobe sobre a faixa (estilo.css)."""
     _html(f'<div class="rd-cab">{f"<div class=rd-sobre>{_t(sobre)}</div>" if sobre else ""}<h1>{_t(titulo)}</h1>'
-          f'<div class="rd-sub">{_negrito(subtitulo)}</div></div>')
+          f'<div class="rd-sub">{_negrito(subtitulo)}</div><div class="rd-ouro"></div></div>')
 
 
 def resposta(rotulo: str, valor: str, unidade: str, faixa: str, frase: str) -> None:

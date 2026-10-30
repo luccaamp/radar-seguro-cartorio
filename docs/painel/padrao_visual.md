@@ -70,3 +70,30 @@ Fundo branco e grade `#f1f2f4` (quase invisível); sem eixo de números quando o
 ## 8. Números
 
 Formato brasileiro sempre com a unidade (`R$ 341,1 mil`, `R$ 1,9 mi`, `≈ 1.121`). O texto dos extremos que saía cortado ("R$ 51,7 mil a R$ 1,9") vinha da largura do cartão; os extremos agora ficam no gráfico, cada um com a unidade, e na tabela de "Sobre os dados". Nenhum número em destaque aparece em duas páginas (teste `test_nenhum_cartao_repete_numero_entre_paginas`); a tabela dos 10 números em "Sobre os dados" é a exceção pedida.
+
+## 9. Quarta rodada (D-052, 2026-10-29): o visual do "Raio-X do Cartório"
+
+A pedido do autor, o painel usa **os mesmos tokens, medidas e componentes** do artefato "Raio-X do Cartório" (ficha de cada serventia do Brasil, feita à parte), com os mesmos valores, para que uma página dele caiba no painel sem emenda. Muda só a aparência: a estrutura da D-051 (cinco páginas, limites por página, classes HTML que os testes conferem) continua.
+
+**Tokens (idênticos aos do Raio-X; nome original entre parênteses):** fundo `#eceff3` (bg); superfícies `#ffffff` e `#f5f7fa` (surface, surface-2); texto `#0f1c33`, `#45506a` e `#6b7590` (ink, ink-2, muted); linhas `#dde2ea`, grade `#e6e9ef` e `#c2c9d6` (line, grid, grid-strong); azul-marinho `#0f2447` → `#183564` (navy, navy-2), texto sobre ele `#f2f5fb` e `#b9c5dd`; dourado `#c9992e`, `#7a5a10` e `#fbf3df` (gold, gold-ink, gold-tint); agregado `#e8eef8` com borda `#c3d1e8` (agg, agg-line); séries `#2a78d6`, `#eb6834`, `#1baf7a` e `#8d97ab` (s1, s2, s3, ref); estados bom `#17794a`/`#e2f4ea`, alerta `#8f5f00`/`#fdf0d2` e ruim `#b42318`/`#fde7e4`; sombra `0 1px 2px rgba(15,28,51,.06), 0 6px 20px rgba(15,28,51,.05)`; IBM Plex Sans 14 px/1,5 no corpo (`baseFontSize = 14` no tema) e Newsreader nos títulos.
+
+| Componente | Raio-X | No painel |
+|---|---|---|
+| Faixa do topo (`.top`) | degradê `#0f2447` → `#183564`, rótulo de 12 px em caixa alta, título Newsreader 600 de 30 a 42 px, texto `#b9c5dd`, traço dourado 44 × 3 px | `.rd-cab`, igual; o degradê vai num `border-image` com recuo lateral, que pinta até as bordas sem criar rolagem |
+| Cartão (`.card`) | branco, borda `#dde2ea`, raio 14 px, sombra, 20 px de respiro; título Newsreader 600 18 px | `.rd-resposta`, `.rd-sugestoes`, os gráficos e os títulos de seção |
+| Agregado (`.cagr`) | quadro `#e8eef8`, número de 40 a 54 px, peso 600 | o número principal do Início |
+| Número (`.tile`) | rótulo 12 px `#6b7590`, valor 24 px peso 600, nota 12,5 px `#45506a` | `.rd-card` |
+| Veredito (`.verdict`) | quadro `#fbf3df`, 13,5 px, sinal em `#7a5a10` | `.rd-frase-bloco` e a frase do Início |
+| Selo (`.badge`) | pílula de 12 px; bom, alerta e ruim | `.rd-selo` (dado = bom; suposição e projeção = alerta) e as etiquetas do Chat |
+| Botão (`.btn2`) | 34 px, raio 8, `#f5f7fa`, borda `#dde2ea` | as perguntas sugeridas ao chat |
+| Tabela (`table.st`) | 13 px, células 7 × 9 px, cabeçalho `#f5f7fa`, linhas `#e6e9ef`, agregado em `#e8eef8` e negrito | `.rd-tabela` (a coluna de valor) |
+| Gráficos (Chart.js) | séries s1/s2/s3/ref; barras com borda branca de 2 px e cantos de 4 px; marcas 12 px `#45506a`; grade `#e6e9ef`; eixo `#c2c9d6`; dica branca com borda `#dde2ea` | Plotly com os mesmos valores; título Newsreader 600 18 px e subtítulo 12,5 px `#6b7590` no campo próprio do Plotly; funil em s1 com o prêmio em s2; tornado s1 (para baixo) × s2 (para cima); faixa em s1 translúcido; extremos em ref |
+| Mapa | (não tem) | escala `#e8eef8` → `#2a78d6` (s1) → `#183564` (navy-2); sem dado `#f5f7fa` com contorno `#45506a` |
+| Navegação | (não tem) | superfície branca com a linha `#dde2ea`, marca em Newsreader 18 px, item ativo em `#e8eef8` com o filete dourado à esquerda (a linha agregada do demonstrativo) |
+| Chat (`src/agent/chat.css`, da Letícia) | caixa de busca de 50 px, raio 10, sombra | só as cores e a fonte do título trocadas pelos tokens acima; campo como a caixa de busca, mensagens como cartões, sugestões como as pílulas de exemplo, botão de enviar em azul-marinho |
+
+**Tema escuro (como o Raio-X):** o painel segue o tema do sistema, e o menu do Streamlit também troca. Tokens escuros, idênticos aos do artefato: fundo `#0c1018`; superfícies `#141a25` e `#1a2130`; texto `#e9edf5`, `#b2bccd` e `#8793a8`; linhas `#262e3d`, grade `#222a38` e `#3a4558`; azul-marinho `#0a1630` → `#12244a`; dourado `#e0b44e`, `#e8c46a` e `#2a2414`; agregado `#1d2840` com borda `#2c3d62`; séries `#3987e5`, `#d95926`, `#199e70` e `#7b869b`; estados `#4cc38a`/`#12301f`, `#e2b04a`/`#33270c` e `#ff8a7a`/`#3a1a17`; sombra `0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.25)`. Como funciona: `.streamlit/config.toml` tem `[theme.light]` e `[theme.dark]`; `ui.estilo()` põe um marcador `.rd-tema-escuro` ou `.rd-tema-claro` conforme `st.context.theme`, e o `estilo.css` troca os tokens por ele (sem marcador, vale `prefers-color-scheme`, como no artefato); o Plotly não lê CSS, então `graficos.finalizar()` troca cada cor clara pela escura (`graficos.ESCURO`), inverte a escala do mapa em luminosidade (no escuro, o valor maior é o azul mais claro) e põe o fundo do mapa na superfície escura. O `chat.css` usa as mesmas variáveis.
+
+**Ajustes de encaixe no Streamlit:** a barra do Streamlit (60 px) fica sobre a faixa, por isso a faixa começa com 76 px de respiro e a barra fica azul-marinho só nas páginas com faixa (o Chat não tem: lá a barra fica da cor do fundo e o conteúdo desce 72 px). O primeiro bloco depois da faixa sobe 30 px sobre ela, como o `main` do Raio-X; um título de seção (Sobre os dados) não sobe, e um filtro (Mercado) vai num cartão branco.
+
+**Fora desta rodada:** a busca por cartório e o demonstrativo por ano (ver as propostas de estrutura no `docs/diario.md`, 2026-10-29).

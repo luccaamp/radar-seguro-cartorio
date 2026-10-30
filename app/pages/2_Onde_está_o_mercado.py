@@ -16,14 +16,13 @@ import streamlit as st
 
 from comum import analise, brl, consulta, execucao, fonte_linha, md_seguro, num, pagina, pct, ticks_brl
 from src.painel import ui
-from src.painel.graficos import COR, finalizar
+from src.painel.graficos import COR, SEQUENCIAL, finalizar
 
 pagina("Onde está o mercado", "🗺️", "Onde está o dinheiro?",
        "O déficit de cobertura, que é o que vira seguro, se concentra nas maiores cidades. Escolha um município para "
        "ver a parte dele.", sobre="Onde está o mercado")
 LIMIAR = int(execucao().limiar_lgpd)
-SEQUENCIAL = ["#eef3fd", "#c9d6f7", "#99b2f0", "#6a8de9", "#3366e6", "#2450c4", "#183a8f"]   # um tom, claro → escuro
-CINZA, SEM_SERV, CONTORNO = "#e5e7eb", "#f9fafb", "#4b5563"
+CINZA, SEM_SERV, CONTORNO = "#dde2ea", "#f5f7fa", "#45506a"   # tokens line, surface-2 e ink-2 do Raio-X (D-052)
 METRICA = "valor_descoberto"
 
 
@@ -126,7 +125,8 @@ def mapa(destaque: str | None, zoom_ids: list[str] | None) -> go.Figure:
         customdata=d[["area_nome", "n_serventias", "valor_txt", "pct_txt"]].to_numpy(),
         hovertemplate=("<b>%{customdata[0]}</b><br>Cartórios: %{customdata[1]}<br>Déficit: %{customdata[2]}<br>"
                        "%{customdata[3]} do déficit de MG<extra></extra>"),
-        colorbar=dict(title=dict(text="Déficit", side="top"), thickness=10, len=0.6, tickvals=vals, ticktext=textos,
+        colorbar=dict(title=dict(text="Déficit", side="top", font=dict(color=COR["texto"], size=12)), thickness=10,
+                      len=0.6, tickvals=vals, ticktext=textos, tickfont=dict(color=COR["texto_2"], size=12),
                       x=0.98, xanchor="right", y=0.5, bgcolor="rgba(255,255,255,0.85)", outlinewidth=0)))
     if destaque:
         f = d[d["area_id"] == destaque]

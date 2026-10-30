@@ -19,7 +19,7 @@ from apoio_painel import RAIZ
 pytestmark = [pytest.mark.dados_reais, pytest.mark.usefixtures("banco_temporario")]
 MERCADO = str(RAIZ / "app/pages/2_Onde_está_o_mercado.py")
 SIMULADOR = str(RAIZ / "app/simulador.py")
-SEM_SERV, CONTORNO = "#f9fafb", "#4b5563"
+SEM_SERV, CONTORNO = "#f5f7fa", "#45506a"   # cores do mapa no visual da D-052 (app/pages/2_Onde_está_o_mercado.py)
 
 
 # ------------------------------------------------------------------ apoio

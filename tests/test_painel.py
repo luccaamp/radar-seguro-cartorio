@@ -164,7 +164,8 @@ def test_analises_rotula_projecao_e_a_leitura_do_limite(painel_demo):
     tela = html(at)
     assert tela.count('class="rd-selo projecao"') >= 2
     figs = [json.loads(g.proto.spec) for g in at.get("plotly_chart")]
-    assert len(figs) == 1 and figs[0]["layout"]["title"]["text"].startswith("<b>PROJEÇÃO")
+    # o título vem sem <b>: o peso 600 da Newsreader está no template (D-052)
+    assert len(figs) == 1 and figs[0]["layout"]["title"]["text"].startswith("PROJEÇÃO")
     assert any("projeção, não número oficial" in a["text"] for a in figs[0]["layout"]["annotations"])
     with con_demo(painel_demo) as con:
         pm = analises.previsao_mercado(con, "MG", ano=2027)

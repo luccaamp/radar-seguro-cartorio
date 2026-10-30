@@ -20,10 +20,12 @@ ESPERA = '<div class="chat-espera">Consultando os dados…</div>'
 
 
 def _css() -> None:
-    """CSS só desta página (src/agent/chat.css), com a cor de marca do tema do painel (.streamlit/config.toml)."""
-    tema = tomllib.loads((llm.RAIZ / ".streamlit" / "config.toml").read_text(encoding="utf-8"))
+    """CSS só desta página (src/agent/chat.css), com a cor de marca do tema do painel (.streamlit/config.toml). Desde a
+    D-052 o tema tem as seções [theme.light] e [theme.dark]; o chat.css usa as variáveis de tema do estilo.css."""
+    tema = tomllib.loads((llm.RAIZ / ".streamlit" / "config.toml").read_text(encoding="utf-8"))["theme"]
+    primaria = tema.get("primaryColor") or tema.get("light", {}).get("primaryColor", "")
     css = (llm.RAIZ / "src" / "agent" / "chat.css").read_text(encoding="utf-8")
-    st.markdown(f"<style>{css.replace('__PRIMARIA__', tema['theme']['primaryColor'])}</style>", unsafe_allow_html=True)
+    st.markdown(f"<style>{css.replace('__PRIMARIA__', primaria)}</style>", unsafe_allow_html=True)
 
 
 def _cabecalho() -> None:
