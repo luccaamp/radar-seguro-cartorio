@@ -70,8 +70,7 @@ def test_a_partir_do_silver_parquet_reproduz_o_conjunto_publico(tmp_path):
     pipeline.main("gold_de_parquet", banco=banco, exportar_parquet=False)
     man = publico.ler_manifesto()
     with duckdb.connect(str(banco), read_only=True) as con:
-        diferentes = [a["tabela"] for a in man["arquivos"] if a["comparar"]
-                      and publico.hash_conteudo_tabela(con, a["tabela"]) != a["sha256_conteudo"]]
+        diferentes = [a["tabela"] for a in man["arquivos"] if a["comparar"] and not publico.tabela_coerente(con, a)]
     assert not diferentes, diferentes
 
 

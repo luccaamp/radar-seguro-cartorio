@@ -4,6 +4,12 @@
 # (todos os níveis e regras, insumos e auditoria); a supressão de áreas pequenas sai na fase 2 (Etapa 3).
 pasta: data/publico
 limite_mb: 20
+# Testes de coerência com o gold local: se o hash de conteúdo difere, as colunas de ponto flutuante podem diferir
+# até esta fração (relativa, valor a valor); texto, inteiros e datas continuam exatos. Cobre o ruído numérico entre
+# máquinas (biblioteca de álgebra linear, ordem das somas): em 2026-10-28, a mesma carga deu até 5,5e-5 na
+# gold.analise_previsao e 2e-12 na gold.analise_clt_modelo (docs/diario.md). fonte: suposição (folga de ~2×
+# sobre o maior ruído medido, muito abaixo da casa decimal que o painel mostra)
+tolerancia_coerencia: 1.0e-4
 
 # schema.tabela -> opções: remover (colunas que não vão), sql (consulta no lugar da tabela inteira),
 # sem_hash (colunas fora do hash de conteúdo: carimbos de execução), comparar (entra na prova "hash idêntico"

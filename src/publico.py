@@ -55,6 +55,39 @@ def hash_conteudo_tabela(con, tabela: str) -> str:
     return hash_conteudo(con, f"({consulta_exportacao(tabela)})", op.get("sem_hash"))
 
 
+def mesmo_conteudo(con: duckdb.DuckDBPyConnection, relacao_a: str, relacao_b: str,
+                   sem_hash: list[str] | None = None) -> bool:
+    """`relacao_a` e `relacao_b` (no mesmo `con`) têm o mesmo conteúdo: hash igual ou, se não, as mesmas linhas com
+    as colunas de ponto flutuante dentro de `tolerancia_coerencia` (config/publico.yaml), por causa do ruído numérico
+    entre máquinas. Para os testes de coerência; a prova "recalcular dá o mesmo" na mesma máquina segue o hash."""
+    if hash_conteudo(con, relacao_a, sem_hash) == hash_conteudo(con, relacao_b, sem_hash):
+        return True
+    import numpy as np
+    import pandas as pd
+    exclui = f" EXCLUDE ({', '.join(sem_hash)})" if sem_hash else ""
+    a, b = (con.execute(f"SELECT *{exclui} FROM {r} ORDER BY ALL").df() for r in (relacao_a, relacao_b))
+    if list(a.columns) != list(b.columns) or len(a) != len(b):
+        return False
+    for c in a.columns:
+        x, y = a[c], b[c]
+        if pd.api.types.is_float_dtype(x) and pd.api.types.is_float_dtype(y):
+            if not np.allclose(x, y, rtol=CONFIG["tolerancia_coerencia"], atol=0, equal_nan=True):
+                return False
+        elif not x.equals(y):
+            return False
+    return True
+
+
+def tabela_coerente(con: duckdb.DuckDBPyConnection, arquivo: dict, pasta: Path = PASTA) -> bool:
+    """A tabela pública `arquivo` (entrada do manifesto) bate com o banco completo `con`: hash do manifesto ou, se
+    não, `mesmo_conteudo` contra o Parquet de `pasta`."""
+    tabela = arquivo["tabela"]
+    if hash_conteudo_tabela(con, tabela) == arquivo["sha256_conteudo"]:
+        return True
+    parquet = f"read_parquet('{(pasta / arquivo['arquivo']).as_posix()}')"
+    return mesmo_conteudo(con, f"({consulta_exportacao(tabela)})", parquet, tabelas()[tabela].get("sem_hash"))
+
+
 def sha256_arquivo(p: Path) -> str:
     h = hashlib.sha256()
     with open(p, "rb") as f:

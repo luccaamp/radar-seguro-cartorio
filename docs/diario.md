@@ -1014,3 +1014,21 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Feito:** `[theme.light]` e `[theme.dark]` no `.streamlit/config.toml`; tokens escuros do Raio-X no `estilo.css`, escolhidos pelo marcador de tema de `ui.estilo()` (`st.context.theme`) ou, sem ele, por `prefers-color-scheme`; gráficos e mapa trocam de cor no escuro em `graficos.finalizar()` (`ESCURO`, escala do mapa invertida, fundo do mapa escuro); `chat.css` nas variáveis de tema; `5_Chat.py` lê a cor de marca da seção nova do tema. Item ativo da navegação com o texto na cor do texto (o azul-marinho sumia no escuro).
 - **Conferido no navegador** com o esquema escuro e o claro (1366 px): as 6 páginas, inclusive o mapa e o Chat. O "Map error" no console do mapa aparece nos dois temas (não vem desta mudança).
 - **Testes:** suíte padrão 307 passed, 2 failed (os de coerência, ruído de ponto flutuante: falta o `bb12465`); `dados_reais` de app, painel, auditoria e chat: 33 passed; ruff sem erro.
+
+## 2026-10-31 — Estado depois da versão final e tolerância de coerência na `main`
+- **Git:** `origin` = `github.com/luccaamp/radar-seguro-cartorio`; no remoto só a `main` (um commit, `3c99a3a`, "Versão final") e a tag `dados-2026-10-19`. O checkout estava em HEAD destacado na `origin/main`; as branches locais são da história antiga, sem ancestral comum com ela.
+- **Testes na versão final:** suíte padrão 307 passed, 2 failed (`test_gold_completo_coerente_com_o_gold_local`, `test_publico_coerente_com_o_gold_local`), em `analise_clt_modelo` (diferença relativa máxima 1,5e-11) e `analise_previsao` (5,5e-5): o mesmo ruído entre máquinas de 2026-10-28. A versão final tinha ficado sem o `bb12465`.
+- **Feito (a pedido do autor):** a correção do `bb12465` reaplicada com a ferramenta de edição, igual ao original (`git diff bb12465` vazio nos 5 arquivos): `config/publico.yaml` (`tolerancia_coerencia: 1.0e-4`, fonte: suposição), `src/publico.py` (`mesmo_conteudo`, `tabela_coerente`), `tests/test_completo.py`, `tests/test_publico.py` (mais o teste sintético) e `tests/test_pipeline.py`.
+- **Testes:** suíte padrão 310 passed. Banco real só lido (SHA-256 `c935a190…` antes e depois). `data/publico/` e `data/completo/` não mudaram. Sem commit.
+
+## 2026-10-31 — `main` alinhada com o GitHub e conferência do projeto com os dados reais e num clone
+- **Git (pedido do autor):** cópia da `main` antiga em `main-antiga` (`1810f98`); `git switch -C main origin/main`, com as mudanças acima mantidas na pasta; a `main` rastreia a `origin/main`.
+- **Dados reais no projeto:** `uv run pytest -m dados_reais`: 57 passed em 24 min (os testes montam uma cópia do banco, `tests/apoio_painel.py`). SHA-256 do banco e dos Parquet de `data/silver` e `data/gold` iguais antes e depois.
+- **Clone novo** (`git clone` do GitHub numa pasta temporária, fora do OneDrive, sem nada desta máquina):
+  - `uv sync` em 1,5 min; suíte padrão: 307 passed, 2 skipped (os de coerência, sem banco);
+  - modo demonstração (seção 1 do README): as 7 páginas abrem sem exceção (AppTest);
+  - modo completo (seção 1b): `exportar_completo.py --instalar` (10 tabelas e o CSV do BI, hash conferido) e `pipeline.py --a-partir-de silver` em ≈ 4 min; contratos do silver com 0 erros e 4 avisos, contratos do gold com 0 erros e 1 aviso (os avisos já conhecidos);
+  - gold do clone × banco real: **39 de 39 tabelas com o mesmo hash de conteúdo**; os 10 números iguais aos do `ESTADO_ATUAL` (`linha_de_base.py`);
+  - painel do clone no navegador: as 6 páginas abrem; sem a chave, o chat mostra "indisponível" e as perguntas prontas funcionam. Os 404 do console são o Streamlit pedindo `<página>/_stcore/health` ao abrir a URL de uma página direto (inofensivo);
+  - coerência no clone: sem a correção da tolerância, `test_publico`/`test_completo` falham nas mesmas 2 tabelas; com ela, 12 passed;
+  - `dados_reais` no clone (com a correção): 45 passed, 9 skipped (bronze ausente), 3 failed: `test_rais_`, `test_susep_` e `test_cnpj_extrato_regenerado_igual` acham os originais em `C:\radar_arquivo` (fora do projeto) e depois leem o extrato oficial do bronze do clone, que não existe. Num PC sem os originais, eles são pulados. Fica a melhoria opcional: pular também quando falta o extrato no bronze.

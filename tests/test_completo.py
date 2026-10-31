@@ -58,14 +58,15 @@ def test_sem_dado_pessoal(tmp_path):
 
 
 @pytest.mark.skipif(not BANCO_REAL.exists(), reason="sem banco local: nada a comparar")
-def test_gold_completo_coerente_com_o_gold_local(tmp_path):
-    """Se o banco local existir, data/completo/gold tem de ter o mesmo conteúdo (hash) que o gold dele."""
-    with duckdb.connect(str(BANCO_REAL), read_only=True) as real, montar(tmp_path / "completo.duckdb") as copia:
+def test_gold_completo_coerente_com_o_gold_local():
+    """Se o banco local existir, data/completo/gold tem de ter o mesmo conteúdo que o gold dele (hash ou, entre
+    máquinas, os mesmos valores dentro da tolerância de ponto flutuante)."""
+    with duckdb.connect(str(BANCO_REAL), read_only=True) as real:
         tabelas = [t for (t,) in real.execute("SELECT table_name FROM information_schema.tables "
                                               "WHERE table_schema = 'gold' ORDER BY 1").fetchall()]
         assert {p.stem for p in (PASTA / "gold").glob("*.parquet")} == set(tabelas)
         # carimbos de execução fora do hash, como no conjunto público (config/publico.yaml, sem_hash)
         sem_hash = {t: (publico.tabelas().get(f"gold.{t}") or {}).get("sem_hash") for t in tabelas}
-        diferentes = [t for t in tabelas if publico.hash_conteudo(real, f"gold.{t}", sem_hash[t])
-                      != publico.hash_conteudo(copia, f"gold.{t}", sem_hash[t])]
+        diferentes = [t for t in tabelas if not publico.mesmo_conteudo(
+            real, f"gold.{t}", f"read_parquet('{(PASTA / 'gold' / f'{t}.parquet').as_posix()}')", sem_hash[t])]
     assert not diferentes, f"data/completo desatualizado: rode `uv run python scripts/exportar_completo.py` ({diferentes[:5]})"
