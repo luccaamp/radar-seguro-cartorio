@@ -24,8 +24,8 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito.
 - [x] item 2: D-072 (GitHub Actions, Hugging Face, Kaggle), D-073 (branch por bloco e pull request; substitui o push direto da D-041) e D-074 (Streamlit Community Cloud), aprovadas;
 - [ ] item 3: decisões pendentes de MG em lote;
 - [ ] item 4: trocar a chave do Gemini (autor);
-- [ ] item 5: CI no GitHub Actions;
-- [ ] item 6: bloco A e estes documentos na `main` (branch `fechamento-mg-a`, sem commit).
+- [ ] item 5: CI no GitHub Actions (branch `ci-github-actions`, 2026-11-05: workflow escrito, falta o primeiro pull request rodar verde no GitHub);
+- [x] item 6: bloco A e estes documentos na `main` (PR #1, juntado em 2026-11-05, merge `1ed46db`). Backup de MG antes dele: branch `backup-MG` e tag `mg-backup-2026-11-05` (`7b5cc73`).
 
 A lista de fechamento de MG, combinada com o autor em 2026-10-31, foi distribuída no plano novo (o bloco A na Fase 0; B, C e D nas Fases 0, 1 e 3). Os quatro blocos:
 

@@ -88,7 +88,7 @@ O chat usa o **Gemini no nível gratuito** do Google AI Studio. **Cada pessoa us
    ```
    Branch de vida curta: termine, abra o pull request, junte com o CI verde e apague a branch. Uma branch aberta por vez (ou branches que não mexem nos mesmos arquivos); antes de juntar, traga a `main` para a branch.
 2. **Claude Code:** quando um colaborador pedir na conversa, o Claude pode fazer `commit`, `push`, `merge` e os demais comandos de `git` e `gh` que o colaborador pedir na hora, sem restrição (`CLAUDE.md`, seção Git).
-3. **Antes do pull request:**
+3. **Antes do pull request** (o CI, `.github/workflows/ci.yml`, roda de novo o `ruff`, a suíte padrão e os testes com os dados reais do modo completo; o pull request só é juntado com ele verde):
    - `uv run pytest` passando (e `uv run pytest -m dados_reais`, se você tem os dados da equipe);
    - `uv run ruff check src app tests scripts pipeline.py --exclude scripts/arquivo` sem erro (o padrão do projeto);
    - se mexeu no painel: `uv run python scripts/prints_painel.py --saida docs/qa/atual --checar`, com os prints e o `checagens.md` anexados ao PR (0 falhas de layout);
