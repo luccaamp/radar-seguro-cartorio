@@ -107,7 +107,7 @@ def test_simulador_padrao_igual_ao_cenario_base_do_painel(painel_demo):
 
 def test_simulador_suspende_zera_premio():
     at = rodar(SIMULADOR)
-    at.radio[0].set_value("suspende_8_17").run()
+    at.radio(key="x_cenario").set_value("suspende_8_17").run()
     assert not at.exception
     premios = [m.value for m in at.metric if m.label == "Prêmio emitido"]
     assert premios and all(v == "R$ 0" for v in premios)

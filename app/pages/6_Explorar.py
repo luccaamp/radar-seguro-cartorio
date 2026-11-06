@@ -33,7 +33,12 @@ aviso_estimativa()
 CONFIG = RAIZ / "config"
 REGRAS = yaml.safe_load((CONFIG / "regras_classificacao.yaml").read_text(encoding="utf-8"))
 CENARIOS = yaml.safe_load((CONFIG / "cenarios_stf.yaml").read_text(encoding="utf-8"))
-PAINEL = yaml.safe_load((CONFIG / "painel.yaml").read_text(encoding="utf-8"))["explorar"]
+_PAINEL_CFG = yaml.safe_load((CONFIG / "painel.yaml").read_text(encoding="utf-8"))
+PAINEL, PROJ_CFG = _PAINEL_CFG["explorar"], _PAINEL_CFG["projecao"]
+ROT_LIM = {PROJ_CFG["leitura_limite_principal"]: "Fixo em R$ 300 mil (regra em vigor)",
+           PROJ_CFG["leitura_limite_comparacao"]: "Corrigido pelo IPCA (comparação)"}
+LIM_CURTO = {PROJ_CFG["leitura_limite_principal"]: "limite fixo em R$ 300 mil",
+             PROJ_CFG["leitura_limite_comparacao"]: "limite corrigido pelo IPCA"}
 ROT_CEN = {"mantem": "Regra mantida", "suspende_8_17": "STF suspende arts. 8º a 17", "parcial": "Decisão parcial"}
 ROTULO_RESULTADO = "Resultado técnico (antes de impostos, resseguro e capital)"
 ROT_MET = {"por_empregados_cnj": "Por empregados (CNJ) — padrão", "arrecadacao": "Por arrecadação",
@@ -69,6 +74,11 @@ def peso_indet(regra: str) -> float:
 pb = premissas_nivel(semente, "base", peso_indet(REGRAS["versao_base"]))
 P = semente["premissas"]
 VARIANTES = consulta("SELECT * FROM gold.simulador_variantes") if DEMO else None
+# projeção 2026–27 (notebook 07): os totais por faixa de déficit só existem nas cargas que os gravam
+PREV = consulta("SELECT * FROM gold.analise_previsao WHERE bloco = 'mercado'")
+ANOS_PROJ = sorted({int(a) for a in PREV["periodo"]
+                    if explorar.totais_projetados(PREV, {}, int(a), PROJ_CFG["leitura_limite_principal"],
+                                                  PROJ_CFG["variante_principal"]) is not None})
 
 
 def grade(coluna: str) -> list:
@@ -124,6 +134,25 @@ for i in range(0, len(botoes), 2):   # duas colunas: o texto da pergunta cabe in
 
 # ------------------------------------------------------------------ controles
 aj: dict = {}
+st.markdown("##### Ano")
+c1, c2 = st.columns([1.4, 2])
+ano = c1.radio("Mercado de", ["hoje", *ANOS_PROJ], horizontal=True, key="x_ano",
+               format_func=lambda a: "Hoje (base do painel)" if a == "hoje" else f"{a} (projeção)",
+               help="Hoje: a classe pela receita de 2025, como no resto do painel. Projeção: a classe pela receita "
+                    "projetada de cada cartório (notebook 07, valor central), com o passivo de 2025."
+                    + ("" if ANOS_PROJ else " A carga atual não gravou os totais da projeção; os anos projetados "
+                                            "aparecem depois da próxima carga."))
+proj = ano != "hoje"
+limite_proj = None
+if proj:
+    limite_proj = c2.radio("Limite da Classe 1 no ano projetado", list(ROT_LIM), format_func=ROT_LIM.get,
+                           horizontal=True, key="x_limite",
+                           help=md_seguro("Fixo: os R$ 300 mil do Prov. 243, a regra em vigor (D-049). Corrigido: "
+                                          "o limite corrigido pelo IPCA recente, como comparação (o Prov. 243 não "
+                                          "nomeia índice)."))
+    c2.caption("Na projeção, o passivo, a regra de classe e o rateio ficam os do cenário base (a projeção foi "
+               "calculada com eles); as suposições do prêmio continuam livres.")
+
 st.markdown("##### Cenário e mercado")
 c1, c2, c3 = st.columns([1.4, 1, 1])
 cenario = c1.radio("Cenário do STF (ADI 8015)", list(CENARIOS["cenarios"]), format_func=ROT_CEN.get, horizontal=True,
@@ -207,6 +236,9 @@ with st.expander("Avançado: déficit, despesas da seguradora, passivo e regra d
                                              help="Faixa da semente: 5% a 12% (fonte: suposição)") / 100
 
     st.markdown("**Passivo** (art. 5º do Prov. 227) **e regra de classe**")
+    if proj:
+        st.caption(md_seguro(f"Travados no cenário base em {ano}: a projeção foi calculada com o passivo de 2025, a "
+                             "regra de R$ 300 mil e o rateio padrão. Escolha \"Hoje\" para mexer neles."))
     if DEMO:
         st.caption("Modo demonstração: o passivo vem de uma grade pré-calculada. Cada controle oferece só os pontos "
                    "da grade, e só **uma** premissa do passivo pode sair do valor base por vez (regra e rateio "
@@ -214,32 +246,40 @@ with st.expander("Avançado: déficit, despesas da seguradora, passivo e regra d
     a, b, c = st.columns(3)
     if DEMO:
         aj["fap"] = a.select_slider("FAP (multiplicador do RAT)", grade("fap"), value=float(pb["fap"]),
-                                    format_func=lambda v: _br(v, 2), help="Decreto 3.048, art. 202-A: entre 0,5 e 2,0")
+                                    format_func=lambda v: _br(v, 2), help="Decreto 3.048, art. 202-A: entre 0,5 e 2,0",
+                                    disabled=proj)
         aj["fracao_ferias_vencidas_pendentes"] = a.select_slider(
             "Férias vencidas ainda não gozadas (períodos)", grade("fracao_ferias_vencidas_pendentes"),
             value=float(pb["fracao_ferias_vencidas_pendentes"]), format_func=lambda v: _br(v, 2),
-            help="Suposição aprovada na D-017: mín 0, base 0,5, máx 1")
+            help="Suposição aprovada na D-017: mín 0, base 0,5, máx 1", disabled=proj)
     else:
         aj["fap"] = slider_br(a, "FAP (multiplicador do RAT)", 0.5, 2.0, 0.1, float(pb["fap"]), casas=2, sufixo="",
-                              help="Decreto 3.048, art. 202-A: entre 0,5 e 2,0")
+                              help="Decreto 3.048, art. 202-A: entre 0,5 e 2,0", disabled=proj)
         aj["fracao_ferias_vencidas_pendentes"] = slider_br(a, "Férias vencidas ainda não gozadas (períodos)", 0.0, 1.0,
                                                            0.1, float(pb["fracao_ferias_vencidas_pendentes"]), casas=2,
                                                            sufixo="",
-                                                           help="Suposição aprovada na D-017: mín 0, base 0,5, máx 1")
+                                                           help="Suposição aprovada na D-017: mín 0, base 0,5, máx 1",
+                                                           disabled=proj)
     inss_aviso = b.checkbox("INSS sobre o aviso prévio indenizado", value=False,
-                            help="Base: não incide (STJ, Tema 478). Marcado = cenário máximo.")
+                            help="Base: não incide (STJ, Tema 478). Marcado = cenário máximo.", disabled=proj)
     aj["incidencias"] = {**pb["incidencias"],
                          "aviso_previo_indenizado": {"fgts": True, "inss": inss_aviso}}
     aj["limiar_vinculos_distribuicao_municipal"] = b.select_slider(
         "Vínculos mínimos para usar a distribuição do município",
         grade("limiar_vinculos_distribuicao_municipal") if DEMO else [10, 20, 30],
-        value=int(pb["limiar_vinculos_distribuicao_municipal"]))
+        value=int(pb["limiar_vinculos_distribuicao_municipal"]), disabled=proj)
     aj["base_remuneracao_rais"] = c.radio("Base de remuneração (art. 6º)", ["dezembro", "media_anual"],
                                           format_func={"dezembro": "Remuneração de dezembro",
-                                                       "media_anual": "Média anual"}.get)
-    regra = c.radio("Regra da Classe 1", ["v2", "v1"], horizontal=True,
+                                                       "media_anual": "Média anual"}.get, disabled=proj)
+    regra = c.radio("Regra da Classe 1", ["v2", "v1"], horizontal=True, disabled=proj,
                     format_func=lambda r: {"v2": "R$ 300 mil (Prov. 243)", "v1": "R$ 100 mil (213 original)"}[r])
-    metodo = b.selectbox("Rateio do passivo entre serventias", METODOS, format_func=ROT_MET.get)
+    metodo = b.selectbox("Rateio do passivo entre serventias", METODOS, format_func=ROT_MET.get, disabled=proj)
+    if proj:   # a projeção foi calculada no cenário base do passivo, da regra e do rateio
+        regra, metodo = REGRAS["versao_base"], METODOS[0]
+        for k in ("fap", "fracao_ferias_vencidas_pendentes", "limiar_vinculos_distribuicao_municipal",
+                  "base_remuneracao_rais", "incidencias"):
+            aj[k] = pb[k]
+        inss_aviso = bool(pb["incidencias"]["aviso_previo_indenizado"]["inss"])
 
 
 # ------------------------------------------------------------------ cálculo
@@ -291,6 +331,9 @@ try:
         serv = calcular(regra, metodo, json.dumps(aj, sort_keys=True), versao)
         t = simulador.totais(serv)
         r = resumo_mercado(serv, p, CENARIOS, cenario, extra)
+    if proj:   # universo projetado: os totais da projeção, com as suposições do prêmio escolhidas aqui
+        t = explorar.totais_projetados(PREV, t, ano, limite_proj, PROJ_CFG["variante_principal"])
+        r = simulador.resumo_por_totais(t, p, CENARIOS, cenario, extra)
 except PremissaInvalida as e:
     st.error(f"Premissa inválida: {e}")
     st.stop()
@@ -310,12 +353,19 @@ st.divider()
 premio = r["mercado_premio_emitido"]
 dif = delta(premio, ref["mercado_premio_emitido"])
 valor, unidade = brl(premio).rsplit(" ", 1) if premio else ("R$ 0", "")
-ui.resposta("Com essas suposições, as seguradoras receberiam por ano, em prêmios", valor,
+ui.resposta("Com essas suposições, as seguradoras receberiam por ano, em prêmios"
+            + (f", em {ano} (projeção)" if proj else ""), valor,
             f"{unidade} por ano".strip(),
-            f"{dif} em relação ao painel" if dif else "o mesmo valor do painel (cenário base)",
+            f"{dif} em relação ao painel (hoje)" if dif else "o mesmo valor do painel (cenário base)",
             f"**Escada:** {aprox(r['n_universo'])} cartórios obrigados → {aprox(r['n_deficit'])} com déficit → "
             f"déficit de {brl(r['valor_descoberto'])} → {brl(r['mercado_importancia_segurada'])} viram seguro → "
             f"prêmio de {brl(premio)} por ano.")
+if proj:
+    st.caption(md_seguro(f"**Projeção para {ano}** ({LIM_CURTO[limite_proj]}): o universo e o passivo por faixa "
+                         "são o valor central da projeção do notebook 07 (receita de 2025 × crescimento projetado de "
+                         "MG × desvio sorteado de cada cartório), com o passivo de 2025. A faixa por sorteio abaixo "
+                         "mede só as suposições do prêmio, não a incerteza da receita projetada (essa está em "
+                         "\"Para onde vai\")."))
 
 k1, k2, k3, k4 = st.columns(4)
 k1.metric("Obrigadas (universo)", aprox(r["n_universo"]), delta=delta(r["n_universo"], ref["n_universo"], num),
@@ -379,7 +429,8 @@ st.caption(md_seguro(f"**Teto teórico do mercado** = passivo dos obrigados × t
                      f"{pct(p['taxa_seguro_anual'])} = **{brl(teto)}** por ano. Supõe que todos os obrigados têm "
                      "déficit igual ao passivo e todos escolhem o seguro; não depende das outras suposições."))
 rodape(["cnj_serventias", "cnj_colaboradores", "cnj_arrecadacao", "rais_vinculos", "susep_ses_garantia"],
-       f"Cenário: {ROT_CEN[cenario]}; regra {regra}; rateio {ROT_MET[metodo]}.", taxa=True)
+       f"Cenário: {ROT_CEN[cenario]}; regra {regra}; rateio {ROT_MET[metodo]}"
+       + (f"; projeção {ano}, {LIM_CURTO[limite_proj]} (rótulo: projeção)." if proj else "."), taxa=True)
 
 ui.sugestoes(["Por que a taxa do seguro pesa tanto no prêmio?", "O que acontece se o STF suspender o Provimento 227?",
               "Quanto a seguradora lucraria com esse mercado?"])
@@ -396,6 +447,7 @@ with st.expander("Salvar este cenário", expanded=False):
         cid = cenarios.salvar({
             "nome": nome, "versao_premissas": versao, "cenario_stf": cenario, "regra_classe": regra,
             "metodo_rateio": metodo, "nivel": "base", "premissas_alteradas": diff, "resultado": r,
+            "ano": "hoje" if not proj else ano, "cenario_limite": limite_proj,
             "ajustes": {**aj, **({"fracao_exigencia_garantia": fracao_parcial} if fracao_parcial else {})}})
         st.success(f"Cenário #{cid} salvo sobre as premissas versão {versao}" +
                    (f" ({len(diff)} premissa(s) alterada(s))." if diff else " (sem mudança de premissa)."))

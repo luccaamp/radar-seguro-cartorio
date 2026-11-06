@@ -48,10 +48,38 @@ def test_app_usa_a_copia(banco_temporario):
 def test_simulador_suspende_zera_premio():
     from streamlit.testing.v1 import AppTest
     at = AppTest.from_file(str(RAIZ / SIMULADOR), default_timeout=120).run()
-    at.radio[0].set_value("suspende_8_17").run()
+    at.radio(key="x_cenario").set_value("suspende_8_17").run()
     assert not at.exception
     premios = [m.value for m in at.metric if m.label == "Prêmio emitido"]
     assert premios and all(v == "R$ 0" for v in premios)   # zero sem centavos (E8)
+
+
+@pytest.mark.parametrize("limite", ["limite fixo", "limite corrigido pelo IPCA"])
+def test_explorar_2027_no_padrao_repete_a_projecao(banco_temporario, limite):
+    """Fase 1, item 1: no ano projetado, com as suposições no padrão, o prêmio do Explorar é o central da
+    gold.analise_previsao (até 0,1%: o Explorar refaz o prêmio com a mediana de cada total, e a tabela grava a
+    mediana do prêmio). Pula numa carga anterior aos totais por faixa de déficit."""
+    from streamlit.testing.v1 import AppTest
+    at = AppTest.from_file(str(RAIZ / SIMULADOR), default_timeout=120).run()
+    if "2027 (projeção)" not in at.radio(key="x_ano").options:   # o AppTest devolve as opções já formatadas
+        pytest.skip("carga sem os totais da projeção (gold.analise_previsao antiga)")
+    at.radio(key="x_ano").set_value(2027).run()
+    at.radio(key="x_limite").set_value(limite).run()
+    assert not at.exception, at.exception
+    with duckdb.connect(str(banco_temporario["copia"]), read_only=True) as con:
+        central = con.execute("SELECT central FROM gold.analise_previsao WHERE bloco = 'mercado' AND periodo = '2027' "
+                              "AND cenario_limite = ? AND medida = 'mercado_premio_emitido' AND variante = "
+                              "'tendência do T2 (principal)'", [limite]).fetchone()[0]
+    import comum
+    premio = [m.value for m in at.metric if m.label == "Prêmio emitido"][0]
+    assert premio == comum.brl(central) or abs(_valor_brl(premio) / central - 1) < 1e-3, (premio, central)
+
+
+def _valor_brl(texto: str) -> float:
+    """'R$ 349,1 mil' → 349100.0 (só para comparar com tolerância)."""
+    n, *u = texto.replace("R$", "").strip().split()
+    mult = {"mil": 1e3, "mi": 1e6, "bi": 1e9}.get(u[0] if u else "", 1)
+    return float(n.replace(".", "").replace(",", ".")) * mult
 
 
 def _sha256(p: Path) -> str:

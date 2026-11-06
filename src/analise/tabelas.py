@@ -30,7 +30,7 @@ SARIMA = "SARIMA(0,1,1)(0,1,1)2 (log)"
 VARIANTE_PRINCIPAL = "tendência do T2 (principal)"
 MEDIDAS_MERCADO = ["acima_do_limite", "providas_acima", "subidas", "descidas", "subidas_ate_consolidacao",
                    "classe_2_para_3", "n_universo", "passivo_universo", "valor_descoberto",
-                   "mercado_importancia_segurada", "mercado_premio_emitido"]
+                   "mercado_importancia_segurada", "mercado_premio_emitido", *pv.TOTAIS_FAIXA]
 
 
 def _cenarios() -> dict:

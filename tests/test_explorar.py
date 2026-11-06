@@ -3,6 +3,7 @@ Totais SINTÉTICOS; premissas da semente versionada."""
 import time
 
 import numpy as np
+import pandas as pd
 import pytest
 import yaml
 
@@ -86,6 +87,39 @@ def test_suposicao_sem_faixa_nao_quebra_o_sorteio():
     f.loc["seguro", ["min", "max"]] = 0.5
     r = explorar.faixa_por_sorteio(TOTAIS, _premissas(), f, CENARIOS, n=1000, semente=2)
     assert np.isfinite([r["premio"]["p05"], r["premio"]["p95"]]).all()
+
+
+def _previsao(medidas=explorar.TOTAIS_PROJETADOS):
+    """Bloco `mercado` sintético da gold.analise_previsao: 2 anos × 2 leituras do limite × 2 variantes."""
+    linhas = []
+    for i, (ano, lim, var) in enumerate((a, c, v) for a in ("2026", "2027") for c in ("fixo", "corrigido")
+                                        for v in ("principal", "outra")):
+        for m in medidas:
+            linhas.append({"bloco": "mercado", "periodo": ano, "cenario_limite": lim, "variante": var, "medida": m,
+                           "p10": 0.0, "central": TOTAIS[m] * (1 + i / 10), "p90": 0.0})
+    linhas.append({"bloco": "arrecadacao_mg", "periodo": "2027-1", "cenario_limite": "—", "variante": "principal",
+                   "medida": "arrecadacao_semestral", "p10": 0.0, "central": 9e9, "p90": 0.0})
+    return pd.DataFrame(linhas)
+
+
+def test_totais_projetados_escolhem_ano_limite_e_variante():
+    """2027, limite corrigido, variante principal = a 7ª combinação (i = 6): os totais da projeção × 1,6; o que a
+    projeção não muda (ativas, CLT, passivo de todas) vem da base."""
+    base = {**TOTAIS, "n_serventias_ativas": 99}
+    t = explorar.totais_projetados(_previsao(), base, 2027, "corrigido", "principal")
+    for m in explorar.TOTAIS_PROJETADOS:
+        assert t[m] == pytest.approx(TOTAIS[m] * 1.6)
+    assert (t["n_serventias_ativas"], t["clt"], t["passivo_todas"]) == (99, TOTAIS["clt"], TOTAIS["passivo_todas"])
+    r = resumo_por_totais(t, _premissas(), CENARIOS, "mantem")
+    assert r["mercado_premio_emitido"] == pytest.approx(
+        1.6 * resumo_por_totais(TOTAIS, _premissas(), CENARIOS, "mantem")["mercado_premio_emitido"])
+
+
+def test_totais_projetados_sem_os_totais_da_carga():
+    """Carga anterior (só as 11 medidas antigas): None, e a página não oferece o ano projetado."""
+    antigas = _previsao(["n_universo", "passivo_universo"])
+    assert explorar.totais_projetados(antigas, TOTAIS, 2027, "fixo", "principal") is None
+    assert explorar.totais_projetados(_previsao(), TOTAIS, 2030, "fixo", "principal") is None
 
 
 def test_tornado_e_sorteio_em_menos_de_um_segundo():

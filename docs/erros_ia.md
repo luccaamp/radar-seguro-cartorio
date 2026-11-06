@@ -909,3 +909,11 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** a IA pensou só no que o git guardaria, e não em como o código lê a presença da pasta.
 - **Correção:** exceções retiradas; a procedência vai para uma pasta própria, `data/procedencia/`, gerada por `scripts/exportar_procedencia.py` e conferida por `tests/test_procedencia.py`.
 - **Bom para os slides?** não
+
+## 2026-11-06 — Teste novo que pularia sempre, e "R$" virando "r$"
+- **Onde:** código gerado (Fase 1, item 1: ano projetado no Explorar; `tests/test_app.py` e `app/pages/6_Explorar.py`).
+- **O que aconteceu:** (1) o teste de 2027 conferia `2027 in at.radio(...).options`, mas o `AppTest` devolve as opções já formatadas ("2027 (projeção)"): o teste pularia em toda carga, inclusive no CI, sem nunca rodar. (2) A nota da projeção usava `ROT_LIM[...].lower()`, e "Fixo em R$ 300 mil" virou "fixo em r$ 300 mil" na tela. (3) Dois textos novos com "R$" fora do `md_seguro` e três testes antigos que pegavam o rádio do cenário pela posição quebraram com o rádio novo do ano.
+- **Como foi detectado:** (1) rodando a mesma lógica com o `AppTest` à mão na cópia regravada, que imprimiu as opções; (2) lendo a página no navegador; (3) suíte padrão.
+- **Causa provável:** a IA supôs o formato das opções do `AppTest` sem conferir, e usou `.lower()` num rótulo com sigla.
+- **Correção:** o teste procura "2027 (projeção)"; rótulos curtos próprios (`LIM_CURTO`) na nota e no rodapé; `md_seguro` nos dois textos; os testes pegam o rádio pela chave (`x_cenario`).
+- **Bom para os slides?** sim (um teste que sempre pula parece verde e não testa nada)
