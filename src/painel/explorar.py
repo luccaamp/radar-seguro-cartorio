@@ -24,6 +24,24 @@ def valores(p: dict) -> dict:
             "pct_2": p["pct_descoberto"]["classe_2"], "prob_2": p["prob_deficit"]["classe_2"]}
 
 
+TOTAIS_PROJETADOS = ["n_universo", "passivo_universo", "n_indeterminadas_universo", "peso_com_passivo_classe_2",
+                     "peso_com_passivo_classe_3", "passivo_ponderado_classe_2", "passivo_ponderado_classe_3"]
+
+
+def totais_projetados(previsao: pd.DataFrame, t_base: dict, ano: int, cenario_limite: str,
+                      variante: str) -> dict | None:
+    """Totais do modelo (formato de simulador.totais) no universo projetado de `ano` (notebook 07, valor central do
+    bloco `mercado` da gold.analise_previsao, numa leitura do limite e numa variante). O que a projeção não muda
+    (serventias ativas, CLT e passivo de todas, o de 2025) vem de `t_base`. None se a carga não gravou os totais
+    por faixa de déficit (cargas anteriores a esta mudança)."""
+    d = previsao[(previsao["bloco"] == "mercado") & (previsao["periodo"] == str(ano))
+                 & (previsao["cenario_limite"] == cenario_limite) & (previsao["variante"] == variante)]
+    central = d.set_index("medida")["central"]
+    if not set(TOTAIS_PROJETADOS) <= set(central.index):
+        return None
+    return {**t_base, **{k: float(central[k]) for k in TOTAIS_PROJETADOS}}
+
+
 def faixas_ao_redor(faixas: pd.DataFrame, p: dict) -> pd.DataFrame:
     """As faixas da semente (saída de sensibilidade.faixas_suposicoes) com o valor mais provável no valor escolhido em
     `p`; o mínimo e o máximo se estendem para incluir esse valor."""

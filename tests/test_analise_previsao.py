@@ -117,6 +117,20 @@ def test_mercado_sem_mudanca_e_o_modelo():
     assert (m["subidas"], m["descidas"], m["acima_do_limite"], m["providas_acima"]) == (0, 0, 3, 2)
 
 
+def test_mercado_grava_os_totais_que_refazem_o_premio():
+    """Os totais por faixa de déficit gravados na projeção bastam para refazer o prêmio (o Explorar usa isso)."""
+    serv = _serv()
+    rec = np.array([320e3, 400e3, 250e3, 3e6, 500e3, np.nan])
+    m = pv.mercado(serv, rec, LIMITES, estado.ler_semente(), CENARIOS)
+    assert set(pv.TOTAIS_FAIXA) <= set(m)
+    t = {"n_serventias_ativas": 6, "clt": 0.0, "passivo_todas": 0.0, "n_universo": m["n_universo"],
+         "passivo_universo": m["passivo_universo"], **{k: m[k] for k in pv.TOTAIS_FAIXA}}
+    p = premissas_nivel(estado.ler_semente(), "base", m["peso_indeterminada"])
+    r = resumo_por_totais(t, p, CENARIOS, "mantem")
+    assert r["mercado_premio_emitido"] == pytest.approx(m["mercado_premio_emitido"])
+    assert r["valor_descoberto"] == pytest.approx(m["valor_descoberto"])
+
+
 def test_mercado_conta_subidas_descidas_e_consolidacao():
     serv = _serv()
     rec = np.array([320e3, 400e3, 250e3, 3e6, 500e3, np.nan])   # a sobe até 10% acima; b sobe; c desce

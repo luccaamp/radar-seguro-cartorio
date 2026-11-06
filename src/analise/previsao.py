@@ -248,6 +248,12 @@ def inflacao_recente(indice: pd.DataFrame, meses: int | None = None) -> tuple[fl
     return float(i["numero_indice"].iloc[-1] / i["numero_indice"].iloc[-1 - meses] - 1), int(i["ano_mes"].iloc[-1])
 
 
+# totais do modelo (simulador.totais) que a projeção também grava: com eles, a área "Explorar" aplica outras
+# suposições ao universo projetado (resumo_por_totais), sem refazer o sorteio das receitas (D-077)
+TOTAIS_FAIXA = ["n_indeterminadas_universo", "peso_com_passivo_classe_2", "peso_com_passivo_classe_3",
+                "passivo_ponderado_classe_2", "passivo_ponderado_classe_3"]
+
+
 def mercado(serv: pd.DataFrame, receita: np.ndarray, limites: dict, semente: dict, cenarios: dict,
             cenario: str = "mantem", consolidacao: float | None = None) -> dict:
     """Universo e mercado com uma receita de referência projetada, pelas funções do modelo: classe e universo
@@ -260,7 +266,8 @@ def mercado(serv: pd.DataFrame, receita: np.ndarray, limites: dict, semente: dic
     s = serv.assign(receita_ref=receita)
     p = premissas_nivel(semente, "base", peso_indeterminada(s, limites))
     u = universo(s, limites, p, limites)
-    r = resumo_por_totais(totais(u), p, cenarios, cenario)
+    t = totais(u)
+    r = resumo_por_totais(t, p, cenarios, cenario)
     antes, depois = serv["classe"].to_numpy(), u["classe"].to_numpy()
     sobe = (antes == "1") & np.isin(depois, ["2", "3"])
     lim = limites["classe_1_max"]
@@ -271,7 +278,8 @@ def mercado(serv: pd.DataFrame, receita: np.ndarray, limites: dict, semente: dic
             "classe_2_para_3": int(((antes == "2") & (depois == "3")).sum()),
             "n_universo": r["n_universo"], "passivo_universo": r["passivo_universo"], "n_deficit": r["n_deficit"],
             "valor_descoberto": r["valor_descoberto"], "mercado_importancia_segurada": r["mercado_importancia_segurada"],
-            "mercado_premio_emitido": r["mercado_premio_emitido"], "peso_indeterminada": p["peso_classe_indeterminada_base"]}
+            "mercado_premio_emitido": r["mercado_premio_emitido"], "peso_indeterminada": p["peso_classe_indeterminada_base"],
+            **{k: t[k] for k in TOTAIS_FAIXA}}
 
 
 def projetar_mercado(serv: pd.DataFrame, receitas: np.ndarray, limites: dict, semente: dict, cenarios: dict,

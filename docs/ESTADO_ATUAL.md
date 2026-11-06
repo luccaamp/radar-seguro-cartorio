@@ -1,6 +1,6 @@
 # Estado atual do projeto
 
-> Leia primeiro. Atualizado ao fim de cada sessão (regra do `CLAUDE.md`). Última atualização: **2026-11-05**.
+> Leia primeiro. Atualizado ao fim de cada sessão (regra do `CLAUDE.md`). Última atualização: **2026-11-06**.
 > O histórico detalhado até 2026-10-31 (Etapas 1 a 3, mineração, chat, cargas) está em [`historico/ESTADO_ATUAL_ate_2026-10-31.md`](historico/ESTADO_ATUAL_ate_2026-10-31.md) e no [`diario.md`](diario.md).
 
 ## O que é
@@ -19,10 +19,13 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito.
 ## Etapa atual: Fase 1 (MG completo)
 **Plano oficial: [`plano_projeto.md`](plano_projeto.md) (D-071, 2026-11-05)**, com 10 fases, de MG completo ao Brasil inteiro publicado e atualizado sozinho. A IA propõe cada passo e segue com a aprovação do autor.
 
-**Fase 1, andamento (2026-11-06):** branch `fase-1-simulador`. Item 1, o Simulador:
+**Fase 1, andamento (2026-11-06):** PR #3 (`fase-1-simulador`) juntado na `main` (`fd66b03`); o ano projetado segue na branch `fase-1-explorar-2027`. Item 1, o Simulador:
 - [x] lugar: área "Explorar", separada da história (D-077); menu com duas seções por `st.navigation` em `app/Inicio.py` (mesmos endereços de antes; "Início" com acento);
 - [x] página `app/pages/6_Explorar.py` refeita no padrão visual: atalhos de pergunta, controles de cenário e mercado, grupo avançado, resultado com a escada, **faixa por sorteio** e **tornado ao vivo** ao redor dos valores escolhidos (`src/painel/explorar.py`), seguradora hipotética e salvar cenário. No padrão, repete o painel (prêmio R$ 341,1 mil, faixa R$ 215,0 a 687,1 mil); taxa de 3% → R$ 511,6 mil; tornado e sorteios em menos de 1 s (teste);
-- [ ] **ano 2027 e limite fixo × corrigido:** a `gold.analise_previsao` grava só os totais de 2027; para aplicar as suposições do Explorar exatamente, o pipeline precisa gravar também os totais por faixa de déficit (classe 2 e 3). Muda o pipeline e pede carga oficial (só a pedido do autor).
+- [x] **ano 2026/2027 (projeção) e limite fixo × corrigido** (branch `fase-1-explorar-2027`): a `gold.analise_previsao` passa a gravar os totais por faixa de déficit (147 linhas; as 107 antigas iguais), e o Explorar ganha "Mercado de" (Hoje, 2026, 2027) e "Limite da Classe 1". Conferido numa cópia: no padrão, 2027 dá R$ 349,1 mil (fixo) e R$ 343,6 mil (corrigido), os centrais gravados (< 0,03%). Suíte padrão 329 passed; `ruff` sem erro.
+- [x] **PR #3 vermelho no "Dados reais"** (2026-11-06): o MAPE do SARIMA deu 10,47376 no Linux do CI contra 10,4748 do T2 gravado no Windows (tolerância era 0,001). Corrigido por outra sessão no commit `378945b` (tolerância de 0,01 ponto, só essa linha); o PR #3 entrou na `main` às 04:39.
+- [x] **Carga oficial 2026-11-06** (pedido do autor): backup em `C:\radar_arquivo\antes_carga_2026-11-06_2027\` (banco `c935a190…`, silver, gold, público, completo); `uv run pipeline.py --a-partir-de silver` sem erro (log em `C:\radar_arquivo\carga_2026-11-06_2027.log`); banco novo `dd6fc158…`. As 39 tabelas do gold iguais às de antes, menos a `analise_previsao` (+40 linhas, nenhuma perdida); os 10 números iguais. `data/publico` (39 arquivos, 0,89 MB, auditor sem vazamento) e `data/completo` regerados.
+- [ ] Depois: conferir o "pronto quando" do item 1 (testes do SPEC §3 e recálculo < 1 s, já cobertos) e seguir para o item 2 (D-038, fase 2), que também pede carga oficial e pode ir na mesma.
 
 **Fase 0 cumprida em 2026-11-06:**
 - [x] item 1: plano novo (D-071) e SPEC, ROADMAP, `CLAUDE.md` e `CONTRIBUTING.md` alinhados;
@@ -46,7 +49,7 @@ A lista de fechamento de MG, combinada com o autor em 2026-10-31, foi distribuí
 - **D. Limpeza:** apagar as branches locais antigas e as referências velhas do remoto (`git fetch --prune`), e decidir o que fazer com o `.claude/launch.json` (configuração do painel para o navegador do Claude; hoje aparece como não versionado): versionar ou pôr no `.gitignore`. Comandos de git só com pedido do autor.
 
 ## Números de referência
-Carga **2026-10-28 (tarde)** (refeita do silver da carga 2026-10-19: dados coletados em 17 e 18/10), premissas **v3** (D-046), regra base (Classe 1 até R$ 300 mil, Prov. 243), nível base, regra do STF mantida. Esta tabela é a fonte dos valores.
+Carga **2026-11-06** (refeita do silver da carga 2026-10-19: dados coletados em 17 e 18/10; mesmos números da carga 2026-10-28, com os totais da projeção a mais), premissas **v3** (D-046), regra base (Classe 1 até R$ 300 mil, Prov. 243), nível base, regra do STF mantida. Esta tabela é a fonte dos valores.
 
 | 1. Serventias ativas | 2. Empregados CLT | 3. Obrigadas (Prov. 227) | 4. Passivo (todas) | 5. Passivo (obrigadas) |
 |---|---|---|---|---|
@@ -56,13 +59,13 @@ Carga **2026-10-28 (tarde)** (refeita do silver da carga 2026-10-19: dados colet
 |---|---|---|---|---|
 | ≈ 148 | R$ 34,1 mi | R$ 17,1 mi | R$ 341,1 mil | R$ 4,76 mi |
 
-Faixa provável do prêmio (P5–P95): R$ 215 a 687 mil. Linha de base: `~/radar_arquivo/baseline_2026-10-28_d048/linha_de_base.json` (WSL). Banco real desta máquina: SHA-256 `c935a190…`.
+Faixa provável do prêmio (P5–P95): R$ 215 a 687 mil. Linha de base: `~/radar_arquivo/baseline_2026-10-28_d048/linha_de_base.json` (WSL). Banco real desta máquina: SHA-256 `dd6fc158…` (carga 2026-11-06; antes, `c935a190…`).
 
 **Última decisão:** D-077 (Simulador na área "Explorar", 2026-11-06); antes, D-076 (aprovação em lote das decisões de MG e das premissas `fonte: suposição`). Não há decisão proposta à espera do autor. As faixas D-053 a D-059 (painel) e D-060 a D-069 (chat) estão reservadas ou usadas; as próximas seguem de D-078 ([`decisoes.md`](decisoes.md)).
 
-## Testes (2026-11-05)
-- Suíte padrão (`uv run pytest`): 315 passed. Não usa a API do Gemini nem a internet. `uv run ruff check .`: sem erro.
-- Dados reais (`uv run pytest -m dados_reais`, ≈ 25 min, sempre numa cópia do banco): 57 passed nesta máquina (2026-10-31). Num clone com o modo completo, os de bronze → silver são pulados ("bronze ausente").
+## Testes (2026-11-06)
+- Suíte padrão (`uv run pytest`): 329 passed. Não usa a API do Gemini nem a internet. `uv run ruff check .`: sem erro.
+- Dados reais (`uv run pytest -m dados_reais`, ≈ 25 min, sempre numa cópia do banco): 59 passed, 0 skipped nesta máquina (2026-11-06, depois da carga oficial). Num clone com o modo completo, os de bronze → silver são pulados ("bronze ausente").
 
 ## O que depende do autor
 1. ~~Trocar a chave do Gemini.~~ Feito em 2026-11-06; a nova responde (conferido pela IA sem exibi-la).

@@ -1,12 +1,12 @@
 {
  "descricao": "Conjunto público do Radar Seguro-Garantia Cartórios (D-029, D-038, D-048): as tabelas que o painel lê e o resultado do modelo por serventia (identificada pelo CNS e pelo município). Sem dado de pessoa física.",
- "carga": "2026-10-28",
- "executado_em": "2026-10-28T15:01:27",
+ "carga": "2026-11-06",
+ "executado_em": "2026-11-06T01:40:40",
  "versao_premissas": 3,
  "limiar_lgpd": 3,
- "commit": "735aac3680954cb46fe200bac027aa55dc1315a8",
+ "commit": "fd66b03d235cf38b1482fb4cffac89a9a7127b9d",
  "alteracoes_sem_commit": true,
- "gerado_em": "2026-10-28T15:07:38",
+ "gerado_em": "2026-11-06T01:44:19",
  "fontes": [
   {
    "fonte": "cnj_arrecadacao",
@@ -220,7 +220,7 @@
    "linhas": 2,
    "sha256_conteudo": "0166d6b8283a584fdcf04c3bcfc747365c2f69e112952035299fcfdf8e3da14a",
    "bytes": 1500,
-   "sha256_arquivo": "67e2a7f27c8388c5b188b0b8f5af2ab13156f07ff41853da24e5e25cf7c6409d"
+   "sha256_arquivo": "0e906221523a5a347c772e49185c06a6658cbb2e071698eaa385ecf14ea9c297"
   },
   {
    "tabela": "gold.diferenca_regra_classe",
@@ -342,7 +342,7 @@
    "linhas": 1,
    "sha256_conteudo": "49f7bdda9a2226e055ccf24903c5d6efe5ec32f0cc40cedd48f18523b7e8f5a6",
    "bytes": 8672,
-   "sha256_arquivo": "ee4f66ae11f4310c54d89e31bb28323f13fad3acd3c9dc2331b02edcd8fd04fc"
+   "sha256_arquivo": "ce6cbaf0baf076100224e30dd8395b7ae6a09fe46031840bbd544465072641f7"
   },
   {
    "tabela": "gold.serventia_publico",
@@ -370,9 +370,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 2444,
-   "sha256_conteudo": "bee3c394abf4b891d29a334126274170410d02009c94ebb47b459c030b289bca",
+   "sha256_conteudo": "8e6fbcf09e203ea42791d58172bb26f1aeaf8e1651aae7f85afe4912e77a4521",
    "bytes": 104003,
-   "sha256_arquivo": "fa60fe23dad34dd67e4eb0e33d3b4cb6d1313754056b11cc48f2b7070a743af3"
+   "sha256_arquivo": "af5d4f1e3c85f6335c13ab79f0aaf8aaba14c8a1b4038f44d6088ff1546c5949"
   },
   {
    "tabela": "gold.analise_regras",
@@ -399,10 +399,10 @@
    "arquivo": "gold.analise_previsao.parquet",
    "comparar": true,
    "sem_hash": [],
-   "linhas": 107,
-   "sha256_conteudo": "f004a937e32444e0637161eded22d00d46515778b7cb0fbaf9599ec21284305f",
-   "bytes": 4743,
-   "sha256_arquivo": "7af1af388b61ce938151c09a5873bb7d5866a92d939ffbfd959aa30adb935992"
+   "linhas": 147,
+   "sha256_conteudo": "bb16eb8b555a81df02d6e8b424a0784bb710b6d7a40d9132cc4a4c7aba75f927",
+   "bytes": 5530,
+   "sha256_arquivo": "24ac08608134690e8d5d137f02a68c0339e9cd8499a43f02bc9878d885d79c9b"
   },
   {
    "tabela": "gold.analise_tornado",

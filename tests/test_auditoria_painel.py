@@ -227,7 +227,7 @@ def test_kpis_iguais_entre_sobre_os_dados_e_simulador():
 def test_simulador_nos_tres_cenarios(cenario):
     from streamlit.testing.v1 import AppTest
     at = AppTest.from_file(SIMULADOR, default_timeout=120).run()
-    at.radio[0].set_value(cenario).run()
+    at.radio(key="x_cenario").set_value(cenario).run()
     assert not at.exception
     premio = [m.value for m in at.metric if m.label == "Prêmio emitido"][0]
     assert (premio == "R$ 0") == (cenario == "suspende_8_17")
