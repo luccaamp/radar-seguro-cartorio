@@ -32,8 +32,8 @@ Um **painel público**, aberto a qualquer pessoa, com os cartórios dos **27 est
 
 | Status | Fase | O que entrega | Versão |
 |---|---|---|---|
-| 🔄 | 0 — Fundamentos | regras do jogo, decisões pendentes, chave nova, CI | — |
-| ⬜ | 1 — MG completo | tudo do plano antigo fechado, sem nada pela metade | — |
+| ✅ 06/11/2026 | 0 — Fundamentos | regras do jogo, decisões pendentes, chave nova, CI | — |
+| 🔄 | 1 — MG completo | tudo do plano antigo fechado, sem nada pela metade | — |
 | ⬜ | 2 — MG publicado | painel no ar, README de vitrine, página de saúde | `v1.0` |
 | ⬜ | 3 — Código por estado | um estado novo vira configuração e dado | — |
 | ⬜ | 4 — Brasil, camada 1 | 27 UFs (cartórios, classes, arrecadação) e pipeline agendado | `v2.0` |
@@ -159,8 +159,8 @@ Cada fase só começa quando a anterior cumpre o seu "pronto quando", salvo as q
 |---|---|
 | [x] Plano novo (D-071) | 2026-11-05 |
 | [x] D-072 (exceções: Actions, Hugging Face, Kaggle), D-073 (fluxo de branches e PR), D-074 (Streamlit Community Cloud, dados no repositório) | 2026-11-05 |
-| [ ] Decisões pendentes de MG em lote (lista na Fase 0, item 3) | Fase 0 |
-| [ ] Lugar do Simulador no painel | Fase 1 |
+| [x] Decisões pendentes de MG em lote (D-076) | 2026-11-06 |
+| [x] Lugar do Simulador no painel: área "Explorar" (D-077) | 2026-11-06 |
 | [ ] Premissas v4 (D-038, fase 2) | Fase 1 |
 | [ ] Pesos e ordem dos estados | Fase 5 |
 | [ ] Premissas de cada estado novo | Fase 6, por UF |

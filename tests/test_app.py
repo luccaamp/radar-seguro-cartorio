@@ -62,7 +62,7 @@ def _salvar_pelo_simulador(nome: str):
     from streamlit.testing.v1 import AppTest
     at = AppTest.from_file(str(RAIZ / SIMULADOR), default_timeout=120).run()
     at.text_input[0].set_value(nome).run()
-    at.button[0].click().run()
+    next(b for b in at.button if b.label == "Salvar").click().run()   # os atalhos do Explorar vêm antes (D-077)
     assert not at.exception and any("salvo" in s.value for s in at.success)
 
 

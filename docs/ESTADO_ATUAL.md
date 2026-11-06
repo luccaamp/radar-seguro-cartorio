@@ -16,15 +16,20 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito.
 - **Releases:** `dados-2026-10-19` (público: silver e manifesto); `carga-2026-10-19` e `originais-2026` (privados, em `luccaamp/radar-seguro-cartorio-dados`: bronze por fonte, banco e originais). O bronze fica no privado porque tem nome de pessoa (D-030); a procedência dele está no git em `data/procedencia/` (D-070).
 - **Rodar a partir de um clone** (conferido em 2026-10-31): modo demonstração em 2 min; modo completo (README, seção 1b) em ≈ 4 min, com o gold **idêntico** ao do banco real (39 de 39 tabelas) e os 10 números iguais.
 
-## Etapa atual: Fase 0 (Fundamentos)
+## Etapa atual: Fase 1 (MG completo)
 **Plano oficial: [`plano_projeto.md`](plano_projeto.md) (D-071, 2026-11-05)**, com 10 fases, de MG completo ao Brasil inteiro publicado e atualizado sozinho. A IA propõe cada passo e segue com a aprovação do autor.
 
-**Fase 0, andamento (2026-11-05):**
+**Fase 1, andamento (2026-11-06):** branch `fase-1-simulador`. Item 1, o Simulador:
+- [x] lugar: área "Explorar", separada da história (D-077); menu com duas seções por `st.navigation` em `app/Inicio.py` (mesmos endereços de antes; "Início" com acento);
+- [x] página `app/pages/6_Explorar.py` refeita no padrão visual: atalhos de pergunta, controles de cenário e mercado, grupo avançado, resultado com a escada, **faixa por sorteio** e **tornado ao vivo** ao redor dos valores escolhidos (`src/painel/explorar.py`), seguradora hipotética e salvar cenário. No padrão, repete o painel (prêmio R$ 341,1 mil, faixa R$ 215,0 a 687,1 mil); taxa de 3% → R$ 511,6 mil; tornado e sorteios em menos de 1 s (teste);
+- [ ] **ano 2027 e limite fixo × corrigido:** a `gold.analise_previsao` grava só os totais de 2027; para aplicar as suposições do Explorar exatamente, o pipeline precisa gravar também os totais por faixa de déficit (classe 2 e 3). Muda o pipeline e pede carga oficial (só a pedido do autor).
+
+**Fase 0 cumprida em 2026-11-06:**
 - [x] item 1: plano novo (D-071) e SPEC, ROADMAP, `CLAUDE.md` e `CONTRIBUTING.md` alinhados;
 - [x] item 2: D-072 (GitHub Actions, Hugging Face, Kaggle), D-073 (branch por bloco e pull request; substitui o push direto da D-041) e D-074 (Streamlit Community Cloud), aprovadas;
-- [ ] item 3: decisões pendentes de MG em lote;
-- [ ] item 4: trocar a chave do Gemini (autor);
-- [ ] item 5: CI no GitHub Actions (branch `ci-github-actions`, 2026-11-05: workflow escrito, falta o primeiro pull request rodar verde no GitHub);
+- [x] item 3: decisões pendentes de MG em lote (D-076, 2026-11-06);
+- [x] item 4: chave do Gemini trocada pelo autor (2026-11-06); a IA conferiu que a nova responde, sem exibi-la;
+- [x] item 5: CI no GitHub Actions (PR #2, juntado pelo auto-merge em 2026-11-06, merge `8055866`: "Testes e ruff" em 36 s e "Dados reais" em 22 min, no Linux do GitHub). `main` protegida pelo CI e auto-merge no repositório (D-075);
 - [x] item 6: bloco A e estes documentos na `main` (PR #1, juntado em 2026-11-05, merge `1ed46db`). Backup de MG antes dele: branch `backup-MG` e tag `mg-backup-2026-11-05` (`7b5cc73`).
 
 A lista de fechamento de MG, combinada com o autor em 2026-10-31, foi distribuída no plano novo (o bloco A na Fase 0; B, C e D nas Fases 0, 1 e 3). Os quatro blocos:
@@ -53,20 +58,19 @@ Carga **2026-10-28 (tarde)** (refeita do silver da carga 2026-10-19: dados colet
 
 Faixa provável do prêmio (P5–P95): R$ 215 a 687 mil. Linha de base: `~/radar_arquivo/baseline_2026-10-28_d048/linha_de_base.json` (WSL). Banco real desta máquina: SHA-256 `c935a190…`.
 
-**Última decisão:** D-074 (painel no Streamlit Community Cloud); D-071 a D-074 aprovadas em 2026-11-05; D-070 (procedência do bronze no git) ainda proposta. As faixas D-053 a D-059 (painel) e D-060 a D-069 (chat) estão reservadas ou usadas; as próximas seguem de D-075 ([`decisoes.md`](decisoes.md)).
+**Última decisão:** D-077 (Simulador na área "Explorar", 2026-11-06); antes, D-076 (aprovação em lote das decisões de MG e das premissas `fonte: suposição`). Não há decisão proposta à espera do autor. As faixas D-053 a D-059 (painel) e D-060 a D-069 (chat) estão reservadas ou usadas; as próximas seguem de D-078 ([`decisoes.md`](decisoes.md)).
 
 ## Testes (2026-11-05)
 - Suíte padrão (`uv run pytest`): 315 passed. Não usa a API do Gemini nem a internet. `uv run ruff check .`: sem erro.
 - Dados reais (`uv run pytest -m dados_reais`, ≈ 25 min, sempre numa cópia do banco): 57 passed nesta máquina (2026-10-31). Num clone com o modo completo, os de bronze → silver são pulados ("bronze ausente").
 
 ## O que depende do autor
-1. **Trocar a chave do Gemini** (revogar a atual e criar outra no AI Studio): ela apareceu na saída de um comando da IA em 2026-10-28 (`erros_ia.md`). É a mais urgente.
-2. **Aprovar ou ajustar as decisões propostas pela IA:** D-039 (plano do projeto), D-042 (faixa do prêmio e sensibilidades), D-049 (limite fixo na projeção, extremos, Simulador só com o tema), D-051 (painel em torno de uma pergunta; Simulador fora da navegação), D-052 (visual), D-064 (normas sem a assinatura), D-069 (ajustes do chat), D-070 (procedência no git). Questões abertas de cada uma: no [`historico/ESTADO_ATUAL_ate_2026-10-31.md`](historico/ESTADO_ATUAL_ate_2026-10-31.md), "O que depende do autor agora".
-3. **Aprovar as premissas com `fonte: suposição`** em `config/analise.yaml`: cortes do Apriori, `n_init`, limiar 0,5, permutação, bootstrap, faixa P10–P90; seção `previsao`; seção `melhorias` (horizonte de 12 meses de saldo, base das premissas v3, e tercis da M4).
-4. **STF:** o painel supõe "a regra do Provimento como publicada". Conferir a ADI 8015 na véspera da demo e atualizar `config/painel.yaml`; com liminar, o número principal precisa de aviso.
-5. **D-038, fase 2:** tirar o limiar de 3 serventias e as áreas agregadas (premissas v4, mudança no pipeline e carga oficial).
-6. **Etapa 4 (Simulador):** volta para a navegação, com o redesenho planejado, ou fica fora (D-051)?
-7. **Chat:** conferir os limites da chave no AI Studio; depois do item 1, rodar a avaliação (`uv run python scripts/avaliar_chat.py --versoes c --limite 5`, depois sem `--limite`); publicar no Streamlit Community Cloud com `GEMINI_API_KEY` em *Settings → Secrets*.
-8. **Pequenas:** conferir a LGPD do zip do silver público; convidar os colegas e mandar o `CONTRIBUTING.md`; e-mail "noreply" do GitHub nos commits; destino de `docs/qa/depois/`; preencher a "Linha de base" do `diario.md`; apagar a pasta antiga no OneDrive.
+1. ~~Trocar a chave do Gemini.~~ Feito em 2026-11-06; a nova responde (conferido pela IA sem exibi-la).
+2. ~~Aprovar as decisões propostas pela IA e as premissas `fonte: suposição` de `config/analise.yaml`.~~ Feito em 2026-11-06 (D-076): D-042, D-049, D-051, D-052, D-064, D-069 e D-070 aprovadas; D-039 virou histórico; as 24 premissas aprovadas como estão (continuam marcadas `fonte: suposição`).
+3. **STF:** o painel supõe "a regra do Provimento como publicada". Conferir a ADI 8015 na véspera da demo e atualizar `config/painel.yaml`; com liminar, o número principal precisa de aviso.
+4. **D-038, fase 2:** tirar o limiar de 3 serventias e as áreas agregadas (premissas v4, mudança no pipeline e carga oficial). Fase 1.
+5. ~~Lugar do Simulador.~~ Decidido em 2026-11-06: área "Explorar", separada da história (D-077).
+6. **Chat:** conferir os limites da chave no AI Studio; depois do item 1, rodar a avaliação (`uv run python scripts/avaliar_chat.py --versoes c --limite 5`, depois sem `--limite`; Fase 1); publicar no Streamlit Community Cloud com `GEMINI_API_KEY` em *Settings → Secrets* (Fase 2).
+7. **Pequenas:** conferir a LGPD do zip do silver público; convidar os colegas e mandar o `CONTRIBUTING.md`; e-mail "noreply" do GitHub nos commits; destino de `docs/qa/depois/`; preencher a "Linha de base" do `diario.md`; apagar a pasta antiga no OneDrive.
 
 As demais pendências técnicas estão no [`historico/ROADMAP.md`](historico/ROADMAP.md), §7.

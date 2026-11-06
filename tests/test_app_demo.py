@@ -136,8 +136,45 @@ def test_simulador_duas_premissas_do_passivo_avisa_e_nao_calcula():
 
 def test_salvar_cenario_desativado():
     at = rodar(SIMULADOR)
-    assert at.button[0].disabled and at.text_input[0].disabled
+    assert next(b for b in at.button if b.label == "Salvar").disabled and at.text_input[0].disabled
     assert any("Desativado no modo demonstração" in c.value for c in at.caption)
+
+
+def _premio_mercado(at) -> str:
+    return [m.value for m in at.metric if m.label == "Prêmio emitido"][0]
+
+
+def test_explorar_mostra_faixa_por_sorteio_e_tornado_ao_redor_do_padrao():
+    """D-077: com os controles no padrão, a faixa por sorteio e o tornado aparecem, e o prêmio é o do painel."""
+    at = rodar(SIMULADOR)
+    titulos = [f["layout"]["title"]["text"].replace("<br>", " ") for f in figuras(at)]   # título quebrado em linhas
+    assert any("faixa azul" in t for t in titulos) and any("o que mais mexe no prêmio" in t for t in titulos)
+    assert "o mesmo valor do painel" in html(at)
+
+
+def test_explorar_atalho_da_taxa_e_voltar_ao_base():
+    at = rodar(SIMULADOR)
+    base = _premio_mercado(at)
+    next(b for b in at.button if b.label == "E se a taxa fosse 3%?").click().run()
+    assert not at.exception
+    assert at.select_slider(key="x_taxa").value == 3.0
+    assert _premio_mercado(at) != base and "em relação ao painel" in html(at)
+    next(b for b in at.button if b.label == "Voltar ao cenário base").click().run()
+    assert _premio_mercado(at) == base
+
+
+def test_explorar_suspensao_sem_faixa_nem_tornado():
+    at = rodar(SIMULADOR)
+    next(b for b in at.button if b.label == "E se o STF suspender a obrigação?").click().run()
+    assert not at.exception and at.radio(key="x_cenario").value == "suspende_8_17"
+    assert _premio_mercado(at) == "R$ 0" and not figuras(at) and "o prêmio é zero" in html(at)
+
+
+def test_explorar_adesao_alta_reduz_a_fianca_que_nao_cabe():
+    """A fiança cabe no que sobra da adesão: com 90% no seguro, a fiança vai a no máximo 10%, sem erro."""
+    at = rodar(SIMULADOR)
+    at.slider(key="x_seguro").set_value(90).run()
+    assert not at.exception and at.slider(key="x_fianca").value <= 10
 
 
 def test_abrir_as_paginas_nao_altera_o_banco_de_demonstracao(painel_demo):
