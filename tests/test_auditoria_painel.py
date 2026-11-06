@@ -18,7 +18,7 @@ from apoio_painel import RAIZ
 # dados_reais: lê silver.serventia e interno_celulas_publicadas (banco completo); fora da suíte padrão
 pytestmark = [pytest.mark.dados_reais, pytest.mark.usefixtures("banco_temporario")]
 MERCADO = str(RAIZ / "app/pages/2_Onde_está_o_mercado.py")
-SIMULADOR = str(RAIZ / "app/simulador.py")
+SIMULADOR = str(RAIZ / "app/pages/6_Explorar.py")
 SEM_SERV, CONTORNO = "#f5f7fa", "#45506a"   # cores do mapa no visual da D-052 (app/pages/2_Onde_está_o_mercado.py)
 
 

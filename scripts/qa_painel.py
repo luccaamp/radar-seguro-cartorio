@@ -128,8 +128,9 @@ def municipio_pequeno(copia: Path) -> str:
 
 
 def estados(copia: Path) -> list[Estado]:
-    """Estados da terceira rodada (D-051): as cinco páginas da história e o município no mapa. O Simulador saiu da
-    navegação (app/simulador.py roda à parte) e o Mercado não tem mais filtros por atribuição, situação e classe."""
+    """Estados da terceira rodada (D-051): as cinco páginas da história e o município no mapa. O Simulador fica na
+    seção "Explorar" do menu (D-077, app/pages/6_Explorar.py) e o Mercado não tem mais filtros por atribuição, situação
+    e classe."""
     pequeno = municipio_pequeno(copia)
     mun = lambda nome: (lambda p: escolher(p, "Município", nome))  # noqa: E731
     mercado = "Onde_está_o_mercado"

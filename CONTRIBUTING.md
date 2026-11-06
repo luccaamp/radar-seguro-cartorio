@@ -86,7 +86,7 @@ O chat usa o **Gemini no nível gratuito** do Google AI Studio. **Cada pessoa us
    git pull
    git switch -c <nome-do-bloco>
    ```
-   Branch de vida curta: termine, abra o pull request, junte com o CI verde e apague a branch. Uma branch aberta por vez (ou branches que não mexem nos mesmos arquivos); antes de juntar, traga a `main` para a branch.
+   Branch de vida curta: termine, abra o pull request, junte com o CI verde e apague a branch. A `main` é protegida (D-075): o GitHub só aceita o merge com os dois jobs do CI verdes e a branch atualizada; ligue o **auto-merge** no pull request (`gh pr merge --auto --merge`) e ele entra sozinho quando os testes passarem. Uma branch aberta por vez (ou branches que não mexem nos mesmos arquivos); antes de juntar, traga a `main` para a branch.
 2. **Claude Code:** quando um colaborador pedir na conversa, o Claude pode fazer `commit`, `push`, `merge` e os demais comandos de `git` e `gh` que o colaborador pedir na hora, sem restrição (`CLAUDE.md`, seção Git).
 3. **Antes do pull request** (o CI, `.github/workflows/ci.yml`, roda de novo o `ruff`, a suíte padrão e os testes com os dados reais do modo completo; o pull request só é juntado com ele verde):
    - `uv run pytest` passando (e `uv run pytest -m dados_reais`, se você tem os dados da equipe);

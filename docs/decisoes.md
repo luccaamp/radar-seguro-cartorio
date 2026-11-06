@@ -804,7 +804,7 @@ Formato:
 - **Efeito nos 10 números:** nenhum (só cópia de registros).
 - **Consequências / onde aparece:** `scripts/exportar_procedencia.py` (novo; rodar depois de cada coleta), `data/procedencia/`, `tests/test_procedencia.py` (novo: só arquivos de registro; URL oficial em cada um, direto ou pela `origem` no `original.json`; nenhum CPF nem e-mail fora dos hashes e URLs; igual ao bronze local nas pastas de coleta presentes), README (seções 3 e 4).
 - **Fonte:** pergunta do autor na conversa com a IA em 2026-10-31; lista de fechamento de MG, item A2, aprovada em 2026-10-31 ("Sim, comece pelo A", 2026-11-05).
-- **Status:** proposta; aprovação do autor pendente.
+- **Status:** aprovada (2026-11-06, em lote, D-076).
 
 ## D-071 — Plano novo: de MG ao Brasil inteiro, publicado e atualizado sozinho
 - **Data:** 2026-11-05
@@ -850,3 +850,43 @@ Formato:
 - **Consequências / onde aparece:** `docs/plano_projeto.md` (Fases 2 e 4), `docs/SPEC.md` §1, `CLAUDE.md` (seção "100% gratuito").
 - **Fonte:** proposta da IA na conversa de 2026-11-05; o autor: "Aprovo as três".
 - **Status:** aprovada (2026-11-05).
+
+## D-075 — `main` protegida pelo CI e auto-merge nos pull requests
+- **Data:** 2026-11-06
+- **Contexto:** a D-073 diz que o pull request só entra com o CI verde, mas o GitHub não sabia disso: a `main` não tinha proteção, e o "Allow auto-merge" do repositório estava desligado. A IA não consegue esperar o CI terminar sozinha (o app só a acorda em falha, conflito ou comentário).
+- **Decisão (do autor, 2026-11-06, "ok pode ser isso mesmo"):**
+  - **proteção da `main`** no GitHub: exige os dois jobs do CI ("Testes e ruff" e "Dados reais (modo completo)") verdes e a branch atualizada com a `main` (`strict`); sem force push nem exclusão da `main`; sem revisão obrigatória; administradores podem passar por cima numa emergência (`enforce_admins: false`);
+  - **"Allow auto-merge"** ligado no repositório: em cada pull request, a IA liga o auto-merge (método merge) ao abrir, e o GitHub junta sozinho quando o CI fica verde;
+  - **aviso de falha** (Auto-fix do app) nos pull requests que a IA abre: em falha do CI, conflito ou comentário, o app acorda a sessão, que corrige na mesma branch.
+  Antes de começar um bloco novo, a IA confere se o anterior já entrou na `main`.
+- **Efeito nos 10 números:** nenhum.
+- **Consequências / onde aparece:** configurações do repositório no GitHub (proteção da `main`, `allow_auto_merge`), `CONTRIBUTING.md` ("Fluxo de trabalho"), `CLAUDE.md` (seção Git).
+- **Fonte:** conversa com a IA em 2026-11-06.
+- **Status:** aprovada (2026-11-06); aplicada no PR #2.
+
+## D-076 — Aprovação em lote das decisões pendentes de MG e das premissas `fonte: suposição` (Fase 0, item 3)
+- **Data:** 2026-11-06
+- **Contexto:** o item 3 da Fase 0 do plano (D-071) pede fechar, em lote, as decisões de MG tomadas pela IA ou propostas e ainda sem a aprovação do autor. A IA resumiu cada uma com a recomendação; nenhuma muda os 10 números.
+- **Decisão (do autor, 2026-11-06, "Aprovo todas"):**
+  - **D-042** (faixa provável P5–P95 abaixo do valor base e extremos teóricos em nota; receita líquida do Prov. 213, T5 e T6 só como sensibilidade; empregados de outros estados só no total estadual, com ±10% como piso): aprovada.
+  - **D-049** (limite fixo como leitura principal da projeção; extremos oficiais; resultados de notebook lidos da saída gravada; ADI 8015 em `config/painel.yaml`): aprovada, com as mudanças da D-051 (sem a página Análises; a leitura corrigida pela inflação no chat).
+  - **D-051** (painel em torno de uma pergunta; cinco páginas e o chat; STF no chat; Simulador fora da navegação até a decisão da Fase 1): aprovada.
+  - **D-052** (visual do "Raio-X do Cartório", claro e escuro): confirmada (era pedido do autor).
+  - **D-064** (texto das normas em `data/normas/`, sem a linha de assinatura): aprovada.
+  - **D-069** (aba de perguntas prontas, frase sem dado do prompt v3, interface, velocidade, contador só no modo demonstração): aprovada; a avaliação com o v3 está na Fase 1.
+  - **D-070** (procedência do bronze no git): aprovada.
+  - **D-039** (plano de 2026-10-23): histórico, substituído pela D-071.
+  - **Premissas `fonte: suposição` de `config/analise.yaml`** (24 valores), como estão: as de impacto (horizonte de 12 meses de saldo do titular, base das premissas v3, com sensibilidade de 6 e 24 meses; regra do salto, 10 vezes a mediana dos 4 semestres anteriores; previsão: completar o 2026-1 com o 2025-1 × crescimento, IPCA dos últimos 12 meses, 500 sorteios) e as técnicas (cortes do Apriori, `n_init`, limiar, permutações, bootstrap, faixa P10–P90, semente). Continuam marcadas `fonte: suposição`, porque a aprovação não lhes dá fonte: uma fonte melhor, quando houver, substitui a suposição por decisão nova.
+- **Efeito nos 10 números:** nenhum.
+- **Consequências / onde aparece:** `docs/ESTADO_ATUAL.md` (pendências do autor), `docs/plano_projeto.md` (decisões do autor).
+- **Fonte:** resumos da IA na conversa de 2026-11-06; o autor: "Aprovo todas".
+- **Status:** aprovada (2026-11-06).
+
+## D-077 — O Simulador vira a área "Explorar", separada da história do painel
+- **Data:** 2026-11-06
+- **Contexto:** a D-051 tirou o Simulador da navegação (`app/simulador.py`), porque com 15 controles ele atrapalhava a história de uma pergunta só, e deixou o destino para a Etapa 4 (hoje Fase 1, item 1, do plano da D-071). Opções: (a) voltar como página da história, depois de "Para onde vai"; (b) uma área separada, "Explorar", para quem quer mexer nas suposições.
+- **Decisão (do autor, 2026-11-06, "pode ser b"):** opção (b). A história do painel continua com as cinco páginas e o chat da D-051; o Simulador, refeito na Fase 1 (ano, limite fixo ou corrigido, faixa por sorteio, tornado ao vivo, cenários do STF, padrão visual atual), fica numa área "Explorar", separada no menu, depois da história. As regras de página da D-051 (até 3 números e 2 gráficos) valem para a história, não para o Explorar.
+- **Efeito nos 10 números:** nenhum.
+- **Consequências / onde aparece:** `app/` (navegação e a página do Explorar), `docs/plano_projeto.md` (Fase 1, item 1), testes do painel.
+- **Fonte:** explicação das opções pela IA na conversa de 2026-11-06; o autor escolheu a (b).
+- **Status:** aprovada (2026-11-06).

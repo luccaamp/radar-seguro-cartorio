@@ -182,10 +182,10 @@ def funil(oficiais: dict, fonte: str) -> go.Figure:
 
 
 # ------------------------------------------------------------------ Quão certo é
-def faixa_premio(r: dict, fonte: str) -> go.Figure:
+def faixa_premio(r: dict, fonte: str, rotulo_base: str = "valor base") -> go.Figure:
     """A faixa provável do prêmio numa linha: extremos teóricos discretos (cinza, nas pontas) > faixa P5–P95 (banda)
     > valor base (ponto). Os valores da faixa e da base já estão no topo do Início; aqui o gráfico mostra a posição,
-    e os extremos (que não aparecem em outro lugar) levam o valor."""
+    e os extremos (que não aparecem em outro lugar) levam o valor. No Explorar, o ponto é o "valor escolhido"."""
     v = r["valores"]
     fig = _fig("Em 9 de cada 10 simulações, o prêmio fica na faixa azul",
                "Prêmio anual do mercado, em R$ · faixa provável (P5–P95) entre os extremos teóricos", fonte, 260)
@@ -198,9 +198,9 @@ def faixa_premio(r: dict, fonte: str) -> go.Figure:
                              hovertemplate=f"Faixa provável (P5–P95): {r['faixa_provavel']}<extra></extra>"))
     fig.add_trace(go.Scatter(x=[v["base"]], y=[0], mode="markers",
                              marker=dict(size=14, color=COR["destaque"], line=dict(width=2, color="#ffffff")),
-                             hovertemplate=f"Valor base: {r['valor_base']}<extra></extra>"))
+                             hovertemplate=f"{rotulo_base.capitalize()}: {r['valor_base']}<extra></extra>"))
     rot = dict(showarrow=False, yref="y", y=0, font=dict(size=12, color=COR["texto_2"]))
-    fig.add_annotation(x=v["base"], text="<b>valor base</b>", yshift=26, xanchor="center",
+    fig.add_annotation(x=v["base"], text=f"<b>{rotulo_base}</b>", yshift=26, xanchor="center",
                        **rot | dict(font=dict(size=12, color=COR["destaque"])))
     fig.add_annotation(x=v["extremo_min"], text=f"extremo<br>{brl(v['extremo_min'])}", yshift=-30, xanchor="left",
                        xshift=-4, align="left", **rot | dict(font=dict(size=11, color=COR["mudo"])))
@@ -221,14 +221,15 @@ CURTOS = {"Parte do déficit que escolhe seguro": "Adesão ao seguro",
           "Parte descoberta, Classe 2": "Parte descoberta (Classe 2)"}
 
 
-def tornado(r: dict, fonte: str, n: int = 5) -> go.Figure:
+def tornado(r: dict, fonte: str, n: int = 5, titulo: str = "A taxa do seguro e a adesão pesam mais que todo o resto",
+            rotulo_base: str = "valor base") -> go.Figure:
     """As `n` suposições que mais mexem no prêmio, uma por vez do mínimo ao máximo (as outras no valor base), com o
-    prêmio na ponta de cada barra. Abaixo da base na cor de destaque; acima, na de comparação."""
+    prêmio na ponta de cada barra. Abaixo da base na cor de destaque; acima, na de comparação. No Explorar, as outras
+    ficam nos valores escolhidos (`rotulo_base`="valor escolhido") e o título diz qual pesa mais ali."""
     t = r["tabela"][:n]
     base = t[0]["premio_base"]
-    fig = _fig("A taxa do seguro e a adesão pesam mais que todo o resto",
-               "Prêmio anual com cada suposição no mínimo e no máximo, as outras no valor base, em R$", fonte,
-               96 + 72 * n + 64)
+    fig = _fig(titulo, f"Prêmio anual com cada suposição no mínimo e no máximo, as outras no {rotulo_base}, em R$",
+               fonte, 96 + 72 * n + 64)
     rot = [CURTOS.get(x["rotulo"], x["rotulo"]) for x in t]
     lo = [min(x["premio_no_min"], x["premio_no_max"]) for x in t]
     hi = [max(x["premio_no_min"], x["premio_no_max"]) for x in t]
@@ -241,7 +242,7 @@ def tornado(r: dict, fonte: str, n: int = 5) -> go.Figure:
                              hovertemplate="<b>%{y}</b><br>prêmio de %{customdata[0]} a %{customdata[1]}"
                                            "<extra></extra>"))
     fig.add_vline(x=base, line=dict(color=COR["texto"], width=1))
-    fig.add_annotation(x=base, y=1, yref="paper", text="valor base", showarrow=False, xanchor="center",
+    fig.add_annotation(x=base, y=1, yref="paper", text=rotulo_base, showarrow=False, xanchor="center",
                        yanchor="bottom", font=dict(size=11, color=COR["texto_2"]))
     x0, x1 = min(lo), max(hi)
     folga = (x1 - x0) * 0.5   # cabe o rótulo da ponta também no celular (390 px)

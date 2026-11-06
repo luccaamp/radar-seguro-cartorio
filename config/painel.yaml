@@ -32,3 +32,16 @@ artefatos:   # tabelas que só existem na saída gravada de um notebook (src/pai
   passivo_m5:
     notebook: notebooks/10_melhorias_confianca.ipynb
     marcador: "mh.passivo_projetado("
+
+explorar:   # área "Explorar" (D-077): o Simulador
+  # Atalhos: perguntas de exemplo que ajustam os controles num clique. Não são premissas nem resultados: são pontos
+  # dentro das faixas da semente (config/premissas/) escolhidos para ilustrar (fonte: suposição, exemplos de pergunta).
+  # Chaves: taxa (% ao ano), seguro (% do déficit que escolhe seguro), cenario (config/cenarios_stf.yaml).
+  atalhos:
+    - rotulo: E se a taxa fosse 3%?
+      ajustes: {taxa: 3.0}
+    - rotulo: E se 70% escolherem o seguro?
+      ajustes: {seguro: 70}
+    - rotulo: E se o STF suspender a obrigação?
+      ajustes: {cenario: suspende_8_17}
+  topo_tornado: 6   # quantas suposições o tornado ao vivo mostra (as seis do T7)
