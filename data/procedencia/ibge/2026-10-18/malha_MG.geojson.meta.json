@@ -1,0 +1,8 @@
+{
+ "coletado_em": "2026-10-18T01:02:11-03:00",
+ "versao_coletor": "fase1-0.1",
+ "url": "https://servicodados.ibge.gov.br/api/v3/malhas/estados/31?formato=application/vnd.geo+json&intrarregiao=municipio&qualidade=minima",
+ "metodo": "GET",
+ "bytes": 499892,
+ "sha256": "b7befa63a1dfac3386535468c6213ea69e05cdd858a805babcc632d59c121b79"
+}

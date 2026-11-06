@@ -1,0 +1,18 @@
+{
+ "url": "https://justicaabertaapi.cnj.jus.br/v1/api/serventias",
+ "metodo": "POST",
+ "params": {
+  "page": 1,
+  "perPage": 10000
+ },
+ "corpo": {
+  "cidade_id": 0,
+  "uf": "MT",
+  "cns": null
+ },
+ "registros": 316,
+ "meta_total": 316,
+ "sha256": "19ef6d35f0f3f56d2242881de301695b8ae082c41a368fcd62127e6fe4993e0a",
+ "coletado_em": "2026-10-17T22:04:15-03:00",
+ "versao_coletor": "fase0-0.2"
+}

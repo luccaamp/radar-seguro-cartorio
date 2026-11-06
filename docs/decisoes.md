@@ -796,3 +796,57 @@ Formato:
 - **Segunda passada (mesmo dia, pedido do autor):** tokens, medidas e componentes **idênticos** aos do Raio-X (fundo, texto, linhas, faixa em degradê, cartões, agregado, veredito, badges, botões, tabela, séries s1/s2/s3/ref nos gráficos, mapa de `#e8eef8` a `#183564`), para uma página do Raio-X caber no painel sem emenda; inclui as cores da página do Chat. **Terceira passada:** os dois temas do Raio-X (claro e escuro), escolhidos pelo tema do Streamlit ou do sistema, como no artefato; gráficos e mapa trocam de cor no escuro.
 - **Consequências / onde aparece:** `.streamlit/config.toml`, `src/painel/estilo.css`, `src/painel/ui.py` (`cabecalho` com o traço dourado), `src/painel/graficos.py` (paleta, fontes, subtítulo, `SEQUENCIAL` do mapa), `app/pages/2_Onde_está_o_mercado.py` (escala do mapa), `app/comum.py` (paleta antiga alinhada), `src/agent/chat.css` (só cores e fonte do título), `tests/test_auditoria_painel.py` (cores do mapa), `tests/test_painel.py` (título da projeção sem `<b>`), `docs/painel/padrao_visual.md`.
 - **Fonte:** pedido do autor (`luccaamp`) na conversa com a IA em 2026-10-29; artefato de referência: claude.ai/artifact/QGughrBBriyQjiw5Pywy4Y (privado).
+
+## D-070 — Procedência do bronze no git (`data/procedencia/`); o bronze continua no Release privado
+- **Data:** 2026-11-05
+- **Contexto:** o autor perguntou se valia publicar o bronze (hoje no Release privado `carga-2026-10-19`) no repositório público. O bronze tem nome de pessoa (os responsáveis no cadastro do CNJ, que o `test_nomes` procura, e as colunas da RAIS que a D-031 tira do silver), e a D-038 proíbe publicar nome e CPF. Um bronze "limpo" deixaria de bater com o SHA-256 da fonte oficial. O silver público já reproduz o gold idêntico (39 de 39 tabelas, conferido num clone em 2026-10-31), e o objetivo final (painel que se atualiza sozinho) coleta direto das fontes.
+- **Decisão (proposta pela IA, aceita pelo autor como item A2 da lista de fechamento de MG em 2026-10-31):** o bronze fica no Release privado. Vão para o git, em `data/procedencia/`, no mesmo caminho do bronze, só os registros de coleta: `original.json` (originais grandes, D-032), `_metadados.json` e `*.meta.json`, com URL oficial, SHA-256, tamanho e hora de coleta, sem o dado (55 arquivos, ≈ 100 KB). Uma pasta própria, e não uma exceção no `.gitignore` do `data/bronze/`: com arquivos versionados, a pasta `data/bronze/` existiria em todo clone, e testes e scripts usam "a pasta existe" como sinal de bronze presente (`test_nomes`, `test_rastreabilidade`, `--instalar` do `exportar_completo.py`).
+- **Efeito nos 10 números:** nenhum (só cópia de registros).
+- **Consequências / onde aparece:** `scripts/exportar_procedencia.py` (novo; rodar depois de cada coleta), `data/procedencia/`, `tests/test_procedencia.py` (novo: só arquivos de registro; URL oficial em cada um, direto ou pela `origem` no `original.json`; nenhum CPF nem e-mail fora dos hashes e URLs; igual ao bronze local nas pastas de coleta presentes), README (seções 3 e 4).
+- **Fonte:** pergunta do autor na conversa com a IA em 2026-10-31; lista de fechamento de MG, item A2, aprovada em 2026-10-31 ("Sim, comece pelo A", 2026-11-05).
+- **Status:** proposta; aprovação do autor pendente.
+
+## D-071 — Plano novo: de MG ao Brasil inteiro, publicado e atualizado sozinho
+- **Data:** 2026-11-05
+- **Contexto:** o plano da D-039 (2026-10-23) terminava numa demo local de MG, com os outros estados como "opcional depois da entrega". O autor definiu como objetivo final um painel público com os 27 estados, alimentado por um pipeline que coleta das fontes de tempos em tempos, com o chat de IA, e pediu a versão mais completa possível, sem cortes.
+- **Decisão (do autor, 2026-11-05, "pode mudar o plano"):** o `docs/plano_projeto.md` passa a ter 10 fases (0 Fundamentos; 1 MG completo; 2 MG publicado, `v1.0`; 3 código por estado; 4 Brasil, camada 1, com pipeline agendado, `v2.0`; 5 ordem dos estados; 6 Brasil, camada 2, estado por estado, até a `v3.0`; 7 agentes e integrações, com MCP; 8 publicações; 9 apresentação), cada uma com "pronto quando". O plano anterior vai para `docs/historico/plano_projeto_ate_2026-11-05.md`. A IA propõe cada passo e segue com a aprovação do autor.
+- **Efeito nos 10 números:** nenhum.
+- **Consequências / onde aparece:** `docs/plano_projeto.md`, `docs/historico/plano_projeto_ate_2026-11-05.md`, `docs/historico/INDICE.md`, `docs/ESTADO_ATUAL.md`. Ficam para a Fase 0, como decisões próprias: D-072 (exceções ao "100% gratuito" para GitHub Actions, Hugging Face e Kaggle, hoje fora do projeto pelo SPEC §1), D-073 (fluxo de branches e pull requests) e D-074 (hospedagem do painel e dos dados publicados).
+- **Fonte:** conversa com a IA em 2026-11-05: o autor descreveu o objetivo final, aprovou a proposta resumida ("o plano me parece bom") e pediu a mudança.
+- **Status:** aprovada (2026-11-05).
+
+## D-072 — Exceções ao "100% gratuito": GitHub Actions, Hugging Face e Kaggle
+- **Data:** 2026-11-05
+- **Contexto:** o plano da D-071 precisa de testes automáticos em cada pull request e de um pipeline agendado (Fases 0 e 4), e prevê publicar dataset e modelo (Fase 8). O SPEC §1 punha o GitHub Actions "fora do projeto", com qualquer serviço em nuvem; a única exceção era o Gemini (D-061).
+- **Decisão (do autor, 2026-11-05):** três exceções novas, nos níveis gratuitos e **sem cartão, sem faturamento e sem plano pago**, com a mesma condição da D-061:
+  - **GitHub Actions** no repositório público (CI e pipeline agendado); segredos (chave do Gemini) só como *secrets* do repositório, nunca em arquivo, log ou saída de job;
+  - **Hugging Face** (dataset e modelo públicos, com data card e model card);
+  - **Kaggle** (dataset público e notebook).
+  O que sai nesses serviços segue a D-038 (nenhum nome nem CPF de pessoa física). Qualquer outro serviço em nuvem continua fora; se um deles passar a pedir cartão ou cobrar, a IA para e pergunta.
+- **Efeito nos 10 números:** nenhum.
+- **Consequências / onde aparece:** `CLAUDE.md` (seção "100% gratuito"), `docs/SPEC.md` §1 (restrições e "Fora do projeto"), `docs/plano_projeto.md` (Fases 0, 4, 7 e 8).
+- **Fonte:** proposta da IA na conversa de 2026-11-05; o autor: "Aprovo as três".
+- **Status:** aprovada (2026-11-05).
+
+## D-073 — Fluxo de trabalho: uma branch por bloco, pull request e CI; substitui o push direto da D-041
+- **Data:** 2026-11-05
+- **Contexto:** a D-041 permitia commit e push direto na `main`. Com o painel publicado a partir da `main` (D-074), um commit quebrado derruba o painel no ar. A correção do `bb12465` se perdeu na "Versão final" porque duas branches longas (`etapa-3-painel` e `etapa-5-chat`) viveram em paralelo por dias.
+- **Decisão (do autor, 2026-11-05):**
+  - cada bloco de trabalho em uma branch própria, de vida curta, juntada na `main` por pull request;
+  - o pull request só é juntado com o CI verde (testes e `ruff`), quando o CI existir (Fase 0, item 5);
+  - uma branch aberta por vez (ou branches que não mexem nos mesmos arquivos); antes de juntar, a branch é atualizada com a `main`;
+  - a `main` fica sempre publicável.
+  A regra de git da IA não muda: comandos que alteram histórico ou branch só com pedido explícito na mensagem atual.
+- **Efeito nos 10 números:** nenhum.
+- **Consequências / onde aparece:** `CONTRIBUTING.md` ("Fluxo de trabalho"), `CLAUDE.md` (seção Git). A D-041 fica substituída na parte do push direto na `main`.
+- **Fonte:** proposta da IA na conversa de 2026-11-05; o autor: "Aprovo as três".
+- **Status:** aprovada (2026-11-05).
+
+## D-074 — Painel no Streamlit Community Cloud, lendo os dados do repositório
+- **Data:** 2026-11-05
+- **Contexto:** a Fase 2 publica o painel de MG (`v1.0`). O painel é Streamlit; o conjunto público (`data/publico/`, < 1 MB) e o `data/completo/` (≈ 13 MB) já estão no git.
+- **Decisão (do autor, 2026-11-05):** hospedar no **Streamlit Community Cloud** (nível gratuito, sem cartão), a partir da `main` do repositório público, lendo os dados versionados no próprio repositório. A chave do Gemini vai em *Settings → Secrets*. Quando os dados do Brasil inteiro (Fase 4) ficarem grandes demais para o repositório ou para a memória do serviço, a decisão é revista (Releases ou Parquet remoto lido pelo DuckDB).
+- **Efeito nos 10 números:** nenhum.
+- **Consequências / onde aparece:** `docs/plano_projeto.md` (Fases 2 e 4), `docs/SPEC.md` §1, `CLAUDE.md` (seção "100% gratuito").
+- **Fonte:** proposta da IA na conversa de 2026-11-05; o autor: "Aprovo as três".
+- **Status:** aprovada (2026-11-05).

@@ -1,0 +1,8 @@
+{
+ "coletado_em": "2026-10-18T01:04:02-03:00",
+ "versao_coletor": "fase1-0.1",
+ "origem": "susep_ses\\2026-10-17\\BaseCompleta.zip",
+ "filtro": "Ses_seguros.csv, coramo em ('0775', '0776')",
+ "unidade": "R$ (valores com centavos e vírgula decimal; inferido, o Ses_campos não declara unidade)",
+ "sha256": "55a83ee0487bc0fb04b58b886fb0ee3c6c909a7dbb6a6daa9636fac8527c2307"
+}

@@ -1,0 +1,8 @@
+{
+ "coletado_em": "2026-10-18T09:19:21-03:00",
+ "versao_coletor": "fase1-0.1",
+ "url": "https://www.planalto.gov.br/ccivil_03/leis/l8212cons.htm",
+ "metodo": "GET",
+ "bytes": 771751,
+ "sha256": "600dfccc7ce36b0d7b6170bdfa28d5e621c0609bbabc2984fc34327f51fc8c30"
+}

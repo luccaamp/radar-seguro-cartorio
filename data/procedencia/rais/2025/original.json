@@ -1,0 +1,21 @@
+{
+ "descricao": "Originais desta fonte (D-032): ficam fora do bronze oficial, na pasta de originais (config/pacotes.yaml); aqui ficam o registro e o extrato que o silver lê. Gerado a partir do _metadados.json da coleta (2026-10-19).",
+ "arquivos": {
+  "RAIS_ESTAB_PUB.7z": {
+   "url": "ftp://ftp.mtps.gov.br/pdet/microdados/RAIS/2025/RAIS_ESTAB_PUB.7z",
+   "bytes": 143766046,
+   "sha256": "6844c2fbd7b9e74354f616a18180001f5d5e4cc73425128a9008a217a49f4457",
+   "coletado_em": "2026-10-17T22:14:36-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "rais/2025/RAIS_ESTAB_PUB.7z"
+  },
+  "RAIS_VINC_PUB_MG_ES_RJ.7z": {
+   "url": "ftp://ftp.mtps.gov.br/pdet/microdados/RAIS/2025/RAIS_VINC_PUB_MG_ES_RJ.7z",
+   "bytes": 766814132,
+   "sha256": "d9c4e359fa16c6a1f929f49c8aec0201a9fbfb801964dc2e27032914924f1f15",
+   "coletado_em": "2026-10-17T22:20:27-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "rais/2025/RAIS_VINC_PUB_MG_ES_RJ.7z"
+  }
+ }
+}

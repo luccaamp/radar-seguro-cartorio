@@ -75,7 +75,7 @@ O radar é **bônus**.
 
 **Restrições inegociáveis.**
 
-1. **100% gratuito.** Nenhum serviço pago, nenhum cartão de crédito, nenhuma chave de API com créditos, nenhum cadastro em nuvem (Google Cloud, AWS, Azure, MotherDuck etc.). Tudo roda no computador do autor, com fontes públicas e programas gratuitos. Se alguma etapa parecer exigir algo pago ou um cadastro, a IA **para e pergunta** antes.
+1. **100% gratuito.** Nenhum serviço pago, nenhum cartão de crédito, nenhuma chave de API com créditos, nenhum cadastro em nuvem (Google Cloud, AWS, Azure, MotherDuck etc.). Tudo roda no computador do autor, com fontes públicas e programas gratuitos. Se alguma etapa parecer exigir algo pago ou um cadastro, a IA **para e pergunta** antes. Exceções registradas, só nos níveis gratuitos e sem cartão: Gemini (D-061), GitHub Actions, Hugging Face e Kaggle (D-072) e Streamlit Community Cloud (D-074).
 2. **Dados reais.** Os números do painel vêm de fontes oficiais públicas, com a data de referência visível. Dados sintéticos só em `tests/`.
 3. Só dados públicos. Nenhuma precificação interna de qualquer seguradora. O market share é de uma **seguradora hipotética** (`fonte: suposição`).
 4. Nenhum número fixo no código. Toda premissa é versionada e tem fonte.
@@ -99,7 +99,7 @@ O painel cruza várias fontes, porque nenhuma traz tudo sozinha. A qualidade dos
 | Normas | atos.cnj.jus.br (Provimentos 227, 213, 243 e posteriores); STF (ADI 8015) | Sites das associações (ANOREG, Arpen, IRTDPJ, IRIB, CNB) | Documento/artigo | Médio: o portal do STF costuma bloquear coleta automática |
 | Proposições legislativas (só se houver radar) | APIs de dados abertos da Câmara e do Senado | — | Proposição | Baixo |
 
-**Fora do projeto:** BigQuery/Base dos Dados (exige conta no Google Cloud e pode gerar cobrança), Claude API (paga por uso), MotherDuck, GitHub Actions e qualquer outro serviço em nuvem.
+**Fora do projeto:** BigQuery/Base dos Dados (exige conta no Google Cloud e pode gerar cobrança), Claude API (paga por uso), MotherDuck e qualquer outro serviço em nuvem fora das exceções da D-072 e da D-074 (GitHub Actions, Hugging Face, Kaggle e Streamlit Community Cloud, só nos níveis gratuitos). O GitHub Actions estava nesta lista até 2026-11-05.
 
 ### 1.2 Regras para as fontes
 
@@ -351,7 +351,7 @@ Depois da Fase 1, cada etapa tem o seu documento, indicado no **`docs/ESTADO_ATU
 - **Ritmo**: etapa por etapa, pelo documento da etapa indicado no `docs/ESTADO_ATUAL.md`, parando no fim da parte pedida.
 - **Coletores**: antes de escrever um, inspecionar uma amostra real da fonte e mostrar os campos encontrados.
 - **Nada inventado**: nunca inventar valores de premissa, URLs, números de normas ou dados apresentados como reais.
-- **Nada pago**: nunca sugerir, instalar ou configurar serviço pago, conta em nuvem ou chave de API com créditos.
+- **Nada pago**: nunca sugerir, instalar ou configurar serviço pago, conta em nuvem ou chave de API com créditos (exceções gratuitas: D-061, D-072 e D-074).
 - **Diário**: registrar em `docs/diario.md` toda limitação, suposição e decisão, com data.
 - **Falhas de fonte**: quando uma fonte falhar, propor o plano B em vez de contornar em silêncio.
 - **Regulação atual**: no início do trabalho, conferir o status da ADI 8015 e se houve novas alterações nos Provimentos 213, 227 e 243.

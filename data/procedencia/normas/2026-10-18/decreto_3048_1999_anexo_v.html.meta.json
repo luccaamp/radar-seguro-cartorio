@@ -1,0 +1,8 @@
+{
+ "coletado_em": "2026-10-18T09:20:09-03:00",
+ "versao_coletor": "fase1-0.1",
+ "url": "https://www.planalto.gov.br/ccivil_03/decreto/D3048anexov-vol1.htm",
+ "metodo": "GET",
+ "bytes": 1802111,
+ "sha256": "10a282d0a0cf892c2db3f98091f04430801e02cfc4ad8e7ac910abd73a2d7f5c"
+}

@@ -64,28 +64,38 @@ def _original(rel: str) -> Path:
     pytest.skip(f"original ausente: {rel} (ver config/pacotes.yaml, pastas.originais)")
 
 
+def _oficial(rel: str) -> Path:
+    """Extrato oficial no bronze do projeto. Os originais ficam fora do projeto e podem existir sem ele (um clone na
+    mesma máquina, ou quem baixou só os originais): sem o extrato não há com o que comparar, e o teste é pulado."""
+    if not (comum.BRONZE / rel).exists():
+        pytest.skip(f"bronze ausente: {rel} (pacote da equipe; ver CONTRIBUTING.md, 'Dados da equipe')")
+    return comum.BRONZE / rel
+
+
 @pytest.mark.dados_reais
 def test_rais_extrato_regenerado_igual(tmp_path):
+    oficial = _oficial("rais/2025/extraido/RAIS_VINC_PUB_MG_ES_RJ_CNAE6912500_MG.csv")
     pacote = _original("rais/2025/RAIS_VINC_PUB_MG_ES_RJ.7z")
     novo = rais.filtrar(pacote, "MG", saida_extrato=tmp_path / "saida", pasta_extracao=tmp_path / "extr")
-    oficial = comum.BRONZE / "rais" / "2025" / "extraido" / novo.name
+    assert novo.name == oficial.name
     assert comum.sha256_arquivo(novo) == comum.sha256_arquivo(oficial)
 
 
 @pytest.mark.dados_reais
 def test_susep_extrato_regenerado_igual(tmp_path):
+    oficial = {nome: _oficial(f"susep_ses/2026-10-17/{nome}") for nome in ("ses_seguros_garantia.csv", "ses_cias.csv")}
     zpath = _original("susep_ses/2026-10-17/BaseCompleta.zip")
     novo = susep.filtrar(zpath, saida=tmp_path)
-    oficial = comum.BRONZE / "susep_ses" / "2026-10-17"
-    for nome in ("ses_seguros_garantia.csv", "ses_cias.csv"):
-        assert comum.sha256_arquivo(tmp_path / nome) == comum.sha256_arquivo(oficial / nome), nome
+    for nome, arquivo in oficial.items():
+        assert comum.sha256_arquivo(tmp_path / nome) == comum.sha256_arquivo(arquivo), nome
     assert novo.name == "ses_seguros_garantia.csv"
 
 
 @pytest.mark.dados_reais
 def test_cnpj_extrato_regenerado_igual(tmp_path):
     """Lê os 6,8 GB do CNPJ: leva alguns minutos."""
+    oficial = _oficial("cnpj/2026-10/estabelecimentos_cnae6912500.json")
     pasta = _original("cnpj/2026-10/Estabelecimentos0.zip").parent
     novo = cnpj.filtrar(pasta, saida=tmp_path)
-    oficial = comum.BRONZE / "cnpj" / "2026-10" / novo.name
+    assert novo.name == oficial.name
     assert comum.sha256_arquivo(novo) == comum.sha256_arquivo(oficial)

@@ -1,0 +1,58 @@
+[
+  {
+    "arquivo": "prov_227_2026.html",
+    "url": "https://atos.cnj.jus.br/atos/detalhar/1384",
+    "sha256": "2813bc1f0655ee6229526067ba8313ded5913812e94ad5ec8110a49852479e87",
+    "bytes": 25324,
+    "coletado_em": "2026-10-17T21:44:50-03:00",
+    "versao_coletor": "fase0-0.1"
+  },
+  {
+    "arquivo": "prov_227_2026_original185607202606106a29b34743c5a.pdf",
+    "url": "https://atos.cnj.jus.br/files/original185607202606106a29b34743c5a.pdf",
+    "sha256": "da1680ae74b78e31ee4a4107b45e44d2ae9b20284e979307fc59901ef067c575",
+    "bytes": 75993,
+    "coletado_em": "2026-10-17T21:44:52-03:00",
+    "versao_coletor": "fase0-0.1"
+  },
+  {
+    "arquivo": "prov_213_2026.html",
+    "url": "https://atos.cnj.jus.br/atos/detalhar/6734",
+    "sha256": "34b7738c2563e3bcda213c26158c2cfa0d46f3740c97c7c691c532eff098537b",
+    "bytes": 148660,
+    "coletado_em": "2026-10-17T21:44:54-03:00",
+    "versao_coletor": "fase0-0.1"
+  },
+  {
+    "arquivo": "prov_213_2026_compilado201256202607236a6275c8e3997.pdf",
+    "url": "https://atos.cnj.jus.br/files/compilado201256202607236a6275c8e3997.pdf",
+    "sha256": "75475359aafbfd46dcd40ed38922e0c4cbe785545e84b4bb99043fdf0129edd0",
+    "bytes": 361566,
+    "coletado_em": "2026-10-17T21:44:56-03:00",
+    "versao_coletor": "fase0-0.1"
+  },
+  {
+    "arquivo": "prov_213_2026_original14120720260223699c60372c2be.pdf",
+    "url": "https://atos.cnj.jus.br/files/original14120720260223699c60372c2be.pdf",
+    "sha256": "29183dbfd59b4786ed91c2d3ab1fea5324e4836c9bc26064edfaa50c466f73f7",
+    "bytes": 439506,
+    "coletado_em": "2026-10-17T21:44:58-03:00",
+    "versao_coletor": "fase0-0.1"
+  },
+  {
+    "arquivo": "prov_243_2026.html",
+    "url": "https://atos.cnj.jus.br/atos/detalhar/6936",
+    "sha256": "e1d8d83873430550d9d2a188555122432243f36627c80c815fdd5ecb7a739fcc",
+    "bytes": 26572,
+    "coletado_em": "2026-10-17T21:45:00-03:00",
+    "versao_coletor": "fase0-0.1"
+  },
+  {
+    "arquivo": "prov_243_2026_original150226202607236a622d022f886.pdf",
+    "url": "https://atos.cnj.jus.br/files/original150226202607236a622d022f886.pdf",
+    "sha256": "d1c62780a1392a7be5d1bb5ff2986706f1f56057db153be5443c42277de16e3f",
+    "bytes": 165605,
+    "coletado_em": "2026-10-17T21:45:02-03:00",
+    "versao_coletor": "fase0-0.1"
+  }
+]

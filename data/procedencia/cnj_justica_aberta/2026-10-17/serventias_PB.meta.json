@@ -1,0 +1,18 @@
+{
+ "url": "https://justicaabertaapi.cnj.jus.br/v1/api/serventias",
+ "metodo": "POST",
+ "params": {
+  "page": 1,
+  "perPage": 10000
+ },
+ "corpo": {
+  "cidade_id": 0,
+  "uf": "PB",
+  "cns": null
+ },
+ "registros": 534,
+ "meta_total": 534,
+ "sha256": "29a4341fdaf3ece7ac1d0195623f962cdfe98d3349b25244013d2c2b5c26ad79",
+ "coletado_em": "2026-10-17T22:04:23-03:00",
+ "versao_coletor": "fase0-0.2"
+}

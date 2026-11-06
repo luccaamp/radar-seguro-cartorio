@@ -1,0 +1,13 @@
+{
+ "descricao": "Originais desta fonte (D-032): ficam fora do bronze oficial, na pasta de originais (config/pacotes.yaml); aqui ficam o registro e o extrato que o silver lê. Gerado a partir do _metadados.json da coleta (2026-10-19).",
+ "arquivos": {
+  "BaseCompleta.zip": {
+   "url": "https://www2.susep.gov.br/redarq.asp?arq=BaseCompleta%2ezip",
+   "bytes": 577162612,
+   "sha256": "b2f23941e7b0a0f050b6b71d4813df32f9437d958477b40d578e6b8051267906",
+   "coletado_em": "2026-10-17T22:17:05-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "susep_ses/2026-10-17/BaseCompleta.zip"
+  }
+ }
+}

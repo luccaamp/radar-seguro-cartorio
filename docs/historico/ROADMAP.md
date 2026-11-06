@@ -1,6 +1,8 @@
 # Roteiro do projeto (ROADMAP)
 
 > **Histórico (D-037, 2026-10-22).** Não é mais a fonte do plano: cada etapa tem o seu documento, indicado no `docs/ESTADO_ATUAL.md`. Fica como referência das etapas, das pendências (§7) e da E2 detalhada.
+>
+> **Desde 2026-11-05 (D-071)**, o plano oficial é o [`plano_projeto.md`](../plano_projeto.md): a E6 (ordem dos estados) virou a Fase 5, a E7 (expansão estado por estado) a Fase 6, e o radar de normas entrou na Fase 7. As pendências da §7 que sobram estão na Fase 1.
 
 > **Fonte única do plano daqui em diante.** O `docs/ESTADO_ATUAL.md` diz em que etapa estamos; este arquivo diz o que cada etapa precisa entregar e como saber que terminou.
 > Em conflito, vale o `CLAUDE.md` (regras), depois este roteiro, depois o `SPEC.md` (desenho técnico).
@@ -383,9 +385,9 @@ As pendências vivem aqui. O `ESTADO_ATUAL.md` só aponta para as que dependem d
 - **[autor]** Apagar a pasta antiga do projeto no OneDrive, depois de 1 a 2 semanas de uso da pasta nova.
 - Pasta de sessões do Claude Code na pasta nova: `c--projetos-radar-seguro-cartorio` (conferida em 2026-10-21); o procedimento de salvar conversas está no `CONTRIBUTING.md`.
 - Backup de `conversas/` e de novas linhas de base em `E:\radar_arquivo` a cada etapa.
-- A tabela antiga `estado.cenarios_salvos` some do banco na próxima carga (D-034); conferir depois da carga.
-- Regras de estilo do `ruff` (hoje só as regras `F`; as padrão acusam cerca de 100 avisos de estilo).
-- Na próxima mudança do painel: o texto da página Qualidade dos dados ainda cita `docs/viabilidade.md` (`app/pages/3_Qualidade_dos_dados.py:45`); trocar por `docs/historico/viabilidade.md`. As sementes `config/premissas/premissas_v001.yaml` e `v002.yaml` ficam com o caminho antigo, porque são o registro do que foi gravado no banco.
+- ~~A tabela antiga `estado.cenarios_salvos` some do banco na próxima carga (D-034).~~ Resolvido: conferido em 2026-10-31, o schema `estado` só tem `log_decisoes` e `premissas_versoes`.
+- Regras de estilo do `ruff` (hoje só as regras `F`, sem erro desde 2026-11-05; as padrão acusam cerca de 100 avisos de estilo). Os imports sem uso dos notebooks ficam até a próxima rodada de cada um (`pyproject.toml`, `per-file-ignores`).
+- ~~O texto da página Qualidade dos dados cita `docs/viabilidade.md`.~~ Resolvido: a página saiu com a D-051 e nenhum arquivo do painel cita mais o caminho antigo (conferido em 2026-10-31). As sementes `config/premissas/premissas_v001.yaml` e `v002.yaml` ficam com o caminho antigo, porque são o registro do que foi gravado no banco.
 - Para a E4: a descrição da página Mercado no SPEC §5.1 é a do plano original ("mapa e ranking por UF"); reescrever com a página real (municípios de MG, áreas agregadas, um filtro por vez, D-026).
 - Para a E4: o nome `gold.fato_mercado_municipio_publico` engana, porque a tabela não está no conjunto público (`docs/dicionario_dados.md`); avaliar renomear ou retirar.
 - D-025 continua como proposta (entra na E2, S3).

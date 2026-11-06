@@ -36,6 +36,12 @@ dev = [
 # rodada (docs/ESTADO_ATUAL.md, pendências; docs/erros_ia.md, 2026-10-20).
 select = ["F"]
 
+[tool.ruff.lint.per-file-ignores]
+# notebooks: import sem uso fica até a próxima rodada de cada notebook. Tirar a linha sem rodar de novo deixaria o
+# código diferente da saída gravada, que vai para o git (D-038); a ferramenta de notebook apaga a saída da célula
+# (docs/erros_ia.md, 2026-11-05)
+"notebooks/*.ipynb" = ["F401"]
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]

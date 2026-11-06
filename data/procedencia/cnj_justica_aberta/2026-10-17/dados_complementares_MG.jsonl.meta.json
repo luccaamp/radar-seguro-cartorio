@@ -1,0 +1,8 @@
+{
+ "url": "https://justicaabertaapi.cnj.jus.br/v1/api/serventias/{cns}/dados-complementares",
+ "metodo": "GET (uma requisição por serventia ativa)",
+ "coletado_em": "2026-10-17T23:10:35-03:00",
+ "coletado_em_obs": "fim da coleta, pelo horário de modificação do arquivo; cada linha traz só a data (2026-10-17)",
+ "versao_coletor": "fase0 (cnj_colab_uf.py); metadados registrados depois, em 2026-10-18, sem tocar no dado",
+ "registrado_em": "2026-10-18T15:10:45-03:00"
+}

@@ -893,3 +893,19 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** a leitura do código do artefato parou no bloco `:root` e ignorou o `@media (prefers-color-scheme: dark)`; a conferência foi feita só no navegador da IA, em modo claro.
 - **Correção:** os dois temas com os tokens do artefato, escolha pelo tema do Streamlit ou do sistema, gráficos e mapa trocando de cor; conferência nos dois esquemas; aviso explícito para reiniciar o painel.
 - **Bom para os slides?** sim (o pedido era claro; faltou conferir no ambiente de quem pediu)
+
+## 2026-11-05 — Ferramenta de notebook apagou a saída gravada da célula
+- **Onde:** código gerado (`notebooks/03_padroes_frequentes.ipynb`, item A4 do fechamento de MG: imports sem uso apontados pelo `ruff`).
+- **O que aconteceu:** para tirar um `import pandas as pd` sem uso, a IA trocou o código da célula com a ferramenta de edição de notebook. A ferramenta zerou o `execution_count` e apagou a saída da célula (as duas linhas com 2.525 serventias e 1.121,3 obrigadas). As saídas dos notebooks vão para o git (D-038).
+- **Como foi detectado:** `git diff` do notebook logo depois da edição (+4 −41 linhas, quando só uma deveria sair).
+- **Causa provável:** a ferramenta trata a célula editada como código novo, ainda não rodado; a IA não conferiu esse comportamento antes de usar.
+- **Correção:** `git restore` do notebook (nenhuma mudança dele ficou); os imports sem uso dos notebooks ficam até a próxima rodada de cada um, com `per-file-ignores` do `F401` em `pyproject.toml` (motivo registrado lá). Regra: notebook com saída só muda quando é rodado de novo, numa cópia do banco.
+- **Bom para os slides?** não
+
+## 2026-11-05 — Exceção no `.gitignore` para versionar a procedência dentro de `data/bronze/`
+- **Onde:** código gerado (item A2 do fechamento de MG; D-070).
+- **O que aconteceu:** a primeira versão abriu exceções no `.gitignore` para os `original.json`, `_metadados.json` e `*.meta.json` dentro de `data/bronze/`. Com eles versionados, a pasta `data/bronze/` passaria a existir em todo clone, e vários testes e scripts tratam "a pasta existe" como "o bronze está aqui": `test_nomes` e `test_rastreabilidade` deixariam de ser pulados e falhariam, e o `--instalar` do `exportar_completo.py` recusaria a pasta ocupada.
+- **Como foi detectado:** antes de qualquer commit, procurando no código os usos de `BRONZE` com `.exists()`, `iterdir()` e `glob()`.
+- **Causa provável:** a IA pensou só no que o git guardaria, e não em como o código lê a presença da pasta.
+- **Correção:** exceções retiradas; a procedência vai para uma pasta própria, `data/procedencia/`, gerada por `scripts/exportar_procedencia.py` e conferida por `tests/test_procedencia.py`.
+- **Bom para os slides?** não

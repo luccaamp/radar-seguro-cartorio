@@ -1,0 +1,181 @@
+{
+ "descricao": "Originais desta fonte (D-032): ficam fora do bronze oficial, na pasta de originais (config/pacotes.yaml); aqui ficam o registro e o extrato que o silver lê. Gerado a partir do _metadados.json da coleta (2026-10-19).",
+ "arquivos": {
+  "Estabelecimentos0.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Estabelecimentos0.zip",
+   "bytes": 2277696710,
+   "sha256": "d002212bd4bd4475ea7f963685c9a22de92a0915cfbe16f9699cfadc527244af",
+   "coletado_em": "2026-10-17T22:29:41-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Estabelecimentos0.zip"
+  },
+  "Estabelecimentos1.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Estabelecimentos1.zip",
+   "bytes": 341948627,
+   "sha256": "52cfe325265ea475d6e4b78a4d9e7624b039e28208e4cb13925bc698916536ec",
+   "coletado_em": "2026-10-17T22:32:38-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Estabelecimentos1.zip"
+  },
+  "Estabelecimentos2.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Estabelecimentos2.zip",
+   "bytes": 336288966,
+   "sha256": "a5b1b86b944523a7ad906fe64b871f5b604edea40b5e028cf42a61a9784137ea",
+   "coletado_em": "2026-10-17T22:34:42-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Estabelecimentos2.zip"
+  },
+  "Estabelecimentos3.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Estabelecimentos3.zip",
+   "bytes": 368597760,
+   "sha256": "ee333efe7fded32209b6722b19f7e155190a440c2eca5271b0829c468cbeff27",
+   "coletado_em": "2026-10-17T22:37:15-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Estabelecimentos3.zip"
+  },
+  "Estabelecimentos4.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Estabelecimentos4.zip",
+   "bytes": 340413465,
+   "sha256": "d5bda174a7683d2cf2045d981dc1c2a0c8070c356ad4e2dedcebaa8a81c575a6",
+   "coletado_em": "2026-10-17T22:39:18-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Estabelecimentos4.zip"
+  },
+  "Estabelecimentos5.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Estabelecimentos5.zip",
+   "bytes": 335452647,
+   "sha256": "4f333a7f08ac505b7192be8ddf11ae133df61865f97388f856955afc31eaac22",
+   "coletado_em": "2026-10-17T22:41:44-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Estabelecimentos5.zip"
+  },
+  "Estabelecimentos6.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Estabelecimentos6.zip",
+   "bytes": 369782592,
+   "sha256": "5fe17420df9aaae6d3b3814362bef693231bfe01221c28ad1e7bb64135b2100e",
+   "coletado_em": "2026-10-17T22:44:10-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Estabelecimentos6.zip"
+  },
+  "Estabelecimentos7.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Estabelecimentos7.zip",
+   "bytes": 338419961,
+   "sha256": "d5bac9f97287f9739158197cc8d79425e5dd8da4aea8a3ef00b07ec415f3993f",
+   "coletado_em": "2026-10-17T22:46:51-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Estabelecimentos7.zip"
+  },
+  "Estabelecimentos8.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Estabelecimentos8.zip",
+   "bytes": 343568209,
+   "sha256": "97a50c93d70c048ee318b6d03ac65d6b4d5b59bc0ebd8923cd8773cf0ede5987",
+   "coletado_em": "2026-10-17T22:49:30-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Estabelecimentos8.zip"
+  },
+  "Estabelecimentos9.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Estabelecimentos9.zip",
+   "bytes": 364761032,
+   "sha256": "732ad06ba3735de8c78b004f44c113e1329bd529f69a84d82127d11b683bb3f6",
+   "coletado_em": "2026-10-17T22:53:29-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Estabelecimentos9.zip"
+  },
+  "Empresas0.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Empresas0.zip",
+   "bytes": 570972127,
+   "sha256": "0462e71efbf4e3d841c570176865b69c9ae7778a04014fa07145d99504327f7f",
+   "coletado_em": "2026-10-17T22:57:36-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Empresas0.zip"
+  },
+  "Empresas1.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Empresas1.zip",
+   "bytes": 77901368,
+   "sha256": "226713337ad77b876be58d7ac9cc92a7d9144f5780991515a0b3506b1a4a9900",
+   "coletado_em": "2026-10-17T22:58:20-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Empresas1.zip"
+  },
+  "Empresas2.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Empresas2.zip",
+   "bytes": 79125712,
+   "sha256": "d9ab5e05dd156bca6c207db7651c46e675600659c4301512c51dd89c08f4a55f",
+   "coletado_em": "2026-10-17T22:58:54-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Empresas2.zip"
+  },
+  "Empresas3.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Empresas3.zip",
+   "bytes": 85102880,
+   "sha256": "5b360ae214d61bc1392e053cc76dc751154e5d379ae962e640ce6ea919d57153",
+   "coletado_em": "2026-10-17T22:59:29-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Empresas3.zip"
+  },
+  "Empresas4.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Empresas4.zip",
+   "bytes": 90222463,
+   "sha256": "7f7b726b0394112ee39bdda4e16b1a409cdd17dcadb2554e78b7508408deac25",
+   "coletado_em": "2026-10-17T23:01:11-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Empresas4.zip"
+  },
+  "Empresas5.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Empresas5.zip",
+   "bytes": 97310075,
+   "sha256": "356cd0b1d33226204059054a4c59ef6a704fb8f68e182f02e5939dd8b89170f7",
+   "coletado_em": "2026-10-17T23:02:01-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Empresas5.zip"
+  },
+  "Empresas6.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Empresas6.zip",
+   "bytes": 94194819,
+   "sha256": "9260ac6e25b6b11651fcf4b09ab57a03c2e9940edee4594fb2218837fe9898aa",
+   "coletado_em": "2026-10-17T23:02:46-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Empresas6.zip"
+  },
+  "Empresas7.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Empresas7.zip",
+   "bytes": 98676055,
+   "sha256": "cacf2f5e184191aa6f5ced48c1ef727a745c343d73da5ad3836848fb36e9123e",
+   "coletado_em": "2026-10-17T23:03:50-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Empresas7.zip"
+  },
+  "Empresas8.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Empresas8.zip",
+   "bytes": 98736571,
+   "sha256": "2401492df8263624eef750e986d9e2e263a9f2b8802bf20a7a84bf77f030ced7",
+   "coletado_em": "2026-10-17T23:04:32-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Empresas8.zip"
+  },
+  "Empresas9.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Empresas9.zip",
+   "bytes": 94309858,
+   "sha256": "366f667afb46474d040b9823217a092991b65e37cb3e62b0f3f07890e0493239",
+   "coletado_em": "2026-10-17T23:05:35-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Empresas9.zip"
+  },
+  "Municipios.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Municipios.zip",
+   "bytes": 43443,
+   "sha256": "e5521c91e7fa62879f441af8223e3ed07564c855105edc39939190c108411d4a",
+   "coletado_em": "2026-10-17T23:05:38-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Municipios.zip"
+  },
+  "Naturezas.zip": {
+   "url": "https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/2026-10/Naturezas.zip",
+   "bytes": 1585,
+   "sha256": "c92728a7d9acc9535baa752a8fce1ebe100155909209df650af3771368e01986",
+   "coletado_em": "2026-10-17T23:05:40-03:00",
+   "versao_coletor": "fase0-0.1",
+   "guardado_em": "cnpj/2026-10/Naturezas.zip"
+  }
+ }
+}
