@@ -493,7 +493,7 @@ def test_pagina_com_cota_esgotada_mostra_so_a_frase(painel_demo, monkeypatch):
 
     def sem_cota(*a, **kw):
         raise llm.LLMIndisponivel("cota", llm.MENSAGENS["cota"] + " (HTTP 429 chave-de-teste-123)")
-        yield   # noqa: unreachable (gerador)
+        yield   # inalcançável: só faz da função um gerador
     monkeypatch.setattr(chat, "responder_em_partes", sem_cota)
     at = _pagina().run()
     at.chat_input[0].set_value("oi").run()

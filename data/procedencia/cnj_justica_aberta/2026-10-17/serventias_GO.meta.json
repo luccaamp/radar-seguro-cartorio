@@ -1,0 +1,18 @@
+{
+ "url": "https://justicaabertaapi.cnj.jus.br/v1/api/serventias",
+ "metodo": "POST",
+ "params": {
+  "page": 1,
+  "perPage": 10000
+ },
+ "corpo": {
+  "cidade_id": 0,
+  "uf": "GO",
+  "cns": null
+ },
+ "registros": 757,
+ "meta_total": 757,
+ "sha256": "fa6d124267fd042c4e11a25dd7ca3c65a2799c2856abbbf873466bc2f145bcbc",
+ "coletado_em": "2026-10-17T22:03:20-03:00",
+ "versao_coletor": "fase0-0.2"
+}

@@ -80,14 +80,15 @@ O chat usa o **Gemini no nível gratuito** do Google AI Studio. **Cada pessoa us
 
 ## Fluxo de trabalho
 
-1. **Qualquer colaborador pode dar commit e push direto na `main`, sem pull request** (D-041). Atualize antes de começar:
+1. **Uma branch por bloco de trabalho, juntada na `main` por pull request** (D-073, que substitui o push direto da D-041). A `main` fica sempre publicável, porque o painel público sai dela (D-074). Comece da `main` atualizada:
    ```
    git switch main
    git pull
+   git switch -c <nome-do-bloco>
    ```
-   Branch e pull request continuam permitidos, se você preferir (por exemplo, para uma mudança grande).
+   Branch de vida curta: termine, abra o pull request, junte com o CI verde e apague a branch. Uma branch aberta por vez (ou branches que não mexem nos mesmos arquivos); antes de juntar, traga a `main` para a branch.
 2. **Claude Code:** quando um colaborador pedir na conversa, o Claude pode fazer `commit`, `push`, `merge` e os demais comandos de `git` e `gh` que o colaborador pedir na hora, sem restrição (`CLAUDE.md`, seção Git).
-3. **Antes do commit na `main` (ou do PR):**
+3. **Antes do pull request:**
    - `uv run pytest` passando (e `uv run pytest -m dados_reais`, se você tem os dados da equipe);
    - `uv run ruff check src app tests scripts pipeline.py --exclude scripts/arquivo` sem erro (o padrão do projeto);
    - se mexeu no painel: `uv run python scripts/prints_painel.py --saida docs/qa/atual --checar`, com os prints e o `checagens.md` anexados ao PR (0 falhas de layout);

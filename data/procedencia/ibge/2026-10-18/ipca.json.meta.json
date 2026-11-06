@@ -1,0 +1,8 @@
+{
+ "coletado_em": "2026-10-18T01:02:12-03:00",
+ "versao_coletor": "fase1-0.1",
+ "url": "https://apisidra.ibge.gov.br/values/t/1737/n1/all/v/2266/p/201901-209912",
+ "metodo": "GET",
+ "bytes": 28568,
+ "sha256": "5ed9a60012889ac91e2ea5121d2945f834fe1f7c20c54b04d171b3afd8f14ea4"
+}

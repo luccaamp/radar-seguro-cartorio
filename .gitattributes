@@ -1,0 +1,3 @@
+# Procedência do bronze (D-070): cópia byte a byte dos registros de coleta; sem conversão de fim de linha, para
+# continuar igual ao bronze (tests/test_procedencia.py compara os bytes)
+data/procedencia/** -text

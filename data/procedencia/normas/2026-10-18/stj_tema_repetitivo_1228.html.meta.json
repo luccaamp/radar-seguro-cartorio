@@ -1,0 +1,8 @@
+{
+ "coletado_em": "2026-10-18T09:34:33-03:00",
+ "versao_coletor": "fase1-0.1",
+ "url": "https://processo.stj.jus.br/repetitivos/temas_repetitivos/pesquisa.jsp?novaConsulta=true&tipo_pesquisa=T&cod_tema_inicial=1228&cod_tema_final=1228",
+ "metodo": "GET",
+ "bytes": 65792,
+ "sha256": "db30e1973cd14fd5655e3c7a0ff1b3b625cad229073865a9c3af32b636aedb9d"
+}

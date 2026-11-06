@@ -1,0 +1,56 @@
+[
+  {
+    "arquivo": "adi_8015_detalhe.html",
+    "url": "https://portal.stf.jus.br/processos/detalhe.asp?incidente=7690150",
+    "status": 200,
+    "sha256": "e62fdc1a539a7e1a894bfb036df97931f296fa0dd7f68ca0ef0758d2594cc836",
+    "bytes": 70800,
+    "coletado_em": "2026-10-17T21:46:53-03:00",
+    "versao_coletor": "fase0-0.1"
+  },
+  {
+    "arquivo": "adi_8015_abaAndamentos.html",
+    "url": "https://portal.stf.jus.br/processos/abaAndamentos.asp?incidente=7690150",
+    "status": 200,
+    "sha256": "3c577d801755c41e793dba73fe9f5f6d1f47eee5297e6024d906251f4184baff",
+    "bytes": 210496,
+    "coletado_em": "2026-10-17T21:46:55-03:00",
+    "versao_coletor": "fase0-0.1"
+  },
+  {
+    "arquivo": "adi_8015_abaPartes.html",
+    "url": "https://portal.stf.jus.br/processos/abaPartes.asp?incidente=7690150",
+    "status": 200,
+    "sha256": "674618dcdc0fcf471175dbbc265581a78ddb1dfd182c36ccb503c97d37bf9ace",
+    "bytes": 2743,
+    "coletado_em": "2026-10-17T21:46:57-03:00",
+    "versao_coletor": "fase0-0.1"
+  },
+  {
+    "arquivo": "adi_8015_abaInformacoes.html",
+    "url": "https://portal.stf.jus.br/processos/abaInformacoes.asp?incidente=7690150",
+    "status": 200,
+    "sha256": "b6519c9d4681a1ea4b18610a2247ea8b7c93e4e5130853db55bfc1b391bcc403",
+    "bytes": 2929,
+    "coletado_em": "2026-10-17T21:47:00-03:00",
+    "versao_coletor": "fase0-0.1"
+  },
+  {
+    "arquivo": "adi_8015_abaDecisoes.html",
+    "url": "https://portal.stf.jus.br/processos/abaDecisoes.asp?incidente=7690150",
+    "status": 200,
+    "sha256": "b95f8d37e6e41aa81edb99fc286d8077c25af7ad64c200d1f2623c65ae1167e9",
+    "bytes": 3323,
+    "coletado_em": "2026-10-17T21:47:02-03:00",
+    "versao_coletor": "fase0-0.1"
+  },
+  {
+    "arquivo": "adi_8015_peca_15391377792.pdf",
+    "url": "https://portal.stf.jus.br/processos/downloadPeca.asp?id=15391377792&ext=.pdf",
+    "status": 200,
+    "sha256": "0cffa9f33275d85b322bee0f166c97c5164a6be33aac4d2eb2c47256b506261d",
+    "bytes": 131744,
+    "coletado_em": "2026-10-17T21:47:34-03:00",
+    "versao_coletor": "fase0-0.1"
+  }
+]

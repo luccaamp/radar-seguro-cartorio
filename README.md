@@ -83,6 +83,7 @@ uv run pipeline.py --a-partir-de bronze
   - os originais grandes vão para uma pasta **fora do projeto**: `C:\radar_arquivo\bronze_originais` no Windows, `~/radar_arquivo/bronze_originais` no Linux/macOS;
   - a pasta se configura em `config/pacotes.yaml` ou na variável `RADAR_ORIGINAIS`;
   - o bronze do projeto (`data/bronze`, ≈ 144 MB) guarda só os extratos que o silver lê e um `original.json` por fonte, com URL oficial, SHA-256, tamanho e hora de coleta de cada original.
+- **Procedência no git (D-070):** o bronze não vai para o git nem para o Release público, porque tem nome de pessoa (D-030). Os registros de coleta dele (`original.json`, `_metadados.json` e `*.meta.json`: URL oficial, SHA-256, tamanho e hora de coleta, sem o dado) vão em `data/procedencia/`, no mesmo caminho do bronze. Para conferir uma coleta nova contra a oficial, compare os SHA-256. Quem mantém a carga regrava a pasta com `uv run python scripts/exportar_procedencia.py` depois de cada coleta.
 - **Tempo:** depende da conexão. A 30 Mbit/s, só o download leva cerca de 40 minutos. O pipeline leva cerca de 1 minuto.
 - **Snapshots:** o `ingest` avisa quando há snapshots novos. Para usá-los, atualize as datas em `config/escopo.yaml`.
 
@@ -93,6 +94,8 @@ uv run pipeline.py --a-partir-de bronze
 ### 4. Equipe
 
 Colaboradores convidados baixam qualquer camada (bronze, silver, gold completo, banco) da mesma carga pelo repositório privado de dados. Veja [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+**Testes com os dados reais** (`uv run pytest -m dados_reais`): com o modo completo (seção 1b), rodam os do painel, do chat, das análises e da coerência com `data/completo/` e `data/publico/`. Os que conferem a passagem bronze → silver (`test_nomes`, `test_rastreabilidade` e os extratos de `test_coletores`) precisam do bronze e são **pulados** com o motivo "bronze ausente": rodam para a equipe (pacote da equipe) ou para quem coletou do zero (seção 3).
 
 ### 5. Conferir o painel
 

@@ -33,4 +33,6 @@ O plano do Bloco 2 (`plano_qualidade_e_correcoes.md`) ficou em `docs/` até 2026
 
 | Arquivo | Data | O que foi |
 |---|---|---|
+| [plano_projeto_ate_2026-11-05.md](plano_projeto_ate_2026-11-05.md) | 2026-10-23 a 2026-11-05 | O plano oficial da D-039: seis etapas até uma demo local de MG, com os métodos testados (T1 a T7), as Etapas 1 a 3 cumpridas e os outros estados como opcional. Substituído pelo plano da D-071 (MG ao Brasil inteiro). |
+| [ESTADO_ATUAL_ate_2026-10-31.md](ESTADO_ATUAL_ate_2026-10-31.md) | até 2026-10-31 | O `ESTADO_ATUAL.md` antes de ser reescrito (2026-11-05): o andamento das Etapas 1 a 3, da mineração e do chat, as cargas oficiais e as questões abertas de cada decisão proposta, com as branches de trabalho anteriores à "Versão final". |
 | [sessao_2026-10-28_mineracao_e_etapa2.md](sessao_2026-10-28_mineracao_e_etapa2.md) | 2026-10-28 | Fim da mineração (notebooks 07 e 09), Etapa 2 (tabelas `gold.analise_*` no pipeline) e as decisões da D-044; a carga oficial espera o autor. |
