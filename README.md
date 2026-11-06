@@ -1,5 +1,7 @@
 # Radar Seguro-Garantia Cartórios
 
+[![CI](https://github.com/luccaamp/radar-seguro-cartorio/actions/workflows/ci.yml/badge.svg)](https://github.com/luccaamp/radar-seguro-cartorio/actions/workflows/ci.yml)
+
 Painel de cartórios com dados públicos reais (hoje só **Minas Gerais**; outros estados numa fase seguinte), simulador do mercado de seguro-garantia criado pelo Provimento CNJ 227/2026 e chat que responde com fontes. Custo zero: tudo roda localmente.
 
 > **Nunca ouviu falar de seguro-garantia nem do Provimento 227? Comece por [`docs/entenda_o_projeto.md`](docs/entenda_o_projeto.md):** o problema, o básico de seguro-garantia, as perguntas que o projeto responde e um glossário, em linguagem simples.
@@ -11,6 +13,8 @@ O problema e as perguntas do projeto estão no [`docs/entenda_o_projeto.md`](doc
 ## Como rodar
 
 Requisitos: Git e o [`uv`](https://docs.astral.sh/uv/) (ele instala o Python 3.12 sozinho). Nada pago, nenhuma conta em nuvem.
+
+**Testes automáticos (CI, D-072 e D-073):** a cada pull request para a `main` e a cada push nela, o GitHub Actions roda dois jobs ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): `ruff` e a suíte padrão (`uv run pytest`, sem chave do Gemini e sem internet); depois, o modo completo da seção 1b (instala `data/completo/`, recalcula o gold) e os testes com os dados reais. O pull request só é juntado com os dois verdes.
 
 ### 1. Ver o painel (≈ 2 min)
 
