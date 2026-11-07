@@ -209,18 +209,16 @@ def checar_sem_dado_pessoal(con: duckdb.DuckDBPyConnection, nomes: set[str] | No
     return problemas
 
 
-def checar(con: duckdb.DuckDBPyConnection, limiar: int, cns: set[str] | None = None,
-           nomes: set[str] | None = None) -> tuple[list[str], list[str]]:
-    """Contratos de "sem dado pessoal" e de limiar sobre um banco montado só com o conjunto público.
+def checar(con: duckdb.DuckDBPyConnection, cns: set[str] | None = None, nomes: set[str] | None = None) -> list[str]:
+    """Contratos de "sem dado pessoal" sobre um banco montado só com o conjunto público. Devolve os problemas.
 
-    Devolve (problemas, exceções usadas). `nomes` (opcional, só na máquina de quem gera): nomes de pessoas do cadastro,
-    procurados em todo texto do conjunto (nada é impresso, só contado). `cns` (códigos de serventia): só nas tabelas
-    agregadas, fora de `por_serventia` (config/publico.yaml); o CNS identifica o cartório e é público desde a D-048."""
+    `nomes` (opcional, só na máquina de quem gera): nomes de pessoas do cadastro, procurados em todo texto do conjunto
+    (nada é impresso, só contado). `cns` (códigos de serventia): só nas tabelas agregadas, fora de `por_serventia`
+    (config/publico.yaml); o CNS identifica o cartório e é público desde a D-048. Sem contrato de limiar de serventias
+    desde a D-078 (D-038, fase 2)."""
     por_serventia = set(CONFIG.get("por_serventia") or [])
-    problemas, excecoes = [], []
+    problemas = []
     proibida = re.compile(CONFIG["colunas_proibidas"], re.IGNORECASE)
-    contagens = set(CONFIG["contagem_de_serventias"])
-    aprovadas = CONFIG.get("excecoes_limiar") or {}
     rel = con.execute("SELECT table_schema, table_name FROM information_schema.tables ORDER BY 1, 2").fetchall()
     for esq, nome in rel:
         t = f"{esq}.{nome}"
@@ -231,14 +229,6 @@ def checar(con: duckdb.DuckDBPyConnection, limiar: int, cns: set[str] | None = N
         for c, tipo in cols:
             if proibida.search(c):
                 problemas.append(f"{t}.{c}: nome de coluna proibido no público")
-            if c in contagens:
-                n = con.execute(f'SELECT count(*) FROM {t} WHERE "{c}" > 0 AND "{c}" < ?', [limiar]).fetchone()[0]
-                if n:
-                    chave = f"{t}.{c}"
-                    if chave in aprovadas:
-                        excecoes.append(f"{chave}: {n} linhas entre 1 e {limiar - 1} ({aprovadas[chave].get('status')})")
-                    else:
-                        problemas.append(f"{chave}: {n} linhas com 1 a {limiar - 1} serventias (abaixo do limiar)")
             if tipo == "VARCHAR":
                 textos = [x for (x,) in con.execute(f'SELECT DISTINCT "{c}" FROM {t} WHERE "{c}" IS NOT NULL').fetchall()]
                 if c != "geometria" and any(CPF.search(x) for x in textos):
@@ -255,4 +245,4 @@ def checar(con: duckdb.DuckDBPyConnection, limiar: int, cns: set[str] | None = N
                 valores = {str(x) for (x,) in con.execute(f'SELECT DISTINCT "{c}" FROM {t}').fetchall()}
                 if c not in ("cod_ibge", "cod_ibge6") and len(valores & cns) > 5:
                     problemas.append(f"{t}.{c}: valores que coincidem com códigos CNS")
-    return problemas, excecoes
+    return problemas

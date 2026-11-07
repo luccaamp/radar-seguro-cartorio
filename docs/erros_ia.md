@@ -917,3 +917,11 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** a IA supôs o formato das opções do `AppTest` sem conferir, e usou `.lower()` num rótulo com sigla.
 - **Correção:** o teste procura "2027 (projeção)"; rótulos curtos próprios (`LIM_CURTO`) na nota e no rodapé; `md_seguro` nos dois textos; os testes pegam o rádio pela chave (`x_cenario`).
 - **Bom para os slides?** sim (um teste que sempre pula parece verde e não testa nada)
+
+## 2026-11-06 — Caminho no formato do Git Bash passado ao DuckDB
+- **Onde:** comando da IA (conferência da D-078 numa cópia: `pipeline.main(..., banco="/c/Users/...")`).
+- **O que aconteceu:** a IA passou ao Python um caminho no formato do Git Bash (`/c/Users/...`); no Windows o DuckDB o leu como `c\Users\...`, relativo à pasta do projeto, e a carga na cópia falhou logo ao abrir o arquivo temporário. Nada foi gravado (a carga é atômica) e o banco real não foi tocado.
+- **Como foi detectado:** a saída do comando (erro de E/S do DuckDB) e o SHA-256 do banco real igual antes e depois.
+- **Causa provável:** a IA reaproveitou a variável do shell sem converter o caminho para o formato do Windows.
+- **Correção:** rodar de novo com o caminho `C:/Users/...`; nos comandos seguintes, uma variável própria com o caminho do Windows para tudo o que o Python abre.
+- **Bom para os slides?** não

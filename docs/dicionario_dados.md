@@ -83,7 +83,7 @@ fonte, arquivo, sha256, bytes, url, coletado_em, **data_referencia** (exibida no
 
 Calculado por `src/motor.py` com a versão vigente das premissas. Níveis: `min`, `base`, `max` (todas as premissas no mesmo nível). Regras de classe: `v2` (R$ 300 mil, base) e `v1` (R$ 100 mil). Valores em R$ por ano.
 
-O gold tem 26 tabelas do modelo (21 sem o prefixo `interno_`, entre elas a `serventia_publico` da D-048, e 5 internas) e, a partir da Etapa 2 (2026-10-28), mais 13 tabelas `analise_*` da mineração (6 da D-043, 2 da D-044 e 5 das melhorias de confiança, D-045 e D-046): 39 no total. "Pública" = está no conjunto público (`config/publico.yaml`, `data/publico/`) e o painel lê; as 18 públicas passaram pelo auditor de ataque por diferença e pelos contratos de LGPD (D-026 a D-030). Conferido contra o banco em 2026-10-21; as `analise_*`, contra um pipeline do zero numa cópia em 2026-10-28.
+O gold tem 20 tabelas do modelo (17 sem o prefixo `interno_`, entre elas a `serventia_publico` da D-048, e 3 internas) e, a partir da Etapa 2 (2026-10-28), mais 13 tabelas `analise_*` da mineração (6 da D-043, 2 da D-044 e 5 das melhorias de confiança, D-045 e D-046): 33 no total. "Pública" = está no conjunto público (`config/publico.yaml`, `data/publico/`) e o painel lê; as públicas passam pelos contratos de "sem dado pessoal" (nome, CPF, e-mail). Desde a D-078 (D-038, fase 2), não há limiar de serventias nem auditor de ataque por diferença: as 6 tabelas da supressão saíram e todo município aparece. Conferido contra um pipeline do zero numa cópia em 2026-11-06.
 
 ### Totais, sensibilidades e execução
 | Tabela | Grão | Colunas principais | Pública? |
@@ -93,22 +93,20 @@ O gold tem 26 tabelas do modelo (21 sem o prefixo `interno_`, entre elas a `serv
 | `gold.serventia_publico` | serventia ativa (2.525) | cns, uf, cod_ibge, municipio, regiao_imediata, regiao_intermediaria, situacao_juridica, tipo_cartorio, atribuicoes, clt, receita_ref, origem_receita, semestres_validos, classe (regra base), classe_v1, classificacao_aproximada, motivo, peso_universo, passivo, passivo_medio_vinculo, n_deficit, valor_descoberto, importancia_segurada, premio_emitido (nível base, STF mantém). Somada, dá o `fato_mercado_uf` (contrato do gold). Sem nome de pessoa | sim (D-038, D-048) |
 | `gold.sensibilidade_premissas` | variação (6): base, INPC, reserva da distribuição = MG, três leituras do art. 16, § 1º (D-023) | chave, variacao, providos_acima_limite, peso_classe_indeterminada_base e os mesmos totais de `fato_mercado_uf` | sim |
 | `gold.diferenca_regra_classe` | nível | universo, passivo, IS e prêmio em v2 e v1 | sim |
-| `gold.execucao` | regra (v1, v2) | regra_classe, peso_classe_indeterminada_base, versao_premissas, executado_em, fator_inpc e mes_inpc_final (a correção pelo INPC saiu da base na D-020; os dois campos continuam e alimentam só a linha "INPC" da sensibilidade e o texto do Início), ano_enquadramento, metodo_rateio, limiar_lgpd | sim |
-| `gold.dim_municipio` | município (853) | cod_ibge, municipio, mesorregiao, populacao, n_serventias, clt (a coluna `clt` não vai para o conjunto público, D-029) | sim, sem `clt` |
+| `gold.execucao` | regra (v1, v2) | regra_classe, peso_classe_indeterminada_base, versao_premissas, executado_em, fator_inpc e mes_inpc_final (a correção pelo INPC saiu da base na D-020; os dois campos continuam e alimentam só a linha "INPC" da sensibilidade e o texto do Início), ano_enquadramento, metodo_rateio (a coluna `limiar_lgpd` saiu na D-078) | sim |
+| `gold.dim_municipio` | município (853) | cod_ibge, municipio, mesorregiao, populacao, n_serventias, clt (no conjunto público desde a D-078) | sim |
 
-### Mapa, áreas e filtros do Mercado (D-026, D-027)
+### Mapa e ranking do Mercado (uma área por município desde a D-078)
 | Tabela | Grão | Colunas principais | Pública? |
 |---|---|---|---|
-| `gold.geo_area_municipio` | município com serventia (851) | cod_ibge, area_id (a área do mapa a que o município pertence) | sim |
-| `gold.geo_mapa_publico` | área do mapa sem filtro (385) | area_id, area_nome, tipo (`municipio` ou `regiao_agregada`), n_municipios, n_serventias, geometria (municípios com menos de 3 serventias dissolvidos por região imediata) | sim |
-| `gold.geo_mapa_filtro` | visão com filtro × área (85) | area_id, geometria, visao (ex.: `classe=2`, `situacao=VAGO`, `atribuicao=ri`) | sim |
-| `gold.geo_regiao_imediata` | região imediata (70) | area_id, geometria | sim |
+| `gold.geo_area_municipio` | município com serventia (851) | cod_ibge, area_id (o código IBGE em texto) | sim |
+| `gold.geo_mapa_publico` | município com serventia (851) | area_id, area_nome (o nome do município), tipo (`municipio`), n_municipios (1), n_serventias, geometria (malha municipal do IBGE) | sim |
 | `gold.geo_sem_serventia` | município sem serventia no cadastro do CNJ (2) | area_id, geometria | sim |
-| `gold.mercado_area_publico` | área do mapa sem filtro (385) | area_id, area_nome, tipo, n_municipios, n_serventias, clt, passivo, passivo_universo, n_universo, n_deficit, valor_descoberto (nível base, regra base) | sim |
-| `gold.mercado_filtro_area` | visão com filtro × área (511) | visao, filtro, valor, area_id, area_nome, nivel_area (`regiao_imediata`, `regiao_intermediaria`, `outras`), n_regioes e os totais da área; só o que o auditor aprovou | sim |
-| `gold.mercado_filtro_regiao` | visão × região imediata (768) | visao, regiao_imediata, area_id (a área publicada que contém a região naquela visão; vazio quando a área foi suprimida) | sim |
-| `gold.mercado_filtro_uf` | visão × regra × nível (78) | visao, filtro, valor, regra_classe, nivel, publicado (falso quando o auditor suprimiu) e os totais de `fato_mercado_uf` | sim |
-| `gold.ranking_municipio_publico` | município × métrica (1.276) | cod_ibge, municipio, metrica (`n_serventias`, `clt`, `passivo`, `valor_descoberto`), valor, posicao, n_municipios, pct_mg; só municípios com 3 ou mais serventias | sim |
+| `gold.mercado_area_publico` | município com serventia (851) | area_id, area_nome, tipo, n_municipios, n_serventias, clt, passivo, passivo_universo, n_universo, n_deficit, valor_descoberto (nível base, regra base) | sim |
+| `gold.mercado_filtro_uf` | visão × regra × nível (78) | visao, filtro, valor, regra_classe, nivel e os totais de `fato_mercado_uf`; todas as combinações (a coluna `publicado` saiu na D-078) | sim |
+| `gold.ranking_municipio_publico` | município com serventia × métrica (3.404) | cod_ibge, municipio, metrica (`n_serventias`, `clt`, `passivo`, `valor_descoberto`), valor, posicao, n_municipios (851), pct_mg; todos os municípios com serventia | sim |
+
+Saíram na D-078 (D-038, fase 2), com a supressão: `gold.mercado_filtro_area`, `gold.mercado_filtro_regiao`, `gold.geo_mapa_filtro`, `gold.geo_regiao_imediata`, `gold.interno_celulas_publicadas` e `gold.interno_auditoria` (as da carga 2026-11-06 ficam no backup em `C:\radar_arquivo`).
 
 ### Simulador por totais (modo demonstração, D-029)
 | Tabela | Grão | Colunas principais | Pública? |
@@ -119,8 +117,8 @@ O gold tem 26 tabelas do modelo (21 sem o prefixo `interno_`, entre elas a `serv
 ### Por município, fora do conjunto público
 | Tabela | Grão | Colunas principais | Pública? |
 |---|---|---|---|
-| `gold.fato_mercado_municipio_publico` | município × nível × regra (hoje só base, v2; 320 linhas) | cod_ibge, municipio, n_serventias, clt, passivo_todas, n_universo, passivo_universo, n_deficit, valor_descoberto; municípios com menos de 3 serventias somados numa linha (`agregado_lgpd`, `n_municipios_agregados`) | não (o painel não lê; contrato de LGPD no `src/quality/reconciliacao.py`) |
-| `gold.fato_passivo_municipio` | município com 3 ou mais serventias × nível (319 municípios, 957 linhas) | cod_ibge, municipio, origem_distribuicao, n_vinculos_rais, passivo_medio_vinculo | não (o painel não lê) |
+| `gold.fato_mercado_municipio_publico` | município com serventia × nível × regra (hoje só base, v2; 851 linhas) | cod_ibge, municipio, n_serventias, clt, passivo_todas, n_universo, passivo_universo, n_deficit, valor_descoberto, nivel, regra_classe; sem linha agregada desde a D-078 | não (o painel não lê) |
+| `gold.fato_passivo_municipio` | município com serventia × nível (851 municípios) | cod_ibge, municipio, origem_distribuicao, n_vinculos_rais, passivo_medio_vinculo | não (o painel não lê) |
 
 `origem_distribuicao` (D-022): `municipio` (o município tem 20 ou mais vínculos na RAIS) → `regiao` (a região imediata do IBGE tem 20 ou mais) → `estado` (MG inteiro). Na carga atual só aparecem `municipio` e `regiao`.
 
@@ -148,9 +146,7 @@ As tabelas da M1 e da M2 usam o CSV do BI do CNJ no bronze, que é opcional: sem
 ### Internas (nunca exibidas por serventia; só no pipeline, D-030)
 - `gold.interno_serventia`: serventia × nível × regra, com passivo, classe, classe_faixa, peso_universo, motivo, n_deficit e valor_descoberto. O painel só mostra agregados.
 - `gold.interno_dim_serventia`: receita de referência de 2025, origem_receita, semestres_validos, classe_v1 e classe_v2.
-- `gold.interno_passivo_municipio`: o passivo médio por vínculo de todos os 851 municípios com serventia (o `fato_passivo_municipio` é o recorte com 3 ou mais serventias).
-- `gold.interno_celulas_publicadas`: quais serventias compõem cada célula publicada (insumo do auditor).
-- `gold.interno_auditoria`: iterações e células do auditor de ataque por diferença.
+- `gold.interno_passivo_municipio`: o passivo médio por vínculo de todos os municípios (desde a D-078, igual ao `fato_passivo_municipio` nos municípios com serventia).
 
 ## Estado do pipeline (`estado.*`, só o pipeline grava)
 - `premissas_versoes`: versao, criada_em, autor, origem, diff_json, conteudo_json. Uma versão por semente YAML (v001, v002); desde a D-034, o painel não cria versão.
@@ -169,9 +165,9 @@ tabela, checagem, severidade (erro / aviso), violacoes, detalhe, camada (silver 
 checagem, fonte_a, valor_a, fonte_b, valor_b, indicador (diferença % ou valor), tolerancia (`config/qualidade.yaml`), status (ok / aviso), detalhe. Valores arredondados a 10 casas a partir de 2026-10-28 (D-044), para o hash não mudar com a ordem das linhas; o status usa o valor sem arredondar.
 
 ### `qualidade.rec_municipio`
-Por município: n_cnj, n_cnpj, clt_cnj, vinc_rais, dif_serventias, dif_empregados.
+Por município, uma linha para cada um dos 853 municípios de MG (desde a D-078; antes, os com menos de 3 serventias eram somados por região imediata): area, area_completa (o nome do município), tipo (`municipio`), regiao_imediata, n_municipios, n_cnj, n_cnpj, clt_cnj, vinc_rais, dif_serventias, dif_empregados.
 
 ## Conjunto público (`data/publico/`, D-029)
-- 39 Parquet com as tabelas públicas (19 do gold, entre elas a `serventia_publico`; 13 `analise_*`, duas delas por serventia desde a D-048; 2 do silver, 4 da qualidade e a versão vigente das premissas, `estado.premissas_vigente`), mais o `manifesto.json`. Versionado no git; gerado por `scripts/gerar_publico.py` (auditor, contratos de "sem dado pessoal" e de limiar, limite de tamanho).
-- `manifesto.json`: carga, data e hora da execução, versão das premissas, limiar de LGPD, commit, fontes (data de referência, data de coleta e SHA-256 do bronze), exceções ao limiar e, por tabela, o arquivo, as linhas, o SHA-256 do arquivo e o **hash de conteúdo** (linhas ordenadas, sem os carimbos de execução). O `tests/test_publico.py` compara o gold local com esse hash.
+- 35 Parquet com as tabelas públicas (15 do gold, entre elas a `serventia_publico`; 13 `analise_*`, duas delas por serventia desde a D-048; 2 do silver, 4 da qualidade e a versão vigente das premissas, `estado.premissas_vigente`), mais o `manifesto.json`. Versionado no git; gerado por `scripts/gerar_publico.py` (contratos de "sem dado pessoal" e limite de tamanho; o auditor de ataque por diferença e o contrato de limiar saíram na D-078).
+- `manifesto.json`: carga, data e hora da execução, versão das premissas, commit, fontes (data de referência, data de coleta e SHA-256 do bronze) e, por tabela, o arquivo, as linhas, o SHA-256 do arquivo e o **hash de conteúdo** (linhas ordenadas, sem os carimbos de execução). O `tests/test_publico.py` compara o gold local com esse hash.
 - Sem banco local, o painel monta um banco temporário a partir desses arquivos (modo demonstração).

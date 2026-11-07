@@ -162,89 +162,50 @@ def test_painel_com_banco_marcado_somente_leitura(banco_temporario, tmp_path):
         os.chmod(ro, stat.S_IREAD | stat.S_IWRITE)
 
 
-def test_mercado_filtro_pequeno_esconde_estimativa(banco_temporario):
-    from streamlit.testing.v1 import AppTest
-    at = AppTest.from_file(str(RAIZ / MERCADO), default_timeout=120).run()
-    # um município com 1 ou 2 serventias: as estimativas não podem aparecer (LGPD)
-    with duckdb.connect(str(banco_temporario["copia"]), read_only=True) as con:  # mesma configuração da conexão do app
-        nome = con.sql("SELECT municipio FROM gold.dim_municipio WHERE n_serventias = 1 ORDER BY municipio LIMIT 1"
-                       ).fetchone()[0]
-        area = con.execute("""SELECT p.n_serventias FROM gold.mercado_area_publico p JOIN gold.geo_area_municipio a
-                              USING (area_id) JOIN gold.dim_municipio d USING (cod_ibge) WHERE d.municipio = ?""",
-                           [nome]).fetchone()[0]
-    at.selectbox[0].set_value(nome).run()
-    assert not at.exception
-    # U1: o município pequeno nunca aparece sozinho; os números são os da área agregada a que ele pertence
-    assert any("agregado" in i.value and "LGPD" in i.value for i in at.info)
-    tela = "\n".join(m.value for m in at.markdown)   # D-051: cartão "Cartórios na área" em HTML
-    serv = re.findall(r'Cartórios na área</div><div class="rd-num">([^<]+)<', tela)
-    assert serv == [str(area)] and area >= 3
-
-
-# exceções explícitas da regra de 3 serventias (D1): contagens do cadastro público do CNJ e dados do IBGE
-EXCECOES_LGPD = {"gold.dim_municipio": "contagens do cadastro público do CNJ (serventias, CLT declarados) e população do IBGE",
-                 "gold.serventia_publico": "resultado por cartório, pelo CNS e pelo município, sem nome de pessoa (D-038, D-048)"}
-
-
-def _municipios_pequenos(con, com_codigos: bool = False) -> set[str]:
-    """Nomes (e, se pedido, códigos IBGE em texto) dos municípios de MG com menos serventias ativas que o limiar LGPD,
-    inclusive os sem serventia."""
-    limiar = con.sql("SELECT max(limiar_lgpd) FROM gold.execucao").fetchone()[0]
-    linhas = con.execute("""
-        SELECT m.nome, m.cod_ibge FROM silver.municipio_ibge m LEFT JOIN
-          (SELECT cod_ibge, count(*) n FROM silver.serventia WHERE status = 'Ativo' GROUP BY 1) s USING (cod_ibge)
-        WHERE coalesce(s.n, 0) < ?""", [limiar]).fetchall()
-    return {n for n, _ in linhas} | ({str(c) for _, c in linhas} if com_codigos else set())
-
-
-def _valores_das_figuras(spec: dict) -> set[str]:
-    """Todo texto que uma figura Plotly mostra ou carrega: hovertext, text, y, locations e customdata (achatado)."""
-    out = set()
-    for trace in spec["data"]:
-        for campo in ("hovertext", "text", "y", "locations"):
-            out |= {str(x) for x in (trace.get(campo) or []) if isinstance(x, (str, int))}
-        for linha in trace.get("customdata") or []:
-            out |= {str(x) for x in (linha if isinstance(linha, list) else [linha]) if isinstance(x, (str, int))}
-    return out
-
-
-def test_lgpd_tabelas_publicas_do_gold_e_da_qualidade(banco_temporario):
-    """D1: nenhuma tabela pública (gold e qualidade, fora as 'interno_*' e as exceções) tem nome de município com
-    menos de 3 serventias."""
-    with duckdb.connect(str(banco_temporario["copia"]), read_only=True) as con:
-        pequenos = _municipios_pequenos(con)
-        cols = con.execute("""SELECT table_schema || '.' || table_name, column_name FROM information_schema.columns
-                              WHERE table_schema IN ('gold', 'qualidade') AND data_type = 'VARCHAR'
-                                AND table_name NOT LIKE 'interno_%'""").fetchall()
-        achados = {}
-        for tabela, coluna in cols:
-            if tabela in EXCECOES_LGPD:
-                continue
-            valores = {r[0] for r in con.execute(f'SELECT DISTINCT "{coluna}" FROM {tabela}').fetchall()}
-            if valores & pequenos:
-                achados[f"{tabela}.{coluna}"] = len(valores & pequenos)
-    assert len(pequenos) > 400 and not achados, achados
-
-
-def test_lgpd_tabelas_e_graficos_do_painel(banco_temporario):
-    """D1: nenhuma tabela nem texto de gráfico do painel mostra nome de município com menos de 3 serventias
-    (o mapa do Mercado agrega esses municípios pela região imediata)."""
+def test_mercado_municipio_pequeno_aparece_sozinho(banco_temporario):
+    """D-078 (D-038, fase 2): um município com 1 serventia tem área própria no mapa, os números dele e a posição no
+    ranking, sem aviso de agregação."""
     import json
     from streamlit.testing.v1 import AppTest
+    at = AppTest.from_file(str(RAIZ / MERCADO), default_timeout=120).run()
+    with duckdb.connect(str(banco_temporario["copia"]), read_only=True) as con:  # mesma configuração da conexão do app
+        nome, cod = con.sql("SELECT municipio, cod_ibge FROM gold.dim_municipio WHERE n_serventias = 1 "
+                            "ORDER BY municipio LIMIT 1").fetchone()
+        pos, total = con.execute("SELECT posicao, n_municipios FROM gold.ranking_municipio_publico "
+                                 "WHERE metrica = 'valor_descoberto' AND cod_ibge = ?", [cod]).fetchone()
+        com_serv = con.sql("SELECT count(*) FROM gold.dim_municipio WHERE n_serventias > 0").fetchone()[0]
+    at.selectbox[0].set_value(nome).run()
+    assert not at.exception
+    assert not any("agregad" in i.value for i in at.info)
+    tela = "\n".join(m.value for m in at.markdown).replace("&#36;", "$")
+    assert f"Déficit em {nome}" in tela
+    assert re.findall(r'Cartórios no município</div><div class="rd-num">([^<]+)<', tela) == ["1"]
+    assert f"{pos}º de {total:,}".replace(",", ".") + " municípios no déficit" in tela
+    assert f"<td>{nome}</td>" in tela   # a linha dele no ranking, abaixo dos 10 primeiros
+    mapa = next(json.loads(g.proto.spec) for g in at.get("plotly_chart")
+                if any(t.get("type") == "choroplethmap" for t in json.loads(g.proto.spec)["data"]))
+    dados = next(t for t in mapa["data"] if "colorbar" in t)
+    assert len(dados["locations"]) == total == com_serv and str(cod) in dados["locations"]
+
+
+def test_tabelas_por_municipio_tem_todos_os_municipios(banco_temporario):
+    """D-078 (D-038, fase 2): o mapa, o ranking, a tabela de mercado por município, o passivo por município e a
+    reconciliação pública trazem todos os municípios com serventia, sem linha agregada."""
     with duckdb.connect(str(banco_temporario["copia"]), read_only=True) as con:
-        pequenos = _municipios_pequenos(con)
-        pequenos_e_codigos = _municipios_pequenos(con, com_codigos=True)
-    figuras_vistas = 0
-    for pagina in PAGINAS:
-        at = AppTest.from_file(str(RAIZ / pagina), default_timeout=120).run()
-        for df in (d.value for d in at.dataframe):
-            textos = {v for c in df.columns if df[c].dtype == object for v in df[c].dropna()}
-            assert not (textos & pequenos), (pagina, sorted(textos & pequenos)[:5])
-        for g in at.get("plotly_chart"):
-            figuras_vistas += 1
-            valores = _valores_das_figuras(json.loads(g.proto.spec))
-            assert not (valores & pequenos_e_codigos), (pagina, sorted(valores & pequenos_e_codigos)[:5])
-    assert figuras_vistas >= 3   # mapa e ranking do Mercado, gráfico da Qualidade
+        q = lambda s: con.sql(s).fetchone()[0]  # noqa: E731
+        com_serv = q("SELECT count(*) FROM gold.dim_municipio WHERE n_serventias > 0")
+        assert com_serv > 800 and q("SELECT count(*) FROM gold.dim_municipio WHERE n_serventias BETWEEN 1 AND 2") > 400
+        assert q("SELECT count(*) FROM gold.geo_mapa_publico") == com_serv
+        assert q("SELECT count(*) FROM gold.mercado_area_publico WHERE tipo = 'municipio'") == com_serv
+        assert q("SELECT count(DISTINCT cod_ibge) FROM gold.ranking_municipio_publico") == com_serv
+        assert q("SELECT count(*) FROM gold.fato_mercado_municipio_publico WHERE cod_ibge IS NOT NULL") == com_serv
+        assert q("SELECT count(*) FROM gold.fato_mercado_municipio_publico") == com_serv
+        assert q("SELECT count(DISTINCT cod_ibge) FROM gold.fato_passivo_municipio") == com_serv
+        assert q("SELECT count(*) FROM qualidade.rec_municipio") == q("SELECT count(*) FROM silver.municipio_ibge")
+        # as somas por município fecham o total de MG (nível e regra base, STF mantém)
+        assert q("SELECT sum(valor_descoberto) FROM gold.mercado_area_publico") == pytest.approx(
+            q("SELECT valor_descoberto FROM gold.fato_mercado_uf WHERE nivel = 'base' AND regra_classe = 'v2' "
+              "AND cenario_stf = 'mantem'"), rel=1e-9)
 
 
 def test_sem_formula_latex_nos_textos(banco_temporario):

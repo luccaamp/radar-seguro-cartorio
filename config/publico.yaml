@@ -1,7 +1,8 @@
 # Conjunto público (D-029; D-038 e D-048): o que scripts/gerar_publico.py copia do banco para data/publico/ (versionado
 # no repositório público). Desde a D-048 (fase 1 da D-038), entram também os resultados por serventia, identificada
 # pelo CNS e pelo município. Nunca nome, CPF, e-mail ou outro dado de pessoa física. As tabelas interno_* ficam fora
-# (todos os níveis e regras, insumos e auditoria); a supressão de áreas pequenas sai na fase 2 (Etapa 3).
+# (todos os níveis e regras, insumos). Desde a D-078 (fase 2 da D-038) não há limiar de serventias: todo município
+# aparece, inclusive os de 1 ou 2 serventias.
 pasta: data/publico
 limite_mb: 20
 # Testes de coerência com o gold local: se o hash de conteúdo difere, as colunas de ponto flutuante podem diferir
@@ -17,16 +18,11 @@ tolerancia_coerencia: 1.0e-4
 tabelas:
   gold.fato_mercado_uf: {}
   gold.mercado_area_publico: {}
-  gold.mercado_filtro_area: {}
   gold.mercado_filtro_uf: {}
-  gold.mercado_filtro_regiao: {}
   gold.ranking_municipio_publico: {}
-  gold.dim_municipio:
-    remover: [clt]          # CLT por município aparece também nos municípios com 1 ou 2 serventias
+  gold.dim_municipio: {}    # com o CLT por município desde a D-078 (antes, removido por causa dos municípios pequenos)
   gold.geo_area_municipio: {}
   gold.geo_mapa_publico: {}
-  gold.geo_mapa_filtro: {}
-  gold.geo_regiao_imediata: {}
   gold.geo_sem_serventia: {}
   gold.execucao:
     sem_hash: [executado_em]
@@ -66,16 +62,6 @@ tabelas:
 # tabelas com uma linha por serventia (D-048): nelas o CNS é esperado; nas outras, um CNS continua sendo erro (uma
 # tabela agregada não deveria trazer código de serventia)
 por_serventia: [gold.serventia_publico, gold.analise_grupos, gold.analise_clt_modelo]
-
-# colunas que contam serventias de uma célula publicada: valor entre 1 e limiar - 1 bloqueia a publicação,
-# salvo exceção abaixo
-contagem_de_serventias: [n_serventias, n_serventias_ativas, n_cnj]
-excecoes_limiar:
-  gold.dim_municipio.n_serventias:
-    motivo: >-
-      Contagem de serventias por município, do cadastro público do CNJ, sem nenhum valor por serventia (o CLT foi
-      removido). O painel usa para dizer que um município pequeno aparece somado à sua região (D1, D-026).
-    status: aprovada pelo autor em 2026-10-19 (D-029)
 
 # D-030 (regra corrigida pelo autor, 2026-10-19; substituída pela D-038/D-048 no data/publico, que agora traz
 # gold.serventia_publico): vale só para o pacote do silver. Colunas do silver com estes nomes saem do pacote

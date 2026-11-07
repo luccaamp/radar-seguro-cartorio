@@ -1,7 +1,7 @@
 """Reconciliações entre fontes e contratos do gold (SPEC §4). Divergência entre fontes = aviso; violação de contrato = erro.
 
 Saídas: qualidade.reconciliacoes (resumo); qualidade.interno_rec_municipio (CNJ × CNPJ × RAIS por município, uso
-interno) e qualidade.rec_municipio (versão pública: municípios com menos de 3 serventias agregados pela região imediata, D1).
+interno) e qualidade.rec_municipio (versão pública, uma linha por município, inclusive os pequenos; D-078).
 """
 import duckdb
 import numpy as np
@@ -30,36 +30,12 @@ def _linha(checagem, fonte_a, valor_a, fonte_b, valor_b, tolerancia, tipo="difer
             "status": "ok" if ok else "aviso", "detalhe": detalhe}
 
 
-def rec_municipio_publico(rec: pd.DataFrame, limiar: int) -> pd.DataFrame:
-    """D1: municípios com pelo menos `limiar` serventias no CNJ aparecem com o nome; os demais são somados por região
-    imediata do IBGE numa linha "Região imediata de X (k municípios com menos de N serventias)"."""
+def rec_municipio_publico(rec: pd.DataFrame) -> pd.DataFrame:
+    """Versão pública da reconciliação por município: uma linha por município, com o nome, inclusive os de 1 ou 2
+    serventias (D-078; antes, D1, os menores eram somados por região imediata). Mesmas colunas de antes."""
     cols = ["n_cnj", "n_cnpj", "clt_cnj", "vinc_rais"]
-    grandes = rec[rec["n_cnj"] >= limiar].assign(area=lambda d: d["municipio"], area_completa=lambda d: d["municipio"],
-                                                 tipo="municipio", n_municipios=1)
-    peq = (rec[rec["n_cnj"] < limiar].groupby("regiao_imediata")
-           .agg(**{c: (c, "sum") for c in cols}, n_municipios=("cod_ibge", "size")).reset_index())
-    # rótulo curto para a tabela (1.5) e o nome completo para o texto ao passar o mouse
-    peq["area"] = [f"RI {r} ({n} mun.)" for r, n in zip(peq["regiao_imediata"], peq["n_municipios"])]
-    peq["area_completa"] = [f"Região imediata de {r} ({n} municípios com menos de {limiar} serventias, somados)"
-                            for r, n in zip(peq["regiao_imediata"], peq["n_municipios"])]
-    peq["tipo"] = "regiao_agregada"
-    # grupo de região imediata que soma só 1 ou 2 serventias mostraria o CLT delas: vai para uma linha única de
-    # "outras regiões" (achado do gerar_publico, 2026-10-19; mesma ideia da hierarquia do Mercado, D-026)
-    poucas = (peq["n_cnj"] > 0) & (peq["n_cnj"] < limiar)
-    if poucas.any() and peq.loc[poucas, "n_cnj"].sum() < limiar:   # a soma também seria pequena: leva junto o menor
-        resto = peq.loc[~poucas & (peq["n_cnj"] > 0), "n_cnj"]       # dos demais grupos
-        if len(resto):
-            poucas |= peq.index == resto.idxmin()
-    if poucas.any():
-        o = peq[poucas]
-        outras = {c: o[c].sum() for c in cols} | {
-            "n_municipios": int(o["n_municipios"].sum()), "regiao_imediata": None, "tipo": "outras",
-            "area": f"Outras regiões ({len(o)} RI)",
-            "area_completa": (f"Outras regiões imediatas ({len(o)} regiões cujos municípios com menos de {limiar} "
-                              f"serventias somam menos de {limiar} serventias, somadas)")}
-        peq = pd.concat([peq[~poucas], pd.DataFrame([outras])], ignore_index=True)
-    campos = ["area", "area_completa", "tipo", "regiao_imediata", "n_municipios"] + cols
-    out = pd.concat([grandes[campos], peq[campos]], ignore_index=True)
+    out = rec.assign(area=rec["municipio"], area_completa=rec["municipio"], tipo="municipio", n_municipios=1)
+    out = out[["area", "area_completa", "tipo", "regiao_imediata", "n_municipios"] + cols].reset_index(drop=True)
     out["dif_serventias"] = out["n_cnpj"] - out["n_cnj"]
     out["dif_empregados"] = out["vinc_rais"] - out["clt_cnj"]
     return out
@@ -81,8 +57,7 @@ def reconciliar(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
     rec_mun["dif_serventias"] = rec_mun["n_cnpj"] - rec_mun["n_cnj"]
     rec_mun["dif_empregados"] = rec_mun["vinc_rais"] - rec_mun["clt_cnj"]
     con.execute("CREATE SCHEMA IF NOT EXISTS qualidade")
-    limiar = int(con.execute("SELECT max(limiar_lgpd) FROM gold.execucao").fetchone()[0])
-    for nome, df in (("interno_rec_municipio", rec_mun), ("rec_municipio", rec_municipio_publico(rec_mun, limiar))):
+    for nome, df in (("interno_rec_municipio", rec_mun), ("rec_municipio", rec_municipio_publico(rec_mun))):
         con.register("_df", df)
         con.execute(f"CREATE OR REPLACE TABLE qualidade.{nome} AS SELECT * FROM _df")
         con.unregister("_df")
@@ -194,10 +169,12 @@ def contratos_gold(con: duckdb.DuckDBPyConnection) -> list[Checagem]:
         condicao(con, f"({g}.interno_serventia JOIN {g}.interno_passivo_municipio USING (cod_ibge, nivel))",
                  "rateio por_empregados_cnj = CLT × passivo médio", "abs(passivo - coalesce(clt, 0) * "
                  f"{g}.interno_passivo_municipio.passivo_medio_vinculo) > 0.01"),
-        condicao(con, f"{g}.fato_mercado_municipio_publico", "exibição sem município com menos serventias que o limiar",
-                 f"NOT agregado_lgpd AND n_serventias < (SELECT max(limiar_lgpd) FROM {g}.execucao)"),
-        condicao(con, f"{g}.geo_mapa_publico", "mapa: nenhuma área pública com menos serventias que o limiar (1.2)",
-                 f"n_serventias < (SELECT max(limiar_lgpd) FROM {g}.execucao)"),
+        condicao(con, f"{g}.dim_municipio", "por município (D-078): todo município com serventia na tabela de mercado",
+                 f"n_serventias > 0 AND cod_ibge NOT IN (SELECT cod_ibge FROM {g}.fato_mercado_municipio_publico)"),
+        condicao(con, f"{g}.dim_municipio", "por município (D-078): todo município com serventia no mapa (uma área "
+                 "própria) e no ranking",
+                 f"n_serventias > 0 AND (CAST(cod_ibge AS VARCHAR) NOT IN (SELECT area_id FROM {g}.geo_mapa_publico) "
+                 f"OR cod_ibge NOT IN (SELECT cod_ibge FROM {g}.ranking_municipio_publico))"),
         condicao(con, f"{g}.geo_area_municipio", "mapa: todo município com serventia pertence a uma área",
                  f"cod_ibge IN (SELECT cod_ibge FROM {g}.dim_municipio WHERE n_serventias > 0) AND area_id IS NULL"),
         classe_api_x_bi(con),

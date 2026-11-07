@@ -4,8 +4,8 @@ Regras (CLAUDE.md, D-026 a D-030):
 - só leem tabelas do conjunto público já auditado (`config/publico.yaml`), por uma conexão só de leitura recebida de
   fora (a do painel); nenhuma tabela interna, nada de SQL livre (testado em tests/test_chat.py);
 - sempre com a UF como parâmetro; hoje só MG tem dados (expansão na E7);
-- regra v1 e mínimo/máximo só nos totais da UF (D-027); abaixo da UF, as contagens por filtro que o auditor publicou
-  (`publicado`) e, desde a D-048 (D-038), o resultado por serventia (`consultar_serventia`, pelo CNS ou pelo
+- regra v1 e mínimo/máximo só nos totais da UF (D-027); abaixo da UF, as contagens por filtro (todas publicadas
+  desde a D-078) e, desde a D-048 (D-038), o resultado por serventia (`consultar_serventia`, pelo CNS ou pelo
   município; nunca nome de pessoa);
 - cada resultado traz os valores já formatados e a linha `citar` (fonte, carga e versão das premissas).
 """
@@ -133,12 +133,12 @@ def contar_serventias(con: duckdb.DuckDBPyConnection, uf: str, recorte: str = "t
     if achado is None:
         return {"erro": f"recorte {recorte!r} não existe; use um destes: {RECORTES}"}
     f, v = achado
-    linha = con.execute("SELECT publicado, n_serventias_ativas, clt FROM gold.mercado_filtro_uf WHERE visao = ? "
+    linha = con.execute("SELECT n_serventias_ativas, clt FROM gold.mercado_filtro_uf WHERE visao = ? "
                         "AND regra_classe = 'v2' AND nivel = 'base'", [f"{f}={v}"]).fetchone()
-    if linha is None or not linha[0]:
-        return {"erro": "contagem não publicada (suprimida pelo auditor de LGPD)"}
-    r = {"uf": "MG", "recorte": f"{f} = {v}", "serventias_ativas_no_recorte": _br(linha[1], 0),
-         "empregados_clt_no_recorte": _br(linha[2], 0)}
+    if linha is None:
+        return {"erro": f"recorte {recorte!r} sem linha em gold.mercado_filtro_uf"}
+    r = {"uf": "MG", "recorte": f"{f} = {v}", "serventias_ativas_no_recorte": _br(linha[0], 0),
+         "empregados_clt_no_recorte": _br(linha[1], 0)}
     if f == "classe":
         r["observacao"] = "classe pela regra v2 (Prov. 243, Classe 1 até R$ 300 mil por semestre), aproximada"
     return {**r, "citar": _citar(con, "gold.mercado_filtro_uf")}

@@ -1,10 +1,10 @@
 """Auditoria do painel (docs/historico/revisao_painel_filtros.md, seção 5): percorre os estados do Mercado e do Simulador
-(3 cenários) com o AppTest e checa mapa, LGPD, consistência numérica e formato. Roda na cópia temporária do banco
+(3 cenários) com o AppTest e checa mapa, consistência numérica e formato. Roda na cópia temporária do banco
 (fixture banco_temporario).
 
 Desde a D-051 (terceira rodada do painel), a página "Onde está o mercado" tem um filtro só (município) e o mapa do
-déficit: os estados por métrica, por atribuição/situação/classe e pela regra v1 saíram da tela (o chat responde). As
-conferências das tabelas públicas filtradas e do auditor continuam, porque as tabelas seguem no conjunto público.
+déficit: os estados por métrica, por atribuição/situação/classe e pela regra v1 saíram da tela (o chat responde).
+Desde a D-078 (D-038, fase 2), o mapa tem uma área por município e não há auditor de ataque por diferença.
 """
 import json
 import re
@@ -15,7 +15,7 @@ import pytest
 
 from apoio_painel import RAIZ
 
-# dados_reais: lê silver.serventia e interno_celulas_publicadas (banco completo); fora da suíte padrão
+# dados_reais: lê o banco completo; fora da suíte padrão
 pytestmark = [pytest.mark.dados_reais, pytest.mark.usefixtures("banco_temporario")]
 MERCADO = str(RAIZ / "app/pages/2_Onde_está_o_mercado.py")
 SIMULADOR = str(RAIZ / "app/pages/6_Explorar.py")
@@ -30,15 +30,6 @@ def db(banco_temporario):
     con = duckdb.connect(str(banco_temporario["copia"]), read_only=True)
     yield con
     con.close()
-
-
-@pytest.fixture(scope="module")
-def pequenos(db):
-    """Nomes e códigos dos municípios com menos de 3 serventias (inclusive sem serventia)."""
-    linhas = db.execute("""SELECT m.nome, m.cod_ibge FROM silver.municipio_ibge m LEFT JOIN
-        (SELECT cod_ibge, count(*) n FROM silver.serventia WHERE status = 'Ativo' GROUP BY 1) s USING (cod_ibge)
-        WHERE coalesce(s.n, 0) < 3""").fetchall()
-    return {n for n, _ in linhas} | {str(c) for _, c in linhas}
 
 
 def mercado(municipio=None):
@@ -87,7 +78,7 @@ def textos_tabelas(at) -> list[str]:
 
 
 # ------------------------------------------------------------------ mapa na visão geral
-def test_estado_do_mercado(db, pequenos):
+def test_estado_do_mercado(db):
     at = mercado()
     mapa = figuras(at)
     areas = db.execute("SELECT * FROM gold.mercado_area_publico").df()
@@ -102,17 +93,12 @@ def test_estado_do_mercado(db, pequenos):
     assert SEM_SERV in fixas and not any(c and c.lower() in ("#ffffff", "white") for c in fixas)
     sem = next(t for t in mapa["data"] if cor_fixa(t) == SEM_SERV)
     assert sem["marker"]["line"]["color"] == CONTORNO
-    # LGPD no texto do mouse e nos identificadores
-    valores = {str(x) for t in mapa["data"] for campo in ("locations", "hovertext") for x in (t.get(campo) or [])}
-    valores |= {str(x) for t in mapa["data"] for linha in (t.get("customdata") or []) for x in linha}
-    assert not (valores & pequenos)
-    # as áreas do mapa somam o déficit de MG; área agregada nunca leva o nome de um município sozinho
+    # D-078: uma área por município com serventia, todas com o nome do município; somam o déficit de MG
+    com_serv = db.execute("SELECT count(*) FROM gold.dim_municipio WHERE n_serventias > 0").fetchone()[0]
+    assert len(dados["locations"]) == com_serv and (areas["tipo"] == "municipio").all()
     assert sum(dados["z"]) == pytest.approx(float(areas["valor_descoberto"].sum()), rel=0.005)
-    tipo = dict(zip(areas["area_nome"], areas["tipo"]))
-    for linha in dados["customdata"]:
-        if tipo[linha[0]] != "municipio":
-            assert linha[0].startswith(("Região", "Município ")) and ("—" in linha[0] or "+" in linha[0] or
-                                                                      linha[0].startswith("Região imediata de"))
+    # ranking: os 10 municípios com mais déficit, numa tabela abaixo do mapa
+    assert html(at).count("º</td>") == 10
     # E7, E8: números dos cartões no formato do painel
     for v in re.findall(r'<div class="rd-num">([^<]+)<', html(at)):
         assert "R$ 0,00" not in v and not v.endswith("…")
@@ -122,8 +108,9 @@ def test_estado_do_mercado(db, pequenos):
     ("SELECT municipio FROM gold.dim_municipio ORDER BY n_serventias DESC LIMIT 1", "grande"),
     ("SELECT municipio FROM gold.dim_municipio WHERE n_serventias BETWEEN 3 AND 5 ORDER BY municipio LIMIT 1", "medio"),
     ("SELECT municipio FROM gold.dim_municipio WHERE n_serventias BETWEEN 1 AND 2 ORDER BY municipio LIMIT 1", "pequeno")])
-def test_filtro_de_municipio_destaque_com_contexto(municipio_sql, rotulo, db, pequenos):
-    """U1: MG inteiro como contexto, destaque com contorno forte, zoom na intermediária; pequeno -> área agregada."""
+def test_filtro_de_municipio_destaque_com_contexto(municipio_sql, rotulo, db):
+    """U1: MG inteiro como contexto, destaque com contorno forte, zoom na intermediária; o pequeno também com os números
+    dele (D-078)."""
     nome = db.execute(municipio_sql).fetchone()[0]
     at = mercado(municipio=nome)
     mapa = figuras(at)
@@ -132,57 +119,10 @@ def test_filtro_de_municipio_destaque_com_contexto(municipio_sql, rotulo, db, pe
     assert len(destaque) == 1 and len(destaque[0]["locations"]) == 1
     assert len(traco_dados(mapa)["locations"]) > 300          # contexto: MG inteiro
     assert mapa["layout"]["map"]["zoom"] > 5.4                # enquadra a região intermediária
-    valores = {str(x) for t in mapa["data"] for x in (t.get("locations") or [])}
-    valores |= {str(x) for t in mapa["data"] for linha in (t.get("customdata") or []) for x in linha}
-    assert not (valores & pequenos)
     tela = html(at)
-    if rotulo == "pequeno":
-        assert any("agregado" in i.value for i in at.info)
-        assert f"Déficit em {nome}" not in tela               # o município pequeno nunca aparece sozinho
-    else:
-        assert f"Déficit em {nome}" in tela and "Parte do déficit de MG" in tela
-
-
-# ------------------------------------------------------------------ LGPD: ataque por diferença
-def test_ataque_por_diferenca(db):
-    """Para todas as visões públicas (geral, cada valor de cada filtro, totais de MG por regra e nível): nenhum par de
-    células cujo conjunto de serventias difira em 1 ou 2, nenhum complemento ou resto de partição de 1 ou 2."""
-    from src.model.supressao import Celula, vazamentos
-    from src.transform.visoes import PARTICOES
-    cel = db.execute("SELECT visao, area_id, conjunto, list(cns) FROM gold.interno_celulas_publicadas GROUP BY ALL").fetchall()
-    por = {}
-    for visao, area, conj, cns in cel:
-        por.setdefault((visao, area), {})[conj] = frozenset(cns)
-    celulas = [Celula(v, a, s.get("todos", frozenset()), s.get("universo", frozenset())) for (v, a), s in por.items()]
-    base = db.execute("""SELECT i.cns, m.regiao_imediata FROM gold.interno_serventia i JOIN silver.municipio_ibge m
-                         USING (cod_ibge) WHERE nivel = 'base' AND regra_classe = 'v2'""").df()
-    totais = {f"RI:{ri}": frozenset(g["cns"]) for ri, g in base.groupby("regiao_imediata")} | {"MG": frozenset(base["cns"])}
-    assert len(celulas) > 800
-    assert vazamentos(celulas, 3, totais, PARTICOES) == []
-    # caso fixo do E1: BH (visão geral) contra qualquer célula publicada contida nele
-    bh = db.execute("""SELECT list(i.cns) FROM gold.interno_serventia i JOIN gold.dim_municipio d USING (cod_ibge)
-                       WHERE d.municipio = 'Belo Horizonte' AND nivel = 'base' AND regra_classe = 'v2'""").fetchone()[0]
-    bh = frozenset(bh)
-    assert not [c for c in celulas if c.todos < bh and 0 < len(bh - c.todos) < 3]
-
-
-def test_tabelas_publicas_batem_com_as_celulas_auditadas(db):
-    """O que está nas tabelas públicas filtradas é exatamente o que o auditor aprovou."""
-    pub = db.execute("SELECT visao, area_id, n_serventias FROM gold.mercado_filtro_area").fetchall()
-    cel = dict(((v, a.split("@")[0]), n) for v, a, n in db.execute(
-        "SELECT visao, area_id, count(*) FROM gold.interno_celulas_publicadas WHERE conjunto = 'todos' "
-        "AND visao NOT LIKE 'uf:%' AND visao NOT LIKE 'sim:%' AND visao <> 'geral' GROUP BY ALL").fetchall())
-    assert {(v, a): n for v, a, n in pub} == cel   # as células 'sim:' são do Simulador (test_simulador_totais.py)
-
-
-def test_celulas_do_simulador_batem_com_as_tabelas_publicas(db):
-    """Cada célula 'sim:' auditada corresponde a uma faixa de uma variante de gold.simulador_*: só totais de MG."""
-    sim = db.execute("""SELECT visao, count(*) FROM gold.interno_celulas_publicadas WHERE visao LIKE 'sim:%'
-                        AND conjunto = 'universo' GROUP BY ALL""").fetchall()
-    assert sim and all(v.split(":")[1] in ("v1", "v2") and v.split(":")[3] in ("classe_2", "classe_3") for v, _ in sim)
-    vids = {int(v.split(":")[4]) for v, _ in sim}
-    assert vids <= {r[0] for r in db.execute("SELECT variante_id FROM gold.simulador_variantes").fetchall()}
-    assert all(n >= 3 for _, n in sim)
+    assert f"Déficit em {nome}" in tela and "Parte do déficit de MG" in tela
+    assert "municípios no déficit" in tela                    # a posição dele no ranking de MG
+    assert not any("agregad" in i.value for i in at.info)
 
 
 # ------------------------------------------------------------------ consistência numérica
@@ -200,7 +140,8 @@ def test_somas_por_classe_e_situacao_fecham_o_total(db):
 
 
 def test_faixas_ordenadas_em_cada_filtro(db):
-    df = db.execute("SELECT * FROM gold.mercado_filtro_uf WHERE publicado").df()
+    df = db.execute("SELECT * FROM gold.mercado_filtro_uf").df()
+    assert len(df) == 13 * 6   # todos os recortes em toda regra e nível (D-078)
     for (visao, regra), g in df.groupby(["visao", "regra_classe"]):
         g = g.set_index("nivel")
         for col in ("passivo_todas", "passivo_universo", "valor_descoberto", "mercado_importancia_segurada",

@@ -26,12 +26,17 @@ def test_manifesto_e_arquivos_batem():
     assert total < publico.CONFIG["limite_mb"] * 1e6, f"{total / 1e6:.1f} MB"
 
 
-def test_sem_dado_pessoal_nem_area_abaixo_do_limiar(tmp_path):
+def test_sem_dado_pessoal(tmp_path):
     banco = publico.montar_banco(publico.PASTA, tmp_path / "publico.duckdb")
     with duckdb.connect(str(banco), read_only=True) as con:
-        problemas, excecoes = publico.checar(con, MAN["limiar_lgpd"])
+        problemas = publico.checar(con)
     assert not problemas, problemas
-    assert all(e.split(":")[0] in publico.CONFIG["excecoes_limiar"] for e in excecoes)
+
+
+def test_sem_limiar_de_serventias():
+    """D-078 (D-038, fase 2): o manifesto e a config não têm mais limiar nem exceções de limiar."""
+    assert "limiar_lgpd" not in MAN and "excecoes_limiar" not in MAN
+    assert "excecoes_limiar" not in publico.CONFIG and "contagem_de_serventias" not in publico.CONFIG
 
 
 def test_checagem_pega_os_casos_errados(tmp_path):
@@ -41,9 +46,9 @@ def test_checagem_pega_os_casos_errados(tmp_path):
         con.execute("CREATE TABLE gold.interno_x AS SELECT 1 AS a")
         con.execute("CREATE TABLE gold.t AS SELECT '000.111.222-33' AS obs, 'x@y.com' AS contato, 'FULANO DE TAL' AS b, "
                     "'999999' AS cod, 2 AS n_serventias, 'z' AS responsavel")
-        problemas, _ = publico.checar(con, 3, cns={"999999"}, nomes={"FULANO DE TAL"})
+        problemas = publico.checar(con, cns={"999999"}, nomes={"FULANO DE TAL"})
     texto = " | ".join(problemas)
-    for esperado in ("tabela interna", "CPF", "e-mail", "nome de pessoa", "CNS", "abaixo do limiar", "proibido"):
+    for esperado in ("tabela interna", "CPF", "e-mail", "nome de pessoa", "CNS", "proibido"):
         assert esperado in texto, (esperado, problemas)
 
 
@@ -55,11 +60,11 @@ def test_cns_so_nas_tabelas_por_serventia(tmp_path):
         con.execute("CREATE SCHEMA gold")
         con.execute("CREATE TABLE gold.serventia_publico AS SELECT '999999' AS cns, 'BELO HORIZONTE' AS municipio")
         con.execute("CREATE TABLE gold.agregada AS SELECT '999999' AS area")
-        problemas, _ = publico.checar(con, 3, cns={"999999"})
+        problemas = publico.checar(con, cns={"999999"})
         assert problemas == ["gold.agregada.area: código CNS de serventia"], problemas
         con.execute("CREATE OR REPLACE TABLE gold.serventia_publico AS SELECT '999999' AS cns, 'FULANO DE TAL' AS obs")
         con.execute("DROP TABLE gold.agregada")
-        problemas, _ = publico.checar(con, 3, cns={"999999"}, nomes={"FULANO DE TAL"})
+        problemas = publico.checar(con, cns={"999999"}, nomes={"FULANO DE TAL"})
     assert len(problemas) == 1 and "nome de pessoa" in problemas[0]
 
 

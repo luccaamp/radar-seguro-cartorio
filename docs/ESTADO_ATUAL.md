@@ -25,7 +25,13 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito.
 - [x] **ano 2026/2027 (projeção) e limite fixo × corrigido** (branch `fase-1-explorar-2027`): a `gold.analise_previsao` passa a gravar os totais por faixa de déficit (147 linhas; as 107 antigas iguais), e o Explorar ganha "Mercado de" (Hoje, 2026, 2027) e "Limite da Classe 1". Conferido numa cópia: no padrão, 2027 dá R$ 349,1 mil (fixo) e R$ 343,6 mil (corrigido), os centrais gravados (< 0,03%). Suíte padrão 329 passed; `ruff` sem erro.
 - [x] **PR #3 vermelho no "Dados reais"** (2026-11-06): o MAPE do SARIMA deu 10,47376 no Linux do CI contra 10,4748 do T2 gravado no Windows (tolerância era 0,001). Corrigido por outra sessão no commit `378945b` (tolerância de 0,01 ponto, só essa linha); o PR #3 entrou na `main` às 04:39.
 - [x] **Carga oficial 2026-11-06** (pedido do autor): backup em `C:\radar_arquivo\antes_carga_2026-11-06_2027\` (banco `c935a190…`, silver, gold, público, completo); `uv run pipeline.py --a-partir-de silver` sem erro (log em `C:\radar_arquivo\carga_2026-11-06_2027.log`); banco novo `dd6fc158…`. As 39 tabelas do gold iguais às de antes, menos a `analise_previsao` (+40 linhas, nenhuma perdida); os 10 números iguais. `data/publico` (39 arquivos, 0,89 MB, auditor sem vazamento) e `data/completo` regerados.
-- [ ] Depois: conferir o "pronto quando" do item 1 (testes do SPEC §3 e recálculo < 1 s, já cobertos) e seguir para o item 2 (D-038, fase 2), que também pede carga oficial e pode ir na mesma.
+- [x] **PR #4 juntado na `main`** (05:37, `e40ee08`): item 1 completo (testes do SPEC §3 e recálculo < 1 s cobertos).
+
+**Item 2 (D-038, fase 2; D-078), na branch `fase-1-d038-fase2`:** plano em [`plano_fase1_item2.md`](plano_fase1_item2.md), aprovado pelo autor em 2026-11-06 com as 4 recomendações.
+- [x] premissas v4 (sem `limiar_agregacao_lgpd`); gold com os 851 municípios no mapa, no ranking e nas tabelas por município; saem as 6 tabelas da supressão e o auditor; painel com a posição do município e os 10 maiores; chat sem "suprimida".
+- [x] conferido numa cópia (pipeline `--a-partir-de silver`): os 10 números iguais; as `analise_*` e as demais tabelas iguais; mudaram só as esperadas (mapa, ranking, por município, `mercado_filtro_uf` com as 7 combinações antes suprimidas, `rec_municipio`, `execucao` sem `limiar_lgpd`, `checagens`); contratos do gold 0 erros. Conjunto público gerado da cópia numa pasta temporária: 35 arquivos, 0,72 MB, sem dado pessoal. Painel no navegador (cópia): mapa com 851 municípios, Santana do Paraíso (1 cartório) com os números dele e "179º de 851"; sem rolagem horizontal em 390 px.
+- [x] suíte padrão: 317 passed e 3 falhas esperadas em `test_publico.py` (leem o `data/publico` versionado, ainda da carga anterior); com `RADAR_PUBLICO_TESTE` apontando o conjunto novo, os testes do modo demonstração passam.
+- [x] **carga oficial 2026-11-07** (pedido do autor: "continue a fase 1 toda [...] e acabe ela toda"): backup em `C:\radar_arquivo\antes_carga_2026-11-07_d078\` (banco `dd6fc158…`, silver, gold, público, completo); `uv run pipeline.py --a-partir-de silver` sem erro (log `C:\radar_arquivo\carga_2026-11-07_d078.log`); banco novo `7f528a8c…`, premissas v4. Contra o backup: o mesmo resultado da cópia (só as tabelas esperadas mudaram; os 10 números iguais). `data/publico` (35 arquivos, 0,72 MB, sem dado pessoal) e `data/completo` (33 tabelas do gold) regerados. Suíte padrão 320 passed; `ruff` sem erro.
 
 **Fase 0 cumprida em 2026-11-06:**
 - [x] item 1: plano novo (D-071) e SPEC, ROADMAP, `CLAUDE.md` e `CONTRIBUTING.md` alinhados;
@@ -49,7 +55,7 @@ A lista de fechamento de MG, combinada com o autor em 2026-10-31, foi distribuí
 - **D. Limpeza:** apagar as branches locais antigas e as referências velhas do remoto (`git fetch --prune`), e decidir o que fazer com o `.claude/launch.json` (configuração do painel para o navegador do Claude; hoje aparece como não versionado): versionar ou pôr no `.gitignore`. Comandos de git só com pedido do autor.
 
 ## Números de referência
-Carga **2026-11-06** (refeita do silver da carga 2026-10-19: dados coletados em 17 e 18/10; mesmos números da carga 2026-10-28, com os totais da projeção a mais), premissas **v3** (D-046), regra base (Classe 1 até R$ 300 mil, Prov. 243), nível base, regra do STF mantida. Esta tabela é a fonte dos valores.
+Carga **2026-11-07** (refeita do silver da carga 2026-10-19: dados coletados em 17 e 18/10; mesmos números da carga 2026-10-28), premissas **v4** (a v3 da D-046 sem o limiar de 3 serventias, D-078), regra base (Classe 1 até R$ 300 mil, Prov. 243), nível base, regra do STF mantida. Esta tabela é a fonte dos valores.
 
 | 1. Serventias ativas | 2. Empregados CLT | 3. Obrigadas (Prov. 227) | 4. Passivo (todas) | 5. Passivo (obrigadas) |
 |---|---|---|---|---|
@@ -59,19 +65,19 @@ Carga **2026-11-06** (refeita do silver da carga 2026-10-19: dados coletados em 
 |---|---|---|---|---|
 | ≈ 148 | R$ 34,1 mi | R$ 17,1 mi | R$ 341,1 mil | R$ 4,76 mi |
 
-Faixa provável do prêmio (P5–P95): R$ 215 a 687 mil. Linha de base: `~/radar_arquivo/baseline_2026-10-28_d048/linha_de_base.json` (WSL). Banco real desta máquina: SHA-256 `dd6fc158…` (carga 2026-11-06; antes, `c935a190…`).
+Faixa provável do prêmio (P5–P95): R$ 215 a 687 mil. Linha de base: `~/radar_arquivo/baseline_2026-10-28_d048/linha_de_base.json` (WSL). Banco real desta máquina: SHA-256 `7f528a8c…` (carga 2026-11-07; antes, `dd6fc158…` e `c935a190…`).
 
-**Última decisão:** D-077 (Simulador na área "Explorar", 2026-11-06); antes, D-076 (aprovação em lote das decisões de MG e das premissas `fonte: suposição`). Não há decisão proposta à espera do autor. As faixas D-053 a D-059 (painel) e D-060 a D-069 (chat) estão reservadas ou usadas; as próximas seguem de D-078 ([`decisoes.md`](decisoes.md)).
+**Última decisão:** D-078 (D-038, fase 2: sem o limiar de 3 serventias, premissas v4, 2026-11-06); antes, D-077 (Simulador na área "Explorar") e D-076 (aprovação em lote das decisões de MG e das premissas `fonte: suposição`). Não há decisão proposta à espera do autor. As faixas D-053 a D-059 (painel) e D-060 a D-069 (chat) estão reservadas ou usadas; as próximas seguem de D-079 ([`decisoes.md`](decisoes.md)).
 
-## Testes (2026-11-06)
-- Suíte padrão (`uv run pytest`): 329 passed. Não usa a API do Gemini nem a internet. `uv run ruff check .`: sem erro.
-- Dados reais (`uv run pytest -m dados_reais`, ≈ 25 min, sempre numa cópia do banco): 59 passed, 0 skipped nesta máquina (2026-11-06, depois da carga oficial). Num clone com o modo completo, os de bronze → silver são pulados ("bronze ausente").
+## Testes (2026-11-07)
+- Suíte padrão (`uv run pytest`): 320 passed. Não usa a API do Gemini nem a internet. `uv run ruff check .`: sem erro.
+- Dados reais (`uv run pytest -m dados_reais`, ≈ 25 min, sempre numa cópia do banco): 55 passed, 0 skipped nesta máquina (2026-11-07, depois da carga oficial da D-078; saíram os testes do auditor). Num clone com o modo completo, os de bronze → silver são pulados ("bronze ausente").
 
 ## O que depende do autor
 1. ~~Trocar a chave do Gemini.~~ Feito em 2026-11-06; a nova responde (conferido pela IA sem exibi-la).
 2. ~~Aprovar as decisões propostas pela IA e as premissas `fonte: suposição` de `config/analise.yaml`.~~ Feito em 2026-11-06 (D-076): D-042, D-049, D-051, D-052, D-064, D-069 e D-070 aprovadas; D-039 virou histórico; as 24 premissas aprovadas como estão (continuam marcadas `fonte: suposição`).
 3. **STF:** o painel supõe "a regra do Provimento como publicada". Conferir a ADI 8015 na véspera da demo e atualizar `config/painel.yaml`; com liminar, o número principal precisa de aviso.
-4. **D-038, fase 2:** tirar o limiar de 3 serventias e as áreas agregadas (premissas v4, mudança no pipeline e carga oficial). Fase 1.
+4. **D-038, fase 2:** aprovada em 2026-11-06 (D-078); falta pedir a carga oficial.
 5. ~~Lugar do Simulador.~~ Decidido em 2026-11-06: área "Explorar", separada da história (D-077).
 6. **Chat:** conferir os limites da chave no AI Studio; depois do item 1, rodar a avaliação (`uv run python scripts/avaliar_chat.py --versoes c --limite 5`, depois sem `--limite`; Fase 1); publicar no Streamlit Community Cloud com `GEMINI_API_KEY` em *Settings → Secrets* (Fase 2).
 7. **Pequenas:** conferir a LGPD do zip do silver público; convidar os colegas e mandar o `CONTRIBUTING.md`; e-mail "noreply" do GitHub nos commits; destino de `docs/qa/depois/`; preencher a "Linha de base" do `diario.md`; apagar a pasta antiga no OneDrive.

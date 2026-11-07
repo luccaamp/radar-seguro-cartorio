@@ -1,12 +1,12 @@
 """Gera o conjunto público (data/publico/, versionado no repositório público; D-029).
 
 Passos (qualquer falha interrompe e não troca a pasta atual):
-1. auditor de ataque por diferença sobre TODAS as células publicadas (gold.interno_celulas_publicadas);
-2. exporta as tabelas de config/publico.yaml (sem as colunas removidas) para Parquet;
-3. monta um banco só com esses Parquet e roda os contratos de "sem dado pessoal" e de limiar, procurando também
-   os códigos CNS e os nomes de pessoas do cadastro (nada disso é impresso; só contado);
-4. confere que o hash de conteúdo do Parquet é igual ao do banco e que o total fica abaixo do limite de tamanho;
-5. grava manifesto.json (fontes, carga, premissas, commit, hash e tamanho de cada arquivo) e troca a pasta.
+1. exporta as tabelas de config/publico.yaml (sem as colunas removidas) para Parquet;
+2. monta um banco só com esses Parquet e roda os contratos de "sem dado pessoal", procurando também os códigos CNS
+   fora das tabelas por serventia e os nomes de pessoas do cadastro (nada disso é impresso; só contado);
+3. confere que o hash de conteúdo do Parquet é igual ao do banco e que o total fica abaixo do limite de tamanho;
+4. grava manifesto.json (fontes, carga, premissas, commit, hash e tamanho de cada arquivo) e troca a pasta.
+Sem auditor de ataque por diferença nem limiar de serventias desde a D-078 (D-038, fase 2).
 
 Uso: uv run python scripts/gerar_publico.py [--banco CÓPIA --destino PASTA]   (as opções: conferir numa cópia)
 Lê data/radar.duckdb só para leitura. Precisa do banco completo (com interno_*), que só existe em quem roda o pipeline.
@@ -24,8 +24,6 @@ import pandas as pd
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ))
 from src import publico  # noqa: E402
-from src.model.supressao import Celula  # noqa: E402
-from src.transform import visoes  # noqa: E402
 from src.transform.silver import BANCO, BRONZE  # noqa: E402
 
 
@@ -36,17 +34,6 @@ def commit_atual() -> dict:
     return {"commit": git("rev-parse", "HEAD"), "alteracoes_sem_commit": bool(git("status", "--porcelain"))}
 
 
-def auditar(con) -> list:
-    """Auditor de ataque por diferença sobre as células publicadas (Mercado + Simulador)."""
-    cel = con.sql("SELECT visao, area_id, conjunto, cns FROM gold.interno_celulas_publicadas").df()
-    celulas = [Celula(v, a, frozenset(g.loc[g["conjunto"] == "todos", "cns"]),
-                      frozenset(g.loc[g["conjunto"] == "universo", "cns"])) for (v, a), g in cel.groupby(["visao", "area_id"])]
-    base = con.sql("""SELECT s.cns, m.regiao_imediata FROM gold.interno_dim_serventia s
-                      JOIN silver.municipio_ibge m USING (cod_ibge)""").df()
-    limiar = int(con.execute("SELECT max(limiar_lgpd) FROM gold.execucao").fetchone()[0])
-    return visoes.auditar(celulas, base, limiar), len(celulas)
-
-
 def main(banco: Path = BANCO, destino: Path = publico.PASTA) -> None:
     """`banco` e `destino` mudam só para conferir numa cópia (a IA não lê o banco real; CLAUDE.md)."""
     if not banco.exists():
@@ -55,11 +42,6 @@ def main(banco: Path = BANCO, destino: Path = publico.PASTA) -> None:
     publico.remover_pasta(novo)
     novo.mkdir(parents=True, exist_ok=True)
     with duckdb.connect(str(banco), read_only=True) as con:
-        achados, n_cel = auditar(con)
-        print(f"auditor de ataque por diferença: {n_cel} células, {len(achados)} vazamentos")
-        if achados:
-            raise SystemExit(f"Publicação bloqueada: vazamento por diferença {achados[:5]}")
-        limiar = int(con.execute("SELECT max(limiar_lgpd) FROM gold.execucao").fetchone()[0])
         cns = {str(x) for (x,) in con.execute("SELECT cns FROM silver.serventia").fetchall()}
         nomes = publico.nomes_do_cadastro(con, BRONZE)
         print(f"procurando {len(cns)} códigos CNS e {len(nomes)} nomes do cadastro no conjunto público")
@@ -84,17 +66,17 @@ def main(banco: Path = BANCO, destino: Path = publico.PASTA) -> None:
                         "painel lê e o resultado do modelo por serventia (identificada pelo CNS e pelo município). "
                         "Sem dado de pessoa física.",
            "carga": executado.strftime("%Y-%m-%d"), "executado_em": executado.isoformat(),
-           "versao_premissas": int(exe["versao_premissas"].iloc[0]), "limiar_lgpd": limiar,
+           "versao_premissas": int(exe["versao_premissas"].iloc[0]),
            **commit_atual(), "gerado_em": dt.datetime.now().replace(microsecond=0).isoformat(),
            "fontes": json.loads(fontes.to_json(orient="records", force_ascii=False)),
-           "excecoes_limiar": {}, "arquivos": arquivos}
+           "arquivos": arquivos}
 
     # contratos sobre um banco montado só com o conjunto público, e conferência dos hashes
     (novo / publico.MANIFESTO).write_text(json.dumps(man, ensure_ascii=False, indent=1), encoding="utf-8")
     with tempfile.TemporaryDirectory() as tmp:
         banco = publico.montar_banco(novo, Path(tmp) / "publico.duckdb")
         with duckdb.connect(str(banco), read_only=True) as con:
-            problemas, excecoes = publico.checar(con, limiar, cns, nomes)
+            problemas = publico.checar(con, cns, nomes)
             for a in arquivos:
                 esq, nome = a["tabela"].split(".")
                 rel = "estado.premissas_versoes" if a["tabela"] == "estado.premissas_vigente" else a["tabela"]
@@ -106,10 +88,8 @@ def main(banco: Path = BANCO, destino: Path = publico.PASTA) -> None:
     if problemas:
         publico.remover_pasta(novo)
         raise SystemExit("Publicação bloqueada:\n  " + "\n  ".join(problemas))
-    man["excecoes_limiar"] = {e.split(":")[0]: e for e in excecoes}
-    (novo / publico.MANIFESTO).write_text(json.dumps(man, ensure_ascii=False, indent=1), encoding="utf-8")
     publico.trocar_conteudo(novo, destino)   # só depois de tudo validado
-    print(f"contratos de 'sem dado pessoal' e de limiar: ok ({len(excecoes)} exceções: {excecoes})")
+    print("contratos de 'sem dado pessoal': ok")
     onde = destino.relative_to(RAIZ) if destino.is_relative_to(RAIZ) else destino
     print(f"{len(arquivos)} arquivos, {total / 1e6:.2f} MB em {onde} · carga {man['carga']} · "
           f"commit {str(man['commit'])[:7]}{' + alterações sem commit' if man['alteracoes_sem_commit'] else ''}")
