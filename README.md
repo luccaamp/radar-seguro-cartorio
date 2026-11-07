@@ -2,13 +2,67 @@
 
 [![CI](https://github.com/luccaamp/radar-seguro-cartorio/actions/workflows/ci.yml/badge.svg)](https://github.com/luccaamp/radar-seguro-cartorio/actions/workflows/ci.yml)
 
-Painel de cartórios com dados públicos reais (hoje só **Minas Gerais**; outros estados numa fase seguinte), simulador do mercado de seguro-garantia criado pelo Provimento CNJ 227/2026 e chat que responde com fontes. Custo zero: tudo roda localmente.
+**Quanto dinheiro o seguro obrigatório dos cartórios pode movimentar, e quão certo é esse número?** O Provimento CNJ 227/2026 obriga parte dos cartórios a garantir a dívida trabalhista com seus empregados. Este projeto estima esse mercado com dados públicos oficiais, mostra a incerteza de cada número e deixa qualquer pessoa conferir as contas: um painel, um simulador e um chat que só responde com número tirado dos dados, com a fonte.
+
+**Painel público:** *link em breve* (Streamlit Community Cloud, Fase 2). Hoje cobre **Minas Gerais**; os outros estados entram nas próximas fases ([`docs/plano_projeto.md`](docs/plano_projeto.md)).
+
+![Início do painel: o prêmio anual estimado de R$ 341,1 mil, com a faixa provável de R$ 215 a 687 mil](docs/img/painel_inicio.png)
 
 > **Nunca ouviu falar de seguro-garantia nem do Provimento 227? Comece por [`docs/entenda_o_projeto.md`](docs/entenda_o_projeto.md):** o problema, o básico de seguro-garantia, as perguntas que o projeto responde e um glossário, em linguagem simples.
 
-> Projeto em construção. A especificação está em [`docs/SPEC.md`](docs/SPEC.md).
+## O que o painel responde (MG, carga de 2026-11-07)
 
-O problema e as perguntas do projeto estão no [`docs/entenda_o_projeto.md`](docs/entenda_o_projeto.md). Este README ainda será completado com a arquitetura, os resultados da avaliação e as limitações. A etapa atual está no [`docs/ESTADO_ATUAL.md`](docs/ESTADO_ATUAL.md).
+| Pergunta | Resposta | Origem |
+|---|---|---|
+| Quantos cartórios ativos e quantos empregados CLT? | 2.525 e 12.134 | dado público (CNJ) |
+| Quantos são obrigados a ter a garantia? | ≈ 1.121 | regra do Prov. 227 sobre a arrecadação do CNJ |
+| Qual a dívida trabalhista dos obrigados? | R$ 238,1 milhões | modelo sobre a RAIS |
+| Quantos não teriam bens para cobri-la, e quanto falta? | ≈ 148, com R$ 34,1 milhões de déficit | modelo |
+| Quanto as seguradoras receberiam por ano? | **R$ 341,1 mil** (faixa provável de R$ 215 a 687 mil) | modelo, com 2 suposições sem fonte pública (taxa e adesão) |
+
+O painel tem a história em 5 páginas (o número, quão certo ele é, onde está o mercado, para onde vai e de onde vêm os dados), o mapa dos 851 municípios com cartório, um simulador ("e se a taxa fosse 3%?", "e se o STF suspender a obrigação?") e o chat. Os dez números oficiais, com os extremos, estão em [`docs/ESTADO_ATUAL.md`](docs/ESTADO_ATUAL.md#números-de-referência).
+
+## Como funciona
+
+```mermaid
+flowchart LR
+    F["Fontes oficiais<br/>CNJ · RAIS · CNPJ · SUSEP · IBGE"] --> B["bronze<br/>originais + SHA-256"]
+    B --> S["silver<br/>dados limpos"]
+    S --> G["gold<br/>modelo, cenários, análises"]
+    C["contratos de qualidade<br/>e conferências entre fontes"] -.bloqueiam.-> G
+    G --> P["conjunto público<br/>data/publico, sem dado pessoal"]
+    P --> D["painel<br/>Streamlit"]
+    P --> CH["chat<br/>Gemini + ferramentas"]
+    CH --> D
+```
+
+- **Pipeline em camadas** (DuckDB): o bronze guarda os originais com o hash; o silver limpa; o gold calcula o modelo (premissas versionadas em `config/`, cada uma com fonte ou marcada `fonte: suposição`). Um contrato de qualidade violado interrompe a carga.
+- **Conjunto público** (`data/publico/`, < 1 MB, no git): as tabelas que o painel lê, auditadas para que nenhum nome nem CPF de pessoa física saia (D-038).
+- **Chat que não inventa número:** o modelo (Gemini, nível gratuito) só responde chamando ferramentas que leem as mesmas tabelas do painel, e cita a fonte. Quando o dado não existe, diz que não encontrou.
+- **Tudo gratuito e reproduzível:** de um clone, `uv sync` e o painel abre com os números da carga oficial; com `data/completo/` o gold é recalculado e confere com o publicado pelo hash.
+
+## Números medidos
+
+| Medida | Resultado | Onde |
+|---|---|---|
+| Acerto do chat no gabarito congelado (52 perguntas) | **96%** com ferramentas; 23% com as normas no prompt; 17% sem nada | [`eval/resultado_avaliacao.md`](eval/resultado_avaliacao.md) |
+| Número inventado nas perguntas-armadilha | nenhum | idem |
+| Contratos de qualidade na carga | 109 checagens; nenhum erro violado | página "Sobre os dados" |
+| Testes automáticos a cada pull request | suíte padrão e modo completo com os dados reais (GitHub Actions) | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+| Acessibilidade (axe) nas 7 páginas | 0 falhas do código do projeto | `scripts/acessibilidade.py` |
+| Custo | R$ 0 (níveis gratuitos, sem cartão) | [`CLAUDE.md`](CLAUDE.md) |
+
+## Limitações
+
+- **Estimativa de mercado, não avaliação de cartório:** só dados públicos e suposições declaradas; supõe a regra do Provimento como publicada (a ADI 8015 no STF pode mudá-la).
+- **Classe aproximada:** a arrecadação publicada pelo CNJ não é exatamente a receita bruta da norma.
+- **Dívida trabalhista:** a RAIS não traz a maior remuneração fixa nem as verbas de convenção coletiva.
+- **Taxa e adesão ao seguro:** nenhuma fonte pública as traz; por isso a faixa provável é larga.
+- **Um estado só**, por enquanto.
+
+## Como o projeto foi feito
+
+O projeto foi construído dirigindo uma IA (Claude Code), com as regras em [`CLAUDE.md`](CLAUDE.md). Cada decisão está em [`docs/decisoes.md`](docs/decisoes.md), cada passo em [`docs/diario.md`](docs/diario.md) e cada erro da IA, com a causa e a correção, em [`docs/erros_ia.md`](docs/erros_ia.md). A etapa atual está no [`docs/ESTADO_ATUAL.md`](docs/ESTADO_ATUAL.md); a especificação, no [`docs/SPEC.md`](docs/SPEC.md).
 
 ## Como rodar
 
@@ -107,9 +161,9 @@ O painel só **lê** o banco (`data/radar.duckdb`) e pode ser aberto direto, sem
 
 Roteiro, com a carga 2026-10-28 (dados da coleta de 17 e 18/10, premissas v3, regra v2, nível base, regra do STF mantida):
 - **Início:** 2.525 serventias, 12.134 empregados CLT, passivo R$ 311,9 mi (todas) e R$ 238,1 mi (obrigados), déficit R$ 34,1 mi, prêmio R$ 341,1 mil, teto teórico R$ 4,8 mi (238,1 mi × 2,0%).
-- **Mercado:** os mesmos totais, ≈ 1.121 obrigadas e ≈ 148 com déficit. Um filtro (ex.: Classe 3) e um município (Belo Horizonte; um pequeno aparece pela área agregada).
+- **Mercado:** os mesmos totais, ≈ 1.121 obrigadas e ≈ 148 com déficit. Um filtro (ex.: Classe 3) e um município (Belo Horizonte; um pequeno, como Santana do Paraíso, aparece com os números dele e a posição entre os 851, D-078).
 - **Explorar → Simule você mesmo** (o Simulador, numa seção própria do menu; D-077): no padrão, 1.121, R$ 238,1 mi, 148, R$ 34,1 mi, IS R$ 17,1 mi, prêmio R$ 341,1 mil e a faixa por sorteio de R$ 215,0 a 687,1 mil (a da página "Quão certo é"). O atalho "E se a taxa fosse 3%?" leva o prêmio a R$ 511,6 mil; "E se o STF suspender a obrigação?" zera a demanda; "Voltar ao cenário base" desfaz. O tornado ao vivo mostra o que mais mexe no prêmio com os valores escolhidos. Salvar um cenário (no expansor do fim): ele aparece na tabela e continua lá depois de reabrir o painel.
-- **Qualidade dos dados:** data de referência de cada fonte, reconciliações (CNPJ × CNJ +15,8%, aviso; RAIS × CNJ +1,8%; cobertura da arrecadação 96,9%) e limitações, sem "R$" quebrado.
+- **Sobre os dados:** os 10 números, a data de referência de cada fonte, como foi calculado, a saúde dos dados (contratos e conferências entre fontes; no modo demonstração, a data e o commit do conjunto publicado) e as limitações. O detalhe das conferências (CNPJ × CNJ +15,8%, aviso; RAIS × CNJ +1,8%) está no chat.
 - **Chat (D-060 a D-066):** usa o Gemini no **nível gratuito** do Google AI Studio, com o **faturamento desligado** (nunca cadastre cartão). Para ligar: crie uma chave em [aistudio.google.com/apikey](https://aistudio.google.com/apikey), copie o `.env.example` para `.env` e cole a chave em `GEMINI_API_KEY` (o `.env` fica fora do git; cada pessoa usa a própria chave). Passo a passo, com os comandos de Windows e WSL: `CONTRIBUTING.md`, seção "Chat com o Gemini". No Streamlit Community Cloud, a mesma variável vai em *Settings → Secrets*. A página tem duas abas: **Chat** e **Perguntas prontas** (16 perguntas por tema, respondidas direto pelas ferramentas, com os mesmos números, contas e fontes do painel). Sem a chave, sem internet ou com a cota esgotada, a aba Chat avisa que está indisponível e indica a outra aba (o motivo vai para o log). No link público, cada sessão faz até 20 perguntas ao modelo. Quando o dado não existe no painel, a resposta é "Não foi possível encontrar essa resposta nos dados do painel.". Medir a velocidade com a API real: `uv run python scripts/medir_latencia_chat.py --saida docs/qa/chat/latencia_depois.md`; capturas da página: `uv run python scripts/prints_chat.py --saida docs/qa/chat/interface_depois`. Não digite dados pessoais: no nível gratuito, o Google pode usar as conversas. Perguntas para testar: "qntos cartorio tem em minas?" (2.525), "Se a taxa fosse 3%, qual o prêmio do mercado?" (R$ 511,6 mil), "A garantia pode ser fiança bancária?" (sim, de banco S1 ou S2; Prov. 227, art. 13) e "Me explica o gráfico tornado" (a taxa do seguro é o que mais pesa). Nome de pessoa nunca aparece.
 - **Avaliação do chat com a API real** (fora de `uv run pytest`, que nunca usa a API nem a internet): `uv run python scripts/avaliar_chat.py` compara as versões (a) sem ferramentas, (b) normas no prompt e (c) com ferramentas no gabarito congelado `eval/gabarito_chat.csv` (52 perguntas; meta: (c) com 85% de acerto e nenhum número inventado nas armadilhas). Pausa 15 s entre perguntas e guarda as respostas em `eval/respostas/`: se a cota acabar no meio, rode de novo depois, e só o que falta é perguntado. Relatório em `eval/resultado_avaliacao.md`. Teste rápido: `--versoes c --limite 5`.
 - **Rodapé:** "Carga 2026-10-28 · dados completos" (ou "· demonstração" sem o banco). Num projeto em que a carga foi refeita sem instalar a Release, o rodapé continua com a data da Release instalada (`data/carga_atual.json`).
@@ -146,8 +200,8 @@ Fora do git, só local: `data/bronze`, `data/silver`, `data/gold`, `data/radar.d
 | IBGE: municípios, população, malha, INPC e IPCA | [servicodados.ibge.gov.br](https://servicodados.ibge.gov.br/api/docs/) e [apisidra.ibge.gov.br](https://apisidra.ibge.gov.br/) | municípios vigentes em 2026-10-18; população 2026; malha 2022; índices até 2026-09 | regiões, mapa, correção salarial |
 
 - **Termos de uso:** todos os dados são públicos, de acesso aberto. Os termos de uso são os de cada site acima: confira na fonte antes de reutilizar.
-- **Publicação e proteção de dados (D-038):** é um estudo público, com dados públicos do governo; tudo pode ser público, inclusive as estimativas do modelo por cartório (os notebooks já as mostram, pelo CNS e pelo município). A única restrição: nenhum nome nem CPF de pessoa física. O conjunto público e o painel ainda seguem a regra antiga (sem estimativas por serventia e com as áreas pequenas agregadas) até o pipeline ser ajustado.
-- **Detalhe de cada fonte:** data de coleta, URL e SHA-256 estão em `data/publico/manifesto.json` e na página "Qualidade dos dados".
+- **Publicação e proteção de dados (D-038):** é um estudo público, com dados públicos do governo; tudo pode ser público, inclusive as estimativas do modelo por cartório (os notebooks já as mostram, pelo CNS e pelo município). A única restrição: nenhum nome nem CPF de pessoa física. Desde a D-078, o conjunto público e o painel mostram todos os municípios com cartório, sem agregação.
+- **Detalhe de cada fonte:** data de coleta, URL e SHA-256 estão em `data/publico/manifesto.json`; a data de referência, na página "Sobre os dados".
 
 ## Licença
 

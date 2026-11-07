@@ -5,7 +5,8 @@ import pandas as pd
 import streamlit as st
 
 from comum import (FONTES_NAO_USADAS, NOMES_FONTE, _data_ref, analise, aviso_modo, carga_em_uso, data_base_passivo,
-                   execucao, md_seguro, num, pagina, rodape)
+                   demonstracao, execucao, md_seguro, num, pagina, pasta_publico, rodape)
+from src import publico
 from src.painel import ui
 
 oficiais = analise("numeros_oficiais")
@@ -48,6 +49,25 @@ ui.tabela(["Item", "Valor"], [
     ["Peso dos cartórios de classe indeterminada", f"{num(100 * e.peso_classe_indeterminada_base, 1)}%"],
     ["Faixa provável", f"P5 a P95 de {premio['sorteios']} simulações das suposições"],
 ], mudas={1})
+
+st.header("Saúde dos dados")
+s = fontes["saude"]
+man = publico.ler_manifesto(pasta_publico()) if demonstracao() else None
+saude = [
+    ["Carga calculada em", f"{e.executado_em:%d/%m/%Y}, com as premissas v{int(e.versao_premissas)} (as datas das "
+                           "fontes estão em \"Fontes e datas\")"],
+    ["Contratos de qualidade", f"{s['contratos_sem_violacao']} de {s['contratos']} sem nenhuma violação; "
+                               f"{s['erros_violados']} erro{'s' if s['erros_violados'] != 1 else ''} (um erro "
+                               "bloqueia a carga; os outros casos são avisos documentados)"],
+    ["Conferências entre fontes", f"{s['conferencias_ok']} de {s['conferencias']} dentro da tolerância; as demais com "
+                                  "aviso e a causa explicada (pergunte ao chat)"],
+]
+if man:
+    saude += [["Conjunto publicado em", _data(man["gerado_em"])],
+              ["Versão do código", f"commit {man['commit'][:7]} do repositório"]]
+ui.tabela(["Item", "Situação"], saude, mudas={1})
+st.caption("O painel só é publicado se os contratos de severidade 'erro' passarem e se nenhum nome ou CPF de pessoa "
+           "física aparecer no conjunto público (D-038).")
 
 st.header("Principais limitações")
 st.markdown(md_seguro(

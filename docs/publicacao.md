@@ -147,3 +147,38 @@ gh release delete carga-AAAA-MM-DD --repo luccaamp/radar-seguro-cartorio-dados -
 ```
 
 O número de cargas mantidas está em `config/pacotes.yaml` (`manter_ultimas_cargas: 3`).
+
+## 8. Painel no Streamlit Community Cloud (Fase 2, D-074)
+
+O painel público roda no **nível gratuito** do Streamlit Community Cloud, direto da `main` deste repositório, no **modo demonstração**: sem `data/radar.duckdb` (fora do git), ele monta o banco a partir do `data/publico/`, com os números da carga oficial, o chat limitado a 20 perguntas por sessão (`config/llm.yaml`) e "Salvar cenário" desligado (os visitantes não gravam nada no servidor). O Cloud lê as dependências de `app/requirements.txt` (gerado do `uv.lock`, sem as de desenvolvimento) e a aparência de `.streamlit/config.toml`, com as fontes de `app/static/fontes/`.
+
+**Só você faz** (a IA não cria conta, não entra com senha e não vê a chave). Os nomes dos botões podem mudar um pouco no site.
+
+1. Abra [share.streamlit.io](https://share.streamlit.io) e entre com **"Continue with GitHub"**, com a conta `luccaamp`. O GitHub pede para autorizar o Streamlit a ler os seus repositórios: autorize. **Não cadastre cartão**: o serviço é gratuito; se em algum momento pedir cartão ou plano pago, pare e avise.
+2. Clique em **"Create app"** e escolha a opção de publicar um app que já está no GitHub.
+3. Preencha:
+   - **Repository:** `luccaamp/radar-seguro-cartorio`
+   - **Branch:** `main`
+   - **Main file path:** `app/Inicio.py`
+   - **App URL:** um nome curto, por exemplo `radar-seguro-cartorio` (vira `https://radar-seguro-cartorio.streamlit.app`)
+4. Abra **"Advanced settings"**:
+   - **Python version:** `3.12` (a mesma do projeto);
+   - **Secrets:** cole uma linha só, com a sua chave do AI Studio (de um projeto com o **faturamento desligado**) entre aspas:
+     ```toml
+     GEMINI_API_KEY = "cole-a-chave-aqui"
+     ```
+     A chave fica só no Cloud. Nunca a cole no chat com a IA, num arquivo do repositório ou num print.
+5. Clique em **"Deploy"**. A primeira instalação leva alguns minutos (geopandas, scikit-learn e statsmodels são grandes); o log aparece ao lado.
+6. Confira no link:
+   - **Início:** prêmio de **R$ 341,1 mil**, faixa de R$ 215 a 687 mil;
+   - **Sobre os dados:** a faixa "Modo demonstração", a seção "Saúde dos dados" (109 contratos, nenhum erro) e o commit publicado;
+   - **Chat:** "qntos cartorio tem em minas?" responde **2.525**, com a fonte, e o contador "1 de 20 perguntas nesta sessão";
+   - **Onde está o mercado:** o mapa com os municípios.
+7. **Mande o link para a IA**, que o põe no README, no `ESTADO_ATUAL.md` e prepara a Release `v1.0`.
+
+**Depois de publicado:**
+- **Atualização:** cada pull request juntado na `main` republica o painel sozinho; por isso a `main` fica sempre publicável (D-073).
+- **Visitantes:** no painel do Cloud ([share.streamlit.io](https://share.streamlit.io)), o menu do app (⋮) tem **"Analytics"**, com o número de visitantes; só o dono vê.
+- **Trocar a chave:** menu do app (⋮) → **Settings → Secrets**; o app reinicia sozinho.
+- **App dormindo:** no nível gratuito, um app sem visitas por alguns dias "dorme"; quem abrir vê um botão para acordá-lo (leva cerca de um minuto).
+- **Problemas:** o menu do app (⋮) → **"Manage app"** mostra o log. Mande o trecho do erro para a IA (sem a chave).
