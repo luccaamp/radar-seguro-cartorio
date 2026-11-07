@@ -568,6 +568,10 @@ def qualidade_fontes(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
                             f"de {len(r)}",
             "contratos": f"{int((c['violacoes'] == 0).sum())} de {len(c)} sem violação; avisos: "
                          + "; ".join(f"{x.checagem} ({_br(x.violacoes, 0)})" for x in c[c["violacoes"] > 0].itertuples()),
+            # contagens da seção "Saúde dos dados" (Fase 2): um contrato de severidade "erro" violado bloqueia a carga
+            "saude": {"contratos": len(c), "contratos_sem_violacao": int((c["violacoes"] == 0).sum()),
+                      "erros_violados": int(((c["severidade"] == "erro") & (c["violacoes"] > 0)).sum()),
+                      "conferencias": len(r), "conferencias_ok": int((r["status"] == "ok").sum())},
             "tabela": _linhas(f.astype(str)),
             **_meta(con, "silver.fonte_metadados, qualidade.reconciliacoes e qualidade.checagens")}
 

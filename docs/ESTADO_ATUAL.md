@@ -16,7 +16,7 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito.
 - **Releases:** `dados-2026-10-19` (público: silver e manifesto); `carga-2026-10-19` e `originais-2026` (privados, em `luccaamp/radar-seguro-cartorio-dados`: bronze por fonte, banco e originais). O bronze fica no privado porque tem nome de pessoa (D-030); a procedência dele está no git em `data/procedencia/` (D-070).
 - **Rodar a partir de um clone** (conferido em 2026-10-31): modo demonstração em 2 min; modo completo (README, seção 1b) em ≈ 4 min, com o gold **idêntico** ao do banco real (39 de 39 tabelas) e os 10 números iguais.
 
-## Etapa atual: Fase 1 (MG completo)
+## Etapa atual: Fase 2 (MG publicado), à espera da publicação pelo autor; Fase 1 cumprida
 **Plano oficial: [`plano_projeto.md`](plano_projeto.md) (D-071, 2026-11-05)**, com 10 fases, de MG completo ao Brasil inteiro publicado e atualizado sozinho. A IA propõe cada passo e segue com a aprovação do autor.
 
 **Fase 1, andamento (2026-11-06):** PR #3 (`fase-1-simulador`) juntado na `main` (`fd66b03`); o ano projetado segue na branch `fase-1-explorar-2027`. Item 1, o Simulador:
@@ -50,8 +50,17 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito.
 
 **Aprovações do autor em 2026-11-07** ("aprovo todas as suas recomendações"): D-079; D-080 (fontes embutidas em `app/static/fontes/`, feito e conferido no navegador); D-081 (desenho da Fase 3: coluna `uf` já, estado sem calibração herda as premissas de MG com `fonte: suposição`, um arquivo de configuração por estado); a pasta `.claude/` inteira no `.gitignore`. Mudanças ainda não commitadas.
 
+**Fase 2 (MG publicado), na branch `fase-2-publicacao`** (2026-11-07; PR #8 juntado antes, às 11:42):
+- [x] **pronto para o Cloud:** `app/requirements.txt` gerado do `uv.lock`, sem as dependências de desenvolvimento (o Cloud procura primeiro na pasta do `app/Inicio.py`; na raiz, o `uv.lock` venceria); `tests/test_publicacao.py` confere que bate com o lock e que as fontes estão no repositório. O painel publicado roda no **modo demonstração** (sem banco, lendo o `data/publico/`): chat com 20 perguntas por sessão e "Salvar cenário" desligado, como o item 1 da Fase 2 pede ("lendo o conjunto público").
+- [x] **página de saúde:** seção "Saúde dos dados" em "Sobre os dados" (a única página técnica, D-051): data da carga e premissas, contratos (104 de 109 sem violação, 0 erros), conferências entre fontes (7 de 9 na tolerância) e, no modo demonstração, a data e o commit do conjunto publicado. Teste novo em `tests/test_app_demo.py`.
+- [x] **README de vitrine:** pergunta, imagem do Início (`docs/img/painel_inicio.png`), o que o painel responde, diagrama da arquitetura (Mermaid), números medidos (chat 96%, contratos, acessibilidade, custo), limitações e "como o projeto foi feito"; trechos antigos corrigidos (regra de agregação e página "Qualidade dos dados").
+- [x] **passo a passo do Cloud** para o autor: [`publicacao.md`](publicacao.md), seção 8.
+- [x] **conferido numa cópia limpa** (arquivos do git, sem banco nem `.env`, ambiente novo só com `app/requirements.txt`): as 7 páginas abrem sem erro, R$ 341,1 mil, fontes locais, chat avisa "indisponível" sem a chave.
+- [ ] **autor:** criar o app no Streamlit Community Cloud e pôr a `GEMINI_API_KEY` nos *Secrets* (`publicacao.md`, seção 8); mandar o link.
+- [ ] **depois do link:** link no README, GIF, Release `v1.0` e o "pronto quando" (link abre, chat responde, um clone reproduz os números).
+
 **Próximo passo:**
-- **Fase 2 (publicar MG):** a IA prepara o README de vitrine, a página de saúde e o passo a passo do Streamlit Community Cloud; o autor cria o app na conta dele e põe a `GEMINI_API_KEY` nos segredos.
+- **Fase 2:** o autor publica (acima); a IA põe o link e faz a Release `v1.0`.
 - **Fase 3, bloco 1:** plano aprovado ([`plano_fase3.md`](plano_fase3.md), D-081); começa por `config/estados.yaml` e a leitura dele nos coletores e contratos, sem mudar nenhum resultado. Uma branch por bloco.
 
 **Fase 0 cumprida em 2026-11-06:**
@@ -91,7 +100,7 @@ Faixa provável do prêmio (P5–P95): R$ 215 a 687 mil. Linha de base: `~/radar
 **Última decisão:** D-081 (desenho da Fase 3, 2026-11-07); antes, D-080 (fontes embutidas) e D-079 (mercado por município no conjunto público), todas aprovadas. Não há decisão proposta à espera do autor. As faixas D-053 a D-059 (painel) e D-060 a D-069 (chat) estão reservadas ou usadas; as próximas seguem de D-082 ([`decisoes.md`](decisoes.md)).
 
 ## Testes (2026-11-07)
-- Suíte padrão (`uv run pytest`): 320 passed. Não usa a API do Gemini nem a internet. `uv run ruff check .`: sem erro.
+- Suíte padrão (`uv run pytest`): 326 passed (Fase 2). Não usa a API do Gemini nem a internet. `uv run ruff check .`: sem erro.
 - Dados reais (`uv run pytest -m dados_reais`, ≈ 25 min, sempre numa cópia do banco): 55 passed, 0 skipped nesta máquina (2026-11-07, depois da carga oficial da D-078; saíram os testes do auditor). Num clone com o modo completo, os de bronze → silver são pulados ("bronze ausente").
 
 ## O que depende do autor

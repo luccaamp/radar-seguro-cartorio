@@ -210,3 +210,14 @@ def test_sem_formula_latex_nos_textos():
         at = rodar(pagina)
         ruins = [t[:80] for t in [m.value for m in at.markdown] + [c.value for c in at.caption] if latex.search(t)]
         assert not ruins, (pagina, ruins)
+
+
+def test_sobre_os_dados_mostra_a_saude_dos_dados(painel_demo):
+    """Fase 2, página de saúde: data dos dados, premissas, contratos, conferências e a versão publicada."""
+    at = rodar(SOBRE)
+    assert "Saúde dos dados" in [h.value for h in at.header]
+    texto = html(at)
+    for trecho in ("Contratos de qualidade", "Conferências entre fontes", "Conjunto publicado em", "commit "):
+        assert trecho in texto, trecho
+    erros = ler(painel_demo, "SELECT count(*) AS n FROM qualidade.checagens WHERE severidade = 'erro' AND violacoes > 0")
+    assert f"{int(erros.n[0])} erro" in texto

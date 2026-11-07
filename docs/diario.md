@@ -1154,3 +1154,16 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Decisões:** D-080 e D-081 registradas; D-079 aprovada.
 - **Limitações encontradas:** o Streamlit serve o `.woff2` como `application/octet-stream`; o navegador carrega a fonte normalmente.
 - **Próximo passo:** Fase 2 (README de vitrine, página de saúde, passo a passo do Streamlit Community Cloud para o autor) e Fase 3, bloco 1 (`config/estados.yaml`), cada um na sua branch.
+
+## 2026-11-07 — Fase 2: painel pronto para o Streamlit Community Cloud
+- **O que foi feito:** branch `fase-2-publicacao`, a partir da `main` com o PR #8.
+  - `app/requirements.txt` (gerado com `uv export --no-dev`) e `tests/test_publicacao.py` (bate com o `uv.lock`, sem dependências de desenvolvimento, fontes e licenças no repositório).
+  - Seção "Saúde dos dados" em "Sobre os dados" (contagens novas em `qualidade_fontes`, chave `saude`).
+  - README de vitrine (início reescrito; o "Como rodar" e o resto continuam) com imagem do Início e diagrama Mermaid.
+  - `docs/publicacao.md`, seção 8: passo a passo do Cloud para o autor.
+- **Decisões:**
+  - **Modo do painel publicado:** demonstração, como diz o item 1 da Fase 2 ("lendo o conjunto público"). O "pronto quando" do `plano_projeto.md` fala em "modo completo", mas o modo completo pede o banco (fora do git) e grava cenários no servidor, o que num painel público misturaria os cenários de todos os visitantes. Fica para o autor confirmar.
+  - **Onde fica o requirements:** na pasta do `app/Inicio.py`, porque o Cloud procura lá primeiro e, na raiz, o `uv.lock` venceria (documentação do Streamlit, conferida em 2026-11-07).
+- **Conferência:** cópia limpa dos arquivos do git (sem banco nem `.env`), ambiente Python 3.12 novo só com o `app/requirements.txt`. As 7 páginas abriram sem erro, com R$ 341,1 mil e as fontes servidas localmente; o chat avisa "indisponível" sem a chave; nenhum erro no log do servidor. Suíte padrão: 326 passed; `ruff` sem erro.
+- **Limitações encontradas:** a chave do Gemini no Cloud e o chat com a API real só se conferem depois da publicação. O GIF do README e a Release `v1.0` ficam para depois do link.
+- **Próximo passo:** o autor publica no Cloud (`publicacao.md`, seção 8) e manda o link.

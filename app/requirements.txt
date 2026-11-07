@@ -1,0 +1,231 @@
+# Dependências do painel no Streamlit Community Cloud (Fase 2, D-074). Gerado do uv.lock, sem as de desenvolvimento
+# (o comando abaixo regrava o arquivo sem este cabeçalho, que é só explicação):
+#   uv export --no-dev --no-hashes --no-emit-project --no-header --format requirements-txt -o app/requirements.txt
+# O Cloud procura primeiro na pasta do app/Inicio.py; por isso fica aqui, e não na raiz (onde o uv.lock venceria).
+# tests/test_publicacao.py confere que bate com o uv.lock.
+altair==6.3.0
+    # via streamlit
+anyio==4.15.1
+    # via
+    #   httpx
+    #   starlette
+    #   streamlit
+attrs==26.1.0
+    # via
+    #   jsonschema
+    #   referencing
+backports-zstd==1.8.0
+    # via py7zr
+brotli==1.2.0 ; platform_python_implementation == 'CPython'
+    # via py7zr
+brotlicffi==1.2.0.2 ; platform_python_implementation == 'PyPy'
+    # via py7zr
+certifi==2026.7.22
+    # via
+    #   httpcore
+    #   httpx
+    #   pyogrio
+    #   pyproj
+    #   requests
+cffi==2.1.1 ; platform_python_implementation == 'PyPy'
+    # via brotlicffi
+charset-normalizer==3.5.2
+    # via requests
+click==8.5.0
+    # via
+    #   streamlit
+    #   uvicorn
+cloudpickle==3.1.2
+    # via joblib
+contourpy==1.4.0
+    # via matplotlib
+cycler==0.12.1
+    # via matplotlib
+duckdb==1.5.6
+    # via radar-seguro-cartorio
+fonttools==4.67.0
+    # via matplotlib
+formulaic==1.2.2
+    # via statsmodels
+geopandas==1.2.0
+    # via radar-seguro-cartorio
+h11==0.16.0
+    # via
+    #   httpcore
+    #   uvicorn
+httpcore==1.0.9
+    # via httpx
+httpx==0.28.1
+    # via radar-seguro-cartorio
+idna==3.20
+    # via
+    #   anyio
+    #   httpx
+    #   requests
+inflate64==1.0.4
+    # via py7zr
+interface-meta==2.0.1
+    # via formulaic
+itsdangerous==2.2.0
+    # via streamlit
+jinja2==3.1.6
+    # via
+    #   altair
+    #   pydeck
+joblib==1.6.0
+    # via
+    #   mlxtend
+    #   scikit-learn
+jsonschema==4.26.0
+    # via altair
+jsonschema-specifications==2025.9.1
+    # via jsonschema
+kiwisolver==1.5.1
+    # via matplotlib
+markupsafe==3.0.4
+    # via jinja2
+matplotlib==3.11.2
+    # via
+    #   mlxtend
+    #   radar-seguro-cartorio
+mlxtend==0.25.0
+    # via radar-seguro-cartorio
+multivolumefile==0.2.3
+    # via py7zr
+narwhals==2.27.1
+    # via
+    #   altair
+    #   formulaic
+    #   plotly
+    #   scikit-learn
+numpy==2.5.4
+    # via
+    #   contourpy
+    #   formulaic
+    #   geopandas
+    #   matplotlib
+    #   mlxtend
+    #   pandas
+    #   patsy
+    #   pydeck
+    #   pyogrio
+    #   radar-seguro-cartorio
+    #   scikit-learn
+    #   scipy
+    #   shapely
+    #   statsmodels
+    #   streamlit
+packaging==26.3
+    # via
+    #   altair
+    #   geopandas
+    #   matplotlib
+    #   patsy
+    #   plotly
+    #   pyogrio
+    #   statsmodels
+    #   streamlit
+pandas==3.0.6
+    # via
+    #   formulaic
+    #   geopandas
+    #   mlxtend
+    #   radar-seguro-cartorio
+    #   statsmodels
+    #   streamlit
+patsy==1.0.3
+    # via statsmodels
+pillow==12.3.0
+    # via
+    #   matplotlib
+    #   streamlit
+plotly==7.1.0
+    # via radar-seguro-cartorio
+protobuf==7.36.2
+    # via streamlit
+psutil==7.2.2 ; sys_platform != 'cygwin'
+    # via py7zr
+py7zr==1.1.4
+    # via radar-seguro-cartorio
+pyarrow==26.0.0
+    # via streamlit
+pybcj==1.0.8
+    # via py7zr
+pycparser==3.11 ; implementation_name != 'PyPy' and platform_python_implementation == 'PyPy'
+    # via cffi
+pycryptodomex==3.24.1
+    # via py7zr
+pydeck==0.9.3
+    # via streamlit
+pyogrio==0.13.0
+    # via geopandas
+pyparsing==3.3.3
+    # via matplotlib
+pyppmd==1.3.1
+    # via py7zr
+pyproj==3.8.0
+    # via geopandas
+python-dateutil==2.9.0.post0
+    # via
+    #   matplotlib
+    #   pandas
+python-dotenv==1.2.4
+    # via radar-seguro-cartorio
+python-multipart==0.0.32
+    # via streamlit
+pyyaml==6.0.3
+    # via radar-seguro-cartorio
+referencing==0.37.0
+    # via
+    #   jsonschema
+    #   jsonschema-specifications
+requests==2.34.2
+    # via streamlit
+rpds-py==2026.9.1
+    # via
+    #   jsonschema
+    #   referencing
+scikit-learn==1.9.1
+    # via
+    #   mlxtend
+    #   radar-seguro-cartorio
+scipy==1.18.1
+    # via
+    #   formulaic
+    #   mlxtend
+    #   scikit-learn
+    #   statsmodels
+shapely==2.2.0
+    # via geopandas
+six==1.17.0
+    # via python-dateutil
+starlette==1.8.0
+    # via streamlit
+statsmodels==0.15.0
+    # via radar-seguro-cartorio
+streamlit==1.66.0
+    # via radar-seguro-cartorio
+texttable==1.7.1
+    # via py7zr
+threadpoolctl==3.7.0
+    # via scikit-learn
+typing-extensions==4.16.0
+    # via
+    #   altair
+    #   anyio
+    #   formulaic
+    #   referencing
+    #   starlette
+    #   streamlit
+tzdata==2026.5 ; sys_platform == 'emscripten' or sys_platform == 'win32'
+    # via pandas
+urllib3==2.8.0
+    # via requests
+uvicorn==0.54.0
+    # via streamlit
+watchdog==6.0.0 ; sys_platform != 'darwin'
+    # via streamlit
+websockets==17.2
+    # via streamlit
+wrapt==2.5.1
+    # via formulaic
