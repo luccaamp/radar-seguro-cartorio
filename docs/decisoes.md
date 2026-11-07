@@ -904,3 +904,12 @@ Formato:
 - **Consequências / onde aparece:** `config/premissas/premissas_v004.yaml` (novo), `src/estado.py`, `src/transform/gold.py`, `geo.py` e `visoes.py`, `src/quality/reconciliacao.py`, `src/publico.py`, `scripts/gerar_publico.py`, `config/publico.yaml`, `src/agent/ferramentas.py`, `app/pages/2_Onde_está_o_mercado.py`, testes (`test_geo.py`, `test_publico.py`, `test_app.py`, `test_app_demo.py`, `test_auditoria_painel.py`; saem `test_lgpd.py` e `test_supressao.py`), `docs/SPEC.md` (lista de premissas e §6), `docs/dicionario_dados.md`. Substitui, no que restava, a D-026, a D-027 e a D-028, e a exceção de limiar da D-029.
 - **Fonte:** plano da IA (`docs/plano_fase1_item2.md`) aprovado pelo autor em 2026-11-06.
 - **Status:** aprovada (2026-11-06); a carga oficial espera o pedido do autor.
+
+## D-079 — A `gold.fato_mercado_municipio_publico` entra no conjunto público
+- **Data:** 2026-11-07
+- **Contexto:** pendência do `historico/ROADMAP.md`, §7 (Fase 1, item 5 do `plano_projeto.md`): o nome `fato_mercado_municipio_publico` enganava, porque a tabela não estava no conjunto público; a opção era renomear ou retirar. Desde a D-078, ela traz todos os municípios com serventia, sem agregação, e nenhum dado pessoal.
+- **Decisão (tomada pela IA no modo autônomo, a pedido do autor de terminar a Fase 1; vale com a aprovação do autor):** em vez de renomear (o que exigiria outra carga oficial e mudaria o contrato do gold), a tabela **entra no conjunto público** (`config/publico.yaml`): o nome passa a ser verdadeiro e o público ganha o mercado por município (passivo, universo, déficit, nível e regra base). O painel continua sem lê-la.
+- **Efeito nos 10 números:** nenhum. Nenhuma tabela do gold muda; o `data/publico` passa de 35 para 36 arquivos (0,75 MB), sem dado pessoal (contratos do `gerar_publico.py`).
+- **Consequências / onde aparece:** `config/publico.yaml`, `data/publico/`, `docs/dicionario_dados.md`, `docs/historico/ROADMAP.md` (§7).
+- **Fonte:** pedido do autor em 2026-11-07 ("continue a fase 1 toda [...] e acabe ela toda").
+- **Status:** tomada pela IA; aprovação do autor pendente.

@@ -32,15 +32,17 @@ dev = [
 ]
 
 [tool.ruff.lint]
-# só erros reais (pyflakes: imports e variáveis sem uso, nomes indefinidos). As regras de estilo ficam para outra
-# rodada (docs/ESTADO_ATUAL.md, pendências; docs/erros_ia.md, 2026-10-20).
-select = ["F"]
+# as regras padrão do ruff (E4, E7, E9: imports, comandos e erros de sintaxe; F: pyflakes) e os avisos W (Fase 1,
+# item 5, 2026-11-07). O comprimento de linha (E501) fica de fora: o projeto usa até 120 colunas e há ≈ 600 linhas
+# acima disso, sem ganho de leitura em quebrar.
+select = ["E4", "E7", "E9", "F", "W"]
 
 [tool.ruff.lint.per-file-ignores]
-# notebooks: import sem uso fica até a próxima rodada de cada notebook. Tirar a linha sem rodar de novo deixaria o
-# código diferente da saída gravada, que vai para o git (D-038); a ferramenta de notebook apaga a saída da célula
-# (docs/erros_ia.md, 2026-11-05)
-"notebooks/*.ipynb" = ["F401"]
+# notebooks: o import depois do sys.path (E402) é o padrão de todos, e o código fica como foi rodado (a saída vai
+# para o git, D-038); mudar o estilo de uma célula exige rodar o notebook de novo
+"notebooks/*.ipynb" = ["E401", "E402", "E702", "E731", "E741"]
+# registro dos testes T1 a T7 (D-039): reproduz os resultados byte a byte; fica como foi rodado
+"scripts/testes_metodos.py" = ["E702", "E731", "E741", "W292"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

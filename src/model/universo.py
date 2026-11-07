@@ -68,17 +68,19 @@ def universo(serventias: pd.DataFrame, limites: dict, p: dict, limites_faixa: di
     peso, motivo = [], []
     for sit, classe in zip(s["situacao_juridica"], s["classe"]):
         if sit == "VAGO":
-            peso.append(0.0); motivo.append("interinidade")
+            w, m = 0.0, "interinidade"
         elif sit in SITUACOES_ESPECIAIS and not p["situacoes_especiais_dentro"]:
-            peso.append(0.0); motivo.append("situacao_especial_fora")
+            w, m = 0.0, "situacao_especial_fora"
         elif classe == "1":
-            peso.append(0.0); motivo.append("classe_1")
+            w, m = 0.0, "classe_1"
         elif classe == "indeterminada":
-            peso.append(float(p["peso_classe_indeterminada_base"])); motivo.append("classe_indeterminada")
+            w, m = float(p["peso_classe_indeterminada_base"]), "classe_indeterminada"
         elif sit == "PROVIDO" or sit in SITUACOES_ESPECIAIS:
-            peso.append(1.0); motivo.append("dentro")
+            w, m = 1.0, "dentro"
         else:
-            peso.append(0.0); motivo.append("situacao_desconhecida")
+            w, m = 0.0, "situacao_desconhecida"
+        peso.append(w)
+        motivo.append(m)
     s["peso_universo"] = peso
     s["motivo"] = motivo
     return s

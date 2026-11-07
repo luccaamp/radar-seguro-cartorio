@@ -925,3 +925,11 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** a IA reaproveitou a variável do shell sem converter o caminho para o formato do Windows.
 - **Correção:** rodar de novo com o caminho `C:/Users/...`; nos comandos seguintes, uma variável própria com o caminho do Windows para tudo o que o Python abre.
 - **Bom para os slides?** não
+
+## 2026-11-07 — Import de notebook tirado pelo `ruff --fix`, não pela ferramenta de edição
+- **Onde:** Fase 1, item 3 (`notebooks/02_analise_exploratoria.ipynb` e `09_conclusoes_lacunas.ipynb`).
+- **O que aconteceu:** a ferramenta de edição de notebook exige ler o arquivo antes, e a leitura recusa os dois notebooks (mais de 25 mil tokens mesmo sem as saídas). A IA tirou o import sem uso com o `ruff check --select F401 --fix`, e não com a ferramenta de edição, como pede o `CLAUDE.md`. Nos outros dois (03 e 10), usou a ferramenta.
+- **Como foi detectado:** pela própria IA, ao escolher o caminho; registrado aqui por transparência.
+- **Causa provável:** limite de leitura da ferramenta; a correção do ruff só remove o nome sem uso apontado pelo linter (não é substituição de texto às cegas), mas não é a ferramenta que a regra pede.
+- **Correção:** o código das células foi conferido depois da correção (as linhas de import impressas), os dois notebooks rodaram de novo e a saída bateu com a gravada (02 igual; 09 só com as 40 linhas novas da `analise_previsao`). Se o autor preferir, notebook grande pode ser dividido ou ter o import corrigido à mão.
+- **Bom para os slides?** não

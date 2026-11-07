@@ -20,6 +20,7 @@ tabelas:
   gold.mercado_area_publico: {}
   gold.mercado_filtro_uf: {}
   gold.ranking_municipio_publico: {}
+  gold.fato_mercado_municipio_publico: {}   # D-079: o nome passa a ser verdadeiro (antes ficava fora do público)
   gold.dim_municipio: {}    # com o CLT por município desde a D-078 (antes, removido por causa dos municípios pequenos)
   gold.geo_area_municipio: {}
   gold.geo_mapa_publico: {}
