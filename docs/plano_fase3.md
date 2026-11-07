@@ -1,6 +1,6 @@
 # Fase 3: código por estado (plano)
 
-> Plano proposto pela IA em 2026-11-07, para a aprovação do autor (o `ESTADO_ATUAL.md`, bloco C, pede "um plano antes"). Fase 3 do [`plano_projeto.md`](plano_projeto.md). **Nenhum código muda antes da aprovação.**
+> Plano proposto pela IA em 2026-11-07 e **aprovado pelo autor no mesmo dia**, com as 3 recomendações do fim (D-081). Fase 3 do [`plano_projeto.md`](plano_projeto.md).
 
 ## Objetivo
 Tirar do código o que só vale para MG e levar para a configuração por estado, para que um estado novo seja "só dado novo" (objetivo do autor, 2026-10-31).
@@ -42,7 +42,7 @@ Tirar do código o que só vale para MG e levar para a configuração por estado
 5. Teste com dois estados sintéticos (dados inventados, marcados como sintéticos, em `tests/`): pipeline do zero, contratos, gold com as duas UFs separadas e somas por UF corretas.
 6. Carga oficial (pedido do autor) só se alguma tabela mudar de conteúdo; senão, só os pacotes, se o esquema mudar (coluna `uf`).
 
-## Questões para o autor
+## Questões para o autor (respondidas em 2026-11-07: as 3 recomendações, D-081)
 1. **Coluna `uf` nas tabelas públicas:** acrescentar já (muda o esquema do `data/publico` e do `data/completo`, com carga oficial) ou só quando entrar o segundo estado? **Recomendação:** já, para o critério "idêntico" ser conferido uma vez só, com o esquema final.
 2. **Premissas de um estado sem calibração:** herdar as de MG com `fonte: suposição` (recomendação) ou bloquear a publicação do modelo daquele estado até a Fase 6? A camada 1 (Fase 4) não usa o modelo, então a questão só pesa na Fase 6.
 3. **Apelidos e normas locais:** mover para `estados.yaml` (recomendação: um arquivo só por estado) ou manter arquivos separados por tema?

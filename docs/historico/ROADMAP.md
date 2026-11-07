@@ -390,7 +390,7 @@ As pendências vivem aqui. O `ESTADO_ATUAL.md` só aponta para as que dependem d
 - ~~O texto da página Qualidade dos dados cita `docs/viabilidade.md`.~~ Resolvido: a página saiu com a D-051 e nenhum arquivo do painel cita mais o caminho antigo (conferido em 2026-10-31). As sementes `config/premissas/premissas_v001.yaml` e `v002.yaml` ficam com o caminho antigo, porque são o registro do que foi gravado no banco.
 - ~~SPEC §5.1 com a descrição antiga das páginas.~~ Resolvido em 2026-11-07: reescrita com as páginas reais (D-051, D-077, D-078).
 - ~~O nome `gold.fato_mercado_municipio_publico` engana.~~ Resolvido em 2026-11-07 (D-079): a tabela entrou no conjunto público.
-- **[autor]** Fonte do painel embutida no repositório (IBM Plex Sans e Newsreader, licença OFL; hoje vêm do Google Fonts): exige baixar os arquivos das fontes, o que a IA só faz com permissão explícita.
+- ~~Fonte do painel embutida no repositório.~~ Resolvido em 2026-11-07 (D-080): IBM Plex Sans e Newsreader em `app/static/fontes/`, com a licença OFL; nenhum pedido ao Google Fonts.
 - D-025 continua como proposta (entra na E2, S3).
 
 ---

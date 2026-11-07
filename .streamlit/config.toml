@@ -2,10 +2,27 @@
 # Cartório", nos dois temas dele. Como o Raio-X, o painel segue o tema do sistema (claro ou escuro); o menu do
 # Streamlit também troca. Só aparência; nenhum dado.
 [theme]
-font = "IBM Plex Sans:https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
-headingFont = "Newsreader:https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap"
+font = "IBM Plex Sans"
+headingFont = "Newsreader"
 baseFontSize = 14
 baseRadius = "10px"
+
+# Fontes embutidas (D-080): servidas pelo próprio painel (app/static/fontes, licença OFL ao lado), sem pedido ao
+# Google Fonts no navegador do visitante. Arquivos variáveis, subconjunto latino (cobre o português).
+[[theme.fontFaces]]
+family = "IBM Plex Sans"
+url = "app/static/fontes/ibm_plex_sans_latin.woff2"
+weight = "100 700"
+style = "normal"
+
+[[theme.fontFaces]]
+family = "Newsreader"
+url = "app/static/fontes/newsreader_latin.woff2"
+weight = "200 800"
+style = "normal"
+
+[server]
+enableStaticServing = true
 
 # claro: --bg #eceff3, --surface-2 #f5f7fa, --ink #0f1c33, --line #dde2ea, --grid #e6e9ef, --s1 #2a78d6
 [theme.light]
