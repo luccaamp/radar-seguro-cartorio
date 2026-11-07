@@ -3,9 +3,9 @@
  "carga": "2026-11-07",
  "executado_em": "2026-11-07T00:24:31",
  "versao_premissas": 4,
- "commit": "e40ee084f11677b4ae3184e33de04efc6ac997fb",
+ "commit": "639dee6b2275a4fe60d8106856c7560e9791c7bf",
  "alteracoes_sem_commit": true,
- "gerado_em": "2026-11-07T00:28:00",
+ "gerado_em": "2026-11-07T01:18:28",
  "fontes": [
   {
    "fonte": "cnj_arrecadacao",
@@ -125,6 +125,16 @@
    "sha256_conteudo": "37293a4293217ec58dec4ac82ffbc83cdc63fd69bef211dab2abaa82960e6698",
    "bytes": 48247,
    "sha256_arquivo": "29e72021ab106b6fc1c88d1effc391bb810ea17fe78917bb30bfab6c6a80ea9a"
+  },
+  {
+   "tabela": "gold.fato_mercado_municipio_publico",
+   "arquivo": "gold.fato_mercado_municipio_publico.parquet",
+   "comparar": true,
+   "sem_hash": [],
+   "linhas": 851,
+   "sha256_conteudo": "a7b132163ac890facb85045ed21b46b307835a8f8ff59293b76f841cf5402f9f",
+   "bytes": 30223,
+   "sha256_arquivo": "1d972a835169268f61a89fe94631908ee49d0a4c6c5726bb8af37c319c4db953"
   },
   {
    "tabela": "gold.dim_municipio",

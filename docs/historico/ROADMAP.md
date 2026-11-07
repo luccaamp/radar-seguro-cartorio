@@ -386,10 +386,11 @@ As pendências vivem aqui. O `ESTADO_ATUAL.md` só aponta para as que dependem d
 - Pasta de sessões do Claude Code na pasta nova: `c--projetos-radar-seguro-cartorio` (conferida em 2026-10-21); o procedimento de salvar conversas está no `CONTRIBUTING.md`.
 - Backup de `conversas/` e de novas linhas de base em `E:\radar_arquivo` a cada etapa.
 - ~~A tabela antiga `estado.cenarios_salvos` some do banco na próxima carga (D-034).~~ Resolvido: conferido em 2026-10-31, o schema `estado` só tem `log_decisoes` e `premissas_versoes`.
-- Regras de estilo do `ruff` (hoje só as regras `F`, sem erro desde 2026-11-05; as padrão acusam cerca de 100 avisos de estilo). Os imports sem uso dos notebooks ficam até a próxima rodada de cada um (`pyproject.toml`, `per-file-ignores`).
+- ~~Regras de estilo do `ruff`.~~ Resolvido em 2026-11-07 (Fase 1, itens 3 e 5): as regras padrão do ruff (E4, E7, E9, F) e os avisos W, sem erro; os imports sem uso dos notebooks saíram com a nova rodada deles. O comprimento de linha (E501) fica de fora (`pyproject.toml`).
 - ~~O texto da página Qualidade dos dados cita `docs/viabilidade.md`.~~ Resolvido: a página saiu com a D-051 e nenhum arquivo do painel cita mais o caminho antigo (conferido em 2026-10-31). As sementes `config/premissas/premissas_v001.yaml` e `v002.yaml` ficam com o caminho antigo, porque são o registro do que foi gravado no banco.
-- Para a E4: a descrição da página Mercado no SPEC §5.1 é a do plano original ("mapa e ranking por UF"); reescrever com a página real (municípios de MG, áreas agregadas, um filtro por vez, D-026).
-- Para a E4: o nome `gold.fato_mercado_municipio_publico` engana, porque a tabela não está no conjunto público (`docs/dicionario_dados.md`); avaliar renomear ou retirar.
+- ~~SPEC §5.1 com a descrição antiga das páginas.~~ Resolvido em 2026-11-07: reescrita com as páginas reais (D-051, D-077, D-078).
+- ~~O nome `gold.fato_mercado_municipio_publico` engana.~~ Resolvido em 2026-11-07 (D-079): a tabela entrou no conjunto público.
+- **[autor]** Fonte do painel embutida no repositório (IBM Plex Sans e Newsreader, licença OFL; hoje vêm do Google Fonts): exige baixar os arquivos das fontes, o que a IA só faz com permissão explícita.
 - D-025 continua como proposta (entra na E2, S3).
 
 ---

@@ -23,8 +23,8 @@ def coletar(uf: str) -> None:
     destino.parent.mkdir(parents=True, exist_ok=True)
     feitos = set()
     if destino.exists():
-        feitos = {json.loads(l)["cns"] for l in destino.read_text(encoding="utf-8").splitlines()
-                  if json.loads(l).get("status_http") == 200}
+        feitos = {json.loads(linha)["cns"] for linha in destino.read_text(encoding="utf-8").splitlines()
+                  if json.loads(linha).get("status_http") == 200}
     faltam = [c for c in ativos if c not in feitos]
     print(f"{uf}: {len(ativos)} ativas, {len(faltam)} a coletar", flush=True)
     with cliente(timeout=60, **HEADERS) as c, open(destino, "a", encoding="utf-8") as f:

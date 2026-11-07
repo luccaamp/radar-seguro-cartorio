@@ -71,8 +71,8 @@ sys.stderr.reconfigure(encoding="utf-8")
 arq, saida, titulo = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
 regs = []
 with open(arq, encoding="utf-8") as f:
-    for l in f:
-        o = json.loads(l)
+    for linha in f:
+        o = json.loads(linha)
         if o.get("type") in ("user", "assistant") and not o.get("isSidechain") and o.get("timestamp"):
             regs.append(o)
 

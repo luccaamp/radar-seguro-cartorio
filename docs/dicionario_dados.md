@@ -114,10 +114,10 @@ Saíram na D-078 (D-038, fase 2), com a supressão: `gold.mercado_filtro_area`, 
 | `gold.simulador_variantes` | variante (80): regra × rateio × uma premissa do passivo por vez | variante_id, regra_classe, metodo_rateio, premissa_variada, fap, fracao_ferias_vencidas_pendentes, inss_aviso_previo, limiar_vinculos_distribuicao_municipal, base_remuneracao_rais e os totais do passivo e do universo | sim |
 | `gold.simulador_base_classe` | variante × faixa de déficit (160) | variante_id, faixa (`classe_2`, `classe_3`), peso_com_passivo, passivo_ponderado | sim |
 
-### Por município, fora do conjunto público
+### Por município
 | Tabela | Grão | Colunas principais | Pública? |
 |---|---|---|---|
-| `gold.fato_mercado_municipio_publico` | município com serventia × nível × regra (hoje só base, v2; 851 linhas) | cod_ibge, municipio, n_serventias, clt, passivo_todas, n_universo, passivo_universo, n_deficit, valor_descoberto, nivel, regra_classe; sem linha agregada desde a D-078 | não (o painel não lê) |
+| `gold.fato_mercado_municipio_publico` | município com serventia × nível × regra (hoje só base, v2; 851 linhas) | cod_ibge, municipio, n_serventias, clt, passivo_todas, n_universo, passivo_universo, n_deficit, valor_descoberto, nivel, regra_classe; sem linha agregada desde a D-078 | sim, desde a D-079 (o painel não lê) |
 | `gold.fato_passivo_municipio` | município com serventia × nível (851 municípios) | cod_ibge, municipio, origem_distribuicao, n_vinculos_rais, passivo_medio_vinculo | não (o painel não lê) |
 
 `origem_distribuicao` (D-022): `municipio` (o município tem 20 ou mais vínculos na RAIS) → `regiao` (a região imediata do IBGE tem 20 ou mais) → `estado` (MG inteiro). Na carga atual só aparecem `municipio` e `regiao`.
@@ -168,6 +168,6 @@ checagem, fonte_a, valor_a, fonte_b, valor_b, indicador (diferença % ou valor),
 Por município, uma linha para cada um dos 853 municípios de MG (desde a D-078; antes, os com menos de 3 serventias eram somados por região imediata): area, area_completa (o nome do município), tipo (`municipio`), regiao_imediata, n_municipios, n_cnj, n_cnpj, clt_cnj, vinc_rais, dif_serventias, dif_empregados.
 
 ## Conjunto público (`data/publico/`, D-029)
-- 35 Parquet com as tabelas públicas (15 do gold, entre elas a `serventia_publico`; 13 `analise_*`, duas delas por serventia desde a D-048; 2 do silver, 4 da qualidade e a versão vigente das premissas, `estado.premissas_vigente`), mais o `manifesto.json`. Versionado no git; gerado por `scripts/gerar_publico.py` (contratos de "sem dado pessoal" e limite de tamanho; o auditor de ataque por diferença e o contrato de limiar saíram na D-078).
+- 36 Parquet com as tabelas públicas (16 do gold, com a `fato_mercado_municipio_publico` desde a D-079, entre elas a `serventia_publico`; 13 `analise_*`, duas delas por serventia desde a D-048; 2 do silver, 4 da qualidade e a versão vigente das premissas, `estado.premissas_vigente`), mais o `manifesto.json`. Versionado no git; gerado por `scripts/gerar_publico.py` (contratos de "sem dado pessoal" e limite de tamanho; o auditor de ataque por diferença e o contrato de limiar saíram na D-078).
 - `manifesto.json`: carga, data e hora da execução, versão das premissas, commit, fontes (data de referência, data de coleta e SHA-256 do bronze) e, por tabela, o arquivo, as linhas, o SHA-256 do arquivo e o **hash de conteúdo** (linhas ordenadas, sem os carimbos de execução). O `tests/test_publico.py` compara o gold local com esse hash.
 - Sem banco local, o painel monta um banco temporário a partir desses arquivos (modo demonstração).

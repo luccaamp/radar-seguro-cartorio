@@ -32,6 +32,13 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito.
 - [x] conferido numa cópia (pipeline `--a-partir-de silver`): os 10 números iguais; as `analise_*` e as demais tabelas iguais; mudaram só as esperadas (mapa, ranking, por município, `mercado_filtro_uf` com as 7 combinações antes suprimidas, `rec_municipio`, `execucao` sem `limiar_lgpd`, `checagens`); contratos do gold 0 erros. Conjunto público gerado da cópia numa pasta temporária: 35 arquivos, 0,72 MB, sem dado pessoal. Painel no navegador (cópia): mapa com 851 municípios, Santana do Paraíso (1 cartório) com os números dele e "179º de 851"; sem rolagem horizontal em 390 px.
 - [x] suíte padrão: 317 passed e 3 falhas esperadas em `test_publico.py` (leem o `data/publico` versionado, ainda da carga anterior); com `RADAR_PUBLICO_TESTE` apontando o conjunto novo, os testes do modo demonstração passam.
 - [x] **carga oficial 2026-11-07** (pedido do autor: "continue a fase 1 toda [...] e acabe ela toda"): backup em `C:\radar_arquivo\antes_carga_2026-11-07_d078\` (banco `dd6fc158…`, silver, gold, público, completo); `uv run pipeline.py --a-partir-de silver` sem erro (log `C:\radar_arquivo\carga_2026-11-07_d078.log`); banco novo `7f528a8c…`, premissas v4. Contra o backup: o mesmo resultado da cópia (só as tabelas esperadas mudaram; os 10 números iguais). `data/publico` (35 arquivos, 0,72 MB, sem dado pessoal) e `data/completo` (33 tabelas do gold) regerados. Suíte padrão 320 passed; `ruff` sem erro.
+- [x] **PR #5 juntado na `main`** (2026-11-07, os dois jobs verdes): item 2 completo.
+
+**Itens 3 e 5, na branch `fase-1-notebooks-e-pendencias`** (2026-11-07; detalhes no `diario.md`):
+- [x] item 3: os 12 notebooks rodaram do zero numa cópia; reprodução conferida em todos (os da época das premissas v2 num banco do mesmo silver com a semente v2). Gravados de novo os 4 com import sem uso (02, 03, 09, 10), com a mesma saída; sai a exceção F401 dos notebooks no `pyproject.toml`.
+- [x] item 5: `ruff` com as regras padrão (E4, E7, E9, F) e W, sem erro; SPEC §5.1 reescrita; D-079 (`fato_mercado_municipio_publico` no conjunto público, 36 arquivos). **Falta só a fonte embutida**, que depende do autor (baixar os arquivos das fontes).
+- [ ] item 4: avaliação do chat (52 perguntas, versões a, b e c) com a API do Gemini (nível gratuito).
+- [ ] item 6: revisão final e nova linha de base de MG.
 
 **Fase 0 cumprida em 2026-11-06:**
 - [x] item 1: plano novo (D-071) e SPEC, ROADMAP, `CLAUDE.md` e `CONTRIBUTING.md` alinhados;
