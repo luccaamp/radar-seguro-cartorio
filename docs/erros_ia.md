@@ -933,3 +933,11 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** limite de leitura da ferramenta; a correção do ruff só remove o nome sem uso apontado pelo linter (não é substituição de texto às cegas), mas não é a ferramenta que a regra pede.
 - **Correção:** o código das células foi conferido depois da correção (as linhas de import impressas), os dois notebooks rodaram de novo e a saída bateu com a gravada (02 igual; 09 só com as 40 linhas novas da `analise_previsao`). Se o autor preferir, notebook grande pode ser dividido ou ter o import corrigido à mão.
 - **Bom para os slides?** não
+
+## 2026-11-07 — Argumento errado no laço da avaliação do chat
+- **Onde:** comando da IA (retomada automática de `scripts/avaliar_chat.py`).
+- **O que aconteceu:** o laço passou `--versoes a b` (duas palavras), e o script espera `--versoes ab`; o argparse recusou o comando, e o laço, que só procurava "Rodada incompleta" no relatório, registrou "completas" sem ter rodado as versões (a) e (b).
+- **Como foi detectado:** o relatório final mostrava (a) com 16/52 e (b) com 0/52 respondidas, contra o "completas" do laço.
+- **Causa provável:** a IA não conferiu o formato da opção e o laço não tratava erro de argumento.
+- **Correção:** rodar de novo com `--versoes ab`, com o laço parando em erro de argumento; as três versões completaram.
+- **Bom para os slides?** não
