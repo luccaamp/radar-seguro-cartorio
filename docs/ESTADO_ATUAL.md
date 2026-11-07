@@ -37,8 +37,16 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito.
 **Itens 3 e 5, na branch `fase-1-notebooks-e-pendencias`** (2026-11-07; detalhes no `diario.md`):
 - [x] item 3: os 12 notebooks rodaram do zero numa cópia; reprodução conferida em todos (os da época das premissas v2 num banco do mesmo silver com a semente v2). Gravados de novo os 4 com import sem uso (02, 03, 09, 10), com a mesma saída; sai a exceção F401 dos notebooks no `pyproject.toml`.
 - [x] item 5: `ruff` com as regras padrão (E4, E7, E9, F) e W, sem erro; SPEC §5.1 reescrita; D-079 (`fato_mercado_municipio_publico` no conjunto público, 36 arquivos). **Falta só a fonte embutida**, que depende do autor (baixar os arquivos das fontes).
-- [ ] item 4: avaliação do chat (52 perguntas, versões a, b e c) com a API do Gemini (nível gratuito).
-- [ ] item 6: revisão final e nova linha de base de MG.
+- [x] **PR #6 juntado na `main`** (2026-11-07, os dois jobs verdes): itens 3 e 5 completos (menos a fonte embutida, do autor).
+
+**Itens 4 e 6, na branch `fase-1-chat-e-revisao`** (2026-11-07):
+- [x] item 4, link do chat: a página do chat não lia o `?pergunta=` dos links das outras páginas; agora envia a pergunta uma vez só (teste novo em `tests/test_chat.py`).
+- [ ] item 4, avaliação com a API real: em andamento (o Gemini devolve 503, "high demand", e a rodada é retomada a cada 5 min; as respostas ficam em `eval/respostas/`). Parcial: versão (c) com 22 de 22 certas e nenhum número inventado nas primeiras 27 perguntas.
+- [x] item 6, acessibilidade (axe, as 7 páginas): 0 falhas do nosso código (eram 22 regras, 8 nossas): contraste do texto apagado (`--mudo` #6b7590 → #5c6680) e do azul em texto pequeno (`--s1-texto`), a legenda do Explorar que subia sobre a faixa do cabeçalho, títulos do Explorar como h2. Ficam `list`/`listitem` do menu do Streamlit.
+- [x] item 6, capturas em 390, 1280, 1366 e 1920 px, nos temas claro e escuro (`docs/qa/atual/`, fora do git): checagens de layout com 0 falhas no claro; no escuro, só um "Map error." no console nas telas do mapa (o mapa aparece certo; pendência conhecida).
+- [x] item 6, dados pessoais: o conjunto público e os notebooks passam nos contratos (3.840 nomes do cadastro e o formato de CPF procurados); os 10 números da nova linha de base (`C:\radar_arquivo\baseline_2026-11-07_fase1\linha_de_base.json`) iguais aos da tabela abaixo. A linha de base antiga, no WSL, não está acessível nesta máquina (sem distribuição instalada).
+
+**Fase 3, plano:** [`plano_fase3.md`](plano_fase3.md) (2026-11-07), **à espera da aprovação do autor** e das 3 questões do fim.
 
 **Fase 0 cumprida em 2026-11-06:**
 - [x] item 1: plano novo (D-071) e SPEC, ROADMAP, `CLAUDE.md` e `CONTRIBUTING.md` alinhados;

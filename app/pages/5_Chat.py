@@ -17,6 +17,7 @@ cfg = llm.config()
 LIMITE = int(cfg["limite_perguntas_sessao"])
 BANCO = f"{modo()}:{caminho_banco()}"   # chave do cache das ferramentas: não mistura bancos
 ESPERA = '<div class="chat-espera">Consultando os dados…</div>'
+TAMANHO_LINK = int(cfg["tamanho_max_pergunta_link"])
 
 
 def _css() -> None:
@@ -121,9 +122,13 @@ def aba_chat() -> None:
                     _mostrar(m)
                 else:
                     st.markdown(md_seguro(m["content"]))
-    pergunta = None
+    # pergunta que veio de um link das outras páginas (ui.link_chat, Chat?pergunta=...): enviada uma vez só; o
+    # parâmetro sai do endereço para um rerun ou um recarregar não perguntar de novo (Fase 1, item 4)
+    pergunta = (st.query_params.get("pergunta") or "").strip()[:TAMANHO_LINK] or None
+    if "pergunta" in st.query_params:
+        del st.query_params["pergunta"]
     sugestoes = st.empty()
-    if not historico:
+    if not historico and not pergunta:
         with sugestoes.container(key="sugestoes"):
             st.caption("Sugestões para começar:")
             colunas = st.columns(2)

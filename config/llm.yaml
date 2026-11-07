@@ -40,6 +40,8 @@ versao_prompt: 3                 # mudou o texto do prompt? suba a versão e reg
 # Link público e demo (D-063). A cota gratuita é por projeto da chave, não por pessoa: no Cloud, todos os
 # visitantes dividem a mesma chave, e o limite por sessão impede que uma pessoa gaste a cota do dia de todos.
 limite_perguntas_sessao: 20      # fonte: decisão de 2026-10-28 (D-063)
+tamanho_max_pergunta_link: 300   # fonte: suposição; corta a pergunta que chega pelo link Chat?pergunta= (as do
+                                 # painel têm menos de 80 caracteres; o corte evita um link enorme gastar a cota)
 
 # Sugestões da conversa vazia (D-069): enviam a pergunta ao modelo ao clicar.
 sugestoes:

@@ -48,23 +48,25 @@ figcaption{{font-size:13px;margin-top:6px}}</style>
 <div class="grade">{''.join(linhas)}</div></html>""", encoding="utf-8")
 
 
-def rodar(saida: Path, checar_layout: bool) -> list:
+def rodar(saida: Path, checar_layout: bool, tema: str = "claro") -> list:
     saida.mkdir(parents=True, exist_ok=True)
     itens, falhas = [], []
+    sufixo = "" if tema == "claro" else f"_{tema}"
     with servidor() as (url, copia), sync_playwright() as p:
         lista = estados(copia)   # antes de abrir páginas: depois disso o Streamlit segura o arquivo da cópia
         nav = p.chromium.launch()
         for largura, altura in LARGURAS.items():
-            page = nav.new_page(viewport={"width": largura, "height": altura}, color_scheme="light")
+            page = nav.new_page(viewport={"width": largura, "height": altura},
+                                color_scheme="dark" if tema == "escuro" else "light")
             erros = []
             ouvir_console(page, erros)
             for est in lista:
                 abrir(page, url, est, erros)
                 if checar_layout:
                     falhas += checar(page, est, largura, erros)
-                arq = saida / f"{est.nome}_{largura}.png"
+                arq = saida / f"{est.nome}_{largura}{sufixo}.png"
                 print_estado(page, est, largura, altura, arq)
-                itens.append({"estado": est.nome, "largura": largura, "arquivo": arq.name,
+                itens.append({"estado": f"{est.nome} ({tema})", "largura": largura, "arquivo": arq.name,
                               "quando": dt.datetime.now().strftime("%d/%m/%Y %H:%M:%S")})
                 print(f"  {est.nome} @ {largura}", flush=True)
             page.close()
@@ -84,6 +86,7 @@ if __name__ == "__main__":
     a = argparse.ArgumentParser()
     a.add_argument("--saida", default=str(RAIZ / "docs" / "qa" / "atual"))
     a.add_argument("--checar", action="store_true", help="também roda as checagens de layout (checagens.md)")
+    a.add_argument("--tema", choices=["claro", "escuro"], default="claro", help="tema do navegador (padrão: claro)")
     args = a.parse_args()
-    f = rodar(Path(args.saida), args.checar)
+    f = rodar(Path(args.saida), args.checar, args.tema)
     print(f"galeria: {Path(args.saida) / 'galeria.html'}" + (f" | falhas de layout: {len(f)}" if args.checar else ""))

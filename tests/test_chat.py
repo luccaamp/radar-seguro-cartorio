@@ -488,6 +488,23 @@ def test_pagina_com_modelo_falso_sugestoes_selo_e_limite(painel_demo, monkeypatc
     assert at.chat_input[0].proto.disabled and any("limite de 20 perguntas" in i.value for i in at.info)
 
 
+def test_pagina_envia_a_pergunta_do_link_uma_vez(painel_demo, monkeypatch):
+    """Fase 1, item 4: o link das outras páginas (Chat?pergunta=...) envia a pergunta ao chat uma vez só."""
+    monkeypatch.setenv("GEMINI_API_KEY", "chave-de-teste-123")
+    monkeypatch.setattr(chat, "responder_em_partes", _falso_em_partes(
+        "Há 2.525 serventias ativas.\n\nFonte: gold.fato_mercado_uf · referência: x · premissas: v4"))
+    at = _pagina()
+    at.query_params["pergunta"] = "Quantos cartórios vagos (interinos) há em MG?"
+    at.run()
+    assert not at.exception and at.session_state["chat_perguntas_usadas"] == 1
+    mensagens = at.tabs[0].chat_message
+    assert [m.name for m in mensagens] == ["user", "assistant"]
+    assert any("Quantos cartórios vagos" in m.value for m in mensagens[0].markdown)
+    assert not [b for b in at.button if b.key and b.key.startswith("sugestao_")]   # com a pergunta, sem sugestões
+    at.run()   # um rerun não pergunta de novo
+    assert at.session_state["chat_perguntas_usadas"] == 1 and len(at.tabs[0].chat_message) == 2
+
+
 def test_pagina_com_cota_esgotada_mostra_so_a_frase(painel_demo, monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "chave-de-teste-123")
 
