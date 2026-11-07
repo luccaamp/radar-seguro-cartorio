@@ -3,8 +3,8 @@
    fundo #eceff3, superfícies brancas, texto #0f1c33, faixa azul-marinho em degradê (#0f2447 → #183564) com o traço
    dourado, cartões de 14 px de raio com sombra, quadro azul-claro dos agregados, veredito dourado-claro, selos e a
    paleta de série (#2a78d6, #eb6834, #1baf7a, #8d97ab). Carregado por src/painel/ui.estilo(), uma vez por página. As
-   cores de dado são as mesmas de src/painel/graficos.py (COR). */
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap");
+   cores de dado são as mesmas de src/painel/graficos.py (COR). As fontes vêm de app/static/fontes, declaradas no
+   .streamlit/config.toml ([[theme.fontFaces]], D-080), sem pedido ao Google Fonts. */
 :root {
   /* tokens do Raio-X (nomes originais entre parênteses) */
   --fundo: #eceff3;            /* (--bg) */

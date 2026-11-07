@@ -19,9 +19,9 @@ pacotes/
 
 # Transcrições das conversas com a IA (uso pessoal do autor)
 conversas/
-# configurações locais do Claude Code (permissões e caminhos desta máquina; o repositório é público)
-.claude/settings.local.json
-.claude/scheduled_tasks.lock
+# configurações locais do Claude Code (permissões, caminhos e servidores de preview desta máquina; o repositório é
+# público). A pasta inteira fica fora (aprovação do autor, 2026-11-07).
+.claude/
 # links simbólicos para o guia de Streamlit dentro do .venv (refeitos em cada máquina)
 .agents/
 .claude/skills/

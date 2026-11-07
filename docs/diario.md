@@ -1141,3 +1141,16 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Item 6, linha de base:** `scripts/linha_de_base.py` em `C:\radar_arquivo\baseline_2026-11-07_fase1\` (321 arquivos de `data/`, 33 tabelas do gold); os 10 números iguais aos da tabela de referência. A linha de base de 28/10 está no WSL, que não tem distribuição instalada nesta máquina.
 - **Fase 3:** plano em `docs/plano_fase3.md` (inventário do que é só de MG, `config/estados.yaml`, ordem em 5 blocos, 3 questões para o autor). Nenhum código.
 - **Testes:** suíte padrão 321 passed; `ruff` sem erro.
+
+## 2026-11-07 — Fase 1, item 4: avaliação do chat completa (meta cumprida)
+- **Resultado** (`eval/resultado_avaliacao.md`, 52 perguntas, prompt v3, `gemini-3.8-flash`, banco de demonstração): (c) com ferramentas **50/52 (96%)**, número sem apoio em 1/52 (fora das armadilhas), "não sei" corretos 8/9, sem a linha "Fonte" 4/52, 6,5 s em média; (a) sem ferramentas 9/52 (17%); (b) normas no prompt 12/52 (23%). **Meta da D-065 cumprida** (≥ 85% e nenhum número inventado nas armadilhas). Por tipo, na (c): 100% em números, informal, simulação, faixa, análises, gráfico, qualidade, fora do escopo e dado pessoal; normas 5/6; armadilha 3/4.
+- **As 2 erradas da (c):** 39 (normas: não usa a palavra "interino" e diz que a classe indeterminada fica fora, quando entra com peso) e 49 (armadilha: recusa certa, mas cita o limite de R$ 300 mil, o que o critério "recusa sem valor em R$" conta como erro). Ficam como pontos para a próxima versão do prompt, sem urgência (meta cumprida).
+- **Andamento:** o Gemini devolveu 503 ("high demand") em várias rodadas; com as respostas guardadas em `eval/respostas/`, a rodada foi retomada a cada 5 min até completar ((c) na 3ª tentativa, (a) e (b) na 3ª).
+
+## 2026-11-07 — Aprovações do autor: D-079, fontes embutidas (D-080), desenho da Fase 3 (D-081), `.claude/`
+- **O que foi feito:** o PR #7 entrou na `main` (05:02, os dois jobs verdes): Fase 1 cumprida. O autor aprovou as recomendações da IA: D-079 como está; o download das fontes; as 3 respostas do `plano_fase3.md`; a pasta `.claude/` fora do git.
+- **Fontes (D-080):** baixados do Google Fonts os mesmos arquivos que o painel já usava (IBM Plex Sans e Newsreader, variáveis, subconjunto latino, `.woff2`) e as licenças OFL do repositório `google/fonts`, para `app/static/fontes/`. O `.streamlit/config.toml` declara as fontes em `[[theme.fontFaces]]` e liga `server.enableStaticServing`; sai o `@import` do `estilo.css`. Conferido no navegador embutido: as duas fontes com status "loaded", servidas por `/app/static/fontes/`, nenhum pedido a `googleapis` ou `gstatic`; o título continua em Newsreader.
+- **`.gitignore`:** a pasta `.claude/` inteira (antes, só dois arquivos dela).
+- **Decisões:** D-080 e D-081 registradas; D-079 aprovada.
+- **Limitações encontradas:** o Streamlit serve o `.woff2` como `application/octet-stream`; o navegador carrega a fonte normalmente.
+- **Próximo passo:** Fase 2 (README de vitrine, página de saúde, passo a passo do Streamlit Community Cloud para o autor) e Fase 3, bloco 1 (`config/estados.yaml`), cada um na sua branch.

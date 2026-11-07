@@ -912,4 +912,22 @@ Formato:
 - **Efeito nos 10 números:** nenhum. Nenhuma tabela do gold muda; o `data/publico` passa de 35 para 36 arquivos (0,75 MB), sem dado pessoal (contratos do `gerar_publico.py`).
 - **Consequências / onde aparece:** `config/publico.yaml`, `data/publico/`, `docs/dicionario_dados.md`, `docs/historico/ROADMAP.md` (§7).
 - **Fonte:** pedido do autor em 2026-11-07 ("continue a fase 1 toda [...] e acabe ela toda").
-- **Status:** tomada pela IA; aprovação do autor pendente.
+- **Status:** aprovada pelo autor em 2026-11-07 ("aprovo todas as suas recomendações").
+
+## D-080 — Fontes do painel embutidas no repositório
+- **Data:** 2026-11-07
+- **Contexto:** o painel buscava IBM Plex Sans e Newsreader no Google Fonts a cada visita (`@import` no `estilo.css` e `[theme]` no `.streamlit/config.toml`): o navegador do visitante falava com o Google só pela fonte, e a letra mudava se o serviço estivesse bloqueado. Pendência do `historico/ROADMAP.md`, §7.
+- **Decisão (aprovada pelo autor em 2026-11-07, com a permissão para baixar os arquivos):** as duas fontes ficam em `app/static/fontes/` (arquivos variáveis `.woff2`, subconjunto latino, o mesmo que o Google Fonts servia; 45 KB e 132 KB), com a licença OFL de cada uma ao lado (`OFL_*.txt`, do repositório `google/fonts`). O `config.toml` declara as fontes em `[[theme.fontFaces]]` e liga `server.enableStaticServing`; sai o `@import` do `estilo.css`.
+- **Efeito nos 10 números:** nenhum (só aparência).
+- **Consequências / onde aparece:** `.streamlit/config.toml`, `src/painel/estilo.css`, `app/static/fontes/`. Conferido no navegador: as duas fontes carregam de `/app/static/fontes/`, nenhum pedido ao Google.
+- **Status:** aprovada.
+
+## D-081 — Desenho da Fase 3 (código por estado)
+- **Data:** 2026-11-07
+- **Contexto:** as 3 questões do [`plano_fase3.md`](plano_fase3.md).
+- **Decisão (aprovada pelo autor em 2026-11-07, as 3 recomendações da IA):**
+  1. a coluna `uf` entra **já** nas tabelas por UF ou por município do gold, do `data/publico` e do `data/completo`, ainda só com MG; o critério "idêntico" é conferido uma vez, com o esquema final (com carga oficial, a pedido do autor);
+  2. um estado sem calibração **herda as premissas de MG**, marcadas `fonte: suposição`, até a calibração dele (Fase 6);
+  3. **um arquivo de configuração por estado** (`config/estados.yaml`, uma entrada por UF), com código IBGE, pacote da RAIS, totais de controle, normas locais e apelidos de municípios.
+- **Efeito nos 10 números:** nenhum esperado (critério de pronto da Fase 3).
+- **Status:** aprovada.

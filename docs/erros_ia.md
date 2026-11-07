@@ -933,3 +933,19 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** limite de leitura da ferramenta; a correção do ruff só remove o nome sem uso apontado pelo linter (não é substituição de texto às cegas), mas não é a ferramenta que a regra pede.
 - **Correção:** o código das células foi conferido depois da correção (as linhas de import impressas), os dois notebooks rodaram de novo e a saída bateu com a gravada (02 igual; 09 só com as 40 linhas novas da `analise_previsao`). Se o autor preferir, notebook grande pode ser dividido ou ter o import corrigido à mão.
 - **Bom para os slides?** não
+
+## 2026-11-07 — Argumento errado no laço da avaliação do chat
+- **Onde:** comando da IA (retomada automática de `scripts/avaliar_chat.py`).
+- **O que aconteceu:** o laço passou `--versoes a b` (duas palavras), e o script espera `--versoes ab`; o argparse recusou o comando, e o laço, que só procurava "Rodada incompleta" no relatório, registrou "completas" sem ter rodado as versões (a) e (b).
+- **Como foi detectado:** o relatório final mostrava (a) com 16/52 e (b) com 0/52 respondidas, contra o "completas" do laço.
+- **Causa provável:** a IA não conferiu o formato da opção e o laço não tratava erro de argumento.
+- **Correção:** rodar de novo com `--versoes ab`, com o laço parando em erro de argumento; as três versões completaram.
+- **Bom para os slides?** não
+
+## 2026-11-07 — Commit empurrado para um PR que o auto-merge já tinha juntado
+- **Onde:** fluxo de git (PR #7, branch `fase-1-chat-e-revisao`).
+- **O que aconteceu:** com o auto-merge ligado, o PR #7 entrou na `main` assim que o CI do commit `21c91f4` ficou verde (05:02). O commit seguinte, `ab59ee3` (resultado completo da avaliação do chat, `eval/respostas/` e documentos), foi empurrado para a mesma branch depois disso e ficou fora da `main`. A IA disse ao autor que a avaliação estava na `main` sem conferir.
+- **Como foi detectado:** ao criar a branch seguinte a partir da `origin/main`, o git recusou a troca porque `docs/ESTADO_ATUAL.md` e `docs/diario.md` divergiam; `git merge-base --is-ancestor ab59ee3 origin/main` confirmou.
+- **Causa provável:** com auto-merge, um PR pode ser juntado entre dois pushes; a IA não conferiu o estado do PR antes de empurrar o último commit.
+- **Correção:** o `ab59ee3` entra na `main` pelo PR seguinte (`fase-1-aprovacoes-fontes`). Regra: antes de empurrar para uma branch com PR em auto-merge, conferir se o PR ainda está aberto (`gh pr view --json state`); se já foi juntado, abrir branch nova.
+- **Bom para os slides?** sim (auto-merge e pushes atrasados)

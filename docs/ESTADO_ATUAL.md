@@ -36,17 +36,23 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito.
 
 **Itens 3 e 5, na branch `fase-1-notebooks-e-pendencias`** (2026-11-07; detalhes no `diario.md`):
 - [x] item 3: os 12 notebooks rodaram do zero numa cópia; reprodução conferida em todos (os da época das premissas v2 num banco do mesmo silver com a semente v2). Gravados de novo os 4 com import sem uso (02, 03, 09, 10), com a mesma saída; sai a exceção F401 dos notebooks no `pyproject.toml`.
-- [x] item 5: `ruff` com as regras padrão (E4, E7, E9, F) e W, sem erro; SPEC §5.1 reescrita; D-079 (`fato_mercado_municipio_publico` no conjunto público, 36 arquivos). **Falta só a fonte embutida**, que depende do autor (baixar os arquivos das fontes).
+- [x] item 5: `ruff` com as regras padrão (E4, E7, E9, F) e W, sem erro; SPEC §5.1 reescrita; D-079 (`fato_mercado_municipio_publico` no conjunto público, 36 arquivos; aprovada em 2026-11-07). Fonte embutida feita em 2026-11-07 (D-080), com a permissão do autor para baixar os arquivos.
 - [x] **PR #6 juntado na `main`** (2026-11-07, os dois jobs verdes): itens 3 e 5 completos (menos a fonte embutida, do autor).
 
 **Itens 4 e 6, na branch `fase-1-chat-e-revisao`** (2026-11-07):
 - [x] item 4, link do chat: a página do chat não lia o `?pergunta=` dos links das outras páginas; agora envia a pergunta uma vez só (teste novo em `tests/test_chat.py`).
-- [ ] item 4, avaliação com a API real: em andamento (o Gemini devolve 503, "high demand", e a rodada é retomada a cada 5 min; as respostas ficam em `eval/respostas/`). Parcial: versão (c) com 22 de 22 certas e nenhum número inventado nas primeiras 27 perguntas.
+- [x] item 4, avaliação com a API real (2026-11-07, `eval/resultado_avaliacao.md`; prompt v3, `gemini-3.8-flash`): **meta da D-065 cumprida.** Versão (c), com ferramentas: 50 de 52 (96%), nenhum número inventado nas armadilhas, 8 de 9 "não sei" corretos, 6,5 s em média. Para comparar: (a) sem ferramentas 17% e (b) com as normas no prompt 23%. As 2 erradas: a 39 (normas; não cita "interino" e diz que a classe indeterminada fica fora, quando ela entra com peso) e a 49 (armadilha; recusa certa, mas cita o limite de R$ 300 mil). O Gemini devolveu 503 ("high demand") várias vezes; a rodada foi retomada até completar.
 - [x] item 6, acessibilidade (axe, as 7 páginas): 0 falhas do nosso código (eram 22 regras, 8 nossas): contraste do texto apagado (`--mudo` #6b7590 → #5c6680) e do azul em texto pequeno (`--s1-texto`), a legenda do Explorar que subia sobre a faixa do cabeçalho, títulos do Explorar como h2. Ficam `list`/`listitem` do menu do Streamlit.
 - [x] item 6, capturas em 390, 1280, 1366 e 1920 px, nos temas claro e escuro (`docs/qa/atual/`, fora do git): checagens de layout com 0 falhas no claro; no escuro, só um "Map error." no console nas telas do mapa (o mapa aparece certo; pendência conhecida).
 - [x] item 6, dados pessoais: o conjunto público e os notebooks passam nos contratos (3.840 nomes do cadastro e o formato de CPF procurados); os 10 números da nova linha de base (`C:\radar_arquivo\baseline_2026-11-07_fase1\linha_de_base.json`) iguais aos da tabela abaixo. A linha de base antiga, no WSL, não está acessível nesta máquina (sem distribuição instalada).
 
-**Fase 3, plano:** [`plano_fase3.md`](plano_fase3.md) (2026-11-07), **à espera da aprovação do autor** e das 3 questões do fim.
+- [x] **PR #7 juntado na `main`** (2026-11-07, 05:02, os dois jobs verdes): itens 4 e 6 completos. **Fase 1 cumprida.** O último commit da avaliação (`ab59ee3`) foi empurrado depois do merge e entra pelo PR `fase-1-aprovacoes-fontes` (`erros_ia.md`).
+
+**Aprovações do autor em 2026-11-07** ("aprovo todas as suas recomendações"): D-079; D-080 (fontes embutidas em `app/static/fontes/`, feito e conferido no navegador); D-081 (desenho da Fase 3: coluna `uf` já, estado sem calibração herda as premissas de MG com `fonte: suposição`, um arquivo de configuração por estado); a pasta `.claude/` inteira no `.gitignore`. Mudanças ainda não commitadas.
+
+**Próximo passo:**
+- **Fase 2 (publicar MG):** a IA prepara o README de vitrine, a página de saúde e o passo a passo do Streamlit Community Cloud; o autor cria o app na conta dele e põe a `GEMINI_API_KEY` nos segredos.
+- **Fase 3, bloco 1:** plano aprovado ([`plano_fase3.md`](plano_fase3.md), D-081); começa por `config/estados.yaml` e a leitura dele nos coletores e contratos, sem mudar nenhum resultado. Uma branch por bloco.
 
 **Fase 0 cumprida em 2026-11-06:**
 - [x] item 1: plano novo (D-071) e SPEC, ROADMAP, `CLAUDE.md` e `CONTRIBUTING.md` alinhados;
@@ -67,7 +73,7 @@ A lista de fechamento de MG, combinada com o autor em 2026-10-31, foi distribuí
   - **Falta o A7:** avaliação do chat com a API real (depois do B1 e do bloco C).
 - **B. Decisões e ações do autor:** lista em "O que depende do autor", abaixo.
 - **C. Preparar para outros estados:** tirar do código o que só vale para MG (códigos e pacotes por UF nos coletores, `uf = 'MG'` nos contratos e no gold, "fator de MG" na previsão, textos do painel e do chat) e levar para a configuração por estado. Critério de pronto: com `ufs: [MG]`, o resultado idêntico ao de hoje. **Precisa de um plano antes**, a pedido do autor.
-- **D. Limpeza:** apagar as branches locais antigas e as referências velhas do remoto (`git fetch --prune`), e decidir o que fazer com o `.claude/launch.json` (configuração do painel para o navegador do Claude; hoje aparece como não versionado): versionar ou pôr no `.gitignore`. Comandos de git só com pedido do autor.
+- **D. Limpeza:** apagar as branches locais antigas e as referências velhas do remoto (`git fetch --prune`); comandos de git só com pedido do autor. ~~O `.claude/launch.json`~~: a pasta `.claude/` inteira foi para o `.gitignore` (autor, 2026-11-07).
 
 ## Números de referência
 Carga **2026-11-07** (refeita do silver da carga 2026-10-19: dados coletados em 17 e 18/10; mesmos números da carga 2026-10-28), premissas **v4** (a v3 da D-046 sem o limiar de 3 serventias, D-078), regra base (Classe 1 até R$ 300 mil, Prov. 243), nível base, regra do STF mantida. Esta tabela é a fonte dos valores.
@@ -82,7 +88,7 @@ Carga **2026-11-07** (refeita do silver da carga 2026-10-19: dados coletados em 
 
 Faixa provável do prêmio (P5–P95): R$ 215 a 687 mil. Linha de base: `~/radar_arquivo/baseline_2026-10-28_d048/linha_de_base.json` (WSL). Banco real desta máquina: SHA-256 `7f528a8c…` (carga 2026-11-07; antes, `dd6fc158…` e `c935a190…`).
 
-**Última decisão:** D-078 (D-038, fase 2: sem o limiar de 3 serventias, premissas v4, 2026-11-06); antes, D-077 (Simulador na área "Explorar") e D-076 (aprovação em lote das decisões de MG e das premissas `fonte: suposição`). Não há decisão proposta à espera do autor. As faixas D-053 a D-059 (painel) e D-060 a D-069 (chat) estão reservadas ou usadas; as próximas seguem de D-079 ([`decisoes.md`](decisoes.md)).
+**Última decisão:** D-081 (desenho da Fase 3, 2026-11-07); antes, D-080 (fontes embutidas) e D-079 (mercado por município no conjunto público), todas aprovadas. Não há decisão proposta à espera do autor. As faixas D-053 a D-059 (painel) e D-060 a D-069 (chat) estão reservadas ou usadas; as próximas seguem de D-082 ([`decisoes.md`](decisoes.md)).
 
 ## Testes (2026-11-07)
 - Suíte padrão (`uv run pytest`): 320 passed. Não usa a API do Gemini nem a internet. `uv run ruff check .`: sem erro.
