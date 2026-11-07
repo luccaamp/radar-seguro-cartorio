@@ -12,7 +12,7 @@
   --superficie-2: #f5f7fa;     /* (--surface-2) */
   --titulo: #0f1c33; --texto: #0f1c33;   /* (--ink) */
   --texto-2: #45506a;          /* (--ink-2) */
-  --mudo: #6b7590;             /* (--muted) */
+  --mudo: #5c6680;             /* (--muted; era #6b7590: 3,98 sobre o fundo, abaixo dos 4,5 da WCAG AA; Fase 1, item 6) */
   --linha: #dde2ea;            /* (--line) */
   --grade: #e6e9ef; --grade-forte: #c2c9d6;   /* (--grid, --grid-strong) */
   --marinho: #0f2447; --marinho-2: #183564; --sobre-marinho: #f2f5fb; --sobre-marinho-2: #b9c5dd;   /* (--navy …) */
@@ -24,6 +24,7 @@
   --f-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --f-titulo: "Newsreader", Georgia, "Times New Roman", serif;
   --destaque: var(--s1); --comparacao: var(--s2);
+  --s1-texto: #1d66ba;         /* azul das séries em texto pequeno (4,97 sobre o fundo; o --s1 dá 3,83) */
   color-scheme: light;
 }
 /* tema escuro do Raio-X, com os mesmos valores. Vale quando o Streamlit está no escuro (marcador .rd-tema-escuro, posto
@@ -35,7 +36,7 @@
   --marinho: #0a1630; --marinho-2: #12244a;
   --ouro: #e0b44e; --ouro-tinta: #e8c46a; --ouro-claro: #2a2414;
   --agregado: #1d2840; --agregado-linha: #2c3d62;
-  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #7b869b;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #7b869b; --s1-texto: #3987e5;
   --bom: #4cc38a; --bom-claro: #12301f; --alerta: #e2b04a; --alerta-claro: #33270c; --ruim: #ff8a7a; --ruim-claro: #3a1a17;
   --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 20px rgba(0, 0, 0, .25);
   color-scheme: dark;
@@ -47,7 +48,7 @@
   --marinho: #0a1630; --marinho-2: #12244a;
   --ouro: #e0b44e; --ouro-tinta: #e8c46a; --ouro-claro: #2a2414;
   --agregado: #1d2840; --agregado-linha: #2c3d62;
-  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #7b869b;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #7b869b; --s1-texto: #3987e5;
   --bom: #4cc38a; --bom-claro: #12301f; --alerta: #e2b04a; --alerta-claro: #33270c; --ruim: #ff8a7a; --ruim-claro: #3a1a17;
   --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 20px rgba(0, 0, 0, .25);
   color-scheme: dark;
@@ -71,7 +72,8 @@ h3 { font-size: 14px !important; font-weight: 600 !important; }
 /* faixa do topo (.top do Raio-X): degradê azul-marinho de ponta a ponta, rótulo, título em serifa, texto e traço dourado */
 /* o degradê vai num border-image com recuo lateral: pinta até as bordas sem criar rolagem horizontal (um pseudo-elemento
    largo fazia o contêiner do Streamlit rolar para o lado e esconder a navegação) */
-.rd-cab { color: var(--sobre-marinho); padding: 76px 0 56px; margin: 0;
+.rd-cab { color: var(--sobre-marinho); padding: 76px 0 56px; margin: 0; background-color: var(--marinho);   /* o fundo
+  que o axe enxerga (ele não lê o border-image); a faixa até a borda da tela vem do border-image */
   border-image: linear-gradient(180deg, var(--marinho) 0%, var(--marinho-2) 100%) fill 0 / 0 / 0 100vmax; }
 .rd-cab .rd-sobre { font-size: 12px; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; color: var(--sobre-marinho-2); }
 .rd-cab h1 { font-family: var(--f-titulo) !important; font-size: clamp(30px, 5vw, 42px) !important; font-weight: 600 !important;
@@ -80,9 +82,12 @@ h3 { font-size: 14px !important; font-weight: 600 !important; }
 .rd-cab .rd-sub { margin: 0; color: var(--sobre-marinho-2); max-width: 62ch; }
 .rd-cab .rd-sub b { color: var(--sobre-marinho); }
 .rd-cab .rd-ouro { width: 44px; height: 3px; background: var(--ouro); border-radius: 2px; margin: 14px 0 0; }
-/* o primeiro bloco depois da faixa sobe sobre ela (main { margin-top: -30px } do Raio-X) */
-[data-testid="stElementContainer"]:has(.rd-cab) + :not(:has(h2)) { margin-top: -30px; position: relative; z-index: 1; }
-[data-testid="stElementContainer"]:has(.rd-cab):has(+ :has(h2)) .rd-cab { padding-bottom: 32px; }
+/* o primeiro bloco depois da faixa sobe sobre ela (main { margin-top: -30px } do Raio-X); uma legenda não sobe (o texto
+   cinza ficaria sobre o azul-marinho, com contraste de 2,7; achado do axe, Fase 1, item 6) */
+[data-testid="stElementContainer"]:has(.rd-cab) + :not(:has(h2)):not(:has([data-testid="stCaptionContainer"])) {
+  margin-top: -30px; position: relative; z-index: 1; }
+[data-testid="stElementContainer"]:has(.rd-cab):has(+ :has(h2)) .rd-cab,
+[data-testid="stElementContainer"]:has(.rd-cab):has(+ :has([data-testid="stCaptionContainer"])) .rd-cab { padding-bottom: 32px; }
 [data-testid="stElementContainer"]:has(.rd-cab) + * [data-testid="stSelectbox"] { background: var(--superficie);
   border: 1px solid var(--linha); border-radius: 14px; padding: 14px 20px 18px; box-shadow: var(--sombra); }
 
@@ -175,7 +180,8 @@ a.rd-sugestao:hover { background: var(--agregado); }
 [data-testid="stAlertContainer"] { border-radius: 10px; font-size: 13px; }
 [data-testid="stAlertContentInfo"], [data-testid="stAlert"] [data-baseweb="notification"] { background: var(--agregado); color: var(--texto-2); }
 [data-testid="stExpander"] details { background: var(--superficie); border: 1px solid var(--linha); border-radius: 14px; }
-[data-testid="stExpander"] summary p { font-weight: 600; color: var(--s1); }
+[data-testid="stExpander"] summary p { font-weight: 600; color: var(--s1-texto); }
+[data-testid="stSliderThumbValue"], [data-testid="stSliderThumbValue"] p { color: var(--s1-texto) !important; }
 
 /* navegação lateral: superfície branca com a linha do Raio-X, marca em serifa, item ativo no azul-claro do agregado */
 [data-testid="stSidebar"] { border-right: 1px solid var(--linha); background: var(--superficie); }

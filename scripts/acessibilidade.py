@@ -1,7 +1,7 @@
-"""Acessibilidade (axe-core) das quatro páginas do painel → docs/qa/acessibilidade.md, por gravidade.
+"""Acessibilidade (axe-core) das páginas do painel → docs/qa/acessibilidade.md, por gravidade.
 
-Sobe o Streamlit sozinho (mesma rotina dos prints: porta livre, cópia temporária do banco) e roda o axe em
-Início, Mercado, Simulador e Qualidade dos dados, em 1280 × 800. Separa o que vem do nosso código (texto, rótulos)
+Sobe o Streamlit sozinho (mesma rotina dos prints: porta livre, cópia temporária do banco) e roda o axe nas cinco
+páginas da história, no Chat e no Explorar (D-051, D-077), em 1280 × 800. Separa o que vem do nosso código (texto, rótulos)
 do que vem do próprio Streamlit / Plotly (componentes de terceiros), que fica só como sugestão.
 
 Uso: uv run python scripts/acessibilidade.py
@@ -17,7 +17,9 @@ from playwright.sync_api import sync_playwright  # noqa: E402
 
 from qa_painel import RAIZ, esperar, servidor  # noqa: E402
 
-PAGINAS = {"Início": "", "Mercado": "Mercado", "Simulador": "Simulador", "Qualidade dos dados": "Qualidade_dos_dados"}
+PAGINAS = {"Início": "", "Quão certo é": "Quão_certo_é", "Onde está o mercado": "Onde_está_o_mercado",
+           "Para onde vai": "Para_onde_vai", "Sobre os dados": "Sobre_os_dados", "Chat": "Chat",
+           "Simule você mesmo (Explorar)": "Explorar"}
 ORDEM = ["critical", "serious", "moderate", "minor"]
 NOME = {"critical": "Crítica", "serious": "Séria", "moderate": "Moderada", "minor": "Menor"}
 # regras que o nosso código controla (texto e rótulos); o resto é componente de terceiros
@@ -69,6 +71,10 @@ def rodar(saida: Path) -> list[dict]:
                f"{'nosso' if a['nossa'] else 'terceiros'} | {a['causa']} |" for a in grupos[g]]
         md.append("")
     md += ["## Limitação conhecida (decisão do autor, 2026-10-19)", "",
+           "- `list` e `listitem` (todas as páginas): a lista do menu lateral do próprio Streamlit (`st.navigation`), "
+           "com itens fora da estrutura de lista que o leitor de tela espera; não é código nosso.",
+           "- Corrigidos em 2026-11-07 (Fase 1, item 6): contraste do texto apagado (`--mudo`) e do azul em texto "
+           "pequeno (`--s1-texto`), a legenda que subia sobre a faixa do cabeçalho e a ordem dos títulos do Explorar.",
            "- O contraste das cores padrão do Streamlit (legenda `st.caption`, cor primária no valor do slider) fica "
            "como está. Caminho possível no futuro: um tema próprio no `.streamlit/config.toml`.",
            "- Já corrigidos em 2026-10-19: ordem dos títulos (`st.header` nas seções) e o seletor \"Valor\" do Mercado "

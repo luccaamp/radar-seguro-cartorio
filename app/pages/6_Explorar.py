@@ -125,7 +125,7 @@ def aplicar_atalho(ajustes: dict) -> None:
         st.session_state["x_cenario"] = ajustes["cenario"]
 
 
-st.markdown("##### Comece por uma pergunta")
+st.markdown("## Comece por uma pergunta")   # h2 logo depois do h1 (ordem dos títulos, acessibilidade)
 botoes = [(a["rotulo"], a["ajustes"], "secondary") for a in PAINEL["atalhos"]]
 botoes.append(("Voltar ao cenário base", {}, "tertiary"))
 for i in range(0, len(botoes), 2):   # duas colunas: o texto da pergunta cabe inteiro (em 4 colunas era cortado)
@@ -134,7 +134,7 @@ for i in range(0, len(botoes), 2):   # duas colunas: o texto da pergunta cabe in
 
 # ------------------------------------------------------------------ controles
 aj: dict = {}
-st.markdown("##### Ano")
+st.markdown("## Ano")
 c1, c2 = st.columns([1.4, 2])
 ano = c1.radio("Mercado de", ["hoje", *ANOS_PROJ], horizontal=True, key="x_ano",
                format_func=lambda a: "Hoje (base do painel)" if a == "hoje" else f"{a} (projeção)",
@@ -153,7 +153,7 @@ if proj:
     c2.caption("Na projeção, o passivo, a regra de classe e o rateio ficam os do cenário base (a projeção foi "
                "calculada com eles); as suposições do prêmio continuam livres.")
 
-st.markdown("##### Cenário e mercado")
+st.markdown("## Cenário e mercado")
 c1, c2, c3 = st.columns([1.4, 1, 1])
 cenario = c1.radio("Cenário do STF (ADI 8015)", list(CENARIOS["cenarios"]), format_func=ROT_CEN.get, horizontal=True,
                    key="x_cenario",
@@ -383,7 +383,7 @@ fonte_sim = "Fonte: modelo do projeto, com as suposições escolhidas nesta pág
 if premio > 0:
     tornado, mc = ao_vivo(json.dumps(t, sort_keys=True, default=float), json.dumps(p, sort_keys=True, default=str),
                           cenario, json.dumps(extra or {}), versao)
-    st.markdown("##### Quão certo é, com essas suposições")
+    st.markdown("## Quão certo é, com essas suposições")
     if st.toggle("Faixa por sorteio (Monte Carlo)", value=True,
                  help="Sorteios triangulares das seis suposições do prêmio: o valor mais provável é o escolhido aqui; o "
                       "mínimo e o máximo são os da semente (estendidos se você escolheu um valor fora deles)."):
@@ -407,7 +407,7 @@ else:
              "tornado a mostrar.")
 
 # a seguradora hipotética (pergunta 9 da escada)
-st.markdown("##### Mercado total e uma seguradora hipotética")
+st.markdown("## Mercado total e uma seguradora hipotética")
 LINHAS = [("importancia_segurada", "Importância segurada", "normal"), ("premio_emitido", "Prêmio emitido", "normal"),
           ("sinistro_esperado", "Sinistro esperado", "inverse"), ("comissao", "Despesa de comercialização", "inverse"),
           ("despesa_administrativa", "Despesa administrativa", "inverse"),
