@@ -45,12 +45,12 @@
 | 31 | Arrecadação de MG cresceu de 7% a 10% ao ano acima da inflação; 34% do aumento de "providas acima do limite" é só inflação | notebook 02 | 7% a 10% ao ano; 34% | saída do notebook 02 | baixa | fora do painel (ver abaixo) | — | — | — (fora) |
 | 32 | Decomposição do passivo: quantidade de empregados explica 75% a 79% | notebook 06b | 75%–79% | saída do notebook 06 | baixa | fora do painel (ver abaixo) | — | — | — (fora) |
 | 33 | Passivo projetado (M5): +14,6% em 2026 e +28,5% em 2027 | notebook 10; 09, achado 8 | prêmio ≈ R$ 392 mil (2026) e ≈ R$ 448 mil (2027), conta aproximada | saída do notebook 09 | média | Análises, nota da projeção | nota | `analises.previsao_mercado` (lê a nota do 09) | ✅ tela |
-| 34 | D-038, fase 2 (sem o limiar de 3 serventias no mapa, sem áreas agregadas) | D-048 | — | — | média | fora desta tarefa (ver abaixo) | — | — | — (fora) |
+| 34 | D-038, fase 2 (sem o limiar de 3 serventias no mapa, sem áreas agregadas) | D-048; D-078 | 851 municípios no mapa e no ranking (antes 319 + 66 regiões) | `gold.geo_mapa_publico`, `gold.ranking_municipio_publico` | média | Onde está o mercado | mapa por município, posição e os 10 maiores | — | ✅ tela (D-078, 2026-11-06) |
 
 ## O que ficou de fora e por quê
 
 - **31 (crescimento real e inflação, notebook 02)** e **32 (decomposição do passivo, 06b)**: importância baixa; explicam método, não mudam a leitura do número. Ficam nos notebooks (já publicados com as saídas).
-- **34 (D-038, fase 2):** é importância média, não alta, mas registro aqui porque o `ESTADO_ATUAL` a coloca "na Etapa 3, com o painel novo". Ela exige premissas v4, mudança no pipeline e no auditor e uma **carga oficial**, que só roda a pedido do autor (`CLAUDE.md`); a tarefa desta etapa pede o painel só leitura e o Mercado "com o mesmo conteúdo e funcionamento". O Mercado continua com as áreas agregadas da D-026. Vai para "Questões para decidir".
+- **34 (D-038, fase 2):** é importância média, não alta, mas registro aqui porque o `ESTADO_ATUAL` a coloca "na Etapa 3, com o painel novo". Ela exige premissas v4, mudança no pipeline e no auditor e uma **carga oficial**, que só roda a pedido do autor (`CLAUDE.md`); a tarefa desta etapa pede o painel só leitura e o Mercado "com o mesmo conteúdo e funcionamento". O Mercado continua com as áreas agregadas da D-026. Vai para "Questões para decidir". **Atualização (2026-11-06):** feita na Fase 1, item 2 (D-078).
 - **Nenhum achado de importância alta ficou de fora.**
 
 ## Recalibração do 05b (prioridade baixa, seção 3.2 da tarefa)

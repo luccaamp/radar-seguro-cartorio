@@ -185,42 +185,23 @@ def test_abrir_as_paginas_nao_altera_o_banco_de_demonstracao(painel_demo):
     assert hashlib.sha256(painel_demo["banco"].read_bytes()).hexdigest() == antes
 
 
-def test_mercado_municipio_pequeno_aparece_agregado(painel_demo):
-    d = ler(painel_demo, """SELECT d.municipio, p.n_serventias FROM gold.dim_municipio d JOIN gold.geo_area_municipio a
-                            USING (cod_ibge) JOIN gold.mercado_area_publico p USING (area_id)
+def test_mercado_municipio_pequeno_aparece_sozinho(painel_demo):
+    """D-078 (D-038, fase 2): no modo demonstração, um município com 1 serventia mostra os números dele e entra no
+    mapa com área própria, sem aviso de agregação."""
+    d = ler(painel_demo, """SELECT d.municipio, d.cod_ibge FROM gold.dim_municipio d
                             WHERE d.n_serventias = 1 ORDER BY d.municipio LIMIT 1""").iloc[0]
+    com_serv = int(ler(painel_demo, "SELECT count(*) FROM gold.dim_municipio WHERE n_serventias > 0").iloc[0, 0])
     at = rodar(MERCADO)
     at.selectbox(key="f_mun").set_value(d["municipio"]).run()
     assert not at.exception
-    assert any("agregado" in i.value and "LGPD" in i.value for i in at.info)
-    tela = html(at)   # o cartão "Cartórios na área" mostra a área agregada, nunca o município pequeno
-    assert f'Cartórios na área</div><div class="rd-num">{d["n_serventias"]}</div>' in tela
-
-
-def test_lgpd_nenhum_municipio_pequeno_nas_tabelas_e_graficos(painel_demo):
-    """D1 no modo demonstração: nenhuma tabela nem texto de gráfico mostra município com menos de 3 serventias."""
-    limiar = int(ler(painel_demo, "SELECT max(limiar_lgpd) FROM gold.execucao").iloc[0, 0])
-    peq = ler(painel_demo, "SELECT municipio, cod_ibge FROM gold.dim_municipio WHERE n_serventias < ?", [limiar])
-    nomes, codigos = set(peq["municipio"]), {str(c) for c in peq["cod_ibge"]}
-    assert len(nomes) > 400
-    figuras = 0
-    for pagina in PAGINAS:
-        at = rodar(pagina)
-        for df in (d.value for d in at.dataframe):
-            textos = {v for c in df.columns if df[c].dtype == object for v in df[c].dropna()}
-            assert not (textos & nomes), (pagina, sorted(textos & nomes)[:5])
-        for g in at.get("plotly_chart"):
-            figuras += 1
-            spec = json.loads(g.proto.spec)
-            valores = set()
-            for t in spec["data"]:
-                for campo in ("hovertext", "text", "y", "locations"):
-                    valores |= {str(x) for x in (t.get(campo) or []) if isinstance(x, (str, int))}
-                for linha in t.get("customdata") or []:
-                    valores |= {str(x) for x in (linha if isinstance(linha, list) else [linha])
-                                if isinstance(x, (str, int))}
-            assert not (valores & (nomes | codigos)), (pagina, sorted(valores & (nomes | codigos))[:5])
-    assert figuras >= 3
+    assert not any("agregad" in i.value for i in at.info)
+    tela = html(at)
+    assert f"Déficit em {d['municipio']}" in tela
+    assert 'Cartórios no município</div><div class="rd-num">1</div>' in tela
+    mapa = next(json.loads(g.proto.spec) for g in at.get("plotly_chart")
+                if any(t.get("type") == "choroplethmap" for t in json.loads(g.proto.spec)["data"]))
+    locais = next(t for t in mapa["data"] if "colorbar" in t)["locations"]
+    assert len(locais) == com_serv and str(d["cod_ibge"]) in locais
 
 
 def test_sem_formula_latex_nos_textos():

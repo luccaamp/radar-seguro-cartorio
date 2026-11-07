@@ -165,8 +165,9 @@ Premissas previstas, além dos parâmetros legais do passivo:
 - `aliquotas_encargos`: INSS patronal, RAT × FAP e FGTS mensal (parágrafo único do art. 5º), com fonte legal;
 - `fator_cobertura_rais` (se a RAIS captar menos empregados que o "Cartório em Números");
 - `peso_classe_indeterminada_base`;
-- `metodo_rateio_padrao`;
-- `limiar_agregacao_lgpd`, com valor 3.
+- `metodo_rateio_padrao`.
+
+O `limiar_agregacao_lgpd` (3 serventias) saiu nas premissas v4 (D-078, D-038 fase 2).
 
 A definição de Classe 1 também é premissa. Ela fica em `regras_classificacao.yaml`, com a norma de origem e a data de vigência de cada versão dos limites:
 
@@ -257,13 +258,17 @@ Páginas:
 
 Desde a Etapa 3 (D-049), a arquitetura das páginas está em `docs/painel/arquitetura.md` e o padrão visual em `docs/painel/padrao_visual.md`; as análises exibidas saem de `src/painel/analises.py`, no formato das ferramentas do chat.
 
-0. **Início**: o prêmio base com a faixa provável (D-042) na manchete; déficit, IS e prêmio no formato da D-042; os 10 números; a escada do passivo ao prêmio; a situação da ADI 8015 com a data da conferência e o prêmio por cenário do STF.
-1. **Mercado**: mapa, ranking e tabela por área, com os filtros da D-026 (município, atribuição, situação, classe); KPIs do recorte; os grupos do notebook 04 e o grupo-alvo do seguro; quem é obrigado (atribuição e porte).
-2. **Análises**: incerteza do prêmio (faixa D-042 e tornado), projeção 2026–27 (notebook 07, limite fixo principal e corrigido como comparação; 05b como comparação), concentração (Gini) e a pergunta 9.
-3. **Qualidade dos dados**: lacunas do notebook 09, "Passivo: escolhas de método", leitura literal do art. 2º, XXIV, saltos de declaração; data de referência de cada fonte, conferências entre fontes, contratos e limitações.
-4. **Simulador**: controles para cada premissa, seletor de cenário do STF, receita do mercado total e da seguradora hipotética lado a lado; botão para salvar o cenário (Etapa 4).
-5. **Chat**: dentro do painel (D-036, D-060); sem a chave do Gemini, sem internet ou com a cota esgotada, explica o motivo e responde as perguntas prontas direto pelas ferramentas (D-063).
-6. **Radar** (só se for feito; etapa opcional, descrita em `docs/historico/ROADMAP.md`).
+O painel responde a uma pergunta (D-051): quanto dinheiro o seguro obrigatório dos cartórios pode movimentar em MG, e quão certo é esse número. O menu tem duas seções (D-077), "A história" e "Explorar" (`app/Inicio.py`, `st.navigation`):
+
+0. **Início** (a resposta): o prêmio anual no valor base, a faixa provável (D-042) logo abaixo, uma frase de quão certo é e o funil da escada (do passivo ao prêmio).
+1. **Quão certo é**: a faixa do prêmio (valor base, P5–P95 e extremos discretos) e as 5 suposições que mais mexem no prêmio (tornado, notebook 08).
+2. **Onde está o mercado**: o mapa do déficit por município, um município por área, inclusive os de 1 ou 2 cartórios (D-078); um filtro só (município), com destaque, zoom na região intermediária e a posição no ranking de MG; os 10 municípios com mais déficit; a frase da concentração e do grupo-alvo (notebook 04).
+3. **Para onde vai**: o prêmio projetado para 2026 e 2027 com a faixa P10–P90 (notebook 07; limite fixo como leitura principal, D-049) e o passivo projetado (M5, notebook 10).
+4. **Sobre os dados**: a única página técnica: os 10 números, as fontes e datas, como o número foi calculado e as limitações.
+5. **Chat**: dentro do painel (D-036, D-060); sem a chave do Gemini, sem internet ou com a cota esgotada, explica o motivo e responde as perguntas prontas direto pelas ferramentas (D-063). O detalhe que saiu das páginas (filtros por atribuição, situação e classe, qualidade, sensibilidades de método) fica aqui.
+6. **Simule você mesmo** (Explorar, D-077): o Simulador: atalhos de pergunta, ano (hoje, 2026, 2027), limite da Classe 1 fixo ou corrigido, cenário do STF, as premissas do seguro, faixa por sorteio, tornado ao vivo, seguradora hipotética e salvar cenário.
+
+O Radar de normas é da Fase 7 (`docs/plano_projeto.md`).
 
 ### 5.2 Chat (`src/agent`)
 
@@ -309,10 +314,10 @@ Taxonomia de `tipo_evento` (aprovada em 2026-10-17): `norma_nova`, `norma_altera
 ## 6. LGPD e ética
 
 - Nome e CPF de titulares são **descartados na passagem bronze → silver** e não aparecem no silver, no gold, no painel nem nas respostas do chat. O bronze fica fora do git.
-- Estimativas do modelo nunca saem em nível de serventia identificável. Regra atual (o texto que vale é o do `CLAUDE.md`, "Regras inegociáveis"):
-  - toda estimativa por área (município ou região) só aparece com **3 ou mais serventias** (`limiar_agregacao_lgpd`) e depois do **auditor de ataque por diferença**; áreas menores são agregadas pela região imediata ou intermediária (D-026, D-027); partições internas da mesma visão seguem a D-028;
-  - no **público** (repositório e Release públicos), nenhuma estimativa do modelo por serventia (passivo, déficit, probabilidade, IS, prêmio); dados de origem já publicados pelas fontes oficiais podem ir, sem dado pessoal (D-030, D-031);
-  - painel e chat só leem tabelas públicas; `interno_*` só no pipeline.
+- É um estudo público, com dados públicos do governo (D-038; o texto que vale é o do `CLAUDE.md`, "Publicação e dados pessoais"):
+  - tudo pode ser público, inclusive o resultado do modelo por serventia (identificada pelo CNS e pelo município, D-048) e por município, **inclusive os de 1 ou 2 serventias** (D-078, fase 2 da D-038: sem o limiar de 3 serventias, sem áreas agregadas e sem o auditor de ataque por diferença, que antes vinham da D-026 a D-028);
+  - a única restrição: **nenhum nome nem CPF de pessoa física** (e nenhum e-mail ou outro dado pessoal) em painel, resposta do chat, notebook, gráfico, log ou arquivo publicado; o `scripts/gerar_publico.py` procura os nomes do cadastro e os formatos de CPF e e-mail em todo o conjunto público;
+  - painel e chat leem o conjunto público.
 - O README declara que os números são estimativas de mercado com premissas públicas, e não avaliação de nenhum cartório, e que o market share é de uma seguradora hipotética.
 
 ## 7. Avaliação (`src/eval`)

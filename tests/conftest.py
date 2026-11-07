@@ -1,4 +1,5 @@
 """Fixtures dos testes. As premissas vêm da semente versionada; os dados de serventias e vínculos são SINTÉTICOS."""
+import os
 from pathlib import Path
 
 import pytest
@@ -76,17 +77,19 @@ def painel_demo(tmp_path_factory):
     Roda em qualquer clone, sem dados reais. Devolve o caminho do banco de demonstração (só leitura nos testes)."""
     from apoio_painel import apontar_painel, restaurar
     from src import publico
-    if not (publico.PASTA / publico.MANIFESTO).exists():
-        pytest.fail("data/publico/manifesto.json ausente: rode uv run python scripts/gerar_publico.py")
+    # RADAR_PUBLICO_TESTE: outro conjunto público (ex.: gerado de uma cópia do banco, antes da carga oficial)
+    pasta = Path(os.environ.get("RADAR_PUBLICO_TESTE") or publico.PASTA)
+    if not (pasta / publico.MANIFESTO).exists():
+        pytest.fail(f"{pasta}/manifesto.json ausente: rode uv run python scripts/gerar_publico.py")
     inexistente = tmp_path_factory.mktemp("sem_banco") / "nao_existe.duckdb"
-    anterior = apontar_painel(inexistente, publico.PASTA)
-    yield {"banco": publico.banco_demonstracao(publico.PASTA)}
+    anterior = apontar_painel(inexistente, pasta)
+    yield {"banco": publico.banco_demonstracao(pasta)}
     restaurar(anterior)
 
 
 @pytest.fixture(scope="session")
 def semente() -> dict:
-    from src.estado import ler_semente   # a mesma semente que o pipeline usa (hoje premissas_v003.yaml)
+    from src.estado import ler_semente   # a mesma semente que o pipeline usa (hoje premissas_v004.yaml)
     return ler_semente()
 
 

@@ -15,7 +15,7 @@ import duckdb
 import yaml
 
 RAIZ = Path(__file__).resolve().parents[1]
-SEMENTE = RAIZ / "config" / "premissas" / "premissas_v003.yaml"   # v001 e v002 continuam no lugar (D-020, D-046)
+SEMENTE = RAIZ / "config" / "premissas" / "premissas_v004.yaml"   # v001 a v003 continuam no lugar (D-020, D-046, D-078)
 DECISOES = RAIZ / "docs" / "decisoes.md"
 
 

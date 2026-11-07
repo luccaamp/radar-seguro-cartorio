@@ -1,13 +1,6 @@
-"""Geometria pública do mapa (1.2): municípios com pelo menos `limiar` serventias ficam como estão; os menores de cada
-região imediata do IBGE viram UM polígono dissolvido. Nenhuma feição pública tem menos de `limiar` serventias.
-
-Regras (D-026, hierarquia do IBGE, como na D-022):
-- município sem serventia no cadastro fica fora da geometria (estado próprio no mapa, com legenda);
-- municípios pequenos de cada região imediata formam um grupo;
-- grupo com menos de `limiar` sobe para os pequenos da região INTERMEDIÁRIA: soma-se aos outros grupos que falharam na
-  mesma intermediária e, se ainda faltar, ao menor grupo de pequenos de outra região imediata da mesma intermediária;
-- só em último caso (intermediária sem nenhum grupo de pequenos que passe) junta-se a um município, com o rótulo
-  "Município X + N municípios pequenos" — nunca com o nome do município sozinho.
+"""Geometria pública do mapa (1.2): uma área por município com serventia, inclusive os de 1 ou 2 (D-078, D-038 fase 2;
+antes, os municípios com menos de 3 serventias eram dissolvidos por região, D-026). Município sem serventia no
+cadastro fica fora da geometria (estado próprio no mapa, com legenda, em gold.geo_sem_serventia).
 """
 import json
 
@@ -15,44 +8,13 @@ import geopandas as gpd
 import pandas as pd
 
 
-def _rotulo_grupo(nivel: str, regiao: str, n_mun: int, limiar: int) -> str:
-    return f"Região {nivel} de {regiao} — {n_mun} municípios com menos de {limiar} serventias, somados"
-
-
-def areas_do_mapa(municipios: pd.DataFrame, limiar: int) -> pd.DataFrame:
-    """`municipios`: cod_ibge, nome, regiao_imediata, regiao_intermediaria, n_serventias.
-    Devolve cod_ibge -> area_id, area_nome, tipo. Função pura (sem geometria)."""
+def areas_do_mapa(municipios: pd.DataFrame) -> pd.DataFrame:
+    """`municipios`: cod_ibge, nome, n_serventias. Devolve cod_ibge -> area_id (o código IBGE em texto), area_nome
+    (o nome do município) e tipo ('municipio'), só dos municípios com serventia. Função pura (sem geometria)."""
     m = municipios[municipios["n_serventias"] > 0].copy()
     m["area_id"] = m["cod_ibge"].astype(int).astype(str)
     m["area_nome"] = m["nome"]
     m["tipo"] = "municipio"
-    peq = m["n_serventias"] < limiar
-    grupos = m[peq].groupby("regiao_imediata")["n_serventias"].sum()
-    passam = set(grupos[grupos >= limiar].index)
-    for reg in passam:                                   # 1) grupo da região imediata
-        idx = m.index[peq & (m["regiao_imediata"] == reg)]
-        m.loc[idx, ["area_id", "tipo"]] = [f"RI-{reg}", "regiao_agregada"]
-        m.loc[idx, "area_nome"] = _rotulo_grupo("imediata", reg, len(idx), limiar)
-    falham = m[peq & ~m["regiao_imediata"].isin(passam)]
-    for rint, g in falham.groupby("regiao_intermediaria"):   # 2) pequenos da região intermediária
-        idx = list(g.index)
-        if m.loc[idx, "n_serventias"].sum() < limiar:
-            # soma-se ao menor grupo de pequenos que passa, de outra região imediata da mesma intermediária
-            vizinhos = m[peq & m["regiao_imediata"].isin(passam) & (m["regiao_intermediaria"] == rint)]
-            if not vizinhos.empty:
-                alvo = vizinhos.groupby("regiao_imediata")["n_serventias"].sum().idxmin()
-                idx += list(vizinhos.index[vizinhos["regiao_imediata"] == alvo])
-        if m.loc[idx, "n_serventias"].sum() >= limiar:
-            m.loc[idx, ["area_id", "tipo"]] = [f"RINT-{rint}", "regiao_agregada"]
-            m.loc[idx, "area_nome"] = _rotulo_grupo("intermediária", rint, len(idx), limiar)
-            continue
-        # 3) último caso: junta ao menor município grande da intermediária, com o nome dele + os pequenos
-        grandes = m[~peq & (m["regiao_intermediaria"] == rint)]
-        if grandes.empty:
-            raise ValueError(f"intermediária {rint} sem área com {limiar} serventias")
-        mun = grandes["n_serventias"].idxmin()
-        nome = f"Município {m.at[mun, 'nome']} + {len(idx)} municípios pequenos"
-        m.loc[idx + [mun], ["area_id", "tipo", "area_nome"]] = [f"MUN+-{m.at[mun, 'cod_ibge']}", "regiao_agregada", nome]
     return m[["cod_ibge", "area_id", "area_nome", "tipo"]].reset_index(drop=True)
 
 

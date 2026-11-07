@@ -161,6 +161,6 @@ Cada fase só começa quando a anterior cumpre o seu "pronto quando", salvo as q
 | [x] D-072 (exceções: Actions, Hugging Face, Kaggle), D-073 (fluxo de branches e PR), D-074 (Streamlit Community Cloud, dados no repositório) | 2026-11-05 |
 | [x] Decisões pendentes de MG em lote (D-076) | 2026-11-06 |
 | [x] Lugar do Simulador no painel: área "Explorar" (D-077) | 2026-11-06 |
-| [ ] Premissas v4 (D-038, fase 2) | Fase 1 |
+| [x] Premissas v4 (D-038, fase 2; D-078) | 2026-11-06 |
 | [ ] Pesos e ordem dos estados | Fase 5 |
 | [ ] Premissas de cada estado novo | Fase 6, por UF |

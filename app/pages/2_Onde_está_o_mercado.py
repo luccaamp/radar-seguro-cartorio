@@ -1,10 +1,10 @@
-"""Onde está o mercado: o mapa do déficit de cobertura (o que vira seguro) por área, com um filtro só (município).
+"""Onde está o mercado: o mapa do déficit de cobertura (o que vira seguro) por município, com um filtro só (município).
 
-Só lê tabelas públicas do gold (1.7), na regra base e no nível base. Dois modos (D-026, U1):
-- sem município: áreas da visão geral (municípios com 3+ serventias e grupos de municípios pequenos);
-- município: destaque com contexto (o município, ou a área agregada a que ele pertence, se tiver menos de 3), com zoom
-  na região intermediária.
-Os filtros por atribuição, situação e classe, as outras métricas, o ranking e a tabela por área saíram do painel
+Só lê tabelas públicas do gold (1.7), na regra base e no nível base. Desde a D-078 (D-038, fase 2) cada município com
+cartório é uma área do mapa, inclusive os de 1 ou 2 cartórios. Dois modos (U1):
+- sem município: o mapa de MG e os 10 municípios com mais déficit;
+- município: destaque com contexto e zoom na região intermediária, e a posição dele no ranking de MG.
+Os filtros por atribuição, situação e classe, as outras métricas e a tabela por área saíram do painel
 (docs/painel/corte.md); o chat responde por município e por recorte.
 """
 import json
@@ -14,14 +14,14 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from comum import analise, brl, consulta, execucao, fonte_linha, md_seguro, num, pagina, pct, ticks_brl
+from comum import analise, brl, consulta, fonte_linha, num, pagina, pct, ticks_brl
 from src.painel import ui
 from src.painel.graficos import COR, SEQUENCIAL, finalizar
 
 pagina("Onde está o mercado", "🗺️", "Onde está o dinheiro?",
        "O déficit de cobertura, que é o que vira seguro, se concentra nas maiores cidades. Escolha um município para "
        "ver a parte dele.", sobre="Onde está o mercado")
-LIMIAR = int(execucao().limiar_lgpd)
+TOPO = 10   # municípios na lista do ranking
 CINZA, SEM_SERV, CONTORNO = "#dde2ea", "#f5f7fa", "#45506a"   # tokens line, surface-2 e ink-2 do Raio-X (D-052)
 METRICA = "valor_descoberto"
 
@@ -44,6 +44,8 @@ municipios = tab("""SELECT m.cod_ibge, m.nome, m.regiao_imediata, m.regiao_inter
                     FROM silver.municipio_ibge m JOIN gold.geo_area_municipio a USING (cod_ibge)
                     JOIN gold.dim_municipio d USING (cod_ibge) ORDER BY m.nome""")
 sem_serventia = tab("SELECT municipio FROM gold.dim_municipio WHERE n_serventias = 0")["municipio"].tolist()
+ranking = tab("SELECT cod_ibge, municipio, valor, posicao, n_municipios FROM gold.ranking_municipio_publico "
+              "WHERE metrica = ? ORDER BY posicao, municipio", (METRICA,))
 total_mg = float(areas[METRICA].sum())
 areas["valor_txt"] = areas[METRICA].map(brl)
 areas["pct_txt"] = [pct(v / total_mg) for v in areas[METRICA]]
@@ -56,27 +58,23 @@ mun = municipios[municipios["nome"] == mun_nome].iloc[0] if mun_nome not in ("To
 foco = areas[areas["area_id"] == mun["area_id"]].iloc[0] if mun is not None else None
 if mun_nome in sem_serventia:
     st.info(f"{mun_nome} não tem cartório no cadastro do CNJ. Mostrando Minas Gerais inteira.")
-elif foco is not None and foco["tipo"] != "municipio":
-    st.info(md_seguro(f"{mun_nome} tem menos de {LIMIAR} cartórios: aparece agregado em “{foco['area_nome']}”, para "
-                      "proteger os dados de cada cartório (LGPD). Os números abaixo são dessa área."))
 
 # ------------------------------------------------------------------ até 3 números
 if foco is None:
     ordem = areas.sort_values(METRICA, ascending=False)
     maior = ordem.iloc[0]
     ui.grade([ui.kpi(f"Só {maior['area_nome']}", maior["pct_txt"], f"do déficit de MG ({maior['valor_txt']})"),
-              ui.kpi("As 10 áreas com mais déficit", pct(ordem[METRICA].head(10).sum() / total_mg),
-                     f"do déficit de MG, entre {num(len(areas))} áreas do mapa"),
-              ui.kpi("Áreas com algum déficit", f"{num((areas[METRICA] > 0).sum())} de {num(len(areas))}",
+              ui.kpi(f"Os {TOPO} municípios com mais déficit", pct(ordem[METRICA].head(TOPO).sum() / total_mg),
+                     f"do déficit de MG, entre {num(len(areas))} municípios com cartório"),
+              ui.kpi("Municípios com algum déficit", f"{num((areas[METRICA] > 0).sum())} de {num(len(areas))}",
                      "o déficit está espalhado, mas é pequeno fora das maiores cidades")], 3)
 else:
-    nome = mun_nome if foco["tipo"] == "municipio" else foco["area_nome"]
-    ui.grade([ui.kpi(f"Déficit em {nome}", foco["valor_txt"], "a parte da dívida trabalhista sem bens que a cubram",
+    pos = ranking[ranking["cod_ibge"] == mun["cod_ibge"]].iloc[0]
+    ui.grade([ui.kpi(f"Déficit em {mun_nome}", foco["valor_txt"], "a parte da dívida trabalhista sem bens que a cubram",
                      dica="déficit de cobertura: precisa de garantia (fiança bancária ou seguro); suposição do modelo"),
-              ui.kpi("Parte do déficit de MG", foco["pct_txt"], "quanto esta área pesa no mercado do estado"),
-              ui.kpi("Cartórios na área", num(foco["n_serventias"]),
-                     "ativos no cadastro do CNJ" if foco["tipo"] == "municipio" else
-                     "somados com os vizinhos pequenos (LGPD)")], 3)
+              ui.kpi("Parte do déficit de MG", foco["pct_txt"],
+                     f"{num(pos['posicao'])}º de {num(pos['n_municipios'])} municípios no déficit"),
+              ui.kpi("Cartórios no município", num(foco["n_serventias"]), "ativos no cadastro do CNJ")], 3)
 
 
 # ------------------------------------------------------------------ mapa (largura inteira)
@@ -152,7 +150,15 @@ ids_int = (list(municipios.loc[municipios["regiao_intermediaria"] == mun["regiao
 st.plotly_chart(finalizar(mapa(foco["area_id"] if foco is not None else None, ids_int)), width="stretch", theme=None,
                 config={"displayModeBar": False})
 ui.fonte(fonte_linha(["cnj_serventias", "rais_vinculos", "ibge_malha"],
-                     "Cor = déficit da área (suposição do modelo); áreas com menos de 3 cartórios aparecem somadas"))
+                     "Cor = déficit do município (suposição do modelo)"))
+
+# ------------------------------------------------------------------ ranking: os maiores e o município escolhido
+linhas = ranking.head(TOPO)
+if mun is not None and int(mun["cod_ibge"]) not in set(linhas["cod_ibge"].astype(int)):
+    linhas = pd.concat([linhas, ranking[ranking["cod_ibge"] == mun["cod_ibge"]]])
+ui.tabela(["Posição", "Município", "Déficit", "Parte de MG"],
+          [[f"{num(r.posicao)}º", r.municipio, brl(r.valor), pct(r.valor / total_mg)] for r in linhas.itertuples()],
+          numericas={0, 2, 3})
 
 conc = analise("concentracao")
 grp = analise("grupos")
