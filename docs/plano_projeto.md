@@ -77,7 +77,7 @@ Cada fase só começa quando a anterior cumpre o seu "pronto quando", salvo as q
 3. **Página de saúde:** data dos dados, versão das premissas, resultado dos contratos; estatísticas de visitantes do serviço de hospedagem.
 4. **Release `v1.0`** com o pacote de dados e as notas.
 
-**Pronto quando:** o link público abre o painel de MG no modo completo, o chat responde e um clone reproduz os números.
+**Pronto quando:** o link público abre o painel de MG no modo demonstração com o conjunto público, o chat responde e um clone reproduz os números. (Era "no modo completo"; trocado pelo autor em 2026-11-09, porque o banco não vai para a nuvem.)
 
 ### Fase 3 — Código por estado
 

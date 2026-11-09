@@ -1182,3 +1182,13 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Suposições:** a ordem dos estados simulados e a série de 2016 a 2026 do protótipo são ilustrativas, não dados.
 - **Limitações encontradas:** o D3 do protótipo não existe pronto no Streamlit (mapa ligado ao quadro lateral, barra fixa, hexágonos, chat lateral).
 - **Próximo passo:** o autor pede a Release `v1.0` e decide o "pronto quando" da Fase 2 (modo demonstração). Depois, o bloco "painel de MG rumo ao V5", que começa pela decisão de tecnologia.
+
+## 2026-11-09 (2) — "Pronto quando" da Fase 2 e preparação da Release `v1.0`
+- **O que foi feito:**
+  - Conferido que o PR #10 (`fase-2-alvo-v5`) entrou na `main` (merge `83fa541`, 04:40, os dois jobs verdes).
+  - `plano_projeto.md`, Fase 2: o "pronto quando" passa de "modo completo" para "modo demonstração com o conjunto público" (aprovado pelo autor).
+  - Título, tag e notas da Release `v1.0` mostrados ao autor; a Release ainda não foi criada.
+  - Comparação de tecnologia para o bloco "painel de MG rumo ao V5" e lista fechada do bloco propostas ao autor (sem editar código).
+- **Decisões:** o "pronto quando" acima (autor). A tecnologia e a lista do bloco aguardam o autor.
+- **Limitações encontradas:** a tag local `dados-2026-10-19` aponta para `be8ad32` (história antiga) e a do remoto para `3c99a3a`; o `git fetch` recusa trocar. Não mexido (comando de git só com pedido).
+- **Próximo passo:** o autor aprova as notas da `v1.0`; a IA cria a Release depois que esta mudança entrar na `main`. Depois, o autor escolhe a tecnologia e aprova a lista do bloco.
