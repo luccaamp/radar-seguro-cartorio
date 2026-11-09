@@ -949,3 +949,19 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** com auto-merge, um PR pode ser juntado entre dois pushes; a IA não conferiu o estado do PR antes de empurrar o último commit.
 - **Correção:** o `ab59ee3` entra na `main` pelo PR seguinte (`fase-1-aprovacoes-fontes`). Regra: antes de empurrar para uma branch com PR em auto-merge, conferir se o PR ainda está aberto (`gh pr view --json state`); se já foi juntado, abrir branch nova.
 - **Bom para os slides?** sim (auto-merge e pushes atrasados)
+
+## 2026-11-09 — População do IBGE dada como "fora do pipeline" nos protótipos
+- **Onde:** protótipos do painel V2 a V4 (artefatos fora do repositório), tabela "Fontes e datas".
+- **O que aconteceu:** a IA escreveu que a população do IBGE estava "ainda fora do pipeline". A fonte `ibge_populacao` (referência 2026) já é coletada e aparece em `qualidade_fontes`.
+- **Como foi detectado:** ao montar a tabela de fontes do V5 com as fontes reais de `qualidade_fontes`.
+- **Causa provável:** a IA escreveu a tabela de memória, sem consultar a lista de fontes do projeto.
+- **Correção:** o V5 traz as 11 fontes reais, com a data de referência e a de coleta. Regra: tabela de fontes sai sempre de `qualidade_fontes` (ou do manifesto), nunca de memória.
+- **Bom para os slides?** não
+
+## 2026-11-09 — Mapa sem saída e legenda sem unidade nos protótipos
+- **Onde:** protótipos V4 e V5 (aba Classes) e V3/V4 (legenda do mapa).
+- **O que aconteceu:** o mapa da aba Classes deixava entrar num estado sem botão para voltar. A barra de recorte, o único caminho de volta, saía da tela ao rolar. A legenda mostrava contagens sem dizer o que contava, e o "0" encostava no "sem dado". As faixas de cor misturavam os zeros com os outros valores, e o Pará aparecia quase todo na cor mais escura.
+- **Como foi detectado:** pelo autor, usando os protótipos.
+- **Causa provável:** a IA testou só se o código rodava (console sem erro), não o caminho de quem usa: entrar num estado e voltar, e ler a legenda sem saber o que ela conta.
+- **Correção:** no V5, "Voltar ao Brasil" em todo mapa que entra num estado, barra de recorte fixa, legenda com título e faixas fixas, zero com cor própria. Regra: ao testar um mapa, fazer o percurso entrar → voltar e ler a legenda como um leitor que não conhece o projeto.
+- **Bom para os slides?** sim (teste de uso × teste de código)

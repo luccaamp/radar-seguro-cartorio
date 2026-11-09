@@ -1167,3 +1167,18 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Conferência:** cópia limpa dos arquivos do git (sem banco nem `.env`), ambiente Python 3.12 novo só com o `app/requirements.txt`. As 7 páginas abriram sem erro, com R$ 341,1 mil e as fontes servidas localmente; o chat avisa "indisponível" sem a chave; nenhum erro no log do servidor. Suíte padrão: 326 passed; `ruff` sem erro.
 - **Limitações encontradas:** a chave do Gemini no Cloud e o chat com a API real só se conferem depois da publicação. O GIF do README e a Release `v1.0` ficam para depois do link.
 - **Próximo passo:** o autor publica no Cloud (`publicacao.md`, seção 8) e manda o link.
+
+## 2026-11-09 — Alvo do painel (protótipos V2 a V5) e fechamento da Fase 2
+- **O que foi feito:**
+  - Avaliação do painel publicado com o autor: interação do mapa, cores no tema escuro e simulador. A decisão foi corrigir agora o que vale para qualquer estado e definir primeiro um esqueleto do painel com vários estados.
+  - Protótipos do painel feitos com a IA como artefatos do Claude, fora do repositório (V2 a V5). MG tem os números reais da carga de 2026-11-07, tirados das funções de `src/painel/analises.py`; os outros 26 estados são simulados.
+  - O V5 virou a referência de estrutura (D-082): `docs/painel/prototipo_v5.html` (2,4 MB, só CNS e município) e `docs/painel/alvo_v5.md`.
+  - Painel publicado conferido: o link abre e o chat com o Gemini respondeu "R$ 341,1 mil, faixa provável de R$ 215,0 mil a R$ 687,1 mil", com a fonte.
+  - Link no README e GIF das 6 páginas (`docs/img/painel_tour.gif`, 0,4 MB, Playwright no link público).
+- **Decisões:** D-082: o V5 é a referência, não um contrato; os detalhes visuais serão revistos na Fase 6. Três ressalvas, cada uma com o seu momento:
+  - a tecnologia, a decidir no primeiro bloco de painel;
+  - os estados "só camada 1" na Fase 4;
+  - as séries, que só existem para a arrecadação e o cadastro.
+- **Suposições:** a ordem dos estados simulados e a série de 2016 a 2026 do protótipo são ilustrativas, não dados.
+- **Limitações encontradas:** o D3 do protótipo não existe pronto no Streamlit (mapa ligado ao quadro lateral, barra fixa, hexágonos, chat lateral).
+- **Próximo passo:** o autor pede a Release `v1.0` e decide o "pronto quando" da Fase 2 (modo demonstração). Depois, o bloco "painel de MG rumo ao V5", que começa pela decisão de tecnologia.

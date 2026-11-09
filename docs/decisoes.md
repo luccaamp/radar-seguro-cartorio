@@ -931,3 +931,11 @@ Formato:
   3. **um arquivo de configuração por estado** (`config/estados.yaml`, uma entrada por UF), com código IBGE, pacote da RAIS, totais de controle, normas locais e apelidos de municípios.
 - **Efeito nos 10 números:** nenhum esperado (critério de pronto da Fase 3).
 - **Status:** aprovada.
+
+## D-082 — Protótipo V5 como referência de estrutura do painel
+- **Data:** 2026-11-09
+- **Contexto:** depois da publicação de MG (Fase 2), o autor iterou com a IA, fora do repositório, um protótipo do painel com vários estados (artefatos V2 a V5): MG com os números reais da carga de 2026-11-07 e os outros 26 estados simulados. O painel de MG publicado tinha problemas de cor, de interação com o mapa e de simulador que valem para qualquer estado, e a estrutura com vários estados precisava de um alvo antes das Fases 3 e 4.
+- **Decisão (aprovada pelo autor em 2026-11-09):** o V5 ([`painel/prototipo_v5.html`](painel/prototipo_v5.html)) é a **referência de estrutura** do painel: abas, barra de recorte, quadro do estado e do município, ficha do cartório, chat com contexto e "Sobre os dados" completo. O que vale e o que está em aberto ficam em [`painel/alvo_v5.md`](painel/alvo_v5.md). Os detalhes visuais serão revistos na Fase 6, com os dados reais. Três ressalvas: a tecnologia (componente HTML no Streamlit × Streamlit puro, a decidir no primeiro bloco de painel), a camada 1 da Fase 4 (um terceiro tipo de estado, "só camada 1") e as séries (só a arrecadação e o cadastro têm série).
+- **Efeito nos 10 números:** nenhum (desenho do painel).
+- **Consequências / onde aparece:** `docs/painel/prototipo_v5.html` (cerca de 2,4 MB, só CNS e município, sem nome de pessoa: D-038) e `docs/painel/alvo_v5.md`. Toda mudança no alvo entra aqui como uma linha nova.
+- **Status:** aprovada.

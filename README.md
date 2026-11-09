@@ -4,9 +4,15 @@
 
 **Quanto dinheiro o seguro obrigatório dos cartórios pode movimentar, e quão certo é esse número?** O Provimento CNJ 227/2026 obriga parte dos cartórios a garantir a dívida trabalhista com seus empregados. Este projeto estima esse mercado com dados públicos oficiais, mostra a incerteza de cada número e deixa qualquer pessoa conferir as contas: um painel, um simulador e um chat que só responde com número tirado dos dados, com a fonte.
 
-**Painel público:** *link em breve* (Streamlit Community Cloud, Fase 2). Hoje cobre **Minas Gerais**; os outros estados entram nas próximas fases ([`docs/plano_projeto.md`](docs/plano_projeto.md)).
+**Painel público:** **[radar-seguro-cartorio.streamlit.app](https://radar-seguro-cartorio.streamlit.app)** (Streamlit Community Cloud, modo demonstração com o conjunto público; a primeira visita pode levar alguns segundos para acordar o app). Hoje cobre **Minas Gerais**; os outros estados entram nas próximas fases ([`docs/plano_projeto.md`](docs/plano_projeto.md)).
 
 ![Início do painel: o prêmio anual estimado de R$ 341,1 mil, com a faixa provável de R$ 215 a 687 mil](docs/img/painel_inicio.png)
+
+<details><summary>Tour pelas páginas (GIF)</summary>
+
+![Tour pelo painel publicado: Início, Quão certo é, Onde está o mercado, Para onde vai, Simule e Sobre os dados](docs/img/painel_tour.gif)
+
+</details>
 
 > **Nunca ouviu falar de seguro-garantia nem do Provimento 227? Comece por [`docs/entenda_o_projeto.md`](docs/entenda_o_projeto.md):** o problema, o básico de seguro-garantia, as perguntas que o projeto responde e um glossário, em linguagem simples.
 
