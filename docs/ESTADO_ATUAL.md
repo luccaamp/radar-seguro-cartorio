@@ -1,6 +1,6 @@
 # Estado atual do projeto
 
-> Leia primeiro. Atualizado ao fim de cada sessão (regra do `CLAUDE.md`). Última atualização: **2026-11-06**.
+> Leia primeiro. Atualizado ao fim de cada sessão (regra do `CLAUDE.md`). Última atualização: **2026-11-09**.
 > O histórico detalhado até 2026-10-31 (Etapas 1 a 3, mineração, chat, cargas) está em [`historico/ESTADO_ATUAL_ate_2026-10-31.md`](historico/ESTADO_ATUAL_ate_2026-10-31.md) e no [`diario.md`](diario.md).
 
 ## O que é
@@ -16,7 +16,7 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito.
 - **Releases:** `dados-2026-10-19` (público: silver e manifesto); `carga-2026-10-19` e `originais-2026` (privados, em `luccaamp/radar-seguro-cartorio-dados`: bronze por fonte, banco e originais). O bronze fica no privado porque tem nome de pessoa (D-030); a procedência dele está no git em `data/procedencia/` (D-070).
 - **Rodar a partir de um clone** (conferido em 2026-10-31): modo demonstração em 2 min; modo completo (README, seção 1b) em ≈ 4 min, com o gold **idêntico** ao do banco real (39 de 39 tabelas) e os 10 números iguais.
 
-## Etapa atual: Fase 2 (MG publicado), à espera da publicação pelo autor; Fase 1 cumprida
+## Etapa atual: Fase 2 (MG publicado), painel no ar; faltam a Release `v1.0` e o "pronto quando" (autor); alvo do painel definido (D-082)
 **Plano oficial: [`plano_projeto.md`](plano_projeto.md) (D-071, 2026-11-05)**, com 10 fases, de MG completo ao Brasil inteiro publicado e atualizado sozinho. A IA propõe cada passo e segue com a aprovação do autor.
 
 **Fase 1, andamento (2026-11-06):** PR #3 (`fase-1-simulador`) juntado na `main` (`fd66b03`); o ano projetado segue na branch `fase-1-explorar-2027`. Item 1, o Simulador:
@@ -56,12 +56,18 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito.
 - [x] **README de vitrine:** pergunta, imagem do Início (`docs/img/painel_inicio.png`), o que o painel responde, diagrama da arquitetura (Mermaid), números medidos (chat 96%, contratos, acessibilidade, custo), limitações e "como o projeto foi feito"; trechos antigos corrigidos (regra de agregação e página "Qualidade dos dados").
 - [x] **passo a passo do Cloud** para o autor: [`publicacao.md`](publicacao.md), seção 8.
 - [x] **conferido numa cópia limpa** (arquivos do git, sem banco nem `.env`, ambiente novo só com `app/requirements.txt`): as 7 páginas abrem sem erro, R$ 341,1 mil, fontes locais, chat avisa "indisponível" sem a chave.
-- [ ] **autor:** criar o app no Streamlit Community Cloud e pôr a `GEMINI_API_KEY` nos *Secrets* (`publicacao.md`, seção 8); mandar o link.
-- [ ] **depois do link:** link no README, GIF, Release `v1.0` e o "pronto quando" (link abre, chat responde, um clone reproduz os números).
+- [x] **autor publicou** (2026-11-07): **https://radar-seguro-cartorio.streamlit.app** (modo demonstração, `GEMINI_API_KEY` nos *Secrets*). O autor também commitou direto na `main` o `.devcontainer/devcontainer.json` (`15810b0`).
+- [x] **link abre e chat responde** (conferido pela IA em 2026-11-09): as páginas carregam; o chat, com o Gemini, respondeu "R$ 341,1 mil, faixa provável de R$ 215,0 mil a R$ 687,1 mil", com a fonte (1 de 20 perguntas).
+- [x] **link no README** e **GIF** do painel publicado (`docs/img/painel_tour.gif`, 6 páginas, 0,4 MB, gerado com Playwright no link público).
+- [ ] **Release `v1.0`:** precisa do pedido do autor (comando `gh`).
+- [ ] **"pronto quando":** o plano diz "modo completo", mas o painel publicado roda no modo demonstração (o banco não vai para a nuvem). Proposta da IA: trocar para "modo demonstração com o conjunto público"; **aguarda o autor**. "Um clone reproduz os números" já foi conferido (cópia limpa, acima).
+
+**Alvo do painel (D-082, 2026-11-09):** o autor iterou com a IA, fora do repositório, protótipos do painel com vários estados (V2 a V5). O V5 virou a **referência de estrutura**: [`painel/prototipo_v5.html`](painel/prototipo_v5.html), com o resumo em [`painel/alvo_v5.md`](painel/alvo_v5.md) (o que vale desde já, o que está em aberto e as 3 ressalvas). Os detalhes visuais serão revistos na Fase 6.
 
 **Próximo passo:**
-- **Fase 2:** o autor publica (acima); a IA põe o link e faz a Release `v1.0`.
-- **Fase 3, bloco 1:** plano aprovado ([`plano_fase3.md`](plano_fase3.md), D-081); começa por `config/estados.yaml` e a leitura dele nos coletores e contratos, sem mudar nenhum resultado. Uma branch por bloco.
+- **Fase 2:** o autor pede a Release `v1.0` e decide o "pronto quando" (acima).
+- **Bloco "painel de MG rumo ao V5"** (antes da Fase 3): primeiro decidir a tecnologia (ressalva 1 do `alvo_v5.md`); depois uma lista fechada, aprovada pelo autor, só com o que não depende de outros estados: mapa (bordas, escala por recorte, zero neutro), clique no município com o quadro dele, resumo e rótulos, Panorama com a resposta e os KPIs, "Quão certo é" com a grade, mapa da aba Classes em % e chat recebendo a aba e o município abertos.
+- **Fase 3, bloco 1:** plano aprovado ([`plano_fase3.md`](plano_fase3.md), D-081); começa por `config/estados.yaml`, sem mudar nenhum resultado, com o seletor de estado no formato da barra de recorte do V5. Uma branch por bloco, a partir da `main` atualizada (a `fase-2-publicacao` local já entrou).
 
 **Fase 0 cumprida em 2026-11-06:**
 - [x] item 1: plano novo (D-071) e SPEC, ROADMAP, `CLAUDE.md` e `CONTRIBUTING.md` alinhados;
