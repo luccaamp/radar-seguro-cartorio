@@ -1282,3 +1282,13 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Erros no caminho:** 2 testes falharam na primeira rodada: uma tabela sintética de `tests/test_analise.py` sem a coluna `uf` e um dublê de `tests/test_analise_tabelas.py` que não aceitava o argumento novo. Os dois ajustados (o primeiro ganhou um caso do filtro por UF).
 - **Decisões:** as colunas `pct_obrigadas_mg` e `pct_passivo_obrigadas_mg` mantêm o nome até o bloco 4; os leitores de `gold.execucao` fora das análises ficam para o bloco 4.
 - **Próximo passo:** PR do bloco 3 depois do merge do #17; a carga oficial (pedido do autor), com o conjunto público e o completo regerados com a coluna `uf`; depois, o bloco 4.
+
+## 2026-11-10 (9) — Carga oficial com a coluna `uf`; blocos 2 e 3 num PR só
+- **O que foi feito:** o "Dados reais" do PR #17 (bloco 2) falhou em `test_a_partir_do_silver_parquet_reproduz_o_conjunto_publico`: o gold recalculado tem a coluna `uf`, e o `data/publico` versionado não (o hash de conteúdo muda). Os outros 42 testes de dados reais passaram. Como o autor tinha pedido a carga "depois do bloco 3", o bloco 3 entrou na mesma branch (`fase-3-bloco-2-gold-uf`) e a carga foi feita nela:
+  - backup em `C:\radar_arquivo\antes_carga_2026-11-10_fase3\` (banco `7f528a8c…`, silver, gold, público, completo);
+  - `uv run pipeline.py --a-partir-de silver`, sem erro (log `C:\radar_arquivo\carga_2026-11-10_fase3.log`); banco novo `923b539f…`;
+  - comparação com o backup (as duas cópias só leitura): 50 tabelas iguais, fora a coluna `uf` em 29 do gold; o `estado.log_decisoes` com 5 linhas a mais (o espelho do `decisoes.md`);
+  - `scripts/gerar_publico.py` (36 arquivos, 0,76 MB, contrato "sem dado pessoal" ok) e `scripts/exportar_completo.py` (10 tabelas do silver, 33 do gold, CSV do BI).
+- **Conferência:** suíte padrão 411 passed com o conjunto novo; `ruff` sem erro; `-m dados_reais` de `tests/test_pipeline.py` e `tests/test_publico.py`: 3 passed (inclusive o que falhou no CI), banco real `923b539f` antes e depois.
+- **Decisões:** blocos 2 e 3 num PR só (o #17), porque o CI só passa com o conjunto público regerado, e a carga foi pedida para depois do bloco 3.
+- **Próximo passo:** o PR #17 com os três; depois, o bloco 4.
