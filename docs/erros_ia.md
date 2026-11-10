@@ -965,3 +965,27 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** a IA testou só se o código rodava (console sem erro), não o caminho de quem usa: entrar num estado e voltar, e ler a legenda sem saber o que ela conta.
 - **Correção:** no V5, "Voltar ao Brasil" em todo mapa que entra num estado, barra de recorte fixa, legenda com título e faixas fixas, zero com cor própria. Regra: ao testar um mapa, fazer o percurso entrar → voltar e ler a legenda como um leitor que não conhece o projeto.
 - **Bom para os slides?** sim (teste de uso × teste de código)
+
+## 2026-11-09 — Commit com aspas no PowerShell e push sem o commit
+- **Onde:** abertura do PR #11 (`fase-2-fechamento`).
+- **O que aconteceu:** a mensagem do commit tinha aspas ("pronto quando") e foi passada ao `git commit -m` pelo PowerShell 5.1, que quebrou o argumento: o commit falhou, mas o `push` na mesma linha rodou e subiu a branch sem mudança.
+- **Como foi detectado:** pela IA, na saída do comando (erro `pathspec ... did not match`).
+- **Causa provável:** a IA encadeou commit e push com `;` em vez de parar no erro, e usou mensagem com aspas como argumento de um executável no PowerShell 5.1.
+- **Correção:** commit refeito com `git commit -F <arquivo>` e push de novo; nada torto no histórico. Regra: mensagem de commit sempre por arquivo (`-F`), e push só depois de conferir que o commit saiu.
+- **Bom para os slides?** não
+
+## 2026-11-10 — `sed` para editar teste, contra a regra do CLAUDE.md
+- **Onde:** `tests/test_auditoria_painel.py`, ao trocar o mapa do Plotly pelo componente (D-083).
+- **O que aconteceu:** a IA usou `sed -i` para apagar uma linha de constantes e trocar uma linha de import, quando o `CLAUDE.md` manda editar código só com a ferramenta de edição. O `sed` deixou uma linha em branco a mais, e o `ruff` acusou um import sem uso.
+- **Como foi detectado:** pela própria IA, na saída do `ruff`, logo em seguida.
+- **Causa provável:** pressa em duas trocas de uma linha, tratadas como "mecânicas".
+- **Correção:** o resultado foi conferido no `git diff` e acertado com a ferramenta de edição (linha em branco e import). Regra: nenhuma troca em código por script, nem de uma linha.
+- **Bom para os slides?** não
+
+## 2026-11-10 — Teste do JavaScript dependia do formato de saída do Node
+- **Onde:** `tests/test_mapa.py::test_javascript_do_mapa`, no PR #12 (D-083).
+- **O que aconteceu:** o teste procurava a linha `# fail 0` do formato TAP. Na máquina local o Node escreve em TAP, mas no CI do GitHub ele escolheu o formato "spec". Os 10 testes do JavaScript passaram nos dois lugares, mas o teste em Python falhou no CI e travou o PR.
+- **Como foi detectado:** pelo autor, que viu o PR vermelho; a IA leu o log do job "Testes e ruff".
+- **Causa provável:** a IA conferiu só na própria máquina uma saída que muda com o ambiente.
+- **Correção:** `node --test --test-reporter=tap`, o mesmo formato em qualquer ambiente; conferido também com `CI=true` e `FORCE_COLOR=1`. Regra: ao ler a saída de outra ferramenta num teste, fixar o formato por opção, nunca contar com o padrão.
+- **Bom para os slides?** sim (funciona na minha máquina × no CI)

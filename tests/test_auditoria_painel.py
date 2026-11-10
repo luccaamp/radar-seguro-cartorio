@@ -5,21 +5,20 @@
 Desde a D-051 (terceira rodada do painel), a página "Onde está o mercado" tem um filtro só (município) e o mapa do
 déficit: os estados por métrica, por atribuição/situação/classe e pela regra v1 saíram da tela (o chat responde).
 Desde a D-078 (D-038, fase 2), o mapa tem uma área por município e não há auditor de ataque por diferença.
+Desde a D-083, o mapa é o componente clicável de src/painel/mapa.py; os testes leem os dados que ele recebe.
 """
-import json
 import re
 import time
 
 import duckdb
 import pytest
 
-from apoio_painel import RAIZ
+from apoio_painel import RAIZ, mapa_componente
 
 # dados_reais: lê o banco completo; fora da suíte padrão
 pytestmark = [pytest.mark.dados_reais, pytest.mark.usefixtures("banco_temporario")]
 MERCADO = str(RAIZ / "app/pages/2_Onde_está_o_mercado.py")
 SIMULADOR = str(RAIZ / "app/pages/6_Explorar.py")
-SEM_SERV, CONTORNO = "#f5f7fa", "#45506a"   # cores do mapa no visual da D-052 (app/pages/2_Onde_está_o_mercado.py)
 
 
 # ------------------------------------------------------------------ apoio
@@ -45,30 +44,6 @@ def html(at) -> str:
     return "\n".join(m.value for m in at.markdown).replace("&#36;", "$")
 
 
-def figuras(at):
-    specs = [json.loads(g.proto.spec) for g in at.get("plotly_chart")]
-    return next((s for s in specs if any(t.get("type") == "choroplethmap" for t in s["data"])), None)
-
-
-def vetor(v) -> list:
-    """O Plotly 6 grava vetores numéricos no JSON como {'dtype', 'bdata' (base64)}; devolve uma lista comum."""
-    if isinstance(v, dict) and "bdata" in v:
-        import base64
-        import numpy as np
-        return np.frombuffer(base64.b64decode(v["bdata"]), dtype=np.dtype(v["dtype"])).tolist()
-    return list(v or [])
-
-
-def traco_dados(mapa):
-    t = next(t for t in mapa["data"] if "colorbar" in t)
-    return {**t, "z": vetor(t.get("z"))}
-
-
-def cor_fixa(t):
-    cs = t.get("colorscale") or []
-    return cs[0][1] if cs and cs[0][1] == cs[-1][1] else None
-
-
 def textos_tabelas(at) -> list[str]:
     out = []
     for d in at.dataframe:
@@ -80,23 +55,20 @@ def textos_tabelas(at) -> list[str]:
 # ------------------------------------------------------------------ mapa na visão geral
 def test_estado_do_mercado(db):
     at = mercado()
-    mapa = figuras(at)
+    mapa = mapa_componente(at)
     areas = db.execute("SELECT * FROM gold.mercado_area_publico").df()
     assert mapa is not None
-    dados = traco_dados(mapa)
-    # E3: escala de cores com rótulos em R$
-    cb = dados["colorbar"]
-    assert cb.get("tickvals") and cb.get("ticktext")
-    assert all(t.lstrip("≥ ").startswith("R$") for t in cb["ticktext"])
-    # E5: sem serventia com contorno; nenhum branco puro como cor fixa
-    fixas = [cor_fixa(t) for t in mapa["data"] if cor_fixa(t)]
-    assert SEM_SERV in fixas and not any(c and c.lower() in ("#ffffff", "white") for c in fixas)
-    sem = next(t for t in mapa["data"] if cor_fixa(t) == SEM_SERV)
-    assert sem["marker"]["line"]["color"] == CONTORNO
+    # E3: legenda com título, o zero à parte e as faixas em R$
+    assert mapa["tituloLegenda"] and mapa["legenda"][0]["faixa"] == "zero"
+    assert all("R$" in item["texto"] for item in mapa["legenda"][1:])
+    # E5: sem serventia como fundo (não clicável), com legenda própria
+    assert mapa["fundo"] and mapa["legendaFundo"]
     # D-078: uma área por município com serventia, todas com o nome do município; somam o déficit de MG
     com_serv = db.execute("SELECT count(*) FROM gold.dim_municipio WHERE n_serventias > 0").fetchone()[0]
-    assert len(dados["locations"]) == com_serv and (areas["tipo"] == "municipio").all()
-    assert sum(dados["z"]) == pytest.approx(float(areas["valor_descoberto"].sum()), rel=0.005)
+    assert len(mapa["areas"]) == com_serv and (areas["tipo"] == "municipio").all()
+    assert sum(a["valor"] for a in mapa["areas"]) == pytest.approx(float(areas["valor_descoberto"].sum()), rel=0.005)
+    # D-083: o zero tem cor neutra, fora da escala
+    assert all((a["faixa"] == "zero") == (a["valor"] == 0) for a in mapa["areas"])
     # ranking: os 10 municípios com mais déficit, numa tabela abaixo do mapa
     assert html(at).count("º</td>") == 10
     # E7, E8: números dos cartões no formato do painel
@@ -113,12 +85,12 @@ def test_filtro_de_municipio_destaque_com_contexto(municipio_sql, rotulo, db):
     dele (D-078)."""
     nome = db.execute(municipio_sql).fetchone()[0]
     at = mercado(municipio=nome)
-    mapa = figuras(at)
-    destaque = [t for t in mapa["data"] if t.get("type") == "choroplethmap" and
-                (t.get("marker", {}).get("line", {}).get("width") or 0) >= 2]
-    assert len(destaque) == 1 and len(destaque[0]["locations"]) == 1
-    assert len(traco_dados(mapa)["locations"]) > 300          # contexto: MG inteiro
-    assert mapa["layout"]["map"]["zoom"] > 5.4                # enquadra a região intermediária
+    mapa, geral = mapa_componente(at), mapa_componente(mercado())
+    cod = db.execute("SELECT cod_ibge FROM gold.dim_municipio WHERE municipio = ?", [nome]).fetchone()[0]
+    assert mapa["selecionado"] == str(cod)                    # destaque com contorno forte (classe rd-sel no JS)
+    assert len(mapa["areas"]) > 300                           # contexto: MG inteiro
+    largura = lambda m: float(m["viewBox"].split()[2])        # noqa: E731
+    assert largura(mapa) < largura(geral)                     # enquadra a região intermediária
     tela = html(at)
     assert f"Déficit em {nome}" in tela and "Parte do déficit de MG" in tela
     assert "municípios no déficit" in tela                    # a posição dele no ranking de MG

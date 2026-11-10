@@ -9,7 +9,7 @@ import re
 import duckdb
 import pytest
 
-from apoio_painel import HISTORIA, MERCADO, PAGINAS, RAIZ, SIMULADOR, SOBRE
+from apoio_painel import HISTORIA, MERCADO, PAGINAS, RAIZ, SIMULADOR, SOBRE, mapa_componente
 
 pytestmark = pytest.mark.usefixtures("painel_demo")
 
@@ -198,10 +198,9 @@ def test_mercado_municipio_pequeno_aparece_sozinho(painel_demo):
     tela = html(at)
     assert f"Déficit em {d['municipio']}" in tela
     assert 'Cartórios no município</div><div class="rd-num">1</div>' in tela
-    mapa = next(json.loads(g.proto.spec) for g in at.get("plotly_chart")
-                if any(t.get("type") == "choroplethmap" for t in json.loads(g.proto.spec)["data"]))
-    locais = next(t for t in mapa["data"] if "colorbar" in t)["locations"]
-    assert len(locais) == com_serv and str(d["cod_ibge"]) in locais
+    mapa = mapa_componente(at)
+    locais = [a["id"] for a in mapa["areas"]]
+    assert len(locais) == com_serv and str(d["cod_ibge"]) in locais and mapa["selecionado"] == str(d["cod_ibge"])
 
 
 def test_sem_formula_latex_nos_textos():

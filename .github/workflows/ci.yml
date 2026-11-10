@@ -33,6 +33,25 @@ jobs:
       - name: Suíte padrão (sem dados reais, sem navegador)
         run: uv run pytest -q
 
+  navegador:
+    # D-083: o mapa clicável (componente HTML/JS dentro do Streamlit) num Chromium de verdade, no modo demonstração
+    # (só o conjunto público versionado): o clique chega ao Python, 390 px sem rolagem lateral, tema escuro.
+    name: Navegador (mapa clicável)
+    needs: testes
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Dependências (versões do uv.lock)
+        run: uv sync --locked
+      - name: Chromium do Playwright
+        run: uv run playwright install --with-deps chromium
+      - name: Testes no navegador
+        run: uv run pytest -q -m navegador
+
   dados-reais:
     # Modo completo do README (seção 1b): instala o silver de data/completo/, recalcula o gold e roda os testes com
     # os dados reais. Os que precisam do bronze (pacote da equipe) são pulados com o motivo "bronze ausente".

@@ -165,7 +165,6 @@ def test_painel_com_banco_marcado_somente_leitura(banco_temporario, tmp_path):
 def test_mercado_municipio_pequeno_aparece_sozinho(banco_temporario):
     """D-078 (D-038, fase 2): um município com 1 serventia tem área própria no mapa, os números dele e a posição no
     ranking, sem aviso de agregação."""
-    import json
     from streamlit.testing.v1 import AppTest
     at = AppTest.from_file(str(RAIZ / MERCADO), default_timeout=120).run()
     with duckdb.connect(str(banco_temporario["copia"]), read_only=True) as con:  # mesma configuração da conexão do app
@@ -182,10 +181,9 @@ def test_mercado_municipio_pequeno_aparece_sozinho(banco_temporario):
     assert re.findall(r'Cartórios no município</div><div class="rd-num">([^<]+)<', tela) == ["1"]
     assert f"{pos}º de {total:,}".replace(",", ".") + " municípios no déficit" in tela
     assert f"<td>{nome}</td>" in tela   # a linha dele no ranking, abaixo dos 10 primeiros
-    mapa = next(json.loads(g.proto.spec) for g in at.get("plotly_chart")
-                if any(t.get("type") == "choroplethmap" for t in json.loads(g.proto.spec)["data"]))
-    dados = next(t for t in mapa["data"] if "colorbar" in t)
-    assert len(dados["locations"]) == total == com_serv and str(cod) in dados["locations"]
+    from apoio_painel import mapa_componente
+    locais = [a["id"] for a in mapa_componente(at)["areas"]]
+    assert len(locais) == total == com_serv and str(cod) in locais
 
 
 def test_tabelas_por_municipio_tem_todos_os_municipios(banco_temporario):

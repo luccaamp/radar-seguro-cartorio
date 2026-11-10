@@ -8,21 +8,18 @@ Os filtros por atribuição, situação e classe, as outras métricas e a tabela
 (docs/painel/corte.md); o chat responde por município e por recorte.
 """
 import json
-import math
 
 import pandas as pd
-import plotly.graph_objects as go
 import streamlit as st
 
-from comum import analise, brl, consulta, fonte_linha, num, pagina, pct, ticks_brl
+from comum import analise, brl, consulta, fonte_linha, num, pagina, pct
 from src.painel import ui
-from src.painel.graficos import COR, SEQUENCIAL, finalizar
+from src.painel.mapa import dados_mapa, mapa_clicavel
 
 pagina("Onde está o mercado", "🗺️", "Onde está o dinheiro?",
        "O déficit de cobertura, que é o que vira seguro, se concentra nas maiores cidades. Escolha um município para "
        "ver a parte dele.", sobre="Onde está o mercado")
 TOPO = 10   # municípios na lista do ranking
-CINZA, SEM_SERV, CONTORNO = "#dde2ea", "#f5f7fa", "#45506a"   # tokens line, surface-2 e ink-2 do Raio-X (D-052)
 METRICA = "valor_descoberto"
 
 
@@ -33,10 +30,9 @@ def tab(sql: str, params: tuple = ()) -> pd.DataFrame:
 
 
 @st.cache_data
-def geojson(sql: str, params: tuple = ()) -> dict:
+def geometrias(sql: str, params: tuple = ()) -> dict[str, dict]:
     g = consulta(sql, list(params))
-    return {"type": "FeatureCollection", "features": [
-        {"type": "Feature", "id": a, "properties": {}, "geometry": json.loads(x)} for a, x in zip(g["area_id"], g["geometria"])]}
+    return {a: json.loads(x) for a, x in zip(g["area_id"], g["geometria"])}
 
 
 areas = tab("SELECT * FROM gold.mercado_area_publico")
@@ -77,78 +73,28 @@ else:
               ui.kpi("Cartórios no município", num(foco["n_serventias"]), "ativos no cadastro do CNJ")], 3)
 
 
-# ------------------------------------------------------------------ mapa (largura inteira)
-def camada(geo, ids, cor, hover, linha=0.4, cor_linha="#ffffff"):
-    return go.Choroplethmap(geojson=geo, locations=ids, z=[1] * len(ids), colorscale=[[0, cor], [1, cor]],
-                            showscale=False, marker_line_width=linha, marker_line_color=cor_linha,
-                            hovertemplate=hover + "<extra></extra>")
+# ------------------------------------------------------------------ mapa clicável (largura inteira; D-083)
+# clicar num município faz o mesmo que escolhê-lo no seletor acima (o seletor continua sendo o caminho pelo teclado)
+nome_da_area = dict(zip(municipios["area_id"], municipios["nome"]))
 
 
-def _merc(lat: float) -> float:
-    s = math.sin(math.radians(lat))
-    return 0.5 - math.log((1 + s) / (1 - s)) / (4 * math.pi)   # y de Web Mercator em fração do mundo
-
-
-def _enquadrar(lons: list[float], lats: list[float]) -> tuple[dict, float]:
-    """Centro e zoom para a caixa caber no mapa. No zoom z o mundo mede 512 × 2^z px (MapLibre). Usa a largura útil
-    do mapa na tela do celular (a figura não sabe a largura da tela; no computador, sobra contexto em volta) e a
-    altura da figura, com folga."""
-    largura, altura, folga = 320, 520, 0.85
-    y0, y1 = _merc(max(lats)), _merc(min(lats))
-    dx, dy = max(max(lons) - min(lons), 0.05) / 360, max(y1 - y0, 0.0002)
-    zoom = min(9.0, math.log2(min(largura / (512 * dx), altura / (512 * dy)) * folga))
-    ym = (y0 + y1) / 2   # centro no meio da caixa em Mercator (não no meio das latitudes)
-    lat_c = math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * ym))))
-    return {"lat": lat_c, "lon": (min(lons) + max(lons)) / 2}, zoom
-
-
-def _pontos(geom: dict):
-    coords = geom["coordinates"]
-    polys = coords if geom["type"] == "MultiPolygon" else [coords]
-    for poly in polys:
-        yield from poly[0]
-
-
-def mapa(destaque: str | None, zoom_ids: list[str] | None) -> go.Figure:
-    geo_dados = geojson("SELECT area_id, geometria FROM gold.geo_mapa_publico")
-    geo_sem = geojson("SELECT area_id, geometria FROM gold.geo_sem_serventia")
-    fig = go.Figure(layout=dict(template="radar", paper_bgcolor=COR["superficie"]))
-    vmax = float(areas[METRICA].quantile(0.95)) or float(areas[METRICA].max()) or 1.0
-    vals, textos = ticks_brl(vmax)
-    textos[-1] = "≥ " + textos[-1]   # a cor satura no percentil 95
-    d = areas
-    fig.add_trace(go.Choroplethmap(
-        geojson=geo_dados, locations=d["area_id"], z=d[METRICA], zmin=0, zmax=vmax, colorscale=SEQUENCIAL,
-        marker_line_width=0.4, marker_line_color="#ffffff",
-        customdata=d[["area_nome", "n_serventias", "valor_txt", "pct_txt"]].to_numpy(),
-        hovertemplate=("<b>%{customdata[0]}</b><br>Cartórios: %{customdata[1]}<br>Déficit: %{customdata[2]}<br>"
-                       "%{customdata[3]} do déficit de MG<extra></extra>"),
-        colorbar=dict(title=dict(text="Déficit", side="top", font=dict(color=COR["texto"], size=12)), thickness=10,
-                      len=0.6, tickvals=vals, ticktext=textos, tickfont=dict(color=COR["texto_2"], size=12),
-                      x=0.98, xanchor="right", y=0.5, bgcolor="rgba(255,255,255,0.85)", outlinewidth=0)))
-    if destaque:
-        f = d[d["area_id"] == destaque]
-        fig.add_trace(go.Choroplethmap(geojson=geo_dados, locations=f["area_id"], z=f[METRICA], zmin=0, zmax=vmax,
-                                       colorscale=SEQUENCIAL, showscale=False, marker_line_width=2.5,
-                                       marker_line_color=CONTORNO, hoverinfo="skip"))
-    # por último: o polígono de uma região imediata cobre os municípios sem serventia
-    fig.add_trace(camada(geo_sem, [f["id"] for f in geo_sem["features"]], SEM_SERV,
-                         "Município sem cartório no cadastro do CNJ", 1.2, CONTORNO))
-    centro, zoom = {"lat": -18.4, "lon": -44.6}, 5.4
-    if zoom_ids:
-        alvo = set(zoom_ids) | {destaque}   # o destaque sempre entra no enquadramento
-        pts = [p for f in geo_dados["features"] if f["id"] in alvo for p in _pontos(f["geometry"])]
-        if pts:
-            centro, zoom = _enquadrar([p[0] for p in pts], [p[1] for p in pts])
-    fig.update_layout(map=dict(style="white-bg", center=centro, zoom=zoom), margin=dict(l=0, r=0, t=0, b=0),
-                      height=560)
-    return fig
+def _escolher(area_id: str) -> None:
+    if area_id in nome_da_area:
+        st.session_state["f_mun"] = nome_da_area[area_id]
 
 
 ids_int = (list(municipios.loc[municipios["regiao_intermediaria"] == mun["regiao_intermediaria"], "area_id"].unique())
            if mun is not None else None)
-st.plotly_chart(finalizar(mapa(foco["area_id"] if foco is not None else None, ids_int)), width="stretch", theme=None,
-                config={"displayModeBar": False})
+geo_dados = geometrias("SELECT area_id, geometria FROM gold.geo_mapa_publico")
+geo_sem = geometrias("SELECT area_id, geometria FROM gold.geo_sem_serventia")
+textos = {r.area_id: f"Cartórios: {num(r.n_serventias)} · Déficit: {r.valor_txt} ({r.pct_txt} de MG)"
+          for r in areas.itertuples()}
+mapa_clicavel(dados_mapa(geo_dados, dict(zip(areas["area_id"], areas[METRICA])),
+                         dict(zip(areas["area_id"], areas["area_nome"])), textos, fundo=geo_sem.values(),
+                         selecionado=foco["area_id"] if foco is not None else None, enquadrar=ids_int,
+                         titulo_legenda="Déficit de cobertura do município",
+                         legenda_fundo="Sem cartório no cadastro do CNJ"),
+              key="mapa_mg", ao_escolher=_escolher)
 ui.fonte(fonte_linha(["cnj_serventias", "rais_vinculos", "ibge_malha"],
                      "Cor = déficit do município (suposição do modelo)"))
 

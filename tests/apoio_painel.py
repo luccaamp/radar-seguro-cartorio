@@ -20,6 +20,15 @@ SOBRE, MERCADO, SIMULADOR = HISTORIA[4], HISTORIA[2], "app/pages/6_Explorar.py"
 PAGINAS = HISTORIA + ["app/pages/5_Chat.py", SIMULADOR]
 
 
+def mapa_componente(at) -> dict | None:
+    """Os dados que o mapa clicável (D-083, src/painel/mapa.py) recebe numa execução do AppTest, ou None sem mapa."""
+    import json
+    for e in at.get("bidi_component"):
+        if e.proto.component_name.endswith("radar_mapa"):
+            return json.loads(e.proto.json)
+    return None
+
+
 def assinatura_real(p: Path = BANCO_REAL) -> tuple:
     """Data e tamanho do banco real e dos Parquet de data/silver e data/gold (nada disso pode mudar nos testes)."""
     arquivos = [p] + sorted((RAIZ / "data" / "gold").glob("*.parquet")) + sorted((RAIZ / "data" / "silver").glob("*.parquet"))
