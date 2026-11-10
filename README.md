@@ -6,7 +6,7 @@
 
 **Painel público:** **[radar-seguro-cartorio.streamlit.app](https://radar-seguro-cartorio.streamlit.app)** (Streamlit Community Cloud, modo demonstração com o conjunto público; a primeira visita pode levar alguns segundos para acordar o app). Hoje cobre **Minas Gerais**; os outros estados entram nas próximas fases ([`docs/plano_projeto.md`](docs/plano_projeto.md)).
 
-![Início do painel: o prêmio anual estimado de R$ 341,1 mil, com a faixa provável de R$ 215 a 687 mil](docs/img/painel_inicio.png)
+![Início do painel: o prêmio anual estimado de R$ 341,1 mil, com a faixa provável de R$ 215 a 687 mil, e os 6 indicadores de MG (2.525 cartórios ativos, arrecadação anual ≈ R$ 5,60 bi, ≈ 1.121 obrigados, 12.134 empregados CLT, R$ 34,1 mi de déficit e o prêmio)](docs/img/painel_inicio.png)
 
 <details><summary>Tour pelas páginas (GIF)</summary>
 
@@ -26,7 +26,7 @@
 | Quantos não teriam bens para cobri-la, e quanto falta? | ≈ 148, com R$ 34,1 milhões de déficit | modelo |
 | Quanto as seguradoras receberiam por ano? | **R$ 341,1 mil** (faixa provável de R$ 215 a 687 mil) | modelo, com 2 suposições sem fonte pública (taxa e adesão) |
 
-O painel tem a história em 5 páginas (o número, quão certo ele é, onde está o mercado, para onde vai e de onde vêm os dados), o mapa dos 851 municípios com cartório, um simulador ("e se a taxa fosse 3%?", "e se o STF suspender a obrigação?") e o chat. Os dez números oficiais, com os extremos, estão em [`docs/ESTADO_ATUAL.md`](docs/ESTADO_ATUAL.md#números-de-referência).
+O painel tem a história em 5 páginas (o número com os 6 indicadores principais, quão certo ele é, onde está o mercado, para onde vai e de onde vêm os dados), o mapa clicável dos 851 municípios com cartório (déficit em R$, % de obrigados ou % na Classe 3; o clique abre os cartórios do município, pelo CNS), um simulador ("e se a taxa fosse 3%?", "e se o STF suspender a obrigação?") e o chat. Os dez números oficiais, com os extremos, estão em [`docs/ESTADO_ATUAL.md`](docs/ESTADO_ATUAL.md#números-de-referência).
 
 ## Como funciona
 
@@ -47,16 +47,20 @@ flowchart LR
 - **Chat que não inventa número:** o modelo (Gemini, nível gratuito) só responde chamando ferramentas que leem as mesmas tabelas do painel, e cita a fonte. Quando o dado não existe, diz que não encontrou.
 - **Tudo gratuito e reproduzível:** de um clone, `uv sync` e o painel abre com os números da carga oficial; com `data/completo/` o gold é recalculado e confere com o publicado pelo hash.
 
-## Números medidos
+## Qualidade medida
 
 | Medida | Resultado | Onde |
 |---|---|---|
-| Acerto do chat no gabarito congelado (52 perguntas) | **96%** com ferramentas; 23% com as normas no prompt; 17% sem nada | [`eval/resultado_avaliacao.md`](eval/resultado_avaliacao.md) |
+| Acerto do chat no gabarito congelado (52 perguntas) | **96%** com ferramentas (intervalo de 95%: 87% a 99%); 23% com as normas no prompt; 17% sem nada | [`eval/resultado_avaliacao.md`](eval/resultado_avaliacao.md) |
+| Ganho das ferramentas, nas mesmas perguntas | +78,8 pontos sobre o modelo sozinho (intervalo: +66,4 a +91,3) | idem, seção "Margem de erro" |
 | Número inventado nas perguntas-armadilha | nenhum | idem |
 | Contratos de qualidade na carga | 109 checagens; nenhum erro violado | página "Sobre os dados" |
-| Testes automáticos a cada pull request | suíte padrão e modo completo com os dados reais (GitHub Actions) | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+| Testes a cada pull request (GitHub Actions) | suíte padrão (399 testes, entre eles os 15 do JavaScript do mapa), o mapa num navegador de verdade (4) e o modo completo com os dados reais | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+| Cobertura dos testes em `src/` | 71% das linhas (indicador, não meta: cobertura alta não garante teste bom; Inozemtseva e Holmes, ICSE 2014) | `uv run pytest --cov=src` |
 | Acessibilidade (axe) nas 7 páginas | 0 falhas do código do projeto | `scripts/acessibilidade.py` |
 | Custo | R$ 0 (níveis gratuitos, sem cartão) | [`CLAUDE.md`](CLAUDE.md) |
+
+A margem de erro do chat segue Miller (2024, "Adding Error Bars to Evals", arXiv:2411.00640). Os contratos do gold seguem a ideia de "testes de unidade para dados" (Schelter et al., PVLDB 2018).
 
 ## Limitações
 
@@ -68,13 +72,13 @@ flowchart LR
 
 ## Como o projeto foi feito
 
-O projeto foi construído dirigindo uma IA (Claude Code), com as regras em [`CLAUDE.md`](CLAUDE.md). Cada decisão está em [`docs/decisoes.md`](docs/decisoes.md), cada passo em [`docs/diario.md`](docs/diario.md) e cada erro da IA, com a causa e a correção, em [`docs/erros_ia.md`](docs/erros_ia.md). A etapa atual está no [`docs/ESTADO_ATUAL.md`](docs/ESTADO_ATUAL.md); a especificação, no [`docs/SPEC.md`](docs/SPEC.md).
+O projeto foi construído dirigindo uma IA (Claude Code), com as regras em [`CLAUDE.md`](CLAUDE.md), num desenvolvimento guiado por especificação: a [`docs/SPEC.md`](docs/SPEC.md) diz o que fazer, o [`docs/plano_projeto.md`](docs/plano_projeto.md) divide em fases com um "pronto quando" cada, e nada entra sem teste e decisão registrada. Cada decisão está em [`docs/decisoes.md`](docs/decisoes.md), cada passo em [`docs/diario.md`](docs/diario.md) e cada erro da IA, com a causa e a correção, em [`docs/erros_ia.md`](docs/erros_ia.md). A etapa atual está no [`docs/ESTADO_ATUAL.md`](docs/ESTADO_ATUAL.md); a especificação, no [`docs/SPEC.md`](docs/SPEC.md).
 
 ## Como rodar
 
 Requisitos: Git e o [`uv`](https://docs.astral.sh/uv/) (ele instala o Python 3.12 sozinho). Nada pago, nenhuma conta em nuvem.
 
-**Testes automáticos (CI, D-072 e D-073):** a cada pull request para a `main` e a cada push nela, o GitHub Actions roda dois jobs ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): `ruff` e a suíte padrão (`uv run pytest`, sem chave do Gemini e sem internet); depois, o modo completo da seção 1b (instala `data/completo/`, recalcula o gold) e os testes com os dados reais. O pull request só é juntado com os dois verdes.
+**Testes automáticos (CI, D-072, D-073 e D-083):** a cada pull request para a `main` e a cada push nela, o GitHub Actions roda três jobs ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): `ruff` e a suíte padrão (`uv run pytest`, sem chave do Gemini e sem internet, com os testes do JavaScript do mapa pelo `node --test`); depois, em paralelo, o mapa clicável num Chromium de verdade (`uv run pytest -m navegador`) e o modo completo da seção 1b (instala `data/completo/`, recalcula o gold) com os testes dos dados reais.
 
 ### 1. Ver o painel (≈ 2 min)
 

@@ -52,3 +52,6 @@ docs/qa/*
 !docs/qa/chat/
 docs/qa/chat/*
 !docs/qa/chat/latencia_*.md
+# cobertura dos testes (pytest-cov): arquivo de dados gerado a cada rodada
+.coverage
+.coverage.*

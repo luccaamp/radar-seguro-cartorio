@@ -27,8 +27,8 @@
   --s1-texto: #1d66ba;         /* azul das séries em texto pequeno (4,97 sobre o fundo; o --s1 dá 3,83) */
   /* mapa clicável (D-083): zero neutro, quase da cor do fundo; 6 faixas do azul-claro ao azul-marinho (SEQUENCIAL de
      graficos.py sem o primeiro tom, que se confundiria com o zero) */
-  --mapa-zero: #e4e7ec; --mapa-1: #c3d1e8; --mapa-2: #8fb3e6; --mapa-3: #5a94e0; --mapa-4: #2a78d6; --mapa-5: #2056a8;
-  --mapa-6: #183564;
+  --mapa-zero: #e4e7ec; --mapa-1: #c3d1e8; --mapa-2: #8fb3e6; --mapa-3: #5a94e0; --mapa-4: #2974d0; --mapa-5: #2056a8;
+  --mapa-6: #183564;   /* --mapa-4 um pouco mais escuro que o --s1 (#2a78d6): texto branco nele com 4,66 de contraste */
   color-scheme: light;
 }
 /* tema escuro do Raio-X, com os mesmos valores. Vale quando o Streamlit está no escuro (marcador .rd-tema-escuro, posto
@@ -43,8 +43,9 @@
   --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #7b869b; --s1-texto: #3987e5;
   --bom: #4cc38a; --bom-claro: #12301f; --alerta: #e2b04a; --alerta-claro: #33270c; --ruim: #ff8a7a; --ruim-claro: #3a1a17;
   --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 20px rgba(0, 0, 0, .25);
-  --mapa-zero: #222936; --mapa-1: #2c3d62; --mapa-2: #2a5aa0; --mapa-3: #3373c8; --mapa-4: #3987e5; --mapa-5: #74aef0;
-  --mapa-6: #b4d3f8;   /* no escuro a escala se inverte em luminosidade (como ESCURO em graficos.py) */
+  --mapa-zero: #222936; --mapa-1: #2c3d62; --mapa-2: #2a5aa0; --mapa-3: #2f6ab8; --mapa-4: #3987e5; --mapa-5: #74aef0;
+  --mapa-6: #b4d3f8;   /* no escuro a escala se inverte em luminosidade (como ESCURO em graficos.py); --mapa-3 um pouco
+                          mais escuro que o #3373c8 de graficos.py: texto claro nele com 4,62 de contraste */
   color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) { :root:not(:has(.rd-tema-claro)) {
@@ -57,7 +58,7 @@
   --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #7b869b; --s1-texto: #3987e5;
   --bom: #4cc38a; --bom-claro: #12301f; --alerta: #e2b04a; --alerta-claro: #33270c; --ruim: #ff8a7a; --ruim-claro: #3a1a17;
   --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 20px rgba(0, 0, 0, .25);
-  --mapa-zero: #222936; --mapa-1: #2c3d62; --mapa-2: #2a5aa0; --mapa-3: #3373c8; --mapa-4: #3987e5; --mapa-5: #74aef0;
+  --mapa-zero: #222936; --mapa-1: #2c3d62; --mapa-2: #2a5aa0; --mapa-3: #2f6ab8; --mapa-4: #3987e5; --mapa-5: #74aef0;
   --mapa-6: #b4d3f8;
   color-scheme: dark;
 } }
@@ -161,6 +162,30 @@ h3 { font-size: 14px !important; font-weight: 600 !important; }
 .rd-tabela td.rd-num { font-weight: 700; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums;
   background: var(--agregado); }
 .rd-tabela td.rd-mudo { color: var(--mudo); }
+@media (max-width: 640px) { .rd-tabela .rd-so-pc { display: none; } }   /* colunas secundárias, só no computador */
+/* seletor de opções (st.segmented_control, "Mostrar no mapa"): no item escolhido o Streamlit pinta o texto com a cor
+   primária sobre um fundo azul-claro (contraste 3,4; axe, 2026-11-10); o texto passa à cor do título, em negrito, e o
+   destaque azul fica no fundo e na borda */
+[data-testid="stButtonGroup"] button[data-selected="true"] p { color: var(--titulo); font-weight: 600; }
+/* quadro de calor (grade Taxa × adesão, V5): as cores do mapa (--mapa-*), texto escuro nas claras e claro nas escuras
+   (no tema escuro a escala inverte a luminosidade, e o texto inverte junto) */
+.rd-calor td { text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rd-calor th[scope="row"] { font-weight: 600; }
+.rd-calor-zero { background: var(--mapa-zero); }
+.rd-calor-1 { background: var(--mapa-1); } .rd-calor-2 { background: var(--mapa-2); }
+.rd-calor-3 { background: var(--mapa-3); } .rd-calor-4 { background: var(--mapa-4); }
+.rd-calor-5 { background: var(--mapa-5); } .rd-calor-6 { background: var(--mapa-6); }
+.rd-tabela.rd-calor td.rd-calor-zero, .rd-tabela.rd-calor td.rd-calor-1, .rd-tabela.rd-calor td.rd-calor-2,
+.rd-tabela.rd-calor td.rd-calor-3 { color: var(--titulo); }
+.rd-tabela.rd-calor td.rd-calor-4, .rd-tabela.rd-calor td.rd-calor-5,
+.rd-tabela.rd-calor td.rd-calor-6 { color: var(--superficie); }
+.rd-calor-base { outline: 3px solid var(--ouro); outline-offset: -3px; }
+.rd-calor-marca { font-weight: 500; font-size: 11px; }
+@media (max-width: 640px) {   /* cabe em 358 px: letra e espaçamento menores; a marca "base" vai para a linha de baixo */
+  .rd-calor th, .rd-calor td { padding: 6px 4px; font-size: 12px; }
+  .rd-calor th[scope="col"]:first-child { white-space: normal; }
+  .rd-calor-marca { display: block; font-size: 10px; }
+}
 
 /* perguntas sugeridas para o chat: .card com título em serifa e botões .btn2 do Raio-X */
 .rd-sugestoes { margin-top: 0; padding: 20px; background: var(--superficie); border: 1px solid var(--linha); border-radius: 14px;

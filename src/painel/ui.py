@@ -105,15 +105,36 @@ def grafico(fig) -> None:
 
 
 def tabela(colunas: list[str], linhas: list[list[str]], numericas: set[int] = frozenset(),
-           mudas: set[int] = frozenset()) -> None:
+           mudas: set[int] = frozenset(), so_no_computador: set[int] = frozenset()) -> None:
     """Tabela compacta em HTML. `numericas`: índices das colunas de número (alinhadas à direita, classe rd-num);
-    `mudas`: colunas de texto secundário."""
+    `mudas`: colunas de texto secundário; `so_no_computador`: colunas escondidas em tela estreita (≤ 640 px), para a
+    tabela caber no celular sem rolagem lateral."""
+    def classes(i):
+        return " ".join(c for c, sim in (("rd-num", i in numericas), ("rd-mudo", i in mudas and i not in numericas),
+                                         ("rd-so-pc", i in so_no_computador)) if sim)
+
     def cel(i, v):
-        classe = "rd-num" if i in numericas else "rd-mudo" if i in mudas else ""
+        classe = classes(i)
         return f'<td class="{classe}">{_t(v)}</td>' if classe else f"<td>{_t(v)}</td>"
-    cab = "".join(f"<th>{_t(c)}</th>" for c in colunas)
+    cab = "".join(f'<th class="rd-so-pc">{_t(c)}</th>' if i in so_no_computador else f"<th>{_t(c)}</th>"
+                  for i, c in enumerate(colunas))
     corpo = "".join("<tr>" + "".join(cel(i, v) for i, v in enumerate(ln)) + "</tr>" for ln in linhas)
     _html(f'<table class="rd-tabela"><thead><tr>{cab}</tr></thead><tbody>{corpo}</tbody></table>')
+
+
+def quadro_calor(titulo_linhas: str, titulo_colunas: str, colunas: list[str],
+                 linhas: list[tuple[str, list[dict]]]) -> None:
+    """Quadro de calor em HTML (a grade Taxa × adesão do V5): uma linha por valor de `titulo_linhas`, uma coluna por
+    valor de `titulo_colunas`. Cada célula é {"texto", "faixa" (zero, 1 … 6: a cor dos tokens --mapa-*), "base"}; a
+    célula base ganha o contorno dourado e a palavra "base" para leitor de tela."""
+    cab = (f'<tr><th scope="col">{_t(titulo_linhas)} ↓ · {_t(titulo_colunas)} →</th>'
+           + "".join(f'<th scope="col">{_t(c)}</th>' for c in colunas) + "</tr>")
+    corpo = "".join(
+        f'<tr><th scope="row">{_t(rot)}</th>' + "".join(
+            f'<td class="rd-calor-{_t(c["faixa"])}{" rd-calor-base" if c.get("base") else ""}">{_t(c["texto"])}'
+            + ('<span class="rd-calor-marca"> base</span>' if c.get("base") else "") + "</td>" for c in cels) + "</tr>"
+        for rot, cels in linhas)
+    _html(f'<table class="rd-tabela rd-calor"><thead>{cab}</thead><tbody>{corpo}</tbody></table>')
 
 
 def fonte(texto: str) -> None:
@@ -121,15 +142,19 @@ def fonte(texto: str) -> None:
     _html(f'<div class="rd-fonte">{_t(texto)}</div>')
 
 
-def link_chat(pergunta: str) -> str:
+def link_chat(pergunta: str, pagina: str = "", municipio: str = "") -> str:
     """Endereço relativo da página do chat com a pergunta no parâmetro ?pergunta= (a página do chat precisa
     lê-lo). Link HTML, e não st.page_link: este só acha a página quando o painel roda pela
-    Início, e cada página também roda sozinha (testes)."""
-    return f"{CHAT}?pergunta={quote(pergunta)}"
+    Início, e cada página também roda sozinha (testes). `pagina` e `municipio` levam o contexto (V5, D-082): a página
+    do chat confere os dois antes de usar (src/agent/chat.texto_contexto)."""
+    extra = "".join(f"&{k}={quote(v)}" for k, v in (("pagina", pagina), ("municipio", municipio)) if v)
+    return f"{CHAT}?pergunta={quote(pergunta)}{extra}"
 
 
-def sugestoes(perguntas: list[str]) -> None:
-    """De 2 a 3 perguntas para o chat, ligadas ao que a página mostra; cada uma abre o chat com a pergunta."""
-    links = "".join(f'<a class="rd-sugestao" href="{link_chat(p)}" target="_self">{_t(p)}</a>' for p in perguntas)
+def sugestoes(perguntas: list[str], pagina: str = "", municipio: str = "") -> None:
+    """De 2 a 3 perguntas para o chat, ligadas ao que a página mostra; cada uma abre o chat com a pergunta e, com
+    `pagina` e `municipio`, com o contexto de onde a pessoa estava (V5, D-082)."""
+    links = "".join(f'<a class="rd-sugestao" href="{_t(link_chat(p, pagina, municipio))}" target="_self">{_t(p)}</a>'
+                    for p in perguntas)
     _html(f'<div class="rd-sugestoes"><div class="rd-sugestoes-tit">Pergunte ao chat</div>'
           f'<div class="rd-sugestoes-links">{links}</div></div>')

@@ -26,4 +26,4 @@ ui.frase("Os cartórios que passam a ser obrigados são pequenos, por isso o pr�
          "trabalhista crescer como projetado, **o prêmio cresce na mesma proporção**.")
 ui.sugestoes(["Quanto a arrecadação de MG deve crescer em 2026?",
               "Quantos cartórios sobem da Classe 1 para a 2 em 2026?",
-              "E se o limite da Classe 1 for corrigido pela inflação?"])
+              "E se o limite da Classe 1 for corrigido pela inflação?"], pagina="Para onde vai")

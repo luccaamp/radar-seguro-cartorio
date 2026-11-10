@@ -327,6 +327,8 @@ CONSULTAS = {
     "consultar_numeros": {
         "numeros_oficiais": "os 10 números principais do painel (Início), com os extremos teóricos (não são a faixa "
                             "provável; para a faixa provável do déficit, da IS ou do prêmio, use faixa_d042)",
+        "panorama": "os 6 indicadores do Início (cartórios, arrecadação anual aproximada, obrigados, empregados, "
+                    "déficit e prêmio), cada um com uma linha de contexto",
         "escada": "do passivo ao prêmio: cada degrau como parte do anterior (Início)",
         "faixa_d042": "déficit, importância segurada ou prêmio: valor base, faixa provável P5–P95, extremos e "
                       "sensibilidade (use `medida`)",
@@ -342,6 +344,10 @@ CONSULTAS = {
         "capacidade_pagar": "obrigadas por meses de saldo para cobrir o passivo (M1, Análises)",
         "consultar_serventia": "resultado do modelo para um cartório pelo CNS, ou a lista de um município "
                                "(use `cns` ou `municipio`)",
+        "cartorios_do_municipio": "o quadro do município no painel: todos os cartórios dele pelo CNS, do maior para o "
+                                  "menor déficit esperado, com empregados, receita, passivo e prêmio (use `municipio`)",
+        "percentual_por_municipio": "o mapa em %: parte dos cartórios de cada município obrigada pelo Prov. 227 ou "
+                                    "na Classe 3, a do estado e os maiores (use `indicador`: obrigados ou classe_3)",
     },
     "consultar_analises": {
         "previsao_mercado": "projeção de 2026 ou 2027: obrigadas, subidas, passivo, déficit, IS e prêmio (use `ano` "
@@ -394,6 +400,8 @@ PARAMETROS = {   # parâmetro → (esquema, ferramentas que o aceitam)
                      ("consultar_numeros",)),
     "cns": ({"type": "string", "description": "CNS do cartório (6 dígitos)"}, ("consultar_mercado",)),
     "municipio": ({"type": "string", "description": "nome do município de MG"}, ("consultar_mercado",)),
+    "indicador": ({"type": "string", "enum": ["obrigados", "classe_3"],
+                   "description": "para percentual_por_municipio"}, ("consultar_mercado",)),
     "ano": ({"type": "integer", "description": "para previsao_mercado: 2026 ou 2027"}, ("consultar_analises",)),
     "leitura_limite": ({"type": "string", "description": "para previsao_mercado: leitura do limite de classe (fixo "
                                                          "ou corrigido); sem ela, usa a principal"},

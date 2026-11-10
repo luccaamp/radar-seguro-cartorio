@@ -997,3 +997,11 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** checagem "rápida" fora dos testes, sem a fixture que aponta a cópia; e tratar acrescentar código como diferente de editar.
 - **Correção:** nada a desfazer (banco intacto; código conferido e coberto por testes). Regras: qualquer execução do painel fora do servidor de demonstração aponta `RADAR_BANCO` para uma cópia ou um caminho inexistente (modo demonstração); acrescentar código também é editar, só com a ferramenta de edição.
 - **Bom para os slides?** não
+
+## 2026-11-10 — Rótulos do mapa: sobrepostos e no tamanho errado, achados só nas capturas
+- **Onde:** item 1 do bloco "painel de MG rumo ao V5" (`src/painel/componentes/mapa.js`).
+- **O que aconteceu:** a primeira versão dos rótulos passou em todos os testes, mas nas capturas (1) os nomes se sobrepunham com zoom (Belo Horizonte, Contagem e Betim), (2) a letra ficava com 8 px no celular e 22 px no computador e, depois da primeira correção, (3) com uns 6 px no zoom, porque a conta usava só a largura do mapa, e quem limita o desenho muitas vezes é a altura máxima (560 px).
+- **Como foi detectado:** pela IA, olhando as capturas em 1280 e 390 px, nos dois temas.
+- **Causa provável:** os testes conferiam que os rótulos existiam e estavam no lugar certo, não o tamanho na tela nem a sobreposição; o tamanho saía de uma fração fixa do viewBox, sem saber a escala real do desenho.
+- **Correção:** o JS mede o mapa e converte 13 px (11 px no celular) pela MENOR escala (largura ou altura) e pula os rótulos que se sobrepõem; testes novos no Node (`tamanhoLetra`, `escolherRotulos`) e no navegador (letra entre 10,5 e 13,5 px na tela, nenhum rótulo sobre outro, com e sem zoom). Regra: o que é visual tem teste do que se vê (tamanho na tela, sobreposição), não só da estrutura; e capturas antes de dar como pronto.
+- **Bom para os slides?** sim (teste de estrutura × teste do que se vê)

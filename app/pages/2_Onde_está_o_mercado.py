@@ -14,7 +14,7 @@ import streamlit as st
 
 from comum import analise, brl, consulta, fonte_linha, num, pagina, pct
 from src.painel import ui
-from src.painel.mapa import dados_mapa, mapa_clicavel
+from src.painel.mapa import dados_mapa, mapa_clicavel, pct_curto
 
 pagina("Onde está o mercado", "🗺️", "Onde está o dinheiro?",
        "O déficit de cobertura, que é o que vira seguro, se concentra nas maiores cidades. Escolha um município para "
@@ -87,16 +87,55 @@ ids_int = (list(municipios.loc[municipios["regiao_intermediaria"] == mun["regiao
            if mun is not None else None)
 geo_dados = geometrias("SELECT area_id, geometria FROM gold.geo_mapa_publico")
 geo_sem = geometrias("SELECT area_id, geometria FROM gold.geo_sem_serventia")
-textos = {r.area_id: f"Cartórios: {num(r.n_serventias)} · Déficit: {r.valor_txt} ({r.pct_txt} de MG)"
-          for r in areas.itertuples()}
-mapa_clicavel(dados_mapa(geo_dados, dict(zip(areas["area_id"], areas[METRICA])),
-                         dict(zip(areas["area_id"], areas["area_nome"])), textos, fundo=geo_sem.values(),
+# o que o mapa mostra (V5, D-082): o déficit em R$ ou um indicador de classe em % (o mapa da aba Classes)
+INDICADORES = {"Déficit (R$)": None, "% obrigados": "obrigados", "% na Classe 3": "classe_3"}
+escolha = st.segmented_control("Mostrar no mapa", list(INDICADORES), default="Déficit (R$)", key="f_indicador")
+indicador = INDICADORES.get(escolha or "Déficit (R$)")
+nomes = dict(zip(areas["area_id"], areas["area_nome"]))
+if indicador is None:
+    valores = dict(zip(areas["area_id"], areas[METRICA]))
+    textos = {r.area_id: f"Cartórios: {num(r.n_serventias)} · Déficit: {r.valor_txt} ({r.pct_txt} de MG)"
+              for r in areas.itertuples()}
+    # resumo em uma frase (V5): o que o mapa mostra no recorte que está na tela
+    n_zero = int((areas[METRICA] <= 0).sum())
+    tres = areas.sort_values(METRICA, ascending=False)["area_nome"].head(3).tolist()
+    resumo = (f"Os maiores déficits estão em {tres[0]}, {tres[1]} e {tres[2]}; {num(n_zero)} dos {num(len(areas))} "
+              "municípios com cartório têm déficit zero (em cinza). Clique num município para ver os números dele.")
+    extra = dict(titulo_legenda="Déficit de cobertura do município")
+    nota_cor = "Cor = déficit do município (suposição do modelo)"
+else:
+    pc = analise("percentual_por_municipio", indicador=indicador)
+    valores = {a: pc["valores"].get(a) for a in areas["area_id"]}
+    textos = {r.area_id: f"Cartórios: {num(r.n_serventias)} · {pc['titulo']}: {pct(pc['valores'].get(r.area_id, 0))}"
+              for r in areas.itertuples()}
+    resumo = (f"{pc['frase_estado']}; {num(pc['zeros'])} dos {num(pc['areas'])} municípios com cartório têm 0% (em "
+              f"cinza). Com 5 ou mais cartórios, os maiores: {', '.join(pc['maiores_com_5_ou_mais'])}.")
+    # sem rótulos: muitos municípios pequenos empatam em 100%, e o rótulo apontaria um deles ao acaso
+    extra = dict(titulo_legenda=f"{pc['titulo']} (% dos cartórios do município)", fmt_legenda=pct_curto,
+                 teto_fixo=1.0, rotulos=0)
+    nota_cor = f"Cor = {pc['titulo'].lower()} (% dos cartórios do município; classe aproximada)"
+if mun is not None:
+    resumo = (f"Região de {mun['regiao_intermediaria']}, com {mun_nome} em destaque (contorno dourado). As cores "
+              "seguem a mesma escala de Minas Gerais inteira.")
+mapa_clicavel(dados_mapa(geo_dados, valores, nomes, textos, fundo=geo_sem.values(),
                          selecionado=foco["area_id"] if foco is not None else None, enquadrar=ids_int,
-                         titulo_legenda="Déficit de cobertura do município",
-                         legenda_fundo="Sem cartório no cadastro do CNJ"),
+                         resumo=resumo, legenda_fundo="Sem cartório no cadastro do CNJ", **extra),
               key="mapa_mg", ao_escolher=_escolher)
-ui.fonte(fonte_linha(["cnj_serventias", "rais_vinculos", "ibge_malha"],
-                     "Cor = déficit do município (suposição do modelo)"))
+ui.fonte(fonte_linha(["cnj_serventias", "rais_vinculos", "ibge_malha"], nota_cor))
+
+# ------------------------------------------------------------------ quadro do município (V5, D-082): os cartórios dele
+if mun is not None:
+    quadro = analise("cartorios_do_municipio", municipio=mun_nome)
+    st.header(f"Os cartórios de {mun_nome}")
+    ui.frase(f"**{quadro['n_cartorios']}** cartórios ativos, **{quadro['obrigados']}** obrigados pelo Prov. 227; "
+             f"déficit esperado de **{quadro['deficit_esperado']}** e prêmio de **{quadro['premio_anual']}** por ano. "
+             "Cada cartório aparece pelo CNS, do maior para o menor déficit.")
+    ui.tabela(["CNS", "Atribuições", "Classe", "Obrigado", "Empregados", "Déficit esperado", "Prêmio por ano"],
+              [[c["cns"], c["atribuicoes"], f"{c['classe']} ({c['situacao']})", c["obrigado"], c["empregados_clt"],
+                c["deficit_esperado"], c["premio_anual"]] for c in quadro["cartorios"]],
+              numericas={4, 5, 6}, mudas={1}, so_no_computador={3, 4, 6})
+    ui.fonte(fonte_linha(["cnj_serventias", "rais_vinculos"],
+                         "Déficit e prêmio por cartório: estimativas do modelo (nível base); classe aproximada"))
 
 # ------------------------------------------------------------------ ranking: os maiores e o município escolhido
 linhas = ranking.head(TOPO)
@@ -111,5 +150,11 @@ grp = analise("grupos")
 ui.frase(f"Os {conc['topo']} maiores cartórios obrigados têm **{conc['parte_dos_maiores_no_passivo']}** da dívida "
          f"trabalhista; o cliente típico do seguro são as **{grp['grupo_alvo'].split(': ')[1]}** "
          f"({grp['serventias_do_alvo']} cartórios, {grp['parte_do_deficit']} do déficit).")
-ui.sugestoes(["Quais cartórios de Uberaba são obrigados?", "Que tipo de cartório é obrigado pelo Prov. 227?",
-              "Quantos cartórios vagos (interinos) há em MG?"])
+if mun is None:
+    ui.sugestoes(["Quais cartórios de Uberaba são obrigados?", "Que tipo de cartório é obrigado pelo Prov. 227?",
+                  "Quantos cartórios vagos (interinos) há em MG?"], pagina="Onde está o mercado")
+else:   # "Perguntar sobre este município" (V5): o chat recebe a página e o município aberto
+    ui.sugestoes([f"Quais cartórios de {mun_nome} são obrigados e quanto é o déficit deles?",
+                  "Por que o déficit deste município é desse tamanho?",
+                  "Como este município se compara com o resto de MG?"],
+                 pagina="Onde está o mercado", municipio=mun_nome)

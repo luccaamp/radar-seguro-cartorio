@@ -28,10 +28,12 @@ def inicio() -> None:
                 f"provavelmente de {premio['faixa_provavel']}",
                 "**Quão certo:** 9 em cada 10 simulações caem nessa faixa. A incerteza vem principalmente de duas "
                 "suposições que ainda ninguém conhece: a **taxa do seguro** e a **adesão ao seguro**.")
+    # Panorama (V5, D-082): 6 indicadores com uma linha de contexto cada
+    ui.grade([ui.kpi(k["rotulo"], k["valor"], k["nota"]) for k in analise("panorama")["kpis"]], 3)
     ui.grafico(graficos.funil(oficiais, fonte_linha(["cnj_serventias", "rais_vinculos"],
                                                     "Déficit, seguro e prêmio dependem de suposições do modelo")))
     ui.sugestoes(["Quanto a seguradora lucraria com esse mercado?", "Por que a Classe 1 fica fora da obrigação?",
-                  "Quais são os 10 números principais do painel?"])
+                  "Quais são os 10 números principais do painel?"], pagina="Início")
 
 
 # url_path: os mesmos endereços do menu automático de antes. Os ícones do menu vêm do estilo.css (padrão do Raio-X),
