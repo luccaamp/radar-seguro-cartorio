@@ -114,13 +114,19 @@ Cada fase só começa quando a anterior cumpre o seu "pronto quando", salvo as q
 1. **Roteiro igual para cada UF:** amostra real da fonte mostrada ao autor antes de escrever ou adaptar um coletor; coleta, contratos e reconciliações; normas da corregedoria local; auditor; números revisados e registrados; painel e chat (o gabarito ganha perguntas da UF); Release.
 2. **Modelo de empregados em produção:** onde o CNJ não traz a contagem, a floresta do T1 estima; o modelo é versionado, retreinado a cada carga, com monitoramento de deriva e validação nos estados que têm a contagem.
 3. **Análises por UF** (regras, grupos, previsão, tornado, Monte Carlo) pelo pipeline, como em MG; um notebook novo compara os estados (os notebooks de MG continuam contando a história de MG).
+4. **Painel testado com leigos (2026-11-10):** cada participante faz antes o Mini-VLAT, teste validado de 12 perguntas e cerca de 5 minutos sobre leitura de gráficos (Pandey e Ottley, *Computer Graphics Forum*, 2023, arXiv:2304.07905), para separar "o painel é confuso" de "a pessoa não lê gráficos". Lighthouse (código aberto, Apache-2.0) nas páginas, com o resultado na página de saúde.
 
 **Pronto quando:** cada UF cumpre o roteiro; as 27 estão na camada 2 (`v3.0`).
 
 ### Fase 7 — Agentes e integrações
 
-1. **Chat nacional:** ferramentas por UF e comparação entre estados; gabarito ampliado e congelado de novo, com a meta fixada antes de rodar.
-2. **Avaliação contínua:** job agendado com a chave como *secret*; histórico de acerto por versão do prompt; alerta quando o acerto cai. A suíte padrão continua sem API.
+1. **Chat nacional:** ferramentas por UF e comparação entre estados; gabarito ampliado e congelado de novo, com a meta fixada antes de rodar. O tamanho do gabarito sai de uma conta feita antes (`perguntas_para_margem`; hoje, cerca de 158 perguntas para ±3 pontos perto de 96%), com perguntas separadas para ajustar o prompt e para avaliar (as de avaliação nunca usadas no ajuste).
+2. **Avaliação contínua:** job agendado com a chave como *secret*; histórico de acerto por versão do prompt; alerta quando o acerto cai. A suíte padrão continua sem API. Métodos (anotados em 2026-11-10, fontes conferidas nos artigos):
+   - **margem de erro em todo relatório:** intervalo de Wilson, erro-padrão agrupado por tipo de pergunta e comparação pareada entre versões (Miller, 2024, arXiv:2411.00640); já no `scripts/avaliar_chat.py` desde 2026-11-10;
+   - **checagem automática de números em todo PR, sem API:** todo número de uma resposta precisa estar no resultado das ferramentas, com o arredondamento do painel (hoje só nas armadilhas);
+   - **repetição:** cada pergunta mais de uma vez, para medir a consistência das respostas (Miller, 2024; SelfCheckGPT, Manakul et al., 2023, arXiv:2303.08896), em lotes pequenos por causa da cota gratuita;
+   - **fidelidade às fontes:** cada afirmação da resposta apoiada no que as ferramentas devolveram (RAGAS, Es et al., 2023, arXiv:2309.15217; FActScore, Min et al., EMNLP 2023, arXiv:2305.14251);
+   - **modelo como juiz só validado:** concordância medida contra notas humanas antes de usar, por causa dos vieses de posição, tamanho e autopreferência (Zheng et al., 2023, arXiv:2306.05685; Shankar et al., 2024, arXiv:2404.12272; ARES, Saad-Falcon et al., 2023, arXiv:2311.09476).
 3. **Servidor MCP:** as mesmas ferramentas do chat, para qualquer agente consultar os dados; documentado, testado e com o mesmo controle de dados pessoais.
 4. **Radar de normas:** monitora os Provimentos do CNJ e a ADI 8015 no STF; primeiro sem IA, depois com um agente que resume o que mudou e o que afeta no modelo. Nunca muda uma premissa sozinho: abre uma issue para decisão.
 5. **API pública estática:** dados agregados em JSON e Parquet, versionados.
@@ -131,7 +137,7 @@ Cada fase só começa quando a anterior cumpre o seu "pronto quando", salvo as q
 
 1. **Hugging Face:** dataset dos cartórios do Brasil (agregado, sem dado pessoal, com data card) e o modelo de empregados (com model card: dados, métrica, limites).
 2. **Kaggle:** o mesmo dataset, com um notebook de análise.
-3. **Artigos técnicos:** avaliação de um agente que não pode inventar número; pipeline de dados públicos que só publica quando passa nos contratos; desenvolver um projeto inteiro dirigindo uma IA (decisões e erros registrados).
+3. **Artigos técnicos:** avaliação de um agente que não pode inventar número (com a margem de erro e os métodos da Fase 7, item 2); pipeline de dados públicos que só publica quando passa nos contratos (os contratos seguem a ideia de "testes de unidade para dados" do Deequ: Schelter et al., PVLDB 2018); desenvolver um projeto inteiro dirigindo uma IA (decisões e erros registrados; é desenvolvimento guiado por especificação: SPEC, plano, "pronto quando" e decisões, sem adotar ferramenta própria como o Spec Kit do GitHub).
 4. **Documentação** em português e em inglês: o `entenda_o_projeto.md` para leigos e um guia de arquitetura.
 
 **Pronto quando:** cada item publicado, com link no README e revisão de dados pessoais.

@@ -140,3 +140,6 @@ avaliacao:
   pausa_s: 15                    # fonte: suposição; espera entre perguntas (ajuste pelos limites do seu AI Studio)
   espera_cota_s: 65              # fonte: suposição; espera depois de um 429 antes de tentar de novo (uma vez)
   normas_no_prompt: ["227", "243", "213"]   # versão (b): o texto destas normas vai inteiro no prompt
+  # margem de erro do relatório (Miller, 2024, "Adding Error Bars to Evals", arXiv:2411.00640; conferido em 2026-11-10)
+  confianca: 0.95                # fonte: convenção estatística (intervalo de 95%)
+  margem_alvo: 0.03              # fonte: suposição; meia-largura desejada do intervalo, para dizer quantas perguntas faltam

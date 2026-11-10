@@ -1,5 +1,9 @@
 # CI (D-072, D-073): roda em cada pull request para a main e em cada push na main. O pull request só é juntado com
 # os dois jobs verdes. Nenhum job usa a API do Gemini nem segredo: a suíte padrão roda sem chave e sem internet.
+# Versões fixas (conferidas nas releases em 2026-11-10): actions/checkout v7 e astral-sh/setup-uv v10.3.3, as duas em
+# Node 24 (o Node 20 foi depreciado nos runners); o setup-uv não publica mais a etiqueta curta (@v10 não existe) desde
+# a v8. Ubuntu 26.04 fixo em vez de ubuntu-latest (a migração do rótulo termina em 2026-11-19; o Playwright do
+# uv.lock, 1.64, já instala o Chromium nele: suporte desde a 1.61).
 name: CI
 
 on:
@@ -19,11 +23,11 @@ permissions:
 jobs:
   testes:
     name: Testes e ruff
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
       - name: Dependências (versões do uv.lock)
@@ -38,11 +42,11 @@ jobs:
     # (só o conjunto público versionado): o clique chega ao Python, 390 px sem rolagem lateral, tema escuro.
     name: Navegador (mapa clicável)
     needs: testes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
       - name: Dependências (versões do uv.lock)
@@ -57,11 +61,11 @@ jobs:
     # os dados reais. Os que precisam do bronze (pacote da equipe) são pulados com o motivo "bronze ausente".
     name: Dados reais (modo completo)
     needs: testes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
       - name: Dependências (versões do uv.lock)

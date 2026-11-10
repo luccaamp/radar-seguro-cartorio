@@ -124,11 +124,62 @@ def _pct(a: int, b: int) -> str:
     return f"{a}/{b} ({100 * a / b:.0f}%)" if b else "—"
 
 
+def _intervalo(feitas: list[dict], conf: float) -> str:
+    if not feitas:
+        return "—"
+    lo, hi = avaliacao.intervalo_wilson(sum(r["certo"] for r in feitas), len(feitas), conf)
+    return f"{100 * lo:.0f}% a {100 * hi:.0f}%"
+
+
+def margem_de_erro(perguntas: list[dict], resultados: dict, versoes: list[str], conf: float,
+                   margem_alvo: float) -> list[str]:
+    """Seção "Margem de erro" (Miller, 2024): intervalo de Wilson, erro-padrão agrupado por tipo de pergunta,
+    comparação pareada entre as versões e quantas perguntas dariam a margem alvo. Só com as versões completas."""
+    completas = [v for v in versoes if len(resultados[v]) == len(perguntas)]
+    if not completas:
+        return []
+    ids = [p["id"] for p in perguntas]
+    linhas = ["", "## Margem de erro", "",
+              f"Com {len(ids)} perguntas, o acerto de uma rodada tem margem de erro grande. Seguindo Miller (2024, "
+              "\"Adding Error Bars to Evals\", arXiv:2411.00640): intervalo de Wilson, erro-padrão agrupado por tipo de "
+              "pergunta (as do mesmo tipo não são independentes) e comparação pareada (as mesmas perguntas nas duas "
+              f"versões). Nível de confiança: {conf:.0%} (`config/llm.yaml`). Uma rodada só, com temperatura 0: a "
+              "variação entre rodadas do modelo ainda não está medida.", "",
+              "| Versão | Acerto | Intervalo (Wilson) | Erro-padrão agrupado por tipo |", "|---|---|---|---|"]
+    for v in completas:
+        certos = [bool(resultados[v][i]["certo"]) for i in ids]
+        grupos: dict[str, list[bool]] = {}
+        for p in perguntas:
+            grupos.setdefault(p["tipo"], []).append(bool(resultados[v][p["id"]]["certo"]))
+        lo, hi = avaliacao.intervalo_wilson(sum(certos), len(certos), conf)
+        ep = avaliacao.erro_padrao_agrupado(grupos)
+        linhas.append(f"| {chat.VERSOES[v]} | {100 * sum(certos) / len(certos):.1f}% | {100 * lo:.1f}% a "
+                      f"{100 * hi:.1f}% | {100 * ep:.1f} pontos |")
+    if "c" in completas:
+        pares = [v for v in completas if v != "c"]
+        if pares:
+            linhas += ["", "| Comparação (mesmas perguntas) | Diferença de acerto | Intervalo |", "|---|---|---|"]
+            for v in pares:
+                d, lo, hi = avaliacao.diferenca_pareada([bool(resultados[v][i]["certo"]) for i in ids],
+                                                        [bool(resultados["c"][i]["certo"]) for i in ids], conf)
+                linhas.append(f"| {chat.VERSOES['c']} − {chat.VERSOES[v]} | {100 * d:+.1f} pontos | "
+                              f"{100 * lo:+.1f} a {100 * hi:+.1f} pontos |")
+        acerto_c = sum(bool(resultados["c"][i]["certo"]) for i in ids) / len(ids)
+        n = avaliacao.perguntas_para_margem(acerto_c, margem_alvo, conf)
+        linhas += ["", f"Para a margem ficar em ±{100 * margem_alvo:.0f} pontos com acerto perto de "
+                       f"{100 * acerto_c:.0f}%, seriam cerca de **{n} perguntas** (hoje, {len(ids)})."]
+    return linhas
+
+
 def relatorio(perguntas: list[dict], resultados: dict, versoes: list[str], sha: str, c: dict,
               parou: str | None) -> None:
     av = c["avaliacao"]
     tipos = list(dict.fromkeys(p["tipo"] for p in perguntas))
-    linhas = [f"# Avaliação do chat ({dt.date.today():%Y-%m-%d})", "",
+    # data das respostas (guardadas com "em"); as feitas agora são de hoje. Refazer só o relatório não muda a data.
+    hoje = f"{dt.date.today():%Y-%m-%d}"
+    datas = sorted({str(r.get("em", hoje))[:10] for rs in resultados.values() for r in rs.values()}) or [hoje]
+    quando = datas[0] if len(datas) == 1 else f"{datas[0]} a {datas[-1]}"
+    linhas = [f"# Avaliação do chat ({quando})", "",
               f"Modelo `{c['modelo']}` (Gemini, nível gratuito; reserva `{c['reserva']}`), raciocínio "
               f"`{c['nivel_raciocinio']}`, temperatura {c['temperatura']}, prompt do agente v{c['versao_prompt']}. "
               f"Gabarito `eval/gabarito_chat.csv` congelado (SHA-256 {sha[:12]}…, {len(perguntas)} perguntas). Dados do "
@@ -154,6 +205,8 @@ def relatorio(perguntas: list[dict], resultados: dict, versoes: list[str], sha: 
     medida("\"Não sei\" corretos", lambda rs: _pct(sum(rs[i]["certo"] for i in nao_sei if i in rs),
                                                    sum(i in rs for i in nao_sei)))
     medida("Latência média", lambda rs: f"{sum(r['segundos'] for r in feitas(rs)) / max(len(feitas(rs)), 1):.1f} s")
+    conf = float(av["confianca"])
+    medida(f"Acertos, intervalo de {conf:.0%}", lambda rs: _intervalo(feitas(rs), conf))
     if "c" in versoes and len(resultados["c"]) == len(perguntas):
         rc = resultados["c"]
         acerto = sum(r["certo"] for r in rc.values()) / len(rc)
@@ -162,6 +215,7 @@ def relatorio(perguntas: list[dict], resultados: dict, versoes: list[str], sha: 
         ok = acerto >= av["meta_acerto"] and not inventou
         linhas += ["", f"**Meta {'cumprida' if ok else 'NÃO cumprida'}:** (c) acertou {acerto:.0%} "
                        f"(meta {av['meta_acerto']:.0%}); armadilhas com número inventado: {inventou or 'nenhuma'}."]
+    linhas += margem_de_erro(perguntas, resultados, versoes, conf, float(av["margem_alvo"]))
     linhas += ["", "## Acerto por tipo", "", "| Tipo | " + " | ".join(chat.VERSOES[v] for v in versoes) + " |",
                "|---|" + "---|" * len(versoes)]
     for t in tipos:

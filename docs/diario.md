@@ -1217,3 +1217,14 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
   - Os checks de mapa do `scripts/qa_painel.py` (escala de cores do Plotly) não se aplicam mais a esta página; o `test_mapa_navegador.py` cobre o mapa novo.
   - Ainda não conferido no Cloud (só depois do merge).
 - **Próximo passo:** commit numa branch, PR e, depois do merge, conferir o mapa no link público. Depois, o autor aprova a lista do bloco (itens 1 a 7).
+
+## 2026-11-10 (3) — Mapa no ar, avisos do CI, margem de erro do chat e ideias no plano
+- **O que foi feito:**
+  - PR #12 juntado (`3dfc714`, os 3 jobs verdes; `main` igual à branch). No link público, clique de mouse no mapa (Playwright): Belo Horizonte em 1280 px e Uberaba em 390 px no tema escuro; 851 áreas, seletor e números trocam, sem rolagem lateral nem erro.
+  - Avisos do GitHub Actions (pedido do autor): nenhum é do painel (as 6 páginas rodam sem aviso de função depreciada; nenhum uso de API antiga do Streamlit). Node 20 depreciado → `actions/checkout@v7` e `astral-sh/setup-uv@v10.3.3` (Node 24; conferido nas releases); o `setup-uv` não publica mais a etiqueta curta desde a v8, então `@v10` não existe. `ubuntu-latest` → `ubuntu-26.04` fixo (os jobs já rodavam no 26.04; o Playwright 1.64 do `uv.lock` é compatível desde a 1.61).
+  - Margem de erro no relatório do chat (Miller, 2024): intervalo de Wilson, erro-padrão agrupado por tipo, comparação pareada e perguntas necessárias para ±3 pontos. Relatório refeito sem API (`--relatorio`): (c) 96,2%, intervalo de 87,0% a 98,9%; (c) − (a) +78,8 pontos (de +66,4 a +91,3); cerca de 158 perguntas para ±3 pontos. O título agora usa a data das respostas, não a do relatório. 6 testes novos; eles acharam que o intervalo pareado passava de +1 com poucas perguntas, corrigido (limitado a −1 e +1).
+  - Ideias do autor avaliadas com pesquisa: cada artigo aberto na fonte (arXiv, páginas dos autores ou da conferência) antes de citar. Anotadas no `plano_projeto.md` (Fase 6: Mini-VLAT e Lighthouse; Fase 7: gabarito com tamanho calculado e separado, checagem de números, repetição, fidelidade às fontes, juiz validado; Fase 8: artigo com os métodos, Deequ e o desenvolvimento guiado por especificação) e no item 7 do bloco do painel (`pytest-cov`, "Qualidade medida" no README, mutação e Dependabot opcionais).
+- **Decisões:** do autor: anotar as ideias no plano e corrigir o CI. Ficaram de fora: modelo próprio de legibilidade (o Mini-VLAT cumpre), Spec Kit como ferramenta e qualquer serviço pago.
+- **Suposições:** `margem_alvo: 0.03` em `config/llm.yaml` (`fonte: suposição`).
+- **Limitações encontradas:** a avaliação foi uma rodada só, com temperatura 0: a variação entre rodadas ainda não está medida. O Dependabot não teve o preço confirmado na documentação.
+- **Próximo passo:** commit, PR e CI verde nas versões novas; depois, o autor aprova a lista do bloco do painel.
