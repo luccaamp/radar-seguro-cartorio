@@ -1307,3 +1307,9 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 ## 2026-11-10 (11) — Imagem do Início e GIF do README com as cores novas
 - **O que foi feito** (pedido do autor: "Sim, depois do merge"; PR #18 juntado em `070b6da`, CI verde; branch `readme-imagens-cores-novas`): `scripts/gif_painel.py` passou a gravar também a imagem do Início (`docs/img/painel_inicio.png`, 1280 × 880, tema claro; antes era uma captura avulsa) e a terminar o GIF com o mapa no tema escuro (D-084). Rodado no modo demonstração: 10 telas, 0,92 MB; imagem de 145 kB. Conferidos a imagem e os quadros do mapa claro e escuro. Descrição do GIF no README atualizada.
 - **Próximo passo:** Reboot no Cloud (o PR #18 mudou o `src/`); depois, Fase 3, bloco 4.
+
+## 2026-11-10 (12) — Teste do tema no navegador intermitente na `main`
+- **O que aconteceu:** a execução da `main` depois do merge do PR #18 (`070b6da`) falhou só em `test_tema_escuro_usa_os_tokens_escuros` (o mapa lido com a cor do claro numa página no escuro); o mesmo teste passou no PR #18, no PR #19 e na `main` depois do #19 (`ff8ad3d`). Localmente, 4 rodadas de diagnóstico mostraram o tema certo desde a primeira leitura.
+- **Causa provável:** o teste lia a cor logo que o primeiro município aparecia; no CI, mais lento, o componente de tema pode não ter marcado o `<html>` ainda, e vale a marca do servidor da primeira execução.
+- **Correção:** o teste espera `data-rd-tema` com o tema certo (até 20 s) antes de ler a cor e, se não vier, mostra a marca que estava na página. 3 rodadas seguidas passaram.
+- **Próximo passo:** se voltar a falhar, a mensagem nova diz qual marca ficou; aí a correção é no componente, não no teste.
