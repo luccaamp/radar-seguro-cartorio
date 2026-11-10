@@ -41,8 +41,7 @@ def modo() -> str:
 def demonstracao() -> bool:
     return modo() == "demonstracao"
 
-# paleta do Raio-X do Cartório (D-052): sequencial do mapa e série principal, as mesmas de src/painel/graficos.py
-AZUL_SEQUENCIAL = ["#e8eef8", "#c3d1e8", "#8fb3e6", "#5a94e0", "#2a78d6", "#2056a8", "#183564"]
+# paleta do Raio-X do Cartório (D-052): série principal, a mesma de src/painel/graficos.py
 AZUL_SERIE = "#2a78d6"
 
 NOMES_FONTE = {

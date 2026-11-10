@@ -218,3 +218,51 @@ test("entrada do componente sem dados ou sem a raiz não quebra", () => {
   assert.doesNotThrow(() => mod.default({ data: null, parentElement: new No("div"), setTriggerValue() {} }));
   assert.doesNotThrow(() => mod.default({ data: dados(), parentElement: new No("div"), setTriggerValue() {} }));
 });
+
+// ------------------------------------------------------------------ vista: zoom, arrastar e "estado inteiro" (2026-11-10)
+const INTEIRO = { x: 0, y: 0, w: 1000, h: 800 };
+
+test("lê e escreve a vista do viewBox", () => {
+  assert.deepEqual(mod.lerVista("10 20 300 240"), { x: 10, y: 20, w: 300, h: 240 });
+  assert.equal(mod.lerVista("x"), null);
+  assert.equal(mod.lerVista("0 0 0 10"), null);
+  assert.equal(mod.textoVista({ x: 1.234, y: 2, w: 3, h: 4 }), "1.2 2 3 4");
+});
+
+test("zoom no centro mantém o centro; limites de 1× a 12× o estado", () => {
+  const v = mod.zoomVista(INTEIRO, 2, 500, 400, INTEIRO);
+  assert.deepEqual(v, { x: 250, y: 200, w: 500, h: 400 });
+  assert.equal(mod.zoomVista(INTEIRO, 1 / 2, 500, 400, INTEIRO).w, 1000);        // não afasta além do estado
+  assert.equal(mod.zoomVista(INTEIRO, 100, 500, 400, INTEIRO).w, 1000 / mod.ZOOM_MAX);
+});
+
+test("arrastar move a vista, sem o centro sair do estado", () => {
+  const v = { x: 250, y: 200, w: 500, h: 400 };
+  assert.deepEqual(mod.moverVista(v, 100, 50, INTEIRO), { x: 150, y: 150, w: 500, h: 400 });
+  const longe = mod.moverVista(v, 5000, 5000, INTEIRO);
+  assert.equal(longe.x + longe.w / 2, 0);   // o centro para na borda do estado
+  assert.equal(longe.y + longe.h / 2, 0);
+});
+
+test("mais nomes com mais zoom, até 12; zero continua zero; só os que estão na tela", () => {
+  assert.equal(mod.maxRotulosNaVista(3, INTEIRO, INTEIRO), 3);
+  assert.equal(mod.maxRotulosNaVista(3, INTEIRO, { w: 500 }), 6);
+  assert.equal(mod.maxRotulosNaVista(3, INTEIRO, { w: 50 }), mod.ROTULOS_MAX);
+  assert.equal(mod.maxRotulosNaVista(0, INTEIRO, { w: 50 }), 0);
+  const c = [{ x: 10, y: 10 }, { x: 900, y: 700 }];
+  assert.deepEqual(mod.rotulosNaVista(c, { x: 0, y: 0, w: 100, h: 100 }), [{ x: 10, y: 10 }]);
+});
+
+test("botões +, − e estado inteiro mudam o viewBox", () => {
+  const raiz = new No("div");
+  const svg = mod.desenhar(raiz, { ...dados(), viewBoxInteiro: "0 0 1000 800", rotuloInteiro: "Ver o estado" },
+                           () => {}, doc);
+  const botoes = raiz.querySelectorAll(".rd-mapa-botao");
+  assert.deepEqual(botoes.map((b) => b.textContent), ["+", "−", "Ver o estado"]);
+  botoes[0].dispatch("click");
+  assert.equal(svg.getAttribute("viewBox"), "187.5 150 625 500");
+  assert.ok(svg.getAttribute("class").includes("rd-aproximado"));
+  botoes[2].dispatch("click");
+  assert.equal(svg.getAttribute("viewBox"), "0 0 1000 800");
+  assert.ok(!svg.getAttribute("class").includes("rd-aproximado"));
+});

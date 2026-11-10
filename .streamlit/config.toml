@@ -33,7 +33,7 @@ textColor = "#0f1c33"
 borderColor = "#dde2ea"
 dataframeBorderColor = "#e6e9ef"
 linkColor = "#2a78d6"
-chartCategoricalColors = ["#2a78d6", "#eb6834", "#1baf7a", "#8d97ab"]
+chartCategoricalColors = ["#2a78d6", "#d65a26", "#178f64", "#78829a"]
 
 [theme.light.sidebar]
 backgroundColor = "#ffffff"
@@ -41,25 +41,28 @@ secondaryBackgroundColor = "#f5f7fa"
 textColor = "#0f1c33"
 borderColor = "#dde2ea"
 
-# escuro: --bg #0c1018, --surface #141a25, --surface-2 #1a2130, --ink #e9edf5, --line #262e3d, --grid #222a38, --s1 #3987e5
+# escuro (2026-11-10): cinza neutro, sem o azul dos dados (era azul-marinho #0c1018, em que o mapa sumia):
+# --fundo #121316, --superficie #1b1d21, --superficie-2 #25262a, --texto #eceef2, --linha #33363c, --grade #2b2e33
 [theme.dark]
 primaryColor = "#3987e5"
-backgroundColor = "#0c1018"
-secondaryBackgroundColor = "#1a2130"
-textColor = "#e9edf5"
-borderColor = "#262e3d"
-dataframeBorderColor = "#222a38"
+backgroundColor = "#121316"
+secondaryBackgroundColor = "#25262a"
+textColor = "#eceef2"
+borderColor = "#33363c"
+dataframeBorderColor = "#2b2e33"
 linkColor = "#3987e5"
 chartCategoricalColors = ["#3987e5", "#d95926", "#199e70", "#7b869b"]
 
 [theme.dark.sidebar]
-backgroundColor = "#141a25"
-secondaryBackgroundColor = "#1a2130"
-textColor = "#e9edf5"
-borderColor = "#262e3d"
+backgroundColor = "#1b1d21"
+secondaryBackgroundColor = "#25262a"
+textColor = "#eceef2"
+borderColor = "#33363c"
 
 [client]
-toolbarMode = "minimal"
+# "viewer": o menu (⋮, canto superior direito) aparece para o visitante, com Settings → tema claro, escuro ou do
+# sistema (2026-11-10; o "minimal" escondia o menu e o visitante não tinha como escolher o tema)
+toolbarMode = "viewer"
 
 [browser]
 gatherUsageStats = false

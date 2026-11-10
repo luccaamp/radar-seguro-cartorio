@@ -1021,3 +1021,11 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** a conferência local comparou o gold com o banco real, mas não rodou os testes de dados reais que comparam com o conjunto público; a IA tratou "conteúdo igual" como suficiente, quando o teste compara o esquema também.
 - **Correção:** a carga oficial (já pedida pelo autor para depois do bloco 3) entrou no mesmo PR, com o conjunto público e o completo regerados. Regra: mudança de esquema no gold vai no mesmo PR que a carga e o `data/publico` novos; antes do PR, rodar `-m dados_reais tests/test_pipeline.py tests/test_publico.py` numa cópia.
 - **Bom para os slides?** não
+
+## 2026-11-10 — Tema escuro com as cores do mapa quase iguais ao fundo, e sem como trocar de tema
+- **Onde:** `src/painel/estilo.css` (tokens do escuro, desde o artefato "Raio-X", D-052, e o mapa da D-083) e `.streamlit/config.toml` (`toolbarMode = "minimal"`).
+- **O que aconteceu:** a IA escolheu o "zero" do mapa "quase da cor do fundo" de propósito e manteve a escala azul sobre o fundo azul-marinho; as faixas baixas tinham 1,3:1 e 1,8:1 contra o fundo. O teste de contraste só olhava o texto sobre as cores (4,5:1), não as cores contra o fundo. O menu de tema ficou escondido sem a IA perceber que era o único jeito de o visitante escolher o claro.
+- **Como foi detectado:** pelo autor, no painel publicado ("horríveis de enxergar").
+- **Causa provável:** contraste conferido só para texto; elementos gráficos (WCAG 1.4.11, 3:1) fora do teste; o visual dos protótipos copiado sem medir.
+- **Correção:** D-084: toda cor de dado ≥ 3:1 contra fundo e superfícies, fundo neutro no escuro, teste que trava a regra (`tests/test_cores.py`), menu de tema visível e componente que acompanha a troca. Regra: toda cor nova de dado entra no teste de contraste contra o fundo, nos dois temas, antes de ir para o painel.
+- **Bom para os slides?** sim (o teste mede o que o usuário vê, não só o texto)

@@ -47,7 +47,7 @@ def test_quadro_calor_html(monkeypatch):
 
 
 def _tokens(bloco: str) -> dict[str, str]:
-    return dict(re.findall(r"--(mapa-[\w]+|titulo|superficie):\s*(#[0-9a-fA-F]{6})", bloco))
+    return dict(re.findall(r"--(mapa-[\w-]+|titulo|superficie):\s*(#[0-9a-fA-F]{6})", bloco))
 
 
 def _contraste(a: str, b: str) -> float:
@@ -61,15 +61,14 @@ def _contraste(a: str, b: str) -> float:
 
 @pytest.mark.parametrize("tema", ["claro", "escuro"])
 def test_contraste_do_texto_em_cada_cor(tema):
-    """Faixas zero a 3 com o texto de --titulo e 4 a 6 com o de --superficie (estilo.css): todas com 4,5 ou mais."""
-    claro = _tokens(CSS.split(":root:has(.rd-tema-escuro)")[0])
-    escuro = {**claro, **_tokens(CSS.split(":root:has(.rd-tema-escuro)")[1].split("}")[0])}
+    """Cada faixa com o texto da sua --mapa-tinta-* (estilo.css): todas com 4,5 ou mais, nos dois temas."""
+    claro = _tokens(CSS.split(':root[data-rd-tema="escuro"]')[0])
+    escuro = {**claro, **_tokens(CSS.split(':root[data-rd-tema="escuro"]')[1].split("}")[0])}
     t = claro if tema == "claro" else escuro
     for f in ["zero", "1", "2", "3", "4", "5", "6"]:
-        texto = t["titulo"] if f in ("zero", "1", "2", "3") else t["superficie"]
+        texto = t[f"mapa-tinta-{f}"]
         assert _contraste(t[f"mapa-{f}"], texto) >= 4.5, (tema, f, t[f"mapa-{f}"], texto)
-    assert re.search(r"td\.rd-calor-3 \{ color: var\(--titulo\); \}", CSS)
-    assert re.search(r"td\.rd-calor-6 \{ color: var\(--superficie\); \}", CSS)
+        assert re.search(rf"td\.rd-calor-{f} \{{ background: var\(--mapa-{f}\); color: var\(--mapa-tinta-{f}\); \}}", CSS)
 
 
 def test_pagina_mostra_a_grade(painel_demo):

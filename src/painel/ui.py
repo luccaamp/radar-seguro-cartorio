@@ -29,21 +29,44 @@ def _html(conteudo: str) -> None:
     st.markdown(conteudo, unsafe_allow_html=True)
 
 
+CHAVE_TEMA = "rd_tema"
+_componente_tema = None
+
+
 def tema() -> str:
-    """'escuro' ou 'claro', o tema que o Streamlit está mostrando (segue o sistema, como o Raio-X; o menu troca). ''
-    quando o navegador ainda não informou: o CSS cai na preferência do sistema."""
+    """'escuro' ou 'claro', o tema que o visitante está vendo. Primeiro o que o navegador informou pelo componente de
+    tema (a escolha do menu ⋮ do Streamlit ou o sistema; componentes/tema.js); antes disso, o st.context.theme. ''
+    quando nenhum dos dois informou: o CSS cai na preferência do sistema."""
     try:
+        do_navegador = (st.session_state.get(CHAVE_TEMA) or {}).get("tema")
+        if do_navegador in ("claro", "escuro"):
+            return do_navegador
         t = st.context.theme.type
     except Exception:   # fora do Streamlit (testes do módulo)
         return ""
     return {"dark": "escuro", "light": "claro"}.get(t or "", "")
 
 
+def _registrar_tema():
+    global _componente_tema
+    if _componente_tema is None:
+        _componente_tema = st.components.v2.component(
+            "radar_tema", html='<div class="rd-tema-js" hidden></div>',
+            js=ESTILO.with_name("componentes").joinpath("tema.js").read_text(encoding="utf-8"))
+    return _componente_tema
+
+
 def estilo() -> None:
-    """Injeta o CSS único do painel e o marcador do tema (.rd-tema-escuro ou .rd-tema-claro), que escolhe os tokens
-    claros ou escuros do Raio-X no estilo.css. Chamado uma vez no topo de cada página."""
-    marca = f'<div class="rd-tema-{tema()}" hidden></div>' if tema() else ""
+    """Injeta o CSS único do painel, o marcador do tema (.rd-tema-escuro ou .rd-tema-claro), que escolhe os tokens
+    claros ou escuros no estilo.css, e o componente invisível que acompanha a troca de tema no menu do Streamlit (ele
+    marca o <html> com data-rd-tema, que vale mais que o marcador). Chamado uma vez no topo de cada página."""
+    t = tema()
+    marca = f'<div class="rd-tema-{t}" hidden></div>' if t else ""
     _html(f"<style>{ESTILO.read_text(encoding='utf-8')}</style>{marca}")
+    try:
+        _registrar_tema()(data={"atual": t}, key=CHAVE_TEMA, on_tema_change=lambda: None)
+    except Exception:   # fora de uma execução do Streamlit (testes do módulo)
+        pass
 
 
 def selo(tipo: str, texto: str | None = None) -> str:
