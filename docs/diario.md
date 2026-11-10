@@ -1303,3 +1303,7 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Conferência:** suíte padrão 442 passed (26 do JavaScript); `-m navegador` 4 passed; capturas em 1280 px nos dois temas e em 375 px no escuro; troca de tema claro → escuro com mudança de página, com o sistema claro e escuro; 10 números sem mudança.
 - **Limitações encontradas:** o servidor local também não recarrega o `src/` sozinho (o componente de tema não apareceu até reiniciar), como no Cloud; os erros 404 do console são do próprio Streamlit (`/<página>/_stcore/health`).
 - **Próximo passo:** PR; depois do merge, Reboot no Cloud; depois, Fase 3, bloco 4.
+
+## 2026-11-10 (11) — Imagem do Início e GIF do README com as cores novas
+- **O que foi feito** (pedido do autor: "Sim, depois do merge"; PR #18 juntado em `070b6da`, CI verde; branch `readme-imagens-cores-novas`): `scripts/gif_painel.py` passou a gravar também a imagem do Início (`docs/img/painel_inicio.png`, 1280 × 880, tema claro; antes era uma captura avulsa) e a terminar o GIF com o mapa no tema escuro (D-084). Rodado no modo demonstração: 10 telas, 0,92 MB; imagem de 145 kB. Conferidos a imagem e os quadros do mapa claro e escuro. Descrição do GIF no README atualizada.
+- **Próximo passo:** Reboot no Cloud (o PR #18 mudou o `src/`); depois, Fase 3, bloco 4.

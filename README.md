@@ -10,7 +10,7 @@
 
 <details><summary>Tour pelas páginas (GIF)</summary>
 
-![Tour pelo painel publicado: Início, Quão certo é, Onde está o mercado, Para onde vai, Simule e Sobre os dados](docs/img/painel_tour.gif)
+![Tour pelo painel no modo demonstração: Início, Quão certo é, Onde está o mercado (mapa, Belo Horizonte e o mapa em %), Para onde vai, Sobre os dados e o mapa no tema escuro](docs/img/painel_tour.gif)
 
 </details>
 
