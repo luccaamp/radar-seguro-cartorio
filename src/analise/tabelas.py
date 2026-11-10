@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from src import estado
+from src import estado, estados_config
 from src.analise import RAIZ, config, dados
 from src.analise import classificacao as cl
 from src.analise import enquadramento as enq
@@ -24,7 +24,7 @@ from src.analise import regressao as rg
 from src.analise import sensibilidade as se
 from src.model import simulador
 from src.motor import Insumos, calcular_serventias, peso_indeterminada, premissas_nivel, resumo_mercado
-from src.transform.gold import carregar_insumos
+from src.transform.gold import _com_uf, carregar_insumos, insumos_da_uf
 
 SARIMA = "SARIMA(0,1,1)(0,1,1)2 (log)"
 VARIANTE_PRINCIPAL = "tendência do T2 (principal)"
@@ -46,22 +46,37 @@ def _ano_enquadramento() -> int:
     return yaml.safe_load((RAIZ / "config" / "escopo.yaml").read_text(encoding="utf-8"))["ano_enquadramento"]
 
 
-def _peso_indeterminada(con) -> float:
-    return con.execute("SELECT peso_classe_indeterminada_base FROM gold.execucao WHERE regra_classe = 'v2'"
-                       ).fetchone()[0]
+def _uf(uf: str | None) -> str:
+    """A UF da análise (Fase 3, bloco 3): a dada ou a primeira do escopo."""
+    return uf or estados_config.uf_padrao()
 
 
-def regras(con) -> pd.DataFrame:
+def _peso_indeterminada(con, uf: str | None = None) -> float:
+    return con.execute("SELECT peso_classe_indeterminada_base FROM gold.execucao WHERE regra_classe = 'v2' "
+                       "AND uf = ?", [_uf(uf)]).fetchone()[0]
+
+
+def _semente(uf: str | None = None) -> dict:
+    """As premissas do modelo da UF (MG: a versão vigente; outra UF herda, D-081)."""
+    return estados_config.premissas_da_uf(_uf(uf), estado.ler_semente())[0]
+
+
+def _insumos(con, uf: str | None = None) -> Insumos:
+    """Os insumos do motor só da UF (as serventias e os vínculos da RAIS dela), como no gold."""
+    return insumos_da_uf(carregar_insumos(con), _uf(uf))
+
+
+def regras(con, uf: str | None = None) -> pd.DataFrame:
     """gold.analise_regras (notebook 03): as regras estáveis que terminam em "obrigada", na ordem do lift."""
-    trans = padroes.transacoes(dados.serventias(con))
+    trans = padroes.transacoes(dados.serventias(con, uf=_uf(uf)))
     candidatas = padroes.regras_alvo(trans, padroes.regras(trans))
     return padroes.tabela_regras(candidatas, trans, padroes.estabilidade(trans))
 
 
-def grupos(con) -> pd.DataFrame:
+def grupos(con, uf: str | None = None) -> pd.DataFrame:
     """gold.analise_grupos (notebook 04): o grupo do k-means de cada serventia agrupada, com o k da maior silhueta."""
     semente = config()["semente"]
-    sv = dados.serventias(con)
+    sv = dados.serventias(con, uf=_uf(uf))
     x = gr.matriz(sv)
     z = gr.padronizar(x)
     escolha = gr.escolha_k(z)
@@ -74,11 +89,11 @@ def grupos(con) -> pd.DataFrame:
     return gr.tabela_grupos(grupo, nomes, gr.grupo_alvo(perfil), k, semente)
 
 
-def grupos_perfil(con, tab_grupos: pd.DataFrame) -> pd.DataFrame:
+def grupos_perfil(con, tab_grupos: pd.DataFrame, uf: str | None = None) -> pd.DataFrame:
     """gold.analise_grupos_perfil (D-044): o perfil agregado de cada grupo da gold.analise_grupos (gr.perfil), sem
-    nenhum dado por serventia, com a parte das serventias, das obrigadas e do passivo das obrigadas de MG. É a versão
-    da análise de grupos que vai para o conjunto público."""
-    sv = dados.serventias(con)
+    nenhum dado por serventia, com a parte das serventias, das obrigadas e do passivo das obrigadas da UF (as colunas
+    `*_mg` mantêm o nome até o bloco 4 da Fase 3). É a versão da análise de grupos que vai para o conjunto público."""
+    sv = dados.serventias(con, uf=_uf(uf))
     t = tab_grupos.set_index("cns")
     p = gr.perfil(sv, t["grupo"])
     obr = sv["passivo"] * sv["peso_universo"]
@@ -90,7 +105,7 @@ def grupos_perfil(con, tab_grupos: pd.DataFrame) -> pd.DataFrame:
     return p.rename(columns={"serventias": "n_serventias"}).reset_index()
 
 
-def sensibilidade_metodo(con) -> pd.DataFrame:
+def sensibilidade_metodo(con, uf: str | None = None) -> pd.DataFrame:
     """gold.analise_sensibilidade_metodo (D-042, itens 2 e 3; D-044): as leituras alternativas do notebook 08 que
     refazem o modelo inteiro, ao lado da base. Universo: receita líquida do repasse (art. 2º, XXIV, do Prov. 213), com
     a faixa de déficit da base (D-019). Passivo: T5 (vínculos sem salário de dezembro com salário estimado), T6
@@ -98,9 +113,10 @@ def sensibilidade_metodo(con) -> pd.DataFrame:
     base, regra v2, STF mantém. Nenhuma linha muda a base.
     A receita líquida usa o CSV do BI do CNJ no bronze, que é opcional (README; não vai no pacote público): sem ele, a
     linha sai com um aviso, e o pipeline a partir do silver continua rodando sem o bronze (D-029)."""
-    semente_premissas, cenarios, limites = estado.ler_semente(), _cenarios(), _limites()
-    p = premissas_nivel(semente_premissas, "base", _peso_indeterminada(con))
-    ins = carregar_insumos(con)
+    uf = _uf(uf)
+    semente_premissas, cenarios, limites = _semente(uf), _cenarios(), _limites()
+    p = premissas_nivel(semente_premissas, "base", _peso_indeterminada(con, uf))
+    ins = _insumos(con, uf)
     serv0 = calcular_serventias(ins, p, limites, limites_faixa=limites)[0]
 
     linha_liq = []
@@ -118,7 +134,7 @@ def sensibilidade_metodo(con) -> pd.DataFrame:
                       "da receita líquida fica de fora")
     # regra do salto (D-046): a base usa o valor declarado; aqui, a receita de quem tem salto grosseiro no ano de
     # enquadramento vira a média dos semestres sem o salto (notebook 01, §7b), com a faixa de déficit da base
-    serie = dados.serie_arrecadacao(con)
+    serie = dados.serie_arrecadacao(con, uf)
     ref_ss = enq.receita_sem_saltos(serie, est.saltos(serie), _ano_enquadramento())
     s_ss = ins.serventias.copy()
     s_ss["receita_ref"] = s_ss["receita_ref"].where(s_ss["receita_ref"].isna(),
@@ -137,7 +153,8 @@ def sensibilidade_metodo(con) -> pd.DataFrame:
     municipios = ins.serventias.cod_ibge.dropna().astype(int).unique().tolist()
     medio6 = se.medio_com_encolhimento(se.vinculos_base(ins, p), municipios, p,
                                        int(p["limiar_vinculos_distribuicao_municipal"]), ins.regioes)
-    gold_sem_regiao = con.execute("SELECT * FROM gold.sensibilidade_premissas WHERE chave = 'sem_regiao'").df()
+    gold_sem_regiao = con.execute("SELECT * FROM gold.sensibilidade_premissas WHERE chave = 'sem_regiao' AND uf = ?",
+                                  [uf]).df()
 
     passivo = "passivo: escolhas de método"
     linhas = [
@@ -148,7 +165,7 @@ def sensibilidade_metodo(con) -> pd.DataFrame:
          resumo_mercado(calcular_serventias(ins5, p, limites, limites_faixa=limites)[0], p, cenarios, "mantem")),
         ("t6_encolhimento", passivo, "T6: reserva por encolhimento (município pequeno mistura a própria média com a "
          "da região)", resumo_mercado(se.calcular_com_medio(ins, p, limites, medio6), p, cenarios, "mantem")),
-        ("sem_regiao", passivo, "Reserva da distribuição = MG inteiro, sem a região (gold.sensibilidade_premissas)",
+        ("sem_regiao", passivo, f"Reserva da distribuição = {uf} inteiro, sem a região (gold.sensibilidade_premissas)",
          gold_sem_regiao.iloc[0].to_dict()),
     ]
     cols = ["n_universo", "passivo_todas", "passivo_universo", "valor_descoberto", "mercado_importancia_segurada",
@@ -160,25 +177,26 @@ def sensibilidade_metodo(con) -> pd.DataFrame:
     return out
 
 
-def clt_modelo(con) -> pd.DataFrame:
+def clt_modelo(con, uf: str | None = None) -> pd.DataFrame:
     """gold.analise_clt_modelo (notebook 06a): CLT declarado e previsto com a região intermediária de fora."""
-    base = rg.base_clt(dados.serventias(con))
+    base = rg.base_clt(dados.serventias(con, uf=_uf(uf)))
     prev, _, _ = rg.validar_grupo_fora(base, rg.METODOS_CLT)
     return rg.tabela_clt_modelo(base, prev)
 
 
-def tornado_e_monte_carlo(con) -> tuple[pd.DataFrame, pd.DataFrame]:
+def tornado_e_monte_carlo(con, uf: str | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
     """gold.analise_tornado e gold.analise_monte_carlo (notebook 08): cada premissa sozinha do mínimo ao máximo e os
     sorteios triangulares das seis suposições (independentes e com o patrimônio junto)."""
+    uf = _uf(uf)
     cfg = config()
     semente, n = cfg["semente"], cfg["sensibilidade"]["sorteios"]
-    semente_premissas, cenarios = estado.ler_semente(), _cenarios()
-    peso = _peso_indeterminada(con)
+    semente_premissas, cenarios = _semente(uf), _cenarios()
+    peso = _peso_indeterminada(con, uf)
     p = premissas_nivel(semente_premissas, "base", peso)
-    totais = simulador.totais(dados.serventias(con))
+    totais = simulador.totais(dados.serventias(con, uf=uf))
     faixas = se.faixas_suposicoes(semente_premissas)
     tor_sup = se.tornado(totais, faixas, p, cenarios).assign(grupo="suposição (passos 5 a 8)")
-    tor_rec = se.tornado_recalculo(carregar_insumos(con), semente_premissas, peso, _limites(), cenarios).assign(
+    tor_rec = se.tornado_recalculo(_insumos(con, uf), semente_premissas, peso, _limites(), cenarios).assign(
         grupo="passivo e universo")
     tor = pd.concat([tor_sup, tor_rec]).sort_values("amplitude", ascending=False).reset_index(drop=True)
 
@@ -192,16 +210,18 @@ def tornado_e_monte_carlo(con) -> tuple[pd.DataFrame, pd.DataFrame]:
     return se.tabela_tornado(tor), se.tabela_monte_carlo(res, cantos, n, semente)
 
 
-def previsao(con) -> pd.DataFrame:
-    """gold.analise_previsao (notebook 07): arrecadação de MG por semestre de 2026 e 2027 (5 variantes) e o mercado
-    projetado por ano, variante da previsão e cenário do limite (11 medidas), com P10, central e P90. PROJEÇÃO."""
+def previsao(con, uf: str | None = None) -> pd.DataFrame:
+    """gold.analise_previsao (notebook 07): arrecadação da UF por semestre de 2026 e 2027 (5 variantes) e o mercado
+    projetado por ano, variante da previsão e cenário do limite (11 medidas), com P10, central e P90. PROJEÇÃO.
+    A série e o "fator" de crescimento são os da UF (pv.serie_mg soma a série que recebe; o nome fica)."""
+    uf = _uf(uf)
     cfg = config()
     pc, semente = cfg["previsao"], cfg["semente"]
-    serie = dados.serie_arrecadacao(con)
+    serie = dados.serie_arrecadacao(con, uf)
     y_tudo = pv.serie_mg(serie)
     y = y_tudo.loc[:pc["ultimo_periodo"]]
     ult = y_tudo.index[-1]
-    semente_premissas, cenarios, limites = estado.ler_semente(), _cenarios(), _limites()
+    semente_premissas, cenarios, limites = _semente(uf), _cenarios(), _limites()
     ano_b, h_max = pc["ano_base"], pc["horizonte"]
 
     sal = est.saltos(serie)
@@ -224,8 +244,8 @@ def previsao(con) -> pd.DataFrame:
     lim1 = limites["classe_1_max"]
     dsv = {h: pv.desvios_individuais(media, sal, list(range(ano_b - h - pc["desvios"]["anos"] + 1, ano_b - h + 1)),
                                      h, lim1) for h in (1, 2)}
-    p = premissas_nivel(semente_premissas, "base", _peso_indeterminada(con))
-    serv0 = calcular_serventias(carregar_insumos(con), p, limites, limites_faixa=limites)[0]
+    p = premissas_nivel(semente_premissas, "base", _peso_indeterminada(con, uf))
+    serv0 = calcular_serventias(_insumos(con, uf), p, limites, limites_faixa=limites)[0]
     inflacao, _ = pv.inflacao_recente(dados.indice_preco(con, "IPCA"))
     ea = pv.erros_anuais(erros, pv.PRINCIPAL)
     fat = {VARIANTE_PRINCIPAL: pv.fatores_ano(prev[pv.PRINCIPAL], y, ano_b),
@@ -261,14 +281,15 @@ def previsao(con) -> pd.DataFrame:
     return pv.tabela_previsao(pd.DataFrame(arr), pd.DataFrame(linhas))
 
 
-def melhorias(con, monte_carlo: pd.DataFrame) -> dict[str, pd.DataFrame]:
+def melhorias(con, monte_carlo: pd.DataFrame, uf: str | None = None) -> dict[str, pd.DataFrame]:
     """As tabelas das melhorias de confiança (notebook 10; D-045): capacidade de pagar (M1, por faixa de meses de saldo
     e por faixa de déficit × horizonte), sinistro por frequência × severidade (M2), prêmio por cenário do STF (M7) e
     na grade taxa × adesão (M8). A M1 e a M2 usam o CSV do BI do CNJ no bronze, que é opcional: sem ele, essas três
     tabelas ficam de fora, com um aviso."""
-    semente_premissas, cenarios = estado.ler_semente(), _cenarios()
-    p = premissas_nivel(semente_premissas, "base", _peso_indeterminada(con))
-    sv = dados.serventias(con)
+    uf = _uf(uf)
+    semente_premissas, cenarios = _semente(uf), _cenarios()
+    p = premissas_nivel(semente_premissas, "base", _peso_indeterminada(con, uf))
+    sv = dados.serventias(con, uf=uf)
     out = {"analise_premio_cenarios": mh.premio_por_cenario(monte_carlo, cenarios),
            "analise_premio_grade": mh.grade_taxa_adesao(float(sv["valor_descoberto"].sum()), semente_premissas)
            .reset_index().melt(id_vars="taxa", var_name="adesao", value_name="premio")
@@ -294,12 +315,25 @@ def melhorias(con, monte_carlo: pd.DataFrame) -> dict[str, pd.DataFrame]:
     return out
 
 
+def construir_uf(con, uf: str) -> dict[str, pd.DataFrame]:
+    """As tabelas gold.analise_* (sem o prefixo) de UMA UF: as seis do plano (D-043), as duas da D-044 e as das
+    melhorias de confiança (D-045; as que dependem de um arquivo opcional do bronze ficam de fora sem ele)."""
+    tornado, monte_carlo = tornado_e_monte_carlo(con, uf)
+    tab_grupos = grupos(con, uf)
+    return {"analise_regras": regras(con, uf), "analise_grupos": tab_grupos,
+            "analise_grupos_perfil": grupos_perfil(con, tab_grupos, uf), "analise_clt_modelo": clt_modelo(con, uf),
+            "analise_previsao": previsao(con, uf), "analise_tornado": tornado, "analise_monte_carlo": monte_carlo,
+            "analise_sensibilidade_metodo": sensibilidade_metodo(con, uf), **melhorias(con, monte_carlo, uf)}
+
+
 def construir(con) -> dict[str, pd.DataFrame]:
-    """As tabelas gold.analise_* (sem o prefixo): as seis do plano (D-043), as duas da D-044 e as das melhorias de
-    confiança (D-045; as que dependem de um arquivo opcional do bronze ficam de fora sem ele)."""
-    tornado, monte_carlo = tornado_e_monte_carlo(con)
-    tab_grupos = grupos(con)
-    return {"analise_regras": regras(con), "analise_grupos": tab_grupos,
-            "analise_grupos_perfil": grupos_perfil(con, tab_grupos), "analise_clt_modelo": clt_modelo(con),
-            "analise_previsao": previsao(con), "analise_tornado": tornado, "analise_monte_carlo": monte_carlo,
-            "analise_sensibilidade_metodo": sensibilidade_metodo(con), **melhorias(con, monte_carlo)}
+    """As tabelas gold.analise_* de todas as UFs do escopo com serventias no gold (Fase 3, bloco 3), cada uma com a
+    coluna `uf` na frente. Com ufs: [MG], o conteúdo é o de antes (fora a coluna nova)."""
+    presentes = {u for (u,) in con.execute("SELECT DISTINCT uf FROM gold.interno_serventia").fetchall()}
+    partes: dict[str, list[pd.DataFrame]] = {}
+    for uf in estados_config.ufs():
+        if uf not in presentes:
+            continue
+        for nome, df in construir_uf(con, uf).items():
+            partes.setdefault(nome, []).append(_com_uf(df, uf))
+    return {nome: pd.concat(dfs, ignore_index=True) for nome, dfs in partes.items()}

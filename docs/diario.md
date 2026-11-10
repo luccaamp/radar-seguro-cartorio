@@ -1273,3 +1273,12 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Decisões:** `pct_mg` mantém o nome (bloco 4, painel e chat); as `analise_*` sem `uf` até o bloco 3.
 - **Limitações encontradas:** o `data/publico` e o `data/completo` só ganham a coluna com uma carga oficial (pedido do autor).
 - **Próximo passo:** PR do bloco 2; bloco 3 (análises por UF).
+
+## 2026-11-10 (8) — Fase 3, bloco 3: análises por UF
+- **O que foi feito** (o autor pediu a carga oficial "depois do bloco 3"; branch `fase-3-bloco-3-analises-uf`):
+  - `src/analise/tabelas.py`: cada função das `gold.analise_*` recebe a UF (padrão: a primeira do escopo) e usa só os dados dela: serventias e série de arrecadação da UF (filtro novo e opcional em `dados.serventias` e `dados.serie_arrecadacao`), insumos da UF (`insumos_da_uf`, do bloco 2), peso da classe indeterminada da UF em `gold.execucao`, premissas da UF (`premissas_da_uf`) e a linha "sem região" da UF em `gold.sensibilidade_premissas`. `construir` percorre as UFs com serventias no gold (`construir_uf`) e põe a coluna `uf` na frente (`_com_uf`).
+  - Previsão: a série e o "fator" de crescimento passam a ser os da UF (com MG, os mesmos).
+- **Conferência:** o mesmo script do bloco 2, numa cópia nova: as 33 tabelas do gold iguais linha a linha às do banco real, fora a coluna `uf` (agora nas 33); os 10 números iguais. Banco real `7f528a8c` antes e depois. Suíte padrão 411 passed; `ruff` sem erro.
+- **Erros no caminho:** 2 testes falharam na primeira rodada: uma tabela sintética de `tests/test_analise.py` sem a coluna `uf` e um dublê de `tests/test_analise_tabelas.py` que não aceitava o argumento novo. Os dois ajustados (o primeiro ganhou um caso do filtro por UF).
+- **Decisões:** as colunas `pct_obrigadas_mg` e `pct_passivo_obrigadas_mg` mantêm o nome até o bloco 4; os leitores de `gold.execucao` fora das análises ficam para o bloco 4.
+- **Próximo passo:** PR do bloco 3 depois do merge do #17; a carga oficial (pedido do autor), com o conjunto público e o completo regerados com a coluna `uf`; depois, o bloco 4.

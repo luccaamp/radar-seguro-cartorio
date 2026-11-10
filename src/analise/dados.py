@@ -17,10 +17,11 @@ NOMES_ATRIBUICOES = {"notas": "Notas", "rcpn": "Registro civil (RCPN)", "ri": "R
 SITUACOES = {"PROVIDO": "provida", "VAGO": "vaga"}   # o resto (intervenção, conversão em diligência) = "outras"
 
 
-def serventias(con: duckdb.DuckDBPyConnection, nivel: str = "base", regra_classe: str = "v2") -> pd.DataFrame:
+def serventias(con: duckdb.DuckDBPyConnection, nivel: str = "base", regra_classe: str = "v2",
+               uf: str | None = None) -> pd.DataFrame:
     """As serventias ativas com o resultado do modelo (gold.interno_serventia) num nível e numa regra de classe, mais
     o número de atribuições, o município e as regiões do IBGE e os colaboradores declarados ao CNJ. Uma serventia sem
-    município casado continua na tabela, com o município vazio (LEFT JOIN)."""
+    município casado continua na tabela, com o município vazio (LEFT JOIN). `uf`: só as da UF (sem ela, todas)."""
     df = con.execute("""
         SELECT s.*, v.n_atribuicoes, v.data_situacao, m.nome AS municipio, m.regiao_imediata, m.regiao_intermediaria,
                m.populacao, c.informado AS colaboradores_informados, c.estatutarios, c.terceirizados
@@ -28,21 +29,22 @@ def serventias(con: duckdb.DuckDBPyConnection, nivel: str = "base", regra_classe
         JOIN silver.serventia v USING (cns)
         LEFT JOIN silver.municipio_ibge m ON m.cod_ibge = s.cod_ibge
         LEFT JOIN silver.serventia_colaboradores c USING (cns)
-        WHERE s.nivel = ? AND s.regra_classe = ?
-        ORDER BY s.cns""", [nivel, regra_classe]).df()
+        WHERE s.nivel = ? AND s.regra_classe = ? AND (?::VARCHAR IS NULL OR s.uf = ?)
+        ORDER BY s.cns""", [nivel, regra_classe, uf, uf]).df()
     df["situacao"] = df["situacao_juridica"].map(SITUACOES).fillna("outras")
     return df
 
 
-def serie_arrecadacao(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
+def serie_arrecadacao(con: duckdb.DuckDBPyConnection, uf: str | None = None) -> pd.DataFrame:
     """Arrecadação semestral das serventias ativas, como o pipeline a lê (versão 1 de cada período; o conflito entre
-    versões fica marcado em `conflito_fonte`, D-014). Os anos de 2005 e 2006 vêm anuais na fonte e ficam fora."""
+    versões fica marcado em `conflito_fonte`, D-014). Os anos de 2005 e 2006 vêm anuais na fonte e ficam fora.
+    `uf`: só as serventias da UF (sem ela, todas)."""
     df = con.execute("""
         SELECT cns, ano, semestre::INT AS semestre, informado, arrecadacao, conflito_fonte
         FROM silver.serventia_arrecadacao
         WHERE versao = 1 AND semestre IS NOT NULL
-          AND cns IN (SELECT cns FROM silver.serventia WHERE status = 'Ativo')
-        ORDER BY cns, ano, semestre""").df()
+          AND cns IN (SELECT cns FROM silver.serventia WHERE status = 'Ativo' AND (?::VARCHAR IS NULL OR uf = ?))
+        ORDER BY cns, ano, semestre""", [uf, uf]).df()
     df["periodo"] = df["ano"].astype(str) + "-" + df["semestre"].astype(str)
     return df
 

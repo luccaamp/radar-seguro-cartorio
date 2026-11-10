@@ -78,8 +78,8 @@ def test_serventias_mantem_quem_nao_tem_municipio():
     with duckdb.connect() as con:
         con.execute("CREATE SCHEMA gold; CREATE SCHEMA silver")
         con.execute("""CREATE TABLE gold.interno_serventia AS SELECT * FROM (VALUES
-            ('S1', 3100104, 'PROVIDO', 'base', 'v2'), ('S2', NULL, 'VAGO', 'base', 'v2'),
-            ('S1', 3100104, 'PROVIDO', 'max', 'v2')) t(cns, cod_ibge, situacao_juridica, nivel, regra_classe)""")
+            ('S1', 'MG', 3100104, 'PROVIDO', 'base', 'v2'), ('S2', 'MG', NULL, 'VAGO', 'base', 'v2'),
+            ('S1', 'MG', 3100104, 'PROVIDO', 'max', 'v2')) t(cns, uf, cod_ibge, situacao_juridica, nivel, regra_classe)""")
         con.execute("""CREATE TABLE silver.serventia AS SELECT * FROM (VALUES ('S1', 2, DATE '2020-01-01'),
             ('S2', 1, DATE '2021-01-01')) t(cns, n_atribuicoes, data_situacao)""")
         con.execute("""CREATE TABLE silver.municipio_ibge AS SELECT * FROM (VALUES (3100104, 'Cidade A', 'Imediata A',
@@ -87,6 +87,7 @@ def test_serventias_mantem_quem_nao_tem_municipio():
         con.execute("""CREATE TABLE silver.serventia_colaboradores AS SELECT * FROM (VALUES (('S1'), true, 0, 0))
             t(cns, informado, estatutarios, terceirizados)""")
         df = dados.serventias(con)
+        assert dados.serventias(con, uf="SP").empty   # filtro por UF (Fase 3, bloco 3)
     assert df["cns"].tolist() == ["S1", "S2"] and df["situacao"].tolist() == ["provida", "vaga"]
     assert df.loc[1, "municipio"] is None or pd.isna(df.loc[1, "municipio"])
 

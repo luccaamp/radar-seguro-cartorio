@@ -37,7 +37,7 @@ Tirar do código o que só vale para MG e levar para a configuração por estado
 ## Ordem de execução (uma branch e um PR por bloco)
 1. `config/estados.yaml` e leitura nos coletores e contratos (sem mudar nenhum resultado). **Feito em 2026-11-10** (branch `fase-3-bloco-1-estados`; silver refeito do bronze idêntico ao do banco real; detalhes no `diario.md`).
 2. Coluna `uf` no gold e o motor por UF; conferir na cópia: 33 tabelas com o mesmo conteúdo (fora a coluna `uf` nova) e os 10 números iguais. **Feito em 2026-11-10** (branch `fase-3-bloco-2-gold-uf`): as 20 tabelas do `gold.construir` com `uf`; as 13 `analise_*` sem a coluna até o bloco 3.
-3. Análises por UF; mesma conferência.
+3. Análises por UF; mesma conferência. **Feito em 2026-11-10** (branch `fase-3-bloco-3-analises-uf`; as 33 tabelas iguais, fora a coluna `uf`).
 4. Painel e chat sem `"MG"` literal; testes do painel e do chat iguais.
 5. Teste com dois estados sintéticos (dados inventados, marcados como sintéticos, em `tests/`): pipeline do zero, contratos, gold com as duas UFs separadas e somas por UF corretas.
 6. Carga oficial (pedido do autor) só se alguma tabela mudar de conteúdo; senão, só os pacotes, se o esquema mudar (coluna `uf`).
