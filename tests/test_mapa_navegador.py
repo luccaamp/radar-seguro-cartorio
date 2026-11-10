@@ -184,9 +184,19 @@ def test_celular_390_px_sem_rolagem_horizontal_e_clique(nav):
 
 
 def test_tema_escuro_usa_os_tokens_escuros(nav):
+    """O sistema no claro ou no escuro vira o tema do painel inteiro. Espera o componente de tema marcar o <html>
+    (data-rd-tema) antes de ler a cor: no CI, a leitura logo depois de o mapa aparecer pegou uma vez o tema anterior
+    (2026-11-10, merge do PR #18)."""
     cores = {}
-    for tema in ("light", "dark"):
+    for tema, esperado in (("light", "claro"), ("dark", "escuro")):
         page, erros = abrir(nav, tema=tema)
+        try:
+            page.wait_for_function("t => document.documentElement.getAttribute('data-rd-tema') === t", arg=esperado,
+                                   timeout=20_000)
+        except Exception:
+            estado = page.evaluate("""() => [document.documentElement.getAttribute('data-rd-tema'),
+                [...document.querySelectorAll('[class^="rd-tema-"]')].map(e => e.className).join(',')]""")
+            raise AssertionError(f"tema {tema}: a página não ficou em {esperado!r} (data-rd-tema, marca) = {estado}")
         cores[tema] = page.locator(".rd-areas path.rd-f-6").first.evaluate("e => getComputedStyle(e).fill")
         assert not erros, erros
         page.close()
