@@ -1313,3 +1313,8 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Causa provável:** o teste lia a cor logo que o primeiro município aparecia; no CI, mais lento, o componente de tema pode não ter marcado o `<html>` ainda, e vale a marca do servidor da primeira execução.
 - **Correção:** o teste espera `data-rd-tema` com o tema certo (até 20 s) antes de ler a cor e, se não vier, mostra a marca que estava na página. 3 rodadas seguidas passaram.
 - **Próximo passo:** se voltar a falhar, a mensagem nova diz qual marca ficou; aí a correção é no componente, não no teste.
+
+## 2026-11-10 (13) — D-084 ficou errada; protótipo novo do painel; documentos em dia
+- **O que foi feito:** o autor viu, no link público, que o painel continua só no escuro e que as cores ainda se confundem. Diagnóstico (detalhes em `erros_ia.md`): o seletor de tema do PR #18 não aparece no link público (moldura do Cloud), as faixas do mapa e do quadro são do mesmo azul, a interface é azulada e cartões e tabelas quase somem no fundo. Protótipo novo em artefato ("Radar · painel novo (claro e escuro)"), na linha do V5, com contraste medido nos dois temas. `ESTADO_ATUAL.md` corrigido (PRs #18 a #20 na `main`; a D-084 marcada como errada; o protótipo como próximo passo; a limpeza das branches detalhada).
+- **Decisões:** nenhuma mudança de design vai para o código antes de o autor aprovar o protótipo; conferência sempre no link público.
+- **Próximo passo:** o autor aprova ou pede ajustes no protótipo; depois, a branch do design novo; depois, Fase 3, bloco 4.
