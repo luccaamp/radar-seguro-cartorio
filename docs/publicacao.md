@@ -177,7 +177,7 @@ O painel público roda no **nível gratuito** do Streamlit Community Cloud, dire
 7. **Mande o link para a IA**, que o põe no README, no `ESTADO_ATUAL.md` e prepara a Release `v1.0`.
 
 **Depois de publicado:**
-- **Atualização:** cada pull request juntado na `main` republica o painel sozinho; por isso a `main` fica sempre publicável (D-073).
+- **Atualização:** cada pull request juntado na `main` republica o painel sozinho; por isso a `main` fica sempre publicável (D-073). **Exceção:** o Cloud recarrega sozinho só o que está em `app/`; se o merge muda o `src/` (as análises, o mapa, o chat), o processo continua com a versão antiga do `src/` na memória e as páginas novas podem dar erro (aconteceu depois do PR #14). Nesse caso: menu do app (⋮) → **"Reboot app"**, espere voltar e confira o Início.
 - **Visitantes:** no painel do Cloud ([share.streamlit.io](https://share.streamlit.io)), o menu do app (⋮) tem **"Analytics"**, com o número de visitantes; só o dono vê.
 - **Trocar a chave:** menu do app (⋮) → **Settings → Secrets**; o app reinicia sozinho.
 - **App dormindo:** no nível gratuito, um app sem visitas por alguns dias "dorme"; quem abrir vê um botão para acordá-lo (leva cerca de um minuto).

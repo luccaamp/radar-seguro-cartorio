@@ -1243,3 +1243,10 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Suposições:** a arrecadação anual do Panorama (aproximação declarada na nota e na `observacao`).
 - **Limitações encontradas:** o chat lateral, a barra de recorte e a ficha do cartório em gaveta do V5 ficam para a Fase 3/6 (o contexto vai pelo link); os rótulos não se refazem se a janela mudar de tamanho sem a página rodar de novo; ainda não conferido no Cloud.
 - **Próximo passo:** commit, PR e, depois do merge, conferir no link público; o autor confirma as duas escolhas da D-082; depois, a Fase 3.
+
+## 2026-11-10 (5) — Bloco V5 na `main`; o link público com o `src/` antigo
+- **O que foi feito:** conferido que a `main` local e a remota estão no `5c09ef6` (merge do PR #14, CI verde): o bloco "painel de MG rumo ao V5", itens 1 a 7, está na `main` (o `ESTADO_ATUAL.md` ainda dizia "sem commit, falta PR"; corrigido). Conferido o link público depois do reboot feito pelo autor: o Cloud serve o `app/` novo, mas o Início para num `KeyError` ao pedir `analise("panorama")` e "Quão certo é" para em `grade['base']`.
+- **Causa:** o código da `main` está certo (`panorama` está em `PARA_O_CHAT`; a suíte passa). O Streamlit recarrega sozinho só os módulos da pasta do script principal (`app/`); o `src/painel/analises.py` fica fora dela, e o processo do Cloud manteve a versão de antes do merge. O reboot do autor provavelmente veio antes de o Cloud puxar o merge, ou não reiniciou o processo.
+- **Decisões:** nenhuma no código; `publicacao.md` §8 ganhou a exceção ("merge que muda o `src/` pede Reboot app").
+- **Limitações encontradas:** a IA não reinicia o app (é a conta do autor no Cloud); os 4 pontos da versão nova (6 indicadores, grade, clique no mapa, mapa em %) ficam para conferir depois do novo reboot.
+- **Próximo passo:** o autor faz o reboot e confirma as duas escolhas da D-082; depois do merge deste PR, a Fase 3, bloco 1 (`plano_fase3.md`).
