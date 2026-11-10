@@ -958,3 +958,14 @@ Formato:
 - **Efeito nos 10 números:** nenhum (só a forma de mostrar o mapa).
 - **Consequências / onde aparece:** `app/pages/2_Onde_está_o_mercado.py` (o mapa do Plotly saiu); testes do AppTest que liam o mapa do Plotly passam a ler os dados do componente (`tests/apoio_painel.mapa_componente`). Mudança no CSS ou no JS do componente só aparece depois de reiniciar o servidor (o componente é registrado uma vez por processo). Falta conferir no Streamlit Community Cloud depois do merge. O job "Navegador" só bloqueia o merge se o autor o incluir nas verificações obrigatórias da `main` (D-075).
 - **Status:** aprovada (tecnologia); o resto do bloco "painel de MG rumo ao V5" aguarda a aprovação da lista.
+
+## D-084 — Cores do painel distintas do fundo, tema escolhível e mapa navegável
+- **Data:** 2026-11-10
+- **Contexto:** no painel publicado, o autor achou o mapa do tema escuro "horrível de enxergar": o fundo era azul-marinho (`#0c1018`) e as faixas baixas do mapa, azul-escuras (`#222936`, `#2c3d62`), com contraste de 1,3:1 e 1,8:1 contra o fundo. O visitante não tinha como escolher o tema claro (o `toolbarMode = "minimal"` escondia o menu), e o mapa não deixava aproximar, mover nem voltar ao estado inteiro depois do clique num município.
+- **Decisão (pedida pelo autor em 2026-11-10: "o tema escuro NUNCA, JAMAIS deve ter a mesma cor que um mapa ou cor de qualquer visual"; "Sim, corrija tudo"):**
+  - **toda cor de dado** (as 7 do mapa e do quadro de calor, as séries s1, s2, s3 e ref) com contraste ≥ 3:1 contra o fundo e as superfícies, nos dois temas (WCAG 2.1, 1.4.11); o **fundo do escuro é cinza neutro** (`#121316`, `#1b1d21`, `#25262a`), sem o matiz azul dos dados; município sem cartório com tom próprio (`--mapa-sem`); travado por `tests/test_cores.py`;
+  - **tema escolhível:** o menu ⋮ do Streamlit volta a aparecer (`toolbarMode = "viewer"`), com System, Light e Dark; um componente invisível (`src/painel/componentes/tema.js`) acompanha a escolha na hora (cores pelo `data-rd-tema` no `<html>`, gráficos redesenhados pelo Python) e a copia para as outras páginas (o Streamlit guarda a escolha por página);
+  - **mapa navegável:** botões +, − e "Ver Minas Gerais inteira", arrastar quando aproximado, e mais nomes com o zoom (3 no estado inteiro, 8 numa região, até 12), medidos de verdade para não se sobreporem.
+- **Efeito nos 10 números:** nenhum (só apresentação).
+- **Consequências / onde aparece:** `src/painel/estilo.css`, `src/painel/graficos.py`, `.streamlit/config.toml`, `src/painel/ui.py`, `src/painel/componentes/` (`tema.js`, `mapa.js`, `mapa.css`), `src/painel/mapa.py`; testes em `tests/test_cores.py`, `tests/js/tema.test.mjs`, `tests/js/mapa.test.mjs`, `tests/test_mapa.py` e `tests/test_quadro_calor.py`. No tema claro, s2, s3 e ref ficaram um pouco mais escuros (eram abaixo de 3:1). Os protótipos V2 a V5 (D-082) usam a paleta antiga; a revisão visual da Fase 6 parte desta.
+- **Status:** aprovada (pedido do autor).

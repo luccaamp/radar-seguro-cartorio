@@ -119,7 +119,8 @@ if mun is not None:
               "seguem a mesma escala de Minas Gerais inteira.")
 mapa_clicavel(dados_mapa(geo_dados, valores, nomes, textos, fundo=geo_sem.values(),
                          selecionado=foco["area_id"] if foco is not None else None, enquadrar=ids_int,
-                         resumo=resumo, legenda_fundo="Sem cartório no cadastro do CNJ", **extra),
+                         resumo=resumo, legenda_fundo="Sem cartório no cadastro do CNJ",
+                         rotulo_inteiro="Ver Minas Gerais inteira", **extra),
               key="mapa_mg", ao_escolher=_escolher)
 ui.fonte(fonte_linha(["cnj_serventias", "rais_vinculos", "ibge_malha"], nota_cor))
 

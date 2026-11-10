@@ -13,9 +13,11 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Num PR, um commit novo cancela a execução antiga (economiza minutos). Na main, cada merge roda até o fim: antes, um
+# merge cancelava o do anterior, que ficava sem conferência e mandava e-mail de "cancelado" (2026-11-10).
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read

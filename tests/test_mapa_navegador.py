@@ -190,5 +190,5 @@ def test_tema_escuro_usa_os_tokens_escuros(nav):
         cores[tema] = page.locator(".rd-areas path.rd-f-6").first.evaluate("e => getComputedStyle(e).fill")
         assert not erros, erros
         page.close()
-    assert cores["light"] == "rgb(24, 53, 100)"     # --mapa-6 claro  #183564
-    assert cores["dark"] == "rgb(180, 211, 248)"    # --mapa-6 escuro #b4d3f8
+    assert cores["light"] == "rgb(18, 50, 90)"      # --mapa-6 claro  #12325a (2026-11-10)
+    assert cores["dark"] == "rgb(215, 228, 246)"    # --mapa-6 escuro #d7e4f6 (2026-11-10)

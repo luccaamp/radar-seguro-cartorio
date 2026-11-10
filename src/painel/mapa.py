@@ -25,8 +25,9 @@ CASAS = 1                 # casas decimais das coordenadas no viewBox (0,1 de 10
 N_FAIXAS = 6              # faixas de cor acima de zero (tokens --mapa-1 … --mapa-6 em src/painel/estilo.css)
 QUANTIL_TETO = 0.95       # a cor satura no percentil 95, como no mapa anterior (Plotly)
 FOLGA = 0.06              # margem em volta do enquadramento, em fração do lado maior
-N_ROTULOS = 3             # rótulos com o nome nas áreas de maior valor do recorte (V5, D-082)
-N_CANDIDATOS = 8          # candidatos em ordem de valor; o JS pula os que se sobrepõem até ter N_ROTULOS
+N_ROTULOS = 3             # rótulos com o nome nas áreas de maior valor, com o estado inteiro na tela (V5, D-082)
+N_ROTULOS_RECORTE = 8     # numa região (município escolhido): mais nomes, a área é menor (autor, 2026-11-10)
+N_CANDIDATOS = 30         # candidatos em ordem de valor; o JS pula os que se sobrepõem e, com zoom, mostra mais
 TAMANHO_ROTULO = 0.022    # letra do rótulo em fração da largura do enquadramento, só se o JS não medir a tela
 
 
@@ -207,12 +208,14 @@ def ponto_interno(geom: dict) -> tuple[float, float]:
 def dados_mapa(geometrias: dict[str, dict], valores: dict[str, float | None], nomes: dict[str, str],
                textos: dict[str, str], *, fundo: Iterable[dict] = (), selecionado: str | None = None,
                enquadrar: Iterable[str] | None = None, titulo_legenda: str = "", resumo: str = "",
-               legenda_fundo: str = "", rotulos: int = N_ROTULOS,
+               legenda_fundo: str = "", rotulos: int | None = None, rotulo_inteiro: str = "Ver o estado inteiro",
                fmt_legenda: Callable[[float], str] | None = None, teto_fixo: float | None = None) -> dict[str, Any]:
     """O que o componente recebe (JSON): viewBox, áreas com caminho, faixa, nome e texto do balão, áreas de fundo
     (não clicáveis), legenda, o selecionado e os rótulos. `enquadrar` limita o viewBox a essas áreas (zoom num
-    recorte). Rótulos: até N_CANDIDATOS áreas de maior valor do recorte (as enquadradas, ou todas), em ordem; o JS
-    mostra as `rotulos` primeiras que não se sobrepõem na tela, com a letra de tamanho fixo em px (`tamanhoRotulo` é
+    recorte); `viewBoxInteiro` é o estado inteiro, para o botão `rotulo_inteiro` e os limites do zoom e do arrastar.
+    Rótulos: até N_CANDIDATOS áreas de maior valor do recorte (as enquadradas, ou todas), em ordem; o JS mostra as
+    `rotulos` primeiras que estão na tela e não se sobrepõem (sem `rotulos`: N_ROTULOS no estado inteiro,
+    N_ROTULOS_RECORTE numa região; com zoom, o JS mostra mais), com a letra de tamanho fixo em px (`tamanhoRotulo` é
     só a reserva, proporcional à largura do enquadramento)."""
     fundo = list(fundo)
     proj = Projecao(list(geometrias.values()) + fundo)
@@ -221,10 +224,23 @@ def dados_mapa(geometrias: dict[str, dict], valores: dict[str, float | None], no
     alvo = [geometrias[a] for a in no_recorte]
     caixa = proj.caixa(alvo) if alvo else (0.0, 0.0, proj.largura, proj.altura)
     sel = selecionado if selecionado in geometrias else None
-    candidatos = [a for a in (no_recorte or geometrias) if (_valor(valores.get(a)) or 0) > 0]
-    maiores = sorted(candidatos, key=lambda a: (-float(valores[a]), a))[:N_CANDIDATOS if rotulos > 0 else 0]
+    if rotulos is None:
+        rotulos = N_ROTULOS_RECORTE if no_recorte else N_ROTULOS
+    def _maiores(ids) -> list[str]:
+        com_valor = [a for a in ids if (_valor(valores.get(a)) or 0) > 0]
+        return sorted(com_valor, key=lambda a: (-float(valores[a]), a))[:N_CANDIDATOS if rotulos > 0 else 0]
+
+    def _rotulos(ids) -> list[dict]:
+        return [{"id": a, "texto": nomes.get(a, a), **dict(zip(("x", "y"), proj.xy(*ponto_interno(geometrias[a]))))}
+                for a in ids]
+
+    maiores = _maiores(no_recorte or geometrias)
+    # com o estado inteiro na tela (botão "Ver o estado inteiro"), os nomes são os maiores do estado
+    maiores_estado = _maiores(geometrias) if no_recorte else []
     return {
         "viewBox": " ".join(_n(v) for v in caixa),
+        "viewBoxInteiro": " ".join(_n(v) for v in (0.0, 0.0, proj.largura, proj.altura)),
+        "rotuloInteiro": rotulo_inteiro,
         "areas": [{"id": a, "d": proj.caminho(g), "faixa": cor[a], "valor": _valor(valores.get(a)),
                    "nome": nomes.get(a, a), "texto": textos.get(a, "")} for a, g in geometrias.items()],
         "fundo": [{"d": proj.caminho(g)} for g in fundo],
@@ -233,9 +249,10 @@ def dados_mapa(geometrias: dict[str, dict], valores: dict[str, float | None], no
         "tituloLegenda": titulo_legenda,
         "legendaFundo": legenda_fundo,
         "resumo": resumo,
-        "rotulos": [{"id": a, "texto": nomes.get(a, a),
-                     **dict(zip(("x", "y"), proj.xy(*ponto_interno(geometrias[a]))))} for a in maiores],
+        "rotulos": _rotulos(maiores),
         "maxRotulos": max(0, rotulos),
+        "rotulosInteiro": _rotulos(maiores_estado),
+        "maxRotulosInteiro": N_ROTULOS if rotulos > 0 else 0,
         "tamanhoRotulo": round(caixa[2] * TAMANHO_ROTULO, 1),
     }
 

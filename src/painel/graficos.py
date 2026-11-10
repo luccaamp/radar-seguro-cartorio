@@ -18,27 +18,29 @@ from src.agent.ferramentas import brl
 
 # tokens do "Raio-X do Cartório" (D-052), com os mesmos valores: séries s1 (azul), s2 (laranja), s3 (verde) e ref
 # (cinza); texto ink / ink-2 / muted; grade grid / grid-strong; laranja sempre com rótulo direto (contraste < 3:1)
+# Toda cor de dado tem contraste ≥ 3:1 contra a superfície nos dois temas (tests/test_cores.py; 2026-11-10: s2, s3 e
+# ref escurecidos no claro, eram #eb6834, #1baf7a e #8d97ab)
 COR = {
-    "destaque": "#2a78d6", "destaque_claro": "#c3d1e8", "comparacao": "#eb6834", "terceira": "#1baf7a",
+    "destaque": "#2a78d6", "destaque_claro": "#4c8ada", "comparacao": "#d65a26", "terceira": "#178f64",
     "neutro": "#2a78d6",          # degraus que levam à resposta: a série s1; o último (o prêmio) vai em s2
-    "extremo": "#8d97ab",         # extremos teóricos: discretos (ref)
+    "extremo": "#78829a",         # extremos teóricos: discretos (ref)
     "titulo": "#0f1c33", "texto": "#0f1c33", "texto_2": "#45506a", "mudo": "#6b7590",
     "grade": "#e6e9ef", "eixo": "#c2c9d6", "superficie": "#ffffff", "linha": "#dde2ea",
 }
 FAIXA = "rgba(42,120,214,0.18)"          # faixa provável (P5–P95) e faixa da projeção (P10–P90): s1 translúcido
 BARRA = dict(line=dict(color="#ffffff", width=2), cornerradius=4)   # barras do Raio-X: borda branca de 2 px, cantos de 4 px
-# mapa: do azul-claro do agregado ao azul-marinho da faixa, passando pela série s1
-SEQUENCIAL = ["#e8eef8", "#c3d1e8", "#8fb3e6", "#5a94e0", "#2a78d6", "#2056a8", "#183564"]
+# escala sequencial (a mesma do mapa, --mapa-1 a --mapa-6 do estilo.css): no claro, do azul médio ao marinho
+SEQUENCIAL = ["#4c8ada", "#2b74d2", "#2461b1", "#1e5294", "#184277", "#12325a"]
+SEQUENCIAL_ESCURO = ["#2f70c7", "#4b86d5", "#6c9ddd", "#8eb3e5", "#b2cbed", "#d7e4f6"]
 
-# tema escuro do Raio-X: cada cor clara acima e a equivalente escura (--surface, --ink, --line, --s1 … do artefato).
-# No mapa a escala se inverte em luminosidade: no escuro, o valor maior é o azul mais claro.
+# tema escuro: cada cor clara acima e a equivalente escura. O fundo e as superfícies são cinza neutro, sem o azul dos
+# dados (2026-11-10; eram azul-marinho). Na escala, o valor maior é o azul mais claro.
 ESCURO = {
-    "#ffffff": "#141a25", "#f5f7fa": "#1a2130", "#0f1c33": "#e9edf5", "#45506a": "#b2bccd", "#6b7590": "#8793a8",
-    "#dde2ea": "#262e3d", "#e6e9ef": "#222a38", "#c2c9d6": "#3a4558",
-    "#2a78d6": "#3987e5", "#eb6834": "#d95926", "#1baf7a": "#199e70", "#8d97ab": "#7b869b",
-    "#e8eef8": "#1d2840", "#c3d1e8": "#2c3d62", "#8fb3e6": "#2a5aa0", "#5a94e0": "#3373c8", "#2056a8": "#74aef0",
-    "#183564": "#b4d3f8",
-    "rgba(42,120,214,0.18)": "rgba(57,135,229,0.24)", "rgba(255,255,255,0.85)": "rgba(20,26,37,0.85)",
+    "#ffffff": "#1b1d21", "#f5f7fa": "#25262a", "#0f1c33": "#eceef2", "#45506a": "#b4b9c2", "#6b7590": "#8b919c",
+    "#dde2ea": "#33363c", "#e6e9ef": "#2b2e33", "#c2c9d6": "#484c54",
+    "#2a78d6": "#3987e5", "#d65a26": "#d95926", "#178f64": "#199e70", "#78829a": "#7b869b",
+    **dict(zip(SEQUENCIAL, SEQUENCIAL_ESCURO)),
+    "rgba(42,120,214,0.18)": "rgba(57,135,229,0.32)", "rgba(255,255,255,0.85)": "rgba(27,29,33,0.85)",
 }
 _COR_RE = re.compile(r"#[0-9a-fA-F]{6}\b|rgba\([^)]*\)")
 

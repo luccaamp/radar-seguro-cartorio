@@ -146,11 +146,17 @@ def test_rotulos_nos_maiores_do_recorte():
     assert [r["texto"] for r in d["rotulos"]] == ["Dois", "Três", "Um"]     # candidatos em ordem; o zero fica fora
     assert all(set(r) == {"id", "texto", "x", "y"} for r in d["rotulos"]) and d["tamanhoRotulo"] > 0
     assert d["maxRotulos"] == m.N_ROTULOS
-    muitos = {str(i): quadrado(-50 + i, -20) for i in range(12)}
-    cand = m.dados_mapa(muitos, {str(i): float(i + 1) for i in range(12)}, {}, {})["rotulos"]
-    assert [r["id"] for r in cand] == [str(i) for i in range(11, 11 - m.N_CANDIDATOS, -1)]   # até N_CANDIDATOS
+    n = m.N_CANDIDATOS + 5
+    muitos = {str(i): quadrado(-50 + i * 0.5, -20) for i in range(n)}
+    cand = m.dados_mapa(muitos, {str(i): float(i + 1) for i in range(n)}, {}, {})["rotulos"]
+    assert [r["id"] for r in cand] == [str(i) for i in range(n - 1, n - 1 - m.N_CANDIDATOS, -1)]   # até N_CANDIDATOS
     recorte = m.dados_mapa(GEO, vals, {}, {}, enquadrar=["1", "4"])
     assert [r["id"] for r in recorte["rotulos"]] == ["1"]                    # só os do recorte, e só com valor
+    assert recorte["maxRotulos"] == m.N_ROTULOS_RECORTE                      # numa região, mais nomes
+    um = m.dados_mapa(GEO, vals, {}, {}, enquadrar=["1"])
+    assert um["viewBoxInteiro"] == d["viewBox"] != um["viewBox"]             # o botão volta ao estado inteiro
+    assert [r["texto"] for r in um["rotulosInteiro"]] == ["2", "3", "1"]     # e mostra os maiores do estado
+    assert um["maxRotulosInteiro"] == m.N_ROTULOS and d["rotulosInteiro"] == []
     zoom = m.dados_mapa(GEO, vals, {}, {}, enquadrar=["1"])                  # ("1" e "4" em diagonal cobrem tudo)
     assert zoom["tamanhoRotulo"] < d["tamanhoRotulo"]                        # com zoom, a letra encolhe no viewBox
     assert m.dados_mapa(GEO, vals, {}, {}, rotulos=0)["rotulos"] == []
@@ -161,8 +167,9 @@ def test_dados_mapa_e_json_e_tem_o_que_o_js_le():
     d = m.dados_mapa(GEO, {"1": 0.0, "2": 10.0, "3": 20.0, "4": None}, {"1": "Um"}, {"2": "texto"},
                      fundo=[quadrado(-45, -20, 0.2)], selecionado="2", titulo_legenda="Déficit", legenda_fundo="Sem")
     json.dumps(d, allow_nan=False)                            # JSON válido, sem NaN
-    assert set(d) == {"viewBox", "areas", "fundo", "selecionado", "legenda", "tituloLegenda", "legendaFundo", "resumo",
-                      "rotulos", "maxRotulos", "tamanhoRotulo"}
+    assert set(d) == {"viewBox", "viewBoxInteiro", "rotuloInteiro", "areas", "fundo", "selecionado", "legenda",
+                      "tituloLegenda", "legendaFundo", "resumo", "rotulos", "maxRotulos", "rotulosInteiro",
+                      "maxRotulosInteiro", "tamanhoRotulo"}
     areas = {a["id"]: a for a in d["areas"]}
     assert areas["1"]["nome"] == "Um" and areas["2"]["nome"] == "2"          # sem nome: o código
     assert areas["1"]["faixa"] == "zero" and areas["4"]["faixa"] == "sem" and areas["4"]["valor"] is None
