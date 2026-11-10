@@ -11,7 +11,7 @@ Escrito à mão e conferido contra o banco em 2026-10-21; a geração por script
 | cns | texto | Código Nacional de Serventia (chave) |
 | uf | texto | UF da serventia |
 | cidade_fonte | texto | nome do município como veio da fonte |
-| cod_ibge | inteiro | código IBGE de 7 dígitos (junção por nome normalizado + `config/apelidos_municipios.yaml`) |
+| cod_ibge | inteiro | código IBGE de 7 dígitos (junção por nome normalizado + `apelidos_municipios` da UF em `config/estados.yaml`) |
 | status | texto | Ativo / Inativo / Extinto |
 | tipo_cartorio | texto | PRIVATIZADO / OFICIALIZADO / PUBLICO |
 | situacao_juridica | texto | PROVIDO / VAGO / SOB INTERVENÇÃO / CONVERSÃO EM DILIGÊNCIA (vazio nas inativas) |

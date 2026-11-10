@@ -26,6 +26,7 @@ ETAPAS = ("all", "silver", "gold", "gold_de_parquet", "ingest")
 
 
 def etapa_ingest() -> None:
+    from src import estados_config
     from src.ingest import (cnj_arrecadacoes, cnj_complementares, cnj_serventias, cnpj, ibge, legislacao, rais,
                             susep)
     esc = yaml.safe_load((CONFIG / "escopo.yaml").read_text(encoding="utf-8"))
@@ -34,7 +35,7 @@ def etapa_ingest() -> None:
         cnj_complementares.coletar(uf)
         cnj_arrecadacoes.coletar(uf)
         ibge.coletar(uf)
-        rais.filtrar(rais.baixar(esc["snapshots"]["rais"], rais.PACOTE_UF[uf]), uf)
+        rais.filtrar(rais.baixar(esc["snapshots"]["rais"], estados_config.pacote_rais(uf)), uf)
     cnpj.filtrar(cnpj.baixar(esc["snapshots"]["cnpj"]))
     susep.filtrar(susep.baixar())
     legislacao.coletar()

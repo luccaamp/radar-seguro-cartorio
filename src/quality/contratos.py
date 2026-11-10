@@ -101,7 +101,7 @@ def contratos_silver(con: duckdb.DuckDBPyConnection) -> list[Checagem]:
         chave_unica(con, f"{s}.fonte_metadados", "arquivo"),
         nao_nulo(con, f"{s}.fonte_metadados", "data_referencia"),
     ]
-    return c + controle_arrecadacao_mg(con) + sem_dados_pessoais(con, s)
+    return c + controle_arrecadacao(con) + sem_dados_pessoais(con, s)
 
 
 def _com_detalhe(c: Checagem, modelo: str) -> Checagem:
@@ -162,33 +162,37 @@ def _pct(v: float, sinal: bool = False) -> str:
     return (f"{100 * v:+.2f}" if sinal else f"{100 * v:.1f}").replace(".", ",") + "%"
 
 
-def controle_arrecadacao_mg(con: duckdb.DuckDBPyConnection) -> list[Checagem]:
-    """F2 (D-024): total de MG por semestre contra os totais de controle de config/qualidade.yaml.
-    Contrato 1 (erro): queda maior que a tolerância em relação ao silver registrado. Contrato 2 (aviso): × BI do CNJ."""
-    import yaml
-    from pathlib import Path
-    cfg = yaml.safe_load((Path(__file__).resolve().parents[2] / "config" / "qualidade.yaml").read_text(encoding="utf-8"))
-    ctl = cfg.get("controle_arrecadacao_mg")
-    if not ctl or not _conta(con, "SELECT count(*) FROM silver.serventia WHERE uf = 'MG'"):
-        return []
-    atual = dict(con.execute("""
-        SELECT ano || '-' || semestre::INT, sum(arrecadacao) FROM silver.serventia_arrecadacao
-        WHERE versao = 1 AND semestre IS NOT NULL
-          AND cns IN (SELECT cns FROM silver.serventia WHERE status = 'Ativo' AND uf = 'MG')
-        GROUP BY 1""").fetchall())
+def controle_arrecadacao(con: duckdb.DuckDBPyConnection, ufs: list[str] | None = None) -> list[Checagem]:
+    """F2 (D-024): total de cada UF por semestre contra os totais de controle de config/estados.yaml (Fase 3).
+    Contrato 1 (erro): queda maior que a tolerância em relação ao silver registrado. Contrato 2 (aviso): × BI do CNJ.
+    UF do escopo com serventias no silver e sem totais de controle: um aviso, não erro (plano_fase3.md, item 5)."""
+    from src import estados_config
     out = []
-    for periodo, ref in ctl["silver"]["totais"].items():
-        v = float(atual.get(periodo) or 0.0)
-        queda = (ref - v) / ref
-        out.append(Checagem("silver.serventia_arrecadacao", f"total MG {periodo} × controle do silver (queda ≤ "
-                            f"{_pct(ctl['silver']['tolerancia_queda'])})", "erro",
-                            int(queda > ctl["silver"]["tolerancia_queda"]),
-                            f"atual {_mi(v)}; controle {_mi(ref)} ({_pct(-queda, True)})"))
-    for periodo, ref in ctl["bi"]["totais"].items():
-        v = float(atual.get(periodo) or 0.0)
-        dif, tol = v / ref - 1, ctl["bi"]["tolerancias"][periodo]
-        out.append(Checagem("silver.serventia_arrecadacao", f"total MG {periodo} × BI do CNJ (±{_pct(tol)})", "aviso",
-                            int(abs(dif) > tol), f"silver {_mi(v)}; BI {_mi(ref)} ({_pct(dif, True)})"))
+    for uf in ufs if ufs is not None else estados_config.ufs():
+        if not _conta(con, f"SELECT count(*) FROM silver.serventia WHERE uf = '{uf}'"):
+            continue
+        ctl = estados_config.controle_arrecadacao(uf)
+        if not ctl:
+            out.append(Checagem("silver.serventia_arrecadacao", f"total {uf} × controle (sem totais de controle)",
+                                "aviso", 1, f"{uf} sem controle_arrecadacao em config/estados.yaml"))
+            continue
+        atual = dict(con.execute(f"""
+            SELECT ano || '-' || semestre::INT, sum(arrecadacao) FROM silver.serventia_arrecadacao
+            WHERE versao = 1 AND semestre IS NOT NULL
+              AND cns IN (SELECT cns FROM silver.serventia WHERE status = 'Ativo' AND uf = '{uf}')
+            GROUP BY 1""").fetchall())
+        for periodo, ref in ctl["silver"]["totais"].items():
+            v = float(atual.get(periodo) or 0.0)
+            queda = (ref - v) / ref
+            out.append(Checagem("silver.serventia_arrecadacao", f"total {uf} {periodo} × controle do silver (queda ≤ "
+                                f"{_pct(ctl['silver']['tolerancia_queda'])})", "erro",
+                                int(queda > ctl["silver"]["tolerancia_queda"]),
+                                f"atual {_mi(v)}; controle {_mi(ref)} ({_pct(-queda, True)})"))
+        for periodo, ref in ctl["bi"]["totais"].items():
+            v = float(atual.get(periodo) or 0.0)
+            dif, tol = v / ref - 1, ctl["bi"]["tolerancias"][periodo]
+            out.append(Checagem("silver.serventia_arrecadacao", f"total {uf} {periodo} × BI do CNJ (±{_pct(tol)})",
+                                "aviso", int(abs(dif) > tol), f"silver {_mi(v)}; BI {_mi(ref)} ({_pct(dif, True)})"))
     return out
 
 

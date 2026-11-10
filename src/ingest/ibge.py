@@ -8,14 +8,14 @@ Uso: uv run python -m src.ingest.ibge MG
 import sys
 import time
 
+from src import estados_config
 from src.ingest.comum import BRONZE, cliente, gravar_meta, hoje, sha256_bytes
 
-COD_UF = {"MG": 31}
 SIDRA = "https://apisidra.ibge.gov.br/values"
 
 
 def urls(uf: str) -> dict[str, str]:
-    cod = COD_UF[uf]
+    cod = estados_config.cod_ibge(uf)   # config/estados.yaml (Fase 3, D-081)
     return {
         f"municipios_{uf}.json": f"https://servicodados.ibge.gov.br/api/v1/localidades/estados/{cod}/municipios",
         # tabela 6579 = estimativas de população; variável 9324 = população residente estimada
@@ -48,4 +48,4 @@ def coletar(uf: str) -> None:
 
 
 if __name__ == "__main__":
-    coletar(sys.argv[1] if len(sys.argv) > 1 else "MG")
+    coletar(sys.argv[1] if len(sys.argv) > 1 else estados_config.uf_padrao())

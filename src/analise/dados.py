@@ -48,9 +48,9 @@ def serie_arrecadacao(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
 
 
 def arquivo_bi() -> Path:
-    """O CSV do BI do CNJ no bronze (config/qualidade.yaml, controle_arrecadacao_mg.bi.arquivo)."""
+    """O CSV do BI do CNJ no bronze (config/qualidade.yaml, bi_cnj.arquivo; nacional, todas as UFs)."""
     cfg = yaml.safe_load((RAIZ / "config" / "qualidade.yaml").read_text(encoding="utf-8"))
-    return RAIZ / cfg["controle_arrecadacao_mg"]["bi"]["arquivo"]
+    return RAIZ / cfg["bi_cnj"]["arquivo"]
 
 
 def arrecadacao_bi(con: duckdb.DuckDBPyConnection, arquivo: Path | None = None) -> pd.DataFrame:
