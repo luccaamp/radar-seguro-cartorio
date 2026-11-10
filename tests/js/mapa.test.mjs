@@ -53,6 +53,72 @@ const dados = () => ({
   tituloLegenda: "Déficit de cobertura do município",
   legendaFundo: "Sem cartório no cadastro do CNJ",
   resumo: "",
+  rotulos: [{ id: "3100302", texto: "<b>C</b>", x: 25, y: 5 }, { id: "3100203", texto: "Município B", x: 400, y: 400 }],
+  tamanhoRotulo: 20,
+});
+
+test("contorno do estado: uma cópia de cada área e do fundo, por baixo das áreas", () => {
+  const svg = mod.desenhar(new No("div"), dados(), () => {}, doc);
+  const grupos = svg.children.map((g) => g.getAttribute("class"));
+  assert.deepEqual(grupos, ["rd-contorno", "rd-areas", "rd-fundo", "rd-rotulos"]);   // ordem de desenho
+  const contorno = svg.querySelector(".rd-contorno");
+  assert.equal(contorno.children.length, 3 + 1);
+  assert.equal(contorno.getAttribute("aria-hidden"), "true");
+  assert.equal(contorno.children[0].listeners.click, undefined);                     // não pega o clique
+});
+
+test("tamanhoLetra: px fixos na tela viram unidades do viewBox, pela menor escala; sem medida, null", () => {
+  const T = (l, a) => ({ largura: l, altura: a });
+  assert.equal(mod.tamanhoLetra(T(500, 400), T(1000, 800), 13), 26);   // 500 px mostrando 1000 unidades
+  assert.equal(mod.tamanhoLetra(T(1000, 1000), T(250, 250), 13), 3.25); // com zoom, a letra encolhe em unidades
+  // a altura limita: 980 × 560 px mostrando 1000 × 818 → escala 560 / 818 (não 980 / 1000)
+  assert.equal(mod.tamanhoLetra(T(980, 560), T(1000, 818), 14), 14 / (560 / 818));
+  assert.equal(mod.tamanhoLetra(T(0, 0), T(1000, 800), 13), null);       // fora da página: usa a reserva
+});
+
+test("escolherRotulos: pula o que se sobrepõe e para no máximo, na ordem recebida", () => {
+  const c = [
+    { id: "a", texto: "Belo Horizonte", x: 100, y: 100 },
+    { id: "b", texto: "Contagem", x: 104, y: 102 },      // em cima de "a": pula
+    { id: "c", texto: "Betim", x: 300, y: 100 },
+    { id: "d", texto: "Uberaba", x: 100, y: 300 },
+    { id: "e", texto: "Uberlândia", x: 500, y: 500 },     // já tem 3: para
+  ];
+  assert.deepEqual(mod.escolherRotulos(c, 3, 10).map((r) => r.id), ["a", "c", "d"]);
+  assert.deepEqual(mod.escolherRotulos(c, 0, 10), []);
+  assert.deepEqual(mod.escolherRotulos(undefined, 3, 10), []);
+  // letra grande: "c" passa a encostar em "a" ("a" vai até 100 + 14 × 0,6 × 40 / 2 = 268; "c" começa em 300 − 60 = 240)
+  assert.deepEqual(mod.escolherRotulos(c, 3, 40).map((r) => r.id), ["a", "d", "e"]);
+});
+
+test("com a tela medida, a letra sai do tamanho na tela (13 px no computador, 11 px no celular)", () => {
+  for (const [larg, px] of [[1000, 13], [400, 11]]) {
+    // o <svg> "medido": getBoundingClientRect só nele
+    const svg = mod.desenhar(new No("div"), dados(), () => {}, {
+      ...doc,
+      createElementNS: (ns, tag) => {
+        const n = new No(tag, ns);
+        if (tag === "svg") n.getBoundingClientRect = () => ({ width: larg, height: larg * 0.8 });   // viewBox 1000 × 800
+        return n;
+      },
+    });
+    const t = svg.querySelector(".rd-rotulos").children[0];
+    assert.equal(Number(t.getAttribute("font-size")), (px * 1000) / larg);
+  }
+});
+
+test("rótulos: texto puro, na posição e no tamanho que vieram do Python, com halo proporcional", () => {
+  const svg = mod.desenhar(new No("div"), dados(), () => {}, doc);
+  const ts = svg.querySelector(".rd-rotulos").children;
+  assert.equal(ts.length, 2);
+  assert.equal(ts[0].tagName, "text");
+  assert.equal(ts[0].textContent, "<b>C</b>");                 // literal, nunca HTML
+  assert.equal(ts[0].children.length, 0);
+  assert.deepEqual([ts[0].getAttribute("x"), ts[0].getAttribute("y")], ["25", "5"]);
+  assert.equal(ts[0].getAttribute("font-size"), "20");
+  assert.equal(ts[0].getAttribute("stroke-width"), "5");
+  const sem = mod.desenhar(new No("div"), { ...dados(), rotulos: undefined }, () => {}, doc);
+  assert.equal(sem.querySelector(".rd-rotulos").children.length, 0);
 });
 
 const caminhos = (svg) => svg.querySelector(".rd-areas").children;

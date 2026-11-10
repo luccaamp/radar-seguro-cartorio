@@ -80,4 +80,4 @@ st.markdown(md_seguro(
     "- **Taxa e adesão ao seguro:** nenhuma fonte pública as traz; por isso a faixa provável é larga."))
 rodape(["cnj_serventias", "cnj_colaboradores", "cnj_arrecadacao", "rais_vinculos", "ibge_malha"])
 ui.sugestoes(["Quais dados não têm fonte pública?", "As fontes de dados batem entre si?",
-              "Quais decisões de método mudam o resultado?"])
+              "Quais decisões de método mudam o resultado?"], pagina="Sobre os dados")

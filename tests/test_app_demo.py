@@ -72,12 +72,14 @@ def test_nada_tecnico_fora_de_sobre_os_dados(pagina):
 @pytest.mark.parametrize("pagina", HISTORIA)
 def test_limites_da_pagina(pagina):
     """Uma manchete (h1), no máximo 3 números em destaque, no máximo 2 gráficos e de 2 a 3 perguntas para o chat,
-    cada uma com o link para o chat com a pergunta preenchida."""
+    cada uma com o link para o chat com a pergunta preenchida. Exceção (D-082, 2026-11-10): o Início é o Panorama do
+    V5, com a resposta e os 6 indicadores (7 destaques); as outras páginas seguem o limite de 3 da D-051."""
     at = rodar(pagina)
     tela = html(at)
     assert tela.count("<h1>") == 1
     destaque = tela.count('<div class="rd-card">') + tela.count('<div class="rd-resposta">')
-    assert destaque <= 3 and len(figuras(at)) <= 2, (destaque, len(figuras(at)))
+    limite = 7 if pagina == HISTORIA[0] else 3
+    assert destaque <= limite and len(figuras(at)) <= 2, (destaque, len(figuras(at)))
     links = re.findall(r'href="Chat\?pergunta=([^"]+)"', tela)
     assert 2 <= len(links) <= 3
 

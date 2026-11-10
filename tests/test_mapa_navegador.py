@@ -109,6 +109,20 @@ def clicar_dentro(page, area_id: str) -> None:
     page.mouse.click(*ponto)
 
 
+def assert_letra_legivel(page) -> None:
+    """Rótulos com letra de leitura na tela (o tamanho da letra × a escala do desenho: 11 a 13 px, como o mapa.js
+    pede), e sem um rótulo em cima do outro (a escolha dos que cabem é do mapa.js)."""
+    textos = page.locator(".rd-rotulos text").all()
+    assert textos, "sem rótulos"
+    px = [t.evaluate("t => parseFloat(t.getAttribute('font-size')) * t.getScreenCTM().a") for t in textos]
+    assert all(10.5 <= v <= 13.5 for v in px), [round(v, 1) for v in px]
+    caixas = [t.bounding_box() for t in textos]
+    for i, a in enumerate(caixas):
+        for b in caixas[i + 1:]:
+            assert (a["x"] + a["width"] <= b["x"] or b["x"] + b["width"] <= a["x"] or
+                    a["y"] + a["height"] <= b["y"] or b["y"] + b["height"] <= a["y"]), (a, b)
+
+
 def escolhido(page, nome: str) -> None:
     page.get_by_text(f"Déficit em {nome}").first.wait_for(timeout=30_000)
 
@@ -119,6 +133,18 @@ def test_mapa_desenha_as_areas_e_a_legenda_sem_erro(nav):
     assert page.locator(".rd-fundo path").count() >= 1
     assert page.locator(".rd-mapa-legenda .rd-mapa-item").count() >= 3
     assert page.locator(".rd-areas path.rd-f-zero").count() > 0                  # o zero neutro aparece
+    assert page.locator(".rd-contorno path").count() == 851 + page.locator(".rd-fundo path").count()
+    rotulos = page.locator(".rd-rotulos text").all_text_contents()   # texto de SVG não tem innerText
+    assert rotulos == ["Belo Horizonte", "Uberlândia", "Uberaba"], rotulos     # os 3 maiores déficits de MG
+    # cada rótulo cai sobre o próprio município (o ponto vem de ponto_interno, em Python)
+    for t in page.locator(".rd-rotulos text").all():
+        alvo = t.get_attribute("data-id")
+        t.scroll_into_view_if_needed()   # elementFromPoint só enxerga o que está na tela
+        assert t.evaluate("""(t, id) => { const b = t.getBoundingClientRect(), r = t.getRootNode();
+            t.style.display = 'none'; const e = r.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2);
+            t.style.display = ''; return e && e.getAttribute('data-id') === id; }""", alvo), alvo
+    assert page.locator(".rd-mapa-resumo").inner_text().startswith("Os maiores déficits estão em Belo Horizonte")
+    assert_letra_legivel(page)
     assert not erros, erros
     page.close()
 
@@ -131,6 +157,7 @@ def test_clique_escolhe_o_municipio_e_enquadra(nav):
     page.locator(f'.rd-areas path.rd-sel[data-id="{BH}"]').wait_for()
     assert page.locator('[data-testid="stSelectbox"] input[role="combobox"]').first.input_value() == "Belo Horizonte"
     assert page.locator(".rd-mapa svg").get_attribute("viewBox") != caixa_mg       # zoom na região
+    assert_letra_legivel(page)                                                     # com zoom, a letra não encolhe
     # outro clique, num vizinho que fica no enquadramento, troca o município (o gatilho não fica preso no primeiro)
     clicar_dentro(page, CONTAGEM)
     escolhido(page, "Contagem")
@@ -146,6 +173,11 @@ def test_celular_390_px_sem_rolagem_horizontal_e_clique(nav):
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
     clicar_dentro(page, UBERABA)
     escolhido(page, "Uberaba")
+    # o clique abre o quadro do município (item 2), e a tabela cabe no celular
+    page.get_by_role("heading", name="Os cartórios de Uberaba").wait_for(timeout=30_000)
+    tab = page.locator("table.rd-tabela", has=page.locator("th", has_text="CNS"))
+    assert tab.evaluate("t => t.scrollWidth <= t.parentElement.clientWidth + 1")
+    assert tab.locator("th:visible").all_inner_texts() == ["CNS", "Atribuições", "Classe", "Déficit esperado"]
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
     assert not erros, erros
     page.close()

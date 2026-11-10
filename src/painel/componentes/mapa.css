@@ -3,6 +3,13 @@
 .rd-mapa { font-family: var(--f-ui, system-ui, sans-serif); color: var(--texto, #0f1c33); }
 .rd-mapa-resumo { margin: 0 0 8px; font-size: 13.5px; line-height: 1.5; color: var(--texto, #0f1c33); }
 .rd-mapa svg { display: block; width: 100%; height: auto; max-height: 560px; }
+/* contorno do estado: traço grosso por baixo das áreas; só a metade de fora aparece */
+.rd-contorno path { fill: none; stroke: var(--texto-2, #45506a); stroke-width: 3; vector-effect: non-scaling-stroke;
+  stroke-linejoin: round; }
+/* rótulos: texto com halo da cor da superfície, para ler sobre qualquer faixa; não pegam o clique */
+.rd-rotulos text { fill: var(--texto, #0f1c33); font-weight: 600; text-anchor: middle; dominant-baseline: middle;
+  paint-order: stroke; stroke: var(--superficie, #ffffff); stroke-linejoin: round;
+  pointer-events: none; }
 .rd-areas path { stroke: var(--superficie, #ffffff); stroke-width: 0.6; vector-effect: non-scaling-stroke;
   fill-rule: evenodd; cursor: pointer; }
 .rd-areas path:hover { stroke: var(--texto, #0f1c33); stroke-width: 1.5; }
@@ -16,7 +23,7 @@
 .rd-f-1 { fill: var(--mapa-1, #c3d1e8); background: var(--mapa-1, #c3d1e8); }
 .rd-f-2 { fill: var(--mapa-2, #8fb3e6); background: var(--mapa-2, #8fb3e6); }
 .rd-f-3 { fill: var(--mapa-3, #5a94e0); background: var(--mapa-3, #5a94e0); }
-.rd-f-4 { fill: var(--mapa-4, #2a78d6); background: var(--mapa-4, #2a78d6); }
+.rd-f-4 { fill: var(--mapa-4, #2974d0); background: var(--mapa-4, #2974d0); }
 .rd-f-5 { fill: var(--mapa-5, #2056a8); background: var(--mapa-5, #2056a8); }
 .rd-f-6 { fill: var(--mapa-6, #183564); background: var(--mapa-6, #183564); }
 .rd-mapa-legenda { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 12px;

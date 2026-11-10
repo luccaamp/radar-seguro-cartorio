@@ -34,8 +34,8 @@ jobs:
         run: uv sync --locked
       - name: ruff
         run: uv run ruff check .
-      - name: Suíte padrão (sem dados reais, sem navegador)
-        run: uv run pytest -q
+      - name: Suíte padrão (sem dados reais, sem navegador), com a cobertura de src/ como indicador
+        run: uv run pytest -q --cov=src --cov-report=term
 
   navegador:
     # D-083: o mapa clicável (componente HTML/JS dentro do Streamlit) num Chromium de verdade, no modo demonstração

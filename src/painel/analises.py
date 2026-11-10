@@ -21,7 +21,7 @@ import pandas as pd
 import yaml
 
 from src import estado
-from src.agent.ferramentas import _br, _citar, _sem_uf, _uf, aprox, brl, pct
+from src.agent.ferramentas import _br, _citar, _obrigada, _sem_acento, _sem_uf, _uf, aprox, brl, pct
 from src.painel import artefatos
 
 RAIZ = Path(__file__).resolve().parents[2]
@@ -127,6 +127,42 @@ def numeros_oficiais(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
             "observacao": "1 a 5 vêm de dados públicos; 6 a 10 dependem de suposições (D-016, D-046)",
             "valores": {r["chave"]: r["base_cru"] for r in linhas}, "tabela": linhas,
             **_meta(con, "gold.fato_mercado_uf")}
+
+
+def panorama(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
+    """Os 6 indicadores do Panorama (V5, D-082), cada um com uma linha de contexto: cartórios ativos, arrecadação
+    anual, obrigados, empregados CLT, déficit de cobertura e prêmio anual. Cinco são números oficiais; a arrecadação
+    anual é aproximada (2 × a receita de referência de 2025 de cada cartório, que é a média dos semestres válidos;
+    superestima um pouco quem tem um semestre só)."""
+    if not _uf(uf):
+        return _sem_uf(uf)
+    of = numeros_oficiais(con, uf)["valores"]
+    fx = faixa_d042(con, uf, medida="premio")
+    r = con.execute("SELECT sum(receita_ref) AS soma, count(receita_ref) AS com, "
+                    "count(*) FILTER (WHERE semestres_validos = 1) AS um FROM gold.serventia_publico").fetchone()
+    arrecadacao = 2 * float(r[0])
+    kpis = [
+        {"chave": "serventias", "rotulo": "Cartórios ativos", "valor": _br(of["serventias"], 0),
+         "nota": "no cadastro do CNJ"},
+        {"chave": "arrecadacao", "rotulo": "Arrecadação anual", "valor": f"≈ {brl(arrecadacao)}",
+         "nota": f"2025, pela receita de referência de {_br(r[1], 0)} cartórios"},
+        {"chave": "obrigadas", "rotulo": "Obrigados à garantia", "valor": aprox(of["obrigadas"]),
+         "nota": f"{_br(100 * of['obrigadas'] / of['serventias'], 0)}% dos ativos (Prov. 227)"},
+        {"chave": "clt", "rotulo": "Empregados CLT", "valor": _br(of["clt"], 0),
+         "nota": f"{_br(of['clt'] / of['serventias'], 1)} por cartório"},
+        {"chave": "deficit", "rotulo": "Déficit de cobertura", "valor": brl(of["deficit"]),
+         "nota": f"{_br(100 * of['deficit'] / of['passivo_obrigadas'], 0)}% do passivo das obrigadas"},
+        {"chave": "premio", "rotulo": "Prêmio anual estimado", "valor": brl(of["premio"]),
+         "nota": f"provavelmente de {fx['faixa_provavel']}"},
+    ]
+    return {"uf": "MG", "kpis": kpis, "tabela": kpis,
+            "valores": {**{k: of[k] for k in ("serventias", "obrigadas", "clt", "deficit", "premio")},
+                        "arrecadacao": arrecadacao, "cartorios_um_semestre": int(r[2])},
+            "conta": ("números oficiais (gold.fato_mercado_uf) e a faixa provável do prêmio; arrecadação anual ≈ 2 × a "
+                      "soma da receita de referência de 2025 (gold.serventia_publico)"),
+            "observacao": (f"a arrecadação anual é aproximada: a receita de referência é a média dos semestres válidos "
+                           f"de 2025, e {_br(int(r[2]), 0)} cartórios têm um semestre só"),
+            **_meta(con, "gold.fato_mercado_uf e gold.serventia_publico")}
 
 
 def faixa_d042(con: duckdb.DuckDBPyConnection, uf: str = "MG", medida: str = "premio") -> dict:
@@ -266,6 +302,80 @@ def quem_e_obrigado(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
 
 
 # ------------------------------------------------------------------ Análises
+# situação jurídica do cadastro do CNJ, em palavras do painel (as 4 que aparecem na carga de 2026-11-07)
+SITUACAO = {"PROVIDO": "titular", "VAGO": "interino", "CONVERSÃO EM DILIGÊNCIA": "em diligência",
+            "SOB INTERVENÇÃO": "sob intervenção"}
+
+
+def cartorios_do_municipio(con: duckdb.DuckDBPyConnection, uf: str = "MG", municipio: str | None = None) -> dict:
+    """Quadro do município (V5, D-082): todos os cartórios dele, pelo CNS (nunca pelo nome do responsável, D-038), do
+    maior para o menor déficit esperado, com a situação, a classe nas duas regras, se é obrigado, empregados, receita,
+    passivo, déficit e prêmio esperados (nível base, regra v2, STF mantém). Sem `municipio`, só explica o que pedir."""
+    if not _uf(uf):
+        return _sem_uf(uf)
+    meta = _meta(con, "gold.serventia_publico")
+    if not municipio:
+        return {"uf": "MG", "municipio": None, "cartorios": [], "tabela": [],
+                "observacao": "informe o município para ver os cartórios dele", **meta}
+    s = con.execute("SELECT * FROM gold.serventia_publico").df()
+    s = s[s["municipio"].map(_sem_acento) == _sem_acento(municipio)]
+    if s.empty:
+        return {"erro": f"município {municipio!r} sem cartório ativo em MG nesta carga (confira a grafia)"}
+    s = s.sort_values(["valor_descoberto", "cns"], ascending=[False, True])
+
+    def linha(r) -> dict:
+        receita = None if pd.isna(r["receita_ref"]) else float(r["receita_ref"])
+        clt = None if pd.isna(r["clt"]) else float(r["clt"])
+        return {"cns": r["cns"], "atribuicoes": r["atribuicoes"],
+                "situacao": SITUACAO.get(str(r["situacao_juridica"]), str(r["situacao_juridica"]).lower()),
+                "classe": r["classe"], "classe_regra_anterior": r["classe_v1"],
+                "obrigado": _obrigada(float(r["peso_universo"])),
+                "empregados_clt": "não declarado" if clt is None else _br(clt, 0),
+                "receita_semestral": "sem receita válida" if receita is None else brl(receita),
+                "passivo": brl(r["passivo"]), "deficit_esperado": brl(r["valor_descoberto"]),
+                "premio_anual": brl(r["premio_emitido"]),
+                "deficit_cru": float(r["valor_descoberto"]), "premio_cru": float(r["premio_emitido"])}
+    linhas = [linha(r) for _, r in s.iterrows()]
+    return {"uf": "MG", "municipio": str(s["municipio"].iloc[0]), "n_cartorios": _br(len(s), 0),
+            "obrigados": aprox(s["peso_universo"].sum()), "deficit_esperado": brl(s["valor_descoberto"].sum()),
+            "premio_anual": brl(s["premio_emitido"].sum()), "cartorios": linhas, "tabela": linhas,
+            "conta": "gold.serventia_publico do município, ordenado pelo déficit esperado (maior primeiro)",
+            "observacao": "estimativas do modelo por cartório (nível base, regra v2, STF mantém); classe aproximada; "
+                          "o déficit é um valor esperado (chance × parte descoberta), não o déficit real do cartório",
+            **meta}
+
+
+# mapa em % (V5, D-082, mapa da aba Classes): indicador → (título da legenda, conta, frase do estado)
+INDICADORES_PCT = {
+    "obrigados": ("Cartórios obrigados pelo Prov. 227", "obrigados (peso no universo) ÷ cartórios ativos do município",
+                  "dos cartórios de MG são obrigados pelo Prov. 227"),
+    "classe_3": ("Cartórios na Classe 3", "cartórios na Classe 3 ÷ cartórios ativos do município (regra atual)",
+                 "dos cartórios de MG estão na Classe 3"),
+}
+
+
+def percentual_por_municipio(con: duckdb.DuckDBPyConnection, uf: str = "MG", indicador: str = "obrigados") -> dict:
+    """Parte dos cartórios de cada município num indicador de classe: obrigados pelo Prov. 227 (com o peso da classe
+    indeterminada) ou na Classe 3 (regra atual). Valores por área do mapa (gold.geo_area_municipio), de 0 a 1."""
+    if not _uf(uf):
+        return _sem_uf(uf)
+    if indicador not in INDICADORES_PCT:
+        return {"erro": f"indicador {indicador!r} não existe; use {list(INDICADORES_PCT)}"}
+    titulo, conta, frase = INDICADORES_PCT[indicador]
+    g = con.execute("""SELECT a.area_id, s.municipio, count(*) AS n, sum(s.peso_universo) AS obrigados,
+                              count(*) FILTER (WHERE s.classe = '3') AS classe_3
+                       FROM gold.serventia_publico s JOIN gold.geo_area_municipio a USING (cod_ibge)
+                       GROUP BY a.area_id, s.municipio ORDER BY a.area_id""").df()
+    g["parte"] = g[indicador] / g["n"]
+    estado_ = float(g[indicador].sum() / g["n"].sum())
+    maiores = g[g["n"] >= 5].sort_values(["parte", "n"], ascending=[False, False]).head(3)
+    return {"uf": "MG", "indicador": indicador, "titulo": titulo, "estado": pct(estado_),
+            "frase_estado": f"{pct(estado_)} {frase}", "zeros": int((g["parte"] <= 0).sum()), "areas": len(g),
+            "maiores_com_5_ou_mais": [f"{r.municipio} ({pct(r.parte)} de {_br(r.n, 0)})" for r in maiores.itertuples()],
+            "valores": {str(r.area_id): float(r.parte) for r in g.itertuples()},
+            "conta": conta, **_meta(con, "gold.serventia_publico")}
+
+
 def concentracao(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     """Gini e a parte dos 10% maiores no passivo das obrigadas (dado) e no déficit esperado (suposição), com a curva
     de Lorenz (a mesma conta de src/analise/conclusoes.concentracao, sobre gold.serventia_publico)."""
@@ -323,7 +433,21 @@ def grade_taxa_adesao(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     if not _uf(uf):
         return _sem_uf(uf)
     g = con.execute("SELECT * FROM gold.analise_premio_grade ORDER BY adesao, taxa").df()
+    prem = estado.premissas_vigentes(con)[0]["premissas"]
+    taxa_base = float(prem["taxa_seguro_anual"]["valores"]["base"])
+    adesao_base = float(prem["escolha_garantia"]["valores"]["base"]["seguro"])
+    # quadro de calor (V5, D-082): linhas = adesão, colunas = taxa; a cor de cada célula pela escala do mapa
+    from src.painel.mapa import faixas
+    cor, _ = faixas({f"{r.adesao}|{r.taxa}": float(r.premio) for r in g.itertuples()})
+    taxas, adesoes = sorted(g["taxa"].unique()), sorted(g["adesao"].unique())
+    valor = {(float(r.adesao), float(r.taxa)): float(r.premio) for r in g.itertuples()}
+    quadro = [{"adesao": f"{_br(100 * a, 0)}%", "celulas": [
+        {"taxa": f"{_br(100 * t, 1).removesuffix(',0')}%", "premio": brl(valor[(a, t)]), "faixa": cor[f"{a}|{t}"],
+         "base": bool(abs(a - adesao_base) < 1e-9 and abs(t - taxa_base) < 1e-9)} for t in taxas]}
+              for a in adesoes]
     return {"uf": "MG", "de": brl(g["premio"].min()), "ate": brl(g["premio"].max()),
+            "taxas": [c["taxa"] for c in quadro[0]["celulas"]], "quadro": quadro,
+            "base": f"taxa de {_br(100 * taxa_base, 1).removesuffix(',0')}% e adesão de {_br(100 * adesao_base, 0)}%",
             "observacao": "a SES da SUSEP não publica a importância segurada; a taxa média não sai dela (M8)",
             "conta": "prêmio = IS da base × (adesão ÷ adesão base) × taxa", "tabela": _linhas(g),
             **_meta(con, "gold.analise_premio_grade", rotulo=SENSIBILIDADE)}
@@ -609,8 +733,10 @@ def decisoes(numeros: tuple[str, ...] = ("D-042", "D-046", "D-047", "D-048", "D-
 
 
 # ferramentas novas que a Etapa 5 pode expor ao chat (mesma assinatura: con, uf)
-PARA_O_CHAT = {f.__name__: f for f in (numeros_oficiais, faixa_d042, escada, premio_por_cenario_stf, grupos,
-                                       quem_e_obrigado, concentracao, tornado, grade_taxa_adesao, previsao_arrecadacao,
+PARA_O_CHAT = {f.__name__: f for f in (numeros_oficiais, panorama, faixa_d042, escada, premio_por_cenario_stf, grupos,
+                                       quem_e_obrigado, cartorios_do_municipio, percentual_por_municipio,
+                                       concentracao, tornado,
+                                       grade_taxa_adesao, previsao_arrecadacao,
                                        previsao_mercado, subidas_comparacao, pergunta_9, capacidade_pagar,
                                        escolhas_metodo_passivo, leitura_literal_receita, saltos_declaracao,
                                        qualidade_fontes, clt_outros_estados)}

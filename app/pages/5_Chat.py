@@ -7,7 +7,8 @@ import tomllib
 
 import streamlit as st
 
-from comum import aviso_modo, caminho_banco, carga_em_uso, conexao, demonstracao, execucao, md_seguro, modo, rodape
+from comum import (aviso_modo, caminho_banco, carga_em_uso, conexao, consulta, demonstracao, execucao, md_seguro, modo,
+                   rodape)
 from src import llm
 from src.agent import chat
 from src.painel import ui
@@ -36,6 +37,30 @@ def _cabecalho() -> None:
                 unsafe_allow_html=True)
     ui.contexto([("Dados", carga_em_uso()), ("Premissas", f"v{int(execucao().versao_premissas)}")])
     aviso_modo()   # a linha do modo demonstração, como em todas as páginas do painel
+
+
+def _ler_contexto() -> None:
+    """Contexto que veio do link de outra página (V5, D-082: Chat?pergunta=…&pagina=…&municipio=…). Os dois valores
+    vêm do endereço, que qualquer um edita: só ficam se passarem em chat.texto_contexto (página da lista, município
+    que existe no cadastro). Saem do endereço como a pergunta, e valem para a sessão até outro link trocar."""
+    pagina, municipio = st.query_params.get("pagina"), st.query_params.get("municipio")
+    for p in ("pagina", "municipio"):
+        if p in st.query_params:
+            del st.query_params[p]
+    if not (pagina or municipio):
+        return
+    validos = set(consulta("SELECT municipio FROM gold.dim_municipio")["municipio"])
+    pagina = pagina if pagina in chat.PAGINAS_CONTEXTO else None
+    municipio = municipio if municipio and chat.texto_contexto(None, municipio, validos) else None
+    st.session_state["chat_contexto"] = {"pagina": pagina, "municipio": municipio,
+                                         "texto": chat.texto_contexto(pagina, municipio, validos)}
+
+
+def _mostrar_contexto() -> None:
+    c = st.session_state.get("chat_contexto") or {}
+    chips = [(rot, c[k]) for rot, k in (("Você veio de", "pagina"), ("Município aberto", "municipio")) if c.get(k)]
+    if chips:
+        ui.contexto(chips)
 
 
 def _selos_html(nomes: list[str]) -> str:
@@ -80,7 +105,9 @@ def _responder(pergunta: str, conversa) -> None:
             area.markdown(ESPERA, unsafe_allow_html=True)
             texto, resposta = "", None
             try:
-                for tipo, valor in chat.responder_em_partes(pergunta, conexao(), anteriores, banco=BANCO):
+                contexto = (st.session_state.get("chat_contexto") or {}).get("texto", "")
+                for tipo, valor in chat.responder_em_partes(pergunta, conexao(), anteriores, banco=BANCO,
+                                                            contexto=contexto):
                     if tipo == "texto":
                         texto += valor
                         area.markdown(md_seguro(texto))
@@ -150,6 +177,7 @@ def aba_chat() -> None:
         st.info(f"Você chegou ao limite de {LIMITE} perguntas nesta sessão. Veja as respostas na aba Perguntas prontas.")
     if historico and st.button("Limpar conversa", type="tertiary"):
         st.session_state["chat_historico"] = []
+        st.session_state.pop("chat_contexto", None)
         st.rerun()   # necessário: a conversa já foi desenhada acima nesta execução
 
 
@@ -171,6 +199,8 @@ st.set_page_config(page_title="Chat", page_icon="💬", layout="wide")
 ui.estilo()
 _css()
 _cabecalho()
+_ler_contexto()
+_mostrar_contexto()
 tab_chat, tab_prontas = st.tabs(["Chat", "Perguntas prontas"])
 with tab_chat, st.container(key="chat"):
     aba_chat()

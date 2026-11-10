@@ -13,6 +13,7 @@ que esteja no próprio mapa.
 from __future__ import annotations
 
 import math
+import re
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
@@ -24,6 +25,9 @@ CASAS = 1                 # casas decimais das coordenadas no viewBox (0,1 de 10
 N_FAIXAS = 6              # faixas de cor acima de zero (tokens --mapa-1 … --mapa-6 em src/painel/estilo.css)
 QUANTIL_TETO = 0.95       # a cor satura no percentil 95, como no mapa anterior (Plotly)
 FOLGA = 0.06              # margem em volta do enquadramento, em fração do lado maior
+N_ROTULOS = 3             # rótulos com o nome nas áreas de maior valor do recorte (V5, D-082)
+N_CANDIDATOS = 8          # candidatos em ordem de valor; o JS pula os que se sobrepõem até ter N_ROTULOS
+TAMANHO_ROTULO = 0.022    # letra do rótulo em fração da largura do enquadramento, só se o JS não medir a tela
 
 
 # ------------------------------------------------------------------ projeção
@@ -92,15 +96,25 @@ def _n(v: float) -> str:
 
 
 # ------------------------------------------------------------------ cor
-def faixas(valores: dict[str, float | None], n: int = N_FAIXAS, quantil: float = QUANTIL_TETO
-           ) -> tuple[dict[str, str], list[dict[str, str]]]:
+def faixas(valores: dict[str, float | None], n: int = N_FAIXAS, quantil: float = QUANTIL_TETO,
+           fmt: Callable[[float], str] | None = None,
+           teto_fixo: float | None = None) -> tuple[dict[str, str], list[dict[str, str]]]:
     """Faixa de cor de cada área e a legenda.
 
     A escala é calculada só com os valores recebidos (o recorte que está na tela). Zero tem a faixa "zero" (cor neutra,
-    fora da escala); sem valor, "sem". Acima de zero, n faixas iguais de 0 até o teto (percentil `quantil` dos valores
-    positivos); o que passa do teto fica na última faixa."""
+    fora da escala); sem valor, "sem". Acima de zero, faixas de largura igual a um passo REDONDO, o primeiro que cobre
+    o teto (percentil `quantil` dos valores positivos) com as n − 1 primeiras faixas; a última fica para o que passa
+    disso ("mais de …"). `fmt` escreve os limites (padrão: R$ curto). Com `teto_fixo` (ex.: 1 para um percentual),
+    nada passa do teto: o passo redondo cobre o teto com as n faixas, e a última diz "até …" (sem "mais de 100%")."""
+    fmt = fmt or brl_curto
     positivos = sorted(v for v in valores.values() if v is not None and v > 0)
-    teto = _quantil(positivos, quantil) if positivos else 0.0
+    if teto_fixo is not None:
+        passo = passo_redondo(teto_fixo / n) if teto_fixo > 0 else 0.0
+        n = min(n, math.ceil(teto_fixo / passo - 1e-9)) if passo > 0 else n
+        teto = teto_fixo
+    else:
+        teto = _quantil(positivos, quantil) if positivos else 0.0
+        passo = passo_redondo(teto / max(n - 1, 1)) if teto > 0 else 0.0
     out: dict[str, str] = {}
     for area, v in valores.items():
         if v is None or (isinstance(v, float) and math.isnan(v)):
@@ -108,13 +122,35 @@ def faixas(valores: dict[str, float | None], n: int = N_FAIXAS, quantil: float =
         elif v <= 0:
             out[area] = "zero"
         else:
-            out[area] = str(min(n, max(1, math.ceil(v / teto * n)))) if teto > 0 else str(n)
+            out[area] = str(min(n, max(1, math.ceil(v / passo)))) if passo > 0 else str(n)
     legenda = [{"faixa": "zero", "texto": "Zero"}]
-    if teto > 0:
-        passo = teto / n
-        legenda += [{"faixa": str(i), "texto": f"até {brl(passo * i)}"} for i in range(1, n)]
-        legenda.append({"faixa": str(n), "texto": f"{brl(passo * (n - 1))} ou mais"})
+    if passo > 0:
+        legenda += [{"faixa": str(i), "texto": f"até {fmt(passo * i)}"} for i in range(1, n)]
+        legenda.append({"faixa": str(n), "texto": f"até {fmt(min(passo * n, teto))}" if teto_fixo is not None
+                        else f"mais de {fmt(passo * (n - 1))}"})
     return out, legenda
+
+
+def passo_redondo(x: float) -> float:
+    """O menor número "redondo" (1; 1,5; 2; 2,5; 3; 4; 5; 6 ou 8 vezes uma potência de 10) maior ou igual a x > 0."""
+    if x <= 0:
+        raise ValueError("passo precisa ser positivo")
+    base = 10 ** math.floor(math.log10(x))
+    for m in (1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10):
+        if m * base >= x * (1 - 1e-12):
+            return m * base
+    return 10 * base
+
+
+def brl_curto(v: float) -> str:
+    """R$ sem o ",0" dos números redondos da legenda ("R$ 50 mil", não "R$ 50,0 mil")."""
+    return re.sub(r",0(?= )", "", brl(v))
+
+
+def pct_curto(v: float) -> str:
+    """Percentual (0,25 → "25%"; 0,125 → "12,5%") para a legenda dos mapas em %."""
+    s = f"{100 * v:.1f}".replace(".", ",")
+    return (s[:-2] if s.endswith(",0") else s) + "%"
 
 
 def _quantil(ordenados: list[float], q: float) -> float:
@@ -127,19 +163,66 @@ def _quantil(ordenados: list[float], q: float) -> float:
     return ordenados[i] + (ordenados[j] - ordenados[i]) * (pos - i)
 
 
+# ------------------------------------------------------------------ rótulos
+def _area_e_centro(anel: list[list[float]]) -> tuple[float, float, float]:
+    """Área (com sinal, fórmula do laço) e centroide de um anel."""
+    a = cx = cy = 0.0
+    for (x0, y0, *_), (x1, y1, *_) in zip(anel, anel[1:] + anel[:1]):
+        c = x0 * y1 - x1 * y0
+        a += c
+        cx += (x0 + x1) * c
+        cy += (y0 + y1) * c
+    if abs(a) < 1e-15:
+        xs, ys = [p[0] for p in anel], [p[1] for p in anel]
+        return 0.0, sum(xs) / len(xs), sum(ys) / len(ys)
+    return a / 2, cx / (3 * a), cy / (3 * a)
+
+
+def _dentro(x: float, y: float, aneis: list[list[list[float]]]) -> bool:
+    """Ponto dentro do polígono (contorno e furos), pela regra par-ímpar."""
+    dentro = False
+    for anel in aneis:
+        for (x0, y0, *_), (x1, y1, *_) in zip(anel, anel[1:] + anel[:1]):
+            if (y0 > y) != (y1 > y) and x < x0 + (y - y0) * (x1 - x0) / (y1 - y0):
+                dentro = not dentro
+    return dentro
+
+
+def ponto_interno(geom: dict) -> tuple[float, float]:
+    """Um ponto (lon, lat) DENTRO do maior pedaço da geometria, para o rótulo: o centroide, se cair dentro; senão, o
+    ponto de uma grade 21 × 21 na caixa do pedaço que fica dentro e mais perto do centroide (município côncavo)."""
+    poligonos = [geom["coordinates"]] if geom["type"] == "Polygon" else list(geom["coordinates"])
+    maior = max(poligonos, key=lambda p: abs(_area_e_centro(p[0])[0]))
+    _, cx, cy = _area_e_centro(maior[0])
+    if _dentro(cx, cy, maior):
+        return cx, cy
+    xs, ys = [p[0] for p in maior[0]], [p[1] for p in maior[0]]
+    candidatos = [(x0 + (x1 - x0) * i / 20, y0 + (y1 - y0) * j / 20)
+                  for x0, x1, y0, y1 in [(min(xs), max(xs), min(ys), max(ys))] for i in range(1, 20) for j in range(1, 20)]
+    dentro = [p for p in candidatos if _dentro(p[0], p[1], maior)]
+    return min(dentro, key=lambda p: (p[0] - cx) ** 2 + (p[1] - cy) ** 2) if dentro else (cx, cy)
+
+
 # ------------------------------------------------------------------ dados do componente
 def dados_mapa(geometrias: dict[str, dict], valores: dict[str, float | None], nomes: dict[str, str],
                textos: dict[str, str], *, fundo: Iterable[dict] = (), selecionado: str | None = None,
                enquadrar: Iterable[str] | None = None, titulo_legenda: str = "", resumo: str = "",
-               legenda_fundo: str = "") -> dict[str, Any]:
+               legenda_fundo: str = "", rotulos: int = N_ROTULOS,
+               fmt_legenda: Callable[[float], str] | None = None, teto_fixo: float | None = None) -> dict[str, Any]:
     """O que o componente recebe (JSON): viewBox, áreas com caminho, faixa, nome e texto do balão, áreas de fundo
-    (não clicáveis), legenda e o selecionado. `enquadrar` limita o viewBox a essas áreas (zoom num recorte)."""
+    (não clicáveis), legenda, o selecionado e os rótulos. `enquadrar` limita o viewBox a essas áreas (zoom num
+    recorte). Rótulos: até N_CANDIDATOS áreas de maior valor do recorte (as enquadradas, ou todas), em ordem; o JS
+    mostra as `rotulos` primeiras que não se sobrepõem na tela, com a letra de tamanho fixo em px (`tamanhoRotulo` é
+    só a reserva, proporcional à largura do enquadramento)."""
     fundo = list(fundo)
     proj = Projecao(list(geometrias.values()) + fundo)
-    cor, legenda = faixas({a: valores.get(a) for a in geometrias})
-    alvo = [geometrias[a] for a in (enquadrar or []) if a in geometrias]
+    cor, legenda = faixas({a: valores.get(a) for a in geometrias}, fmt=fmt_legenda, teto_fixo=teto_fixo)
+    no_recorte = [a for a in (enquadrar or []) if a in geometrias]
+    alvo = [geometrias[a] for a in no_recorte]
     caixa = proj.caixa(alvo) if alvo else (0.0, 0.0, proj.largura, proj.altura)
     sel = selecionado if selecionado in geometrias else None
+    candidatos = [a for a in (no_recorte or geometrias) if (_valor(valores.get(a)) or 0) > 0]
+    maiores = sorted(candidatos, key=lambda a: (-float(valores[a]), a))[:N_CANDIDATOS if rotulos > 0 else 0]
     return {
         "viewBox": " ".join(_n(v) for v in caixa),
         "areas": [{"id": a, "d": proj.caminho(g), "faixa": cor[a], "valor": _valor(valores.get(a)),
@@ -150,6 +233,10 @@ def dados_mapa(geometrias: dict[str, dict], valores: dict[str, float | None], no
         "tituloLegenda": titulo_legenda,
         "legendaFundo": legenda_fundo,
         "resumo": resumo,
+        "rotulos": [{"id": a, "texto": nomes.get(a, a),
+                     **dict(zip(("x", "y"), proj.xy(*ponto_interno(geometrias[a]))))} for a in maiores],
+        "maxRotulos": max(0, rotulos),
+        "tamanhoRotulo": round(caixa[2] * TAMANHO_ROTULO, 1),
     }
 
 

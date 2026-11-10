@@ -85,15 +85,31 @@ def test_faixas_zero_neutro_sem_valor_e_teto_no_quantil():
     valores = {"z": 0.0, "n": None, "nan": float("nan"), **{str(i): float(i) for i in range(1, 101)}}
     cor, legenda = m.faixas(valores)
     assert cor["z"] == "zero" and cor["n"] == "sem" and cor["nan"] == "sem"
-    assert cor["1"] == "1" and cor["100"] == str(m.N_FAIXAS)
     teto = m._quantil(sorted(float(i) for i in range(1, 101)), m.QUANTIL_TETO)
     assert teto == pytest.approx(95.05)                       # o mesmo quantil do pandas
-    assert cor["96"] == str(m.N_FAIXAS)                       # acima do teto: última faixa
-    # faixas crescem com o valor (monótono)
+    # passo redondo que cobre o teto em n − 1 faixas: 95,05 / 5 = 19,01 → 20
+    assert cor["1"] == "1" and cor["20"] == "1" and cor["21"] == "2" and cor["100"] == "5"
+    # faixas crescem com o valor (monótono) e só a última fica para o que passa de (n − 1) passos
     seq = [int(cor[str(i)]) for i in range(1, 101)]
-    assert seq == sorted(seq) and set(seq) == set(range(1, m.N_FAIXAS + 1))
+    assert seq == sorted(seq) and set(seq) == set(range(1, m.N_FAIXAS))
+    assert m.faixas({"a": 10.0, "b": 1000.0, **{str(i): 50.0 for i in range(40)}})[0]["b"] == str(m.N_FAIXAS)
     assert legenda[0] == {"faixa": "zero", "texto": "Zero"} and len(legenda) == m.N_FAIXAS + 1
-    assert all("R$" in item["texto"] for item in legenda[1:]) and legenda[-1]["texto"].endswith("ou mais")
+    assert [x["texto"] for x in legenda[1:3]] == ["até R$ 20,00", "até R$ 40,00"]
+    assert legenda[-1]["texto"] == "mais de R$ 100,00"
+
+
+@pytest.mark.parametrize("x, esperado", [(0.7, 0.8), (1, 1), (1.2, 1.5), (19.01, 20), (21, 25), (27, 30), (33, 40),
+                                         (57_600, 60_000), (79_000, 80_000), (81_000, 100_000)])
+def test_passo_redondo(x, esperado):
+    assert m.passo_redondo(x) == pytest.approx(esperado)
+
+
+def test_formatos_curtos_da_legenda():
+    assert m.brl_curto(60_000) == "R$ 60 mil" and m.brl_curto(62_500) == "R$ 62,5 mil"
+    assert m.brl_curto(1_000_000) == "R$ 1 mi"
+    assert m.pct_curto(0.25) == "25%" and m.pct_curto(0.125) == "12,5%" and m.pct_curto(0) == "0%"
+    cor, leg = m.faixas({"a": 0.1, "b": 0.5}, fmt=m.pct_curto)
+    assert leg[1]["texto"].startswith("até ") and leg[1]["texto"].endswith("%")
 
 
 def test_faixas_calculadas_no_recorte():
@@ -106,8 +122,38 @@ def test_faixas_calculadas_no_recorte():
 def test_faixas_sem_positivos_nao_quebra():
     cor, legenda = m.faixas({"a": 0.0, "b": None})
     assert cor == {"a": "zero", "b": "sem"} and legenda == [{"faixa": "zero", "texto": "Zero"}]
-    cor, _ = m.faixas({"a": 5.0})                             # um só valor: o próprio teto
-    assert cor["a"] == str(m.N_FAIXAS)
+    cor, _ = m.faixas({"a": 5.0})                             # um só valor: cabe nas faixas de baixo, sem quebrar
+    assert 1 <= int(cor["a"]) < m.N_FAIXAS
+
+
+# ------------------------------------------------------------------ rótulos
+def test_ponto_interno_fica_dentro_mesmo_em_forma_de_u():
+    assert m.ponto_interno(GEO["1"]) == pytest.approx((-44.5, -19.5))   # quadrado: o centro
+    # "U": o centroide cai no vão, fora do polígono; o ponto do rótulo tem de cair dentro
+    u = {"type": "Polygon", "coordinates": [[[0, 0], [3, 0], [3, 3], [2, 3], [2, 1], [1, 1], [1, 3], [0, 3], [0, 0]]]}
+    _, cx, cy = m._area_e_centro(u["coordinates"][0])
+    assert not m._dentro(cx, cy, u["coordinates"])
+    x, y = m.ponto_interno(u)
+    assert m._dentro(x, y, u["coordinates"])
+    # MultiPolygon: o rótulo vai no pedaço maior
+    multi = {"type": "MultiPolygon", "coordinates": [quadrado(0, 0, 0.1)["coordinates"], quadrado(5, 5, 2)["coordinates"]]}
+    assert m.ponto_interno(multi) == pytest.approx((6, 6))
+
+
+def test_rotulos_nos_maiores_do_recorte():
+    vals = {"1": 10.0, "2": 40.0, "3": 30.0, "4": 0.0}
+    d = m.dados_mapa(GEO, vals, {"1": "Um", "2": "Dois", "3": "Três", "4": "Quatro"}, {})
+    assert [r["texto"] for r in d["rotulos"]] == ["Dois", "Três", "Um"]     # candidatos em ordem; o zero fica fora
+    assert all(set(r) == {"id", "texto", "x", "y"} for r in d["rotulos"]) and d["tamanhoRotulo"] > 0
+    assert d["maxRotulos"] == m.N_ROTULOS
+    muitos = {str(i): quadrado(-50 + i, -20) for i in range(12)}
+    cand = m.dados_mapa(muitos, {str(i): float(i + 1) for i in range(12)}, {}, {})["rotulos"]
+    assert [r["id"] for r in cand] == [str(i) for i in range(11, 11 - m.N_CANDIDATOS, -1)]   # até N_CANDIDATOS
+    recorte = m.dados_mapa(GEO, vals, {}, {}, enquadrar=["1", "4"])
+    assert [r["id"] for r in recorte["rotulos"]] == ["1"]                    # só os do recorte, e só com valor
+    zoom = m.dados_mapa(GEO, vals, {}, {}, enquadrar=["1"])                  # ("1" e "4" em diagonal cobrem tudo)
+    assert zoom["tamanhoRotulo"] < d["tamanhoRotulo"]                        # com zoom, a letra encolhe no viewBox
+    assert m.dados_mapa(GEO, vals, {}, {}, rotulos=0)["rotulos"] == []
 
 
 # ------------------------------------------------------------------ dados do componente e clique
@@ -115,7 +161,8 @@ def test_dados_mapa_e_json_e_tem_o_que_o_js_le():
     d = m.dados_mapa(GEO, {"1": 0.0, "2": 10.0, "3": 20.0, "4": None}, {"1": "Um"}, {"2": "texto"},
                      fundo=[quadrado(-45, -20, 0.2)], selecionado="2", titulo_legenda="Déficit", legenda_fundo="Sem")
     json.dumps(d, allow_nan=False)                            # JSON válido, sem NaN
-    assert set(d) == {"viewBox", "areas", "fundo", "selecionado", "legenda", "tituloLegenda", "legendaFundo", "resumo"}
+    assert set(d) == {"viewBox", "areas", "fundo", "selecionado", "legenda", "tituloLegenda", "legendaFundo", "resumo",
+                      "rotulos", "maxRotulos", "tamanhoRotulo"}
     areas = {a["id"]: a for a in d["areas"]}
     assert areas["1"]["nome"] == "Um" and areas["2"]["nome"] == "2"          # sem nome: o código
     assert areas["1"]["faixa"] == "zero" and areas["4"]["faixa"] == "sem" and areas["4"]["valor"] is None

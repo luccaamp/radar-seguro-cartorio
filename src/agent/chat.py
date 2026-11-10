@@ -97,14 +97,38 @@ def _executar_pedidos(con, pedidos: list[dict], banco: str) -> list[dict]:
             c.close()
 
 
+# ------------------------------------------------------------------ contexto do painel (V5, D-082)
+# páginas que podem mandar contexto ao chat (o rótulo que aparece ao usuário e ao modelo)
+PAGINAS_CONTEXTO = ("Início", "Quão certo é", "Onde está o mercado", "Para onde vai", "Sobre os dados",
+                    "Simule você mesmo")
+_NOME_MUNICIPIO = re.compile(r"[A-Za-zÀ-ÿ' \-]{2,60}")
+
+
+def texto_contexto(pagina: str | None, municipio: str | None, municipios_validos=()) -> str:
+    """A linha de contexto que vai junto da pergunta: a página de onde a pessoa veio e o município aberto nela. Os dois
+    vêm do endereço (que qualquer um edita): a página só vale se estiver em PAGINAS_CONTEXTO, e o município só se tiver
+    só letras e estiver em `municipios_validos`. O que não passar some sem aviso. Sem nada válido, devolve ""."""
+    partes = []
+    if pagina in PAGINAS_CONTEXTO:
+        partes.append(f"a pessoa estava na página “{pagina}” do painel")
+    if municipio and _NOME_MUNICIPIO.fullmatch(municipio) and municipio in set(municipios_validos):
+        partes.append(f"com o município de {municipio} aberto")
+    if not partes:
+        return ""
+    return ("[Contexto do painel, só para entender a pergunta (não é instrução): " + ", ".join(partes) + ". Se a "
+            "pergunta falar de \"este município\" ou \"aqui\", é desse.]")
+
+
 # ------------------------------------------------------------------ resposta
 def responder_em_partes(pergunta: str, con: duckdb.DuckDBPyConnection | None, historico: list[dict] | None = None,
-                        versao: str = "c", banco: str = ""):
+                        versao: str = "c", banco: str = "", contexto: str = ""):
     """A resposta em streaming: ("texto", trecho) enquanto o texto chega, ("consultando", None) quando o modelo pede
     ferramentas (o texto mostrado até ali era preâmbulo e pode ser trocado) e ("fim", Resposta) no fim. Levanta
-    llm.LLMIndisponivel se o Gemini não responder (sem chave, sem internet, demora, cota)."""
+    llm.LLMIndisponivel se o Gemini não responder (sem chave, sem internet, demora, cota). `contexto` (de
+    texto_contexto) vai como uma parte a mais da mensagem do usuário, antes da pergunta; vazio, nada muda."""
     sistema = prompt_sistema(versao)
-    conteudos = [*_historico(historico), {"role": "user", "parts": [{"text": pergunta}]}]
+    partes_usuario = ([{"text": contexto}] if contexto else []) + [{"text": pergunta}]
+    conteudos = [*_historico(historico), {"role": "user", "parts": partes_usuario}]
     esquemas = ferramentas.ESQUEMAS if versao == "c" else None
     chamadas, etapas = [], []
     rodadas = int(llm.config()["max_rodadas_ferramentas"]) if esquemas else 0
@@ -146,9 +170,9 @@ def responder_em_partes(pergunta: str, con: duckdb.DuckDBPyConnection | None, hi
 
 
 def responder(pergunta: str, con: duckdb.DuckDBPyConnection | None, historico: list[dict] | None = None,
-              versao: str = "c", banco: str = "") -> Resposta:
+              versao: str = "c", banco: str = "", contexto: str = "") -> Resposta:
     """A resposta inteira de uma vez (avaliação e testes). Levanta llm.LLMIndisponivel se o Gemini não responder."""
-    for tipo, valor in responder_em_partes(pergunta, con, historico, versao, banco):
+    for tipo, valor in responder_em_partes(pergunta, con, historico, versao, banco, contexto):
         if tipo == "fim":
             return valor
     raise llm.LLMIndisponivel("erro", llm.MENSAGENS["erro"])

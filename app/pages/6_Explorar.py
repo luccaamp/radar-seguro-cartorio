@@ -433,7 +433,7 @@ rodape(["cnj_serventias", "cnj_colaboradores", "cnj_arrecadacao", "rais_vinculos
        + (f"; projeção {ano}, {LIM_CURTO[limite_proj]} (rótulo: projeção)." if proj else "."), taxa=True)
 
 ui.sugestoes(["Por que a taxa do seguro pesa tanto no prêmio?", "O que acontece se o STF suspender o Provimento 227?",
-              "Quanto a seguradora lucraria com esse mercado?"])
+              "Quanto a seguradora lucraria com esse mercado?"], pagina="Simule você mesmo")
 
 # ------------------------------------------------------------------ salvar
 with st.expander("Salvar este cenário", expanded=False):
