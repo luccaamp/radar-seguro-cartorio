@@ -162,7 +162,10 @@ def test_javascript_do_mapa():
         pytest.skip("Node ausente: os testes do JavaScript do mapa não rodam")
     arquivos = sorted(str(p) for p in (RAIZ / "tests" / "js").glob("*.test.mjs"))   # lista explícita (Node 20 e 22)
     assert arquivos
-    r = subprocess.run(["node", "--test", *arquivos], capture_output=True, text=True, encoding="utf-8", timeout=120)
+    # formato TAP sempre: sem a opção, o Node escolhe o formato pelo ambiente (no CI do GitHub sai o "spec", sem o
+    # "# fail 0" que a linha de baixo procura; 2026-11-10, PR #12)
+    r = subprocess.run(["node", "--test", "--test-reporter=tap", *arquivos], capture_output=True, text=True,
+                       encoding="utf-8", timeout=120)
     assert r.returncode == 0, r.stdout + r.stderr
     assert re.search(r"# fail 0", r.stdout) and not re.search(r"# pass 0\b", r.stdout), r.stdout
 

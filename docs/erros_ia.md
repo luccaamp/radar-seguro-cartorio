@@ -981,3 +981,11 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** pressa em duas trocas de uma linha, tratadas como "mecânicas".
 - **Correção:** o resultado foi conferido no `git diff` e acertado com a ferramenta de edição (linha em branco e import). Regra: nenhuma troca em código por script, nem de uma linha.
 - **Bom para os slides?** não
+
+## 2026-11-10 — Teste do JavaScript dependia do formato de saída do Node
+- **Onde:** `tests/test_mapa.py::test_javascript_do_mapa`, no PR #12 (D-083).
+- **O que aconteceu:** o teste procurava a linha `# fail 0` do formato TAP. Na máquina local o Node escreve em TAP, mas no CI do GitHub ele escolheu o formato "spec". Os 10 testes do JavaScript passaram nos dois lugares, mas o teste em Python falhou no CI e travou o PR.
+- **Como foi detectado:** pelo autor, que viu o PR vermelho; a IA leu o log do job "Testes e ruff".
+- **Causa provável:** a IA conferiu só na própria máquina uma saída que muda com o ambiente.
+- **Correção:** `node --test --test-reporter=tap`, o mesmo formato em qualquer ambiente; conferido também com `CI=true` e `FORCE_COLOR=1`. Regra: ao ler a saída de outra ferramenta num teste, fixar o formato por opção, nunca contar com o padrão.
+- **Bom para os slides?** sim (funciona na minha máquina × no CI)
