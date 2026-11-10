@@ -28,6 +28,8 @@ Cada bloco do painel (correções de MG, Fase 3, Fase 4) segue esta estrutura:
    - (b) Streamlit puro, com o visual aproximado.
 
    Um site estático fica fora porque pediria hospedagem fora das exceções gratuitas aprovadas.
+
+   **Decidido em 2026-11-10 (D-083): opção (a).** O mapa de "Onde está o mercado" já é o componente (`src/painel/mapa.py`), com a lógica em Python e o JavaScript só desenhando e avisando o clique.
 2. **Camada 1 × camada 2.** A Fase 4 publica os 27 estados só na camada 1: cartórios, classe, obrigados, arrecadação. O prêmio e o déficit chegam estado por estado na Fase 6. O painel precisa de um terceiro tipo de estado, "só camada 1", além de real e simulado. A visão do Brasil abre num indicador de camada 1 (por exemplo, % de obrigados), e o mapa de prêmio mostra só os estados com camada 2.
 3. **Séries no tempo.** Só a arrecadação e o cadastro do CNJ têm série, e só no período coletado. O passivo, o déficit e o prêmio existem para o ano da RAIS (hoje, 2025).
 

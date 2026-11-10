@@ -25,6 +25,10 @@
   --f-titulo: "Newsreader", Georgia, "Times New Roman", serif;
   --destaque: var(--s1); --comparacao: var(--s2);
   --s1-texto: #1d66ba;         /* azul das séries em texto pequeno (4,97 sobre o fundo; o --s1 dá 3,83) */
+  /* mapa clicável (D-083): zero neutro, quase da cor do fundo; 6 faixas do azul-claro ao azul-marinho (SEQUENCIAL de
+     graficos.py sem o primeiro tom, que se confundiria com o zero) */
+  --mapa-zero: #e4e7ec; --mapa-1: #c3d1e8; --mapa-2: #8fb3e6; --mapa-3: #5a94e0; --mapa-4: #2a78d6; --mapa-5: #2056a8;
+  --mapa-6: #183564;
   color-scheme: light;
 }
 /* tema escuro do Raio-X, com os mesmos valores. Vale quando o Streamlit está no escuro (marcador .rd-tema-escuro, posto
@@ -39,6 +43,8 @@
   --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #7b869b; --s1-texto: #3987e5;
   --bom: #4cc38a; --bom-claro: #12301f; --alerta: #e2b04a; --alerta-claro: #33270c; --ruim: #ff8a7a; --ruim-claro: #3a1a17;
   --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 20px rgba(0, 0, 0, .25);
+  --mapa-zero: #222936; --mapa-1: #2c3d62; --mapa-2: #2a5aa0; --mapa-3: #3373c8; --mapa-4: #3987e5; --mapa-5: #74aef0;
+  --mapa-6: #b4d3f8;   /* no escuro a escala se inverte em luminosidade (como ESCURO em graficos.py) */
   color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) { :root:not(:has(.rd-tema-claro)) {
@@ -51,6 +57,8 @@
   --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #7b869b; --s1-texto: #3987e5;
   --bom: #4cc38a; --bom-claro: #12301f; --alerta: #e2b04a; --alerta-claro: #33270c; --ruim: #ff8a7a; --ruim-claro: #3a1a17;
   --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 20px rgba(0, 0, 0, .25);
+  --mapa-zero: #222936; --mapa-1: #2c3d62; --mapa-2: #2a5aa0; --mapa-3: #3373c8; --mapa-4: #3987e5; --mapa-5: #74aef0;
+  --mapa-6: #b4d3f8;
   color-scheme: dark;
 } }
 

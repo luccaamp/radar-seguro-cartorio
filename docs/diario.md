@@ -1192,3 +1192,28 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Decisões:** o "pronto quando" acima (autor). A tecnologia e a lista do bloco aguardam o autor.
 - **Limitações encontradas:** a tag local `dados-2026-10-19` aponta para `be8ad32` (história antiga) e a do remoto para `3c99a3a`; o `git fetch` recusa trocar. Não mexido (comando de git só com pedido).
 - **Próximo passo:** o autor aprova as notas da `v1.0`; a IA cria a Release depois que esta mudança entrar na `main`. Depois, o autor escolhe a tecnologia e aprova a lista do bloco.
+
+## 2026-11-10 — Release `v1.0`: Fase 2 cumprida
+- **O que foi feito:**
+  - Conferido que o PR #11 (`fase-2-fechamento`) entrou na `main` (merge `a3fe5cc`, 2026-11-09 05:38, os dois jobs verdes); `main` local atualizada.
+  - Release **`v1.0` — Minas Gerais publicado** criada (pedido do autor), com a tag no `a3fe5cc`, as notas aprovadas e dois anexos gerados com `git archive` do mesmo commit: `publico-2026-11-07.zip` (39 arquivos, 0,6 MB) e `completo-2026-11-07.zip` (53 arquivos, 12,2 MB). Só o que já está no git; nada novo fica público.
+- **Decisões:** nenhuma nova. A tecnologia e a lista do bloco "painel de MG rumo ao V5" seguem com o autor.
+- **Limitações encontradas:** o aviso de falha do CI (monitor do app) foi negado pela permissão automática; o PR #11 foi acompanhado à mão.
+- **Próximo passo:** o autor escolhe a tecnologia e aprova a lista do bloco "painel de MG rumo ao V5".
+
+## 2026-11-10 (2) — Tecnologia do painel (D-083) e item 0 do bloco "painel de MG rumo ao V5"
+- **O que foi feito:**
+  - O autor escolheu a opção (a), componente HTML dentro do Streamlit, e pediu testes de unidade e de verificação que garantam que funciona, para não dar problema com linguagens diferentes.
+  - Teste de viabilidade: o Streamlit 1.66 tem o `st.components.v2` (sem iframe, sem build), que devolve o clique ao Python como gatilho, com uma função de retorno que roda antes de a página rodar de novo.
+  - Mapa novo em "Onde está o mercado": `src/painel/mapa.py` (lógica toda em Python), `src/painel/componentes/mapa.js` (só desenha e avisa o clique) e `mapa.css` (cores pelos tokens `--mapa-*` de `estilo.css`, claro e escuro). Clicar num município faz o mesmo que escolher no seletor; o selecionado tem contorno dourado; o zero tem cor neutra (416 dos 851 municípios); a escala vai em 6 faixas até o percentil 95 dos positivos.
+  - Testes em três camadas (25 em Python, 10 em JavaScript, 4 no navegador) e job novo no CI. Teste de sabotagem: com o nome do gatilho trocado, falharam as três camadas.
+  - Testes antigos que liam o mapa do Plotly passaram a ler os dados do componente (`tests/apoio_painel.mapa_componente`).
+- **Conferência:** suíte padrão 351 passed; `-m navegador` 4 passed; `-m dados_reais` (`test_auditoria_painel.py` e `test_app.py`, cópia do banco) 31 passed; `-m visual` 4 passed; axe sem falha nova (só as do menu do Streamlit); `ruff` sem erro. Capturas em 1280 px (claro, com Belo Horizonte clicada) e 390 px (escuro).
+- **Decisões:** D-083.
+- **Limitações encontradas:**
+  - Belo Horizonte mede 12 px no mapa inteiro; clicar nela no computador exige mira (o zoom e os rótulos são o item 1).
+  - O componente é registrado uma vez por processo: mudança no CSS ou no JS só aparece depois de reiniciar o servidor.
+  - Ao abrir por endereço de página, o Streamlit sonda `/<página>/_stcore/health` e `/host-config` e recebe 404 no console; é do Streamlit, e o teste ignora só esses dois.
+  - Os checks de mapa do `scripts/qa_painel.py` (escala de cores do Plotly) não se aplicam mais a esta página; o `test_mapa_navegador.py` cobre o mapa novo.
+  - Ainda não conferido no Cloud (só depois do merge).
+- **Próximo passo:** commit numa branch, PR e, depois do merge, conferir o mapa no link público. Depois, o autor aprova a lista do bloco (itens 1 a 7).

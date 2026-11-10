@@ -13,10 +13,10 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito.
 ## Repositório
 - **GitHub:** `luccaamp/radar-seguro-cartorio`, só a `main`. A história recomeçou na "Versão final" (`3c99a3a`, 2026-10-30), que juntou as branches de trabalho; a correção de coerência que tinha ficado de fora voltou em `7b5cc73` (2026-10-31).
 - **Local:** `main` = `origin/main`. A `main` de antes da versão final ficou na branch local `main-antiga` (`1810f98`), só como cópia; as outras branches locais (`etapa-3-painel`, `etapa-5-chat`, `notebooks-*`) são dessa história antiga, sem ancestral comum com a `main`.
-- **Releases:** `dados-2026-10-19` (público: silver e manifesto); `carga-2026-10-19` e `originais-2026` (privados, em `luccaamp/radar-seguro-cartorio-dados`: bronze por fonte, banco e originais). O bronze fica no privado porque tem nome de pessoa (D-030); a procedência dele está no git em `data/procedencia/` (D-070).
+- **Releases:** `v1.0` (2026-11-10, Fase 2: conjuntos público e completo); `dados-2026-10-19` (público: silver e manifesto); `carga-2026-10-19` e `originais-2026` (privados, em `luccaamp/radar-seguro-cartorio-dados`: bronze por fonte, banco e originais). O bronze fica no privado porque tem nome de pessoa (D-030); a procedência dele está no git em `data/procedencia/` (D-070).
 - **Rodar a partir de um clone** (conferido em 2026-10-31): modo demonstração em 2 min; modo completo (README, seção 1b) em ≈ 4 min, com o gold **idêntico** ao do banco real (39 de 39 tabelas) e os 10 números iguais.
 
-## Etapa atual: Fase 2 (MG publicado), "pronto quando" cumprido; falta a Release `v1.0`; bloco "painel de MG rumo ao V5" aguarda a tecnologia e a lista (autor)
+## Etapa atual: Fase 2 cumprida (Release `v1.0`, 2026-11-10); bloco "painel de MG rumo ao V5": tecnologia decidida e item 0 feito (D-083), a lista aguarda o autor
 **Plano oficial: [`plano_projeto.md`](plano_projeto.md) (D-071, 2026-11-05)**, com 10 fases, de MG completo ao Brasil inteiro publicado e atualizado sozinho. A IA propõe cada passo e segue com a aprovação do autor.
 
 **Fase 1, andamento (2026-11-06):** PR #3 (`fase-1-simulador`) juntado na `main` (`fd66b03`); o ano projetado segue na branch `fase-1-explorar-2027`. Item 1, o Simulador:
@@ -59,16 +59,15 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito.
 - [x] **autor publicou** (2026-11-07): **https://radar-seguro-cartorio.streamlit.app** (modo demonstração, `GEMINI_API_KEY` nos *Secrets*). O autor também commitou direto na `main` o `.devcontainer/devcontainer.json` (`15810b0`).
 - [x] **link abre e chat responde** (conferido pela IA em 2026-11-09): as páginas carregam; o chat, com o Gemini, respondeu "R$ 341,1 mil, faixa provável de R$ 215,0 mil a R$ 687,1 mil", com a fonte (1 de 20 perguntas).
 - [x] **link no README** e **GIF** do painel publicado (`docs/img/painel_tour.gif`, 6 páginas, 0,4 MB, gerado com Playwright no link público).
-- [ ] **Release `v1.0`:** precisa do pedido do autor (comando `gh`).
+- [x] **Release `v1.0`** (pedido do autor, 2026-11-10): "v1.0 — Minas Gerais publicado", tag no merge do PR #11 (`a3fe5cc`), com as notas aprovadas e os anexos `publico-2026-11-07.zip` (0,6 MB) e `completo-2026-11-07.zip` (12,2 MB), gerados com `git archive` das pastas versionadas. **Fase 2 cumprida.**
 - [x] **"pronto quando":** trocado de "modo completo" para "modo demonstração com o conjunto público" (autor, 2026-11-09; `plano_projeto.md`). O link abre, o chat responde e um clone reproduz os números (cópia limpa, acima): **cumprido**.
-- PR #10 (`fase-2-alvo-v5`) juntado na `main` em 2026-11-09 (`83fa541`, os dois jobs verdes). Notas da `v1.0` mostradas ao autor; a Release sai depois que a troca do "pronto quando" entrar na `main`.
+- PR #10 (`fase-2-alvo-v5`) juntado na `main` em 2026-11-09 (`83fa541`); PR #11 (`fase-2-fechamento`, o "pronto quando") em 2026-11-09 às 05:38 (`a3fe5cc`), os dois com os jobs verdes.
 - Tag local `dados-2026-10-19` diferente da do remoto (`be8ad32`, história antiga, × `3c99a3a`); não mexida.
 
 **Alvo do painel (D-082, 2026-11-09):** o autor iterou com a IA, fora do repositório, protótipos do painel com vários estados (V2 a V5). O V5 virou a **referência de estrutura**: [`painel/prototipo_v5.html`](painel/prototipo_v5.html), com o resumo em [`painel/alvo_v5.md`](painel/alvo_v5.md) (o que vale desde já, o que está em aberto e as 3 ressalvas). Os detalhes visuais serão revistos na Fase 6.
 
 **Próximo passo:**
-- **Fase 2:** o autor aprova as notas da Release `v1.0`; a IA cria a Release depois que a troca do "pronto quando" entrar na `main`.
-- **Bloco "painel de MG rumo ao V5"** (antes da Fase 3): primeiro decidir a tecnologia (ressalva 1 do `alvo_v5.md`); depois uma lista fechada, aprovada pelo autor, só com o que não depende de outros estados: mapa (bordas, escala por recorte, zero neutro), clique no município com o quadro dele, resumo e rótulos, Panorama com a resposta e os KPIs, "Quão certo é" com a grade, mapa da aba Classes em % e chat recebendo a aba e o município abertos.
+- **Bloco "painel de MG rumo ao V5"** (antes da Fase 3). **Tecnologia: opção (a), D-083** (autor, 2026-11-10). **Item 0 feito** (2026-11-10, sem commit, na `main` local): o mapa de "Onde está o mercado" é um componente do `st.components.v2` (`src/painel/mapa.py`, `src/painel/componentes/mapa.js` e `mapa.css`); clicar num município faz o mesmo que escolhê-lo no seletor. Testes: `tests/test_mapa.py` (25, com os 10 do JavaScript em `tests/js/mapa.test.mjs` pelo `node --test`) e `tests/test_mapa_navegador.py` (4, `-m navegador`, Chromium no modo demonstração; job novo no CI). Suíte padrão 351 passed; `-m dados_reais` do mapa 31 passed (cópia); `-m visual` 4 passed; axe sem falha nova. **Falta:** conferir no Cloud depois do merge; o autor incluir o job "Navegador (mapa clicável)" nas verificações obrigatórias da `main`, se quiser que ele bloqueie o merge. **A lista do bloco aguarda o autor:** 1 mapa (bordas, escala no recorte, zero neutro, 3 rótulos, resumo); 2 clique no município com o quadro e os cartórios por CNS; 3 Panorama com a resposta e 6 KPIs; 4 "Quão certo é" com a grade; 5 mapa da aba Classes em %; 6 chat recebendo a aba e o município; 7 conferência final (axe, 390/1280 px, suíte, 10 números, GIF novo).
 - **Fase 3, bloco 1:** plano aprovado ([`plano_fase3.md`](plano_fase3.md), D-081); começa por `config/estados.yaml`, sem mudar nenhum resultado, com o seletor de estado no formato da barra de recorte do V5. Uma branch por bloco, a partir da `main` atualizada (a `fase-2-publicacao` local já entrou).
 
 **Fase 0 cumprida em 2026-11-06:**
@@ -105,10 +104,11 @@ Carga **2026-11-07** (refeita do silver da carga 2026-10-19: dados coletados em 
 
 Faixa provável do prêmio (P5–P95): R$ 215 a 687 mil. Linha de base: `~/radar_arquivo/baseline_2026-10-28_d048/linha_de_base.json` (WSL). Banco real desta máquina: SHA-256 `7f528a8c…` (carga 2026-11-07; antes, `dd6fc158…` e `c935a190…`).
 
-**Última decisão:** D-081 (desenho da Fase 3, 2026-11-07); antes, D-080 (fontes embutidas) e D-079 (mercado por município no conjunto público), todas aprovadas. Não há decisão proposta à espera do autor. As faixas D-053 a D-059 (painel) e D-060 a D-069 (chat) estão reservadas ou usadas; as próximas seguem de D-082 ([`decisoes.md`](decisoes.md)).
+**Última decisão:** D-083 (mapa como componente HTML dentro do Streamlit, 2026-11-10); antes, D-082 (V5 como referência) e D-081 (desenho da Fase 3), todas aprovadas. Não há decisão proposta à espera do autor. As faixas D-053 a D-059 (painel) e D-060 a D-069 (chat) estão reservadas ou usadas; as próximas seguem de D-084 ([`decisoes.md`](decisoes.md)).
 
-## Testes (2026-11-07)
-- Suíte padrão (`uv run pytest`): 326 passed (Fase 2). Não usa a API do Gemini nem a internet. `uv run ruff check .`: sem erro.
+## Testes (2026-11-10)
+- Suíte padrão (`uv run pytest`): 351 passed (D-083: +25 do mapa, com os 10 do JavaScript pelo `node --test`; no CI o Node é obrigatório). Não usa a API do Gemini nem a internet. `uv run ruff check .`: sem erro.
+- Navegador (`uv run pytest -m navegador`, ≈ 15 s, precisa de `uv run playwright install chromium`): 4 passed, no modo demonstração; também no CI, job "Navegador (mapa clicável)".
 - Dados reais (`uv run pytest -m dados_reais`, ≈ 25 min, sempre numa cópia do banco): 55 passed, 0 skipped nesta máquina (2026-11-07, depois da carga oficial da D-078; saíram os testes do auditor). Num clone com o modo completo, os de bronze → silver são pulados ("bronze ausente").
 
 ## O que depende do autor

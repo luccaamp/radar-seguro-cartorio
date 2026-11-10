@@ -939,3 +939,19 @@ Formato:
 - **Efeito nos 10 números:** nenhum (desenho do painel).
 - **Consequências / onde aparece:** `docs/painel/prototipo_v5.html` (cerca de 2,4 MB, só CNS e município, sem nome de pessoa: D-038) e `docs/painel/alvo_v5.md`. Toda mudança no alvo entra aqui como uma linha nova.
 - **Status:** aprovada.
+
+## D-083 — Mapa do painel como componente HTML dentro do Streamlit
+- **Data:** 2026-11-10
+- **Contexto:** ressalva 1 da D-082. O mapa do V5 (clique no município que abre o quadro dele, bordas nítidas, zero neutro) não existe pronto no Streamlit; o mapa do Plotly não devolvia o clique, e o município se escolhia só pela lista. As opções eram (a) componente HTML dentro do Streamlit, só para o mapa e o explorador, e (b) Streamlit puro com o visual aproximado.
+- **Decisão (opção a, escolhida pelo autor em 2026-11-10, com o pedido de testes de unidade e de verificação que garantam que funciona):** o mapa é um componente do `st.components.v2` (Streamlit 1.66), sem iframe e sem etapa de build. Para não depender de duas linguagens:
+  - **toda a lógica fica em Python** (`src/painel/mapa.py`): projeção das geometrias em caminhos SVG, enquadramento, faixa de cor de cada área (zero numa cor neutra, escala calculada no recorte, teto no percentil 95), legenda e conferência do código que volta do navegador (só aceita uma área do mapa);
+  - **o JavaScript só desenha e avisa o clique** (`src/painel/componentes/mapa.js`): nada de cálculo, nada de `innerHTML` com texto dos dados;
+  - **as cores vêm dos tokens** `--mapa-zero` e `--mapa-1` a `--mapa-6` de `src/painel/estilo.css`, nos dois temas; o selecionado tem o contorno dourado (`--ouro`);
+  - o seletor de município continua sendo o caminho pelo teclado; o clique no mapa faz o mesmo que escolher no seletor.
+- **Como se garante que funciona (três camadas, cada uma pegou o erro quando o nome do gatilho foi estragado de propósito):**
+  - `tests/test_mapa.py` (suíte padrão, 25 testes): projeção, furos e multipolígonos, enquadramento, faixas e zero, JSON sem NaN, conferência do clique, CSS e tokens nos dois temas, o mapa real de MG com o conjunto público (851 áreas, ≈ 0,3 MB);
+  - `tests/js/mapa.test.mjs` (10 testes, `node --test`, sem dependências, rodados pela suíte padrão; no CI o Node é obrigatório): desenho, selecionado por cima, clique, texto puro no balão, classe que não aceita texto arbitrário, legenda, redesenho sem duplicar, ligação com o Streamlit;
+  - `tests/test_mapa_navegador.py` (marcador `navegador`, 4 testes, Chromium de verdade no modo demonstração; job novo "Navegador (mapa clicável)" no CI): 851 áreas sem erro no console, clique de mouse em Belo Horizonte e depois em Contagem chega ao Python (seletor, números, destaque e zoom), 390 px sem rolagem lateral, tema escuro com os tokens escuros.
+- **Efeito nos 10 números:** nenhum (só a forma de mostrar o mapa).
+- **Consequências / onde aparece:** `app/pages/2_Onde_está_o_mercado.py` (o mapa do Plotly saiu); testes do AppTest que liam o mapa do Plotly passam a ler os dados do componente (`tests/apoio_painel.mapa_componente`). Mudança no CSS ou no JS do componente só aparece depois de reiniciar o servidor (o componente é registrado uma vez por processo). Falta conferir no Streamlit Community Cloud depois do merge. O job "Navegador" só bloqueia o merge se o autor o incluir nas verificações obrigatórias da `main` (D-075).
+- **Status:** aprovada (tecnologia); o resto do bloco "painel de MG rumo ao V5" aguarda a aprovação da lista.

@@ -1,0 +1,26 @@
+/* Mapa clicável (D-083). As cores vêm dos tokens --mapa-* de src/painel/estilo.css (tema claro e escuro); o valor
+   depois da vírgula é o do tema claro, para o componente funcionar mesmo sem o estilo do painel. */
+.rd-mapa { font-family: var(--f-ui, system-ui, sans-serif); color: var(--texto, #0f1c33); }
+.rd-mapa-resumo { margin: 0 0 8px; font-size: 13.5px; line-height: 1.5; color: var(--texto, #0f1c33); }
+.rd-mapa svg { display: block; width: 100%; height: auto; max-height: 560px; }
+.rd-areas path { stroke: var(--superficie, #ffffff); stroke-width: 0.6; vector-effect: non-scaling-stroke;
+  fill-rule: evenodd; cursor: pointer; }
+.rd-areas path:hover { stroke: var(--texto, #0f1c33); stroke-width: 1.5; }
+/* selecionado: o dourado do painel, que contrasta com todos os azuis da escala nos dois temas */
+.rd-areas path.rd-sel { stroke: var(--ouro, #c9992e); stroke-width: 3; }
+.rd-fundo path { fill: var(--superficie-2, #f5f7fa); stroke: var(--texto-2, #45506a); stroke-width: 1.2;
+  vector-effect: non-scaling-stroke; fill-rule: evenodd; pointer-events: none; }
+.rd-f-zero { fill: var(--mapa-zero, #e4e7ec); background: var(--mapa-zero, #e4e7ec); }
+.rd-f-sem, .rd-f-fundo { fill: var(--superficie-2, #f5f7fa); background: var(--superficie-2, #f5f7fa);
+  outline: 1px solid var(--texto-2, #45506a); outline-offset: -1px; }
+.rd-f-1 { fill: var(--mapa-1, #c3d1e8); background: var(--mapa-1, #c3d1e8); }
+.rd-f-2 { fill: var(--mapa-2, #8fb3e6); background: var(--mapa-2, #8fb3e6); }
+.rd-f-3 { fill: var(--mapa-3, #5a94e0); background: var(--mapa-3, #5a94e0); }
+.rd-f-4 { fill: var(--mapa-4, #2a78d6); background: var(--mapa-4, #2a78d6); }
+.rd-f-5 { fill: var(--mapa-5, #2056a8); background: var(--mapa-5, #2056a8); }
+.rd-f-6 { fill: var(--mapa-6, #183564); background: var(--mapa-6, #183564); }
+.rd-mapa-legenda { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 12px;
+  color: var(--texto-2, #45506a); align-items: center; }
+.rd-mapa-legenda-titulo { font-weight: 600; color: var(--texto, #0f1c33); width: 100%; }
+.rd-mapa-item { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.rd-mapa-item i { display: inline-block; width: 14px; height: 10px; border-radius: 2px; }

@@ -50,5 +50,6 @@ testpaths = ["tests"]
 markers = [
     "visual: QA visual no navegador (Playwright); fora da suíte padrão, rodar com `uv run pytest -m visual`",
     "dados_reais: precisa do banco completo, do silver ou do bronze (dados da equipe); fora da suíte padrão, rodar com `uv run pytest -m dados_reais`",
+    "navegador: componente do painel num navegador de verdade (Playwright), no modo demonstração; fora da suíte padrão, rodar com `uv run pytest -m navegador` (D-083)",
 ]
-addopts = "-m 'not visual and not dados_reais'"
+addopts = "-m 'not visual and not dados_reais and not navegador'"
