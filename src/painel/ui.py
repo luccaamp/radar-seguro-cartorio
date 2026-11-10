@@ -34,9 +34,9 @@ _componente_tema = None
 
 
 def tema() -> str:
-    """'escuro' ou 'claro', o tema que o visitante está vendo. Primeiro o que o navegador informou pelo componente de
-    tema (a escolha do menu ⋮ do Streamlit ou o sistema; componentes/tema.js); antes disso, o st.context.theme. ''
-    quando nenhum dos dois informou: o CSS cai na preferência do sistema."""
+    """'escuro' ou 'claro', o tema que o visitante está vendo. Primeiro o que o navegador informou pelo botão de tema
+    do painel (componentes/tema.js); antes disso, o st.context.theme (o botão grava a escolha também para o Streamlit).
+    '' quando nenhum dos dois informou: o CSS fica no claro, o padrão."""
     try:
         do_navegador = (st.session_state.get(CHAVE_TEMA) or {}).get("tema")
         if do_navegador in ("claro", "escuro"):
@@ -50,16 +50,19 @@ def tema() -> str:
 def _registrar_tema():
     global _componente_tema
     if _componente_tema is None:
+        botoes = "".join(f'<button type="button" data-t="{t}" aria-pressed="false">{rot}</button>'
+                         for t, rot in (("claro", "Claro"), ("escuro", "Escuro"), ("sistema", "Sistema")))
         _componente_tema = st.components.v2.component(
-            "radar_tema", html='<div class="rd-tema-js" hidden></div>',
+            "radar_tema", html=f'<div class="rd-tema" role="group" aria-label="Tema do painel">{botoes}</div>',
+            css=ESTILO.with_name("componentes").joinpath("tema.css").read_text(encoding="utf-8"),
             js=ESTILO.with_name("componentes").joinpath("tema.js").read_text(encoding="utf-8"))
     return _componente_tema
 
 
 def estilo() -> None:
     """Injeta o CSS único do painel, o marcador do tema (.rd-tema-escuro ou .rd-tema-claro), que escolhe os tokens
-    claros ou escuros no estilo.css, e o componente invisível que acompanha a troca de tema no menu do Streamlit (ele
-    marca o <html> com data-rd-tema, que vale mais que o marcador). Chamado uma vez no topo de cada página."""
+    claros ou escuros no estilo.css, e o botão de tema (Claro · Escuro · Sistema, no canto do topo; ele marca o <html>
+    com data-rd-tema, que vale mais que o marcador). Chamado uma vez no topo de cada página."""
     t = tema()
     marca = f'<div class="rd-tema-{t}" hidden></div>' if t else ""
     _html(f"<style>{ESTILO.read_text(encoding='utf-8')}</style>{marca}")
@@ -89,8 +92,7 @@ def termo(texto: str, explicacao: str) -> str:
 
 
 def cabecalho(titulo: str, subtitulo: str, sobre: str = "") -> None:
-    """Faixa azul-marinho do topo (D-052): rótulo pequeno acima (`sobre`), título em serifa, uma linha de subtítulo e
-    o traço dourado; sem etiquetas. O primeiro bloco da página sobe sobre a faixa (estilo.css)."""
+    """Título da página (V5 .lede): rótulo pequeno acima (`sobre`), título em negrito e uma linha de subtítulo."""
     _html(f'<div class="rd-cab">{f"<div class=rd-sobre>{_t(sobre)}</div>" if sobre else ""}<h1>{_t(titulo)}</h1>'
           f'<div class="rd-sub">{_negrito(subtitulo)}</div><div class="rd-ouro"></div></div>')
 
@@ -149,7 +151,7 @@ def quadro_calor(titulo_linhas: str, titulo_colunas: str, colunas: list[str],
                  linhas: list[tuple[str, list[dict]]]) -> None:
     """Quadro de calor em HTML (a grade Taxa × adesão do V5): uma linha por valor de `titulo_linhas`, uma coluna por
     valor de `titulo_colunas`. Cada célula é {"texto", "faixa" (zero, 1 … 6: a cor dos tokens --mapa-*), "base"}; a
-    célula base ganha o contorno dourado e a palavra "base" para leitor de tela."""
+    célula base ganha o contorno grosso e a palavra "base" para leitor de tela."""
     cab = (f'<tr><th scope="col">{_t(titulo_linhas)} ↓ · {_t(titulo_colunas)} →</th>'
            + "".join(f'<th scope="col">{_t(c)}</th>' for c in colunas) + "</tr>")
     corpo = "".join(

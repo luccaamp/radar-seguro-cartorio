@@ -77,9 +77,21 @@ def nav():
         b.close()
 
 
-def abrir(nav, largura=1280, altura=900, tema="light"):
+# O botão de tema do painel grava a escolha para o Streamlit e recarrega a página uma vez quando a chave dele não bate
+# (componentes/tema.js). Nos testes do mapa, a chave já vem certa, para nenhuma recarga cair no meio de um clique; o
+# teste do tema abre sem isso (preparar=False) e confere a recarga.
+PREPARAR_TEMA = """(() => { try {
+    const t = localStorage.getItem('radar-tema') || 'claro';
+    const nome = {claro: 'Light', escuro: 'Dark', sistema: 'System'}[t] || 'Light';
+    localStorage.setItem('stActiveTheme-' + location.pathname + '-v2', JSON.stringify(nome));
+} catch (e) {} })();"""
+
+
+def abrir(nav, largura=1280, altura=900, tema="light", preparar=True):
     url, b = nav
     page = b.new_page(viewport={"width": largura, "height": altura}, color_scheme=tema)
+    if preparar:
+        page.add_init_script(PREPARAR_TEMA)
     erros: list[str] = []
     # ao abrir por um endereço de página, o Streamlit sonda /<página>/_stcore/health e /host-config antes da raiz e
     # recebe 404: é do próprio Streamlit, não do mapa (conferido em 2026-11-10); qualquer outro erro conta
@@ -177,28 +189,47 @@ def test_celular_390_px_sem_rolagem_horizontal_e_clique(nav):
     page.get_by_role("heading", name="Os cartórios de Uberaba").wait_for(timeout=30_000)
     tab = page.locator("table.rd-tabela", has=page.locator("th", has_text="CNS"))
     assert tab.evaluate("t => t.scrollWidth <= t.parentElement.clientWidth + 1")
-    assert tab.locator("th:visible").all_inner_texts() == ["CNS", "Atribuições", "Classe", "Déficit esperado"]
+    assert [t.lower() for t in tab.locator("th:visible").all_inner_texts()] == [   # cabeçalho em versalete (V5)
+        "cns", "atribuições", "classe", "déficit esperado"]
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
     assert not erros, erros
     page.close()
 
 
-def test_tema_escuro_usa_os_tokens_escuros(nav):
-    """O sistema no claro ou no escuro vira o tema do painel inteiro. Espera o componente de tema marcar o <html>
-    (data-rd-tema) antes de ler a cor: no CI, a leitura logo depois de o mapa aparecer pegou uma vez o tema anterior
-    (2026-11-10, merge do PR #18)."""
-    cores = {}
-    for tema, esperado in (("light", "claro"), ("dark", "escuro")):
-        page, erros = abrir(nav, tema=tema)
-        try:
-            page.wait_for_function("t => document.documentElement.getAttribute('data-rd-tema') === t", arg=esperado,
-                                   timeout=20_000)
-        except Exception:
-            estado = page.evaluate("""() => [document.documentElement.getAttribute('data-rd-tema'),
-                [...document.querySelectorAll('[class^="rd-tema-"]')].map(e => e.className).join(',')]""")
-            raise AssertionError(f"tema {tema}: a página não ficou em {esperado!r} (data-rd-tema, marca) = {estado}")
-        cores[tema] = page.locator(".rd-areas path.rd-f-6").first.evaluate("e => getComputedStyle(e).fill")
-        assert not erros, erros
-        page.close()
-    assert cores["light"] == "rgb(18, 50, 90)"      # --mapa-6 claro  #12325a (2026-11-10)
-    assert cores["dark"] == "rgb(215, 228, 246)"    # --mapa-6 escuro #d7e4f6 (2026-11-10)
+def _esperar_tema(page, esperado: str) -> None:
+    """Espera o botão de tema marcar o <html> (data-rd-tema) antes de ler a cor (no CI, uma leitura logo depois de o
+    mapa aparecer pegou o tema anterior; 2026-11-10)."""
+    try:
+        page.wait_for_function("t => document.documentElement.getAttribute('data-rd-tema') === t", arg=esperado,
+                               timeout=30_000)
+    except Exception:
+        estado = page.evaluate("() => document.documentElement.getAttribute('data-rd-tema')")
+        raise AssertionError(f"a página não ficou em {esperado!r} (data-rd-tema = {estado!r})")
+    page.locator(".rd-areas path").first.wait_for(timeout=60_000)
+
+
+def _cor(page, seletor: str, prop: str) -> str:
+    return page.locator(seletor).first.evaluate(f"e => getComputedStyle(e).{prop}")
+
+
+def test_botao_de_tema_claro_por_padrao_e_escuro_com_um_clique(nav):
+    """O painel abre no claro mesmo com o sistema no escuro (o padrão, 2026-11-11); o botão "Escuro", na própria
+    página (no link público o menu do Streamlit não troca o tema, D-084), passa o painel inteiro ao escuro: as faixas do
+    mapa e o fundo dos componentes do Streamlit; "Sistema" segue o aparelho."""
+    page, erros = abrir(nav, tema="dark", preparar=False)
+    _esperar_tema(page, "claro")
+    assert _cor(page, ".rd-areas path.rd-f-6", "fill") == "rgb(30, 59, 122)"      # --mapa-6 claro  #1e3b7a
+    assert _cor(page, ".stApp", "backgroundColor") == "rgb(244, 245, 242)"        # --fundo claro   #f4f5f2
+    assert page.evaluate("localStorage.getItem('stActiveTheme-' + location.pathname + '-v2')") == '"Light"'
+    page.get_by_role("button", name="Escuro").click()
+    _esperar_tema(page, "escuro")
+    page.wait_for_function("() => getComputedStyle(document.querySelector('.stApp')).backgroundColor "
+                           "=== 'rgb(15, 19, 18)'", timeout=30_000)                # o Streamlit também no escuro
+    assert _cor(page, ".rd-areas path.rd-f-6", "fill") == "rgb(248, 251, 228)"    # --mapa-6 escuro #f8fbe4
+    assert page.get_by_role("button", name="Escuro").get_attribute("aria-pressed") == "true"
+    page.get_by_role("button", name="Sistema").click()
+    _esperar_tema(page, "escuro")                                                  # o sistema está no escuro
+    page.get_by_role("button", name="Claro").click()
+    _esperar_tema(page, "claro")
+    assert not erros, erros
+    page.close()

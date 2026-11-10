@@ -41,8 +41,8 @@ def modo() -> str:
 def demonstracao() -> bool:
     return modo() == "demonstracao"
 
-# paleta do Raio-X do Cartório (D-052): série principal, a mesma de src/painel/graficos.py
-AZUL_SERIE = "#2a78d6"
+# série principal do V5 (D-082), a mesma de src/painel/graficos.py
+AZUL_SERIE = "#1f5c99"
 
 NOMES_FONTE = {
     "cnj_serventias": "CNJ / Justiça Aberta (cadastro)",

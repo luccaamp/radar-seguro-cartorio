@@ -1,6 +1,6 @@
 # Estado atual do projeto
 
-> Leia primeiro. Atualizado ao fim de cada sessão (regra do `CLAUDE.md`). Última atualização: **2026-11-10**.
+> Leia primeiro. Atualizado ao fim de cada sessão (regra do `CLAUDE.md`). Última atualização: **2026-11-11**.
 > O histórico detalhado até 2026-10-31 (Etapas 1 a 3, mineração, chat, cargas) está em [`historico/ESTADO_ATUAL_ate_2026-10-31.md`](historico/ESTADO_ATUAL_ate_2026-10-31.md) e no [`diario.md`](diario.md).
 
 ## O que é
@@ -16,7 +16,15 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito.
 - **Releases:** `v1.0` (2026-11-10, Fase 2: conjuntos público e completo); `dados-2026-10-19` (público: silver e manifesto); `carga-2026-10-19` e `originais-2026` (privados, em `luccaamp/radar-seguro-cartorio-dados`: bronze por fonte, banco e originais). O bronze fica no privado porque tem nome de pessoa (D-030); a procedência dele está no git em `data/procedencia/` (D-070).
 - **Rodar a partir de um clone** (conferido em 2026-10-31): modo demonstração em 2 min; modo completo (README, seção 1b) em ≈ 4 min, com o gold **idêntico** ao do banco real (39 de 39 tabelas) e os 10 números iguais.
 
-## Etapa atual: refazer o design do painel (a D-084 do PR #18 ficou errada), a partir do protótipo à espera do autor; depois, Fase 3, bloco 4. Na `main` (`2395e1c`, CI verde): Fase 3, blocos 1 a 3, a carga de 2026-11-10 e os PRs #18 a #20
+## Etapa atual: plano de entrega, etapa 1 (painel igual ao V5, D-085), feita na branch `estado-atual-pos-pr20` e à espera do OK do autor pelas capturas. Na `main` (`2395e1c`, CI verde): Fase 3, blocos 1 a 3, a carga de 2026-11-10 e os PRs #18 a #20
+
+**Plano de entrega (aprovado pelo autor em 2026-11-10; uma etapa começa assim que a anterior acaba, um PR por etapa, com os documentos no mesmo PR):**
+1. **Painel igual ao V5** — feito em 2026-11-11, não commitado (D-085): visual do `prototipo_v5.html`, menu no topo, botão Claro · Escuro · Sistema próprio (claro por padrão), escala do mapa do V5. Suíte padrão 449 passed, `-m navegador` 4 passed, `ruff` sem erro; capturas em `docs/qa/v5/` (fora do git), sem rolagem lateral. **Falta:** OK do autor → commit, PR, merge, **Reboot app** (o `src/` muda) e conferência no link público nos dois temas e no celular; depois, a imagem e o GIF do README regerados (`scripts/gif_painel.py`).
+2. Ferramentas do chat como servidor MCP, agente "o que mudou" a cada carga, avaliação do chat no CI com o resultado no README.
+3. Brasil, camada 1 (cadastro do CNJ e IBGE, 27 UFs; mapa do Brasil por UF; MG continua completo), pipeline agendado no GitHub Actions, selo "atualizado em".
+4. Hugging Face e Kaggle, README em português e inglês, artigo técnico curto.
+5. Conferência no link público (claro, escuro, celular), Release `v2.0`, roteiro de demo de 5 min.
+Fora do prazo: Fase 3, bloco 4; Fases 5 e 6 completas; limpeza das branches (bloco D).
 **Plano oficial: [`plano_projeto.md`](plano_projeto.md) (D-071, 2026-11-05)**, com 10 fases, de MG completo ao Brasil inteiro publicado e atualizado sozinho. A IA propõe cada passo e segue com a aprovação do autor.
 
 **Fase 1, andamento (2026-11-06):** PR #3 (`fase-1-simulador`) juntado na `main` (`fd66b03`); o ano projetado segue na branch `fase-1-explorar-2027`. Item 1, o Simulador:
@@ -96,8 +104,7 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito.
   - Conferência: suíte padrão 442 passed (26 testes de JavaScript), `-m navegador` 4 passed, `ruff` sem erro, capturas em 1280 px nos dois temas e em 375 px no escuro, sem rolagem lateral; 10 números sem mudança (só apresentação).
   - PR #19 (`8329ec0`): imagem do Início e GIF do README regerados pelo `scripts/gif_painel.py`, que agora gera os dois. PR #20 (`2395e1c`): o teste do tema no navegador, intermitente no CI, espera o `data-rd-tema` antes de ler a cor.
   - **A D-084 ficou errada** (`erros_ia.md`, 2026-11-10): (1) o seletor de tema não chega a quem abre o link público: o ⋮ do Streamlit foi testado só no servidor local e em `.../~/+/`; no link público a moldura do Cloud fica por cima e não oferece o tema; (2) as 6 faixas do mapa e do quadro Taxa × adesão são do mesmo azul (≈ 1,3:1 entre vizinhas; o teste aceita 1,25); (3) a interface também é azulada e se mistura com os dados; (4) tabelas e cartões quase da cor do fundo.
-  - **Protótipo novo, à espera da validação do autor:** artefato "Radar · painel novo (claro e escuro)" (https://claude.ai/artifact/PpJA5M8nayVP5XnHtFkJ8n), na linha do V5: seletor Claro · Escuro · Sistema no topo; interface neutra com verde-petróleo só na interface; cartões e tabelas com borda e linhas alternadas; escala do mapa e do quadro com mudança de cor por faixa (claro: âmbar → índigo; escuro: roxo → amarelo-claro), "sem cartório" com hachura; gráfico com azul ("no mínimo") e laranja ("no máximo").
-  - **Depois da aprovação:** branch com o seletor de tema próprio do painel (troca cores, gráficos, mapa, tabelas e os componentes do Streamlit), teste automático (contraste contra o fundo, diferença entre faixas vizinhas em claridade e cor, texto legível em cada faixa) e capturas **do link público** nos dois temas para o autor aprovar antes do merge.
+  - O protótipo novo da IA (artefato "Radar · painel novo (claro e escuro)") foi **recusado** pelo autor; no lugar dele, o painel igual ao V5 (D-085, etapa 1 do plano de entrega, acima).
 
 **Fase 0 cumprida em 2026-11-06:**
 - [x] item 1: plano novo (D-071) e SPEC, ROADMAP, `CLAUDE.md` e `CONTRIBUTING.md` alinhados;
@@ -133,10 +140,10 @@ Carga **2026-11-10** (Fase 3, coluna `uf`; refeita do silver da carga 2026-10-19
 
 Faixa provável do prêmio (P5–P95): R$ 215 a 687 mil. Linha de base: `~/radar_arquivo/baseline_2026-10-28_d048/linha_de_base.json` (WSL). Banco real desta máquina: SHA-256 `923b539f…` (carga 2026-11-10; antes, `7f528a8c…`, `dd6fc158…` e `c935a190…`).
 
-**Última decisão:** D-084 (cores distintas do fundo, tema escolhível e mapa navegável, pedido do autor, 2026-11-10); antes, D-083 (mapa como componente HTML dentro do Streamlit, 2026-11-10), D-082 (V5 como referência) e D-081 (desenho da Fase 3), todas aprovadas; as duas escolhas do bloco V5 na D-082 (7 destaques no Início; mapa em % como seletor) confirmadas pelo autor em 2026-11-10. Não há decisão proposta à espera do autor. As faixas D-053 a D-059 (painel) e D-060 a D-069 (chat) estão reservadas ou usadas; as próximas seguem de D-085 ([`decisoes.md`](decisoes.md)).
+**Última decisão:** D-085 (painel com o visual do V5 e botão de tema próprio, 2026-11-11; substitui a parte de cores e tema da D-084); antes, D-084 (cores distintas do fundo, tema escolhível e mapa navegável, 2026-11-10), D-083 (mapa como componente HTML dentro do Streamlit, 2026-11-10), D-082 (V5 como referência) e D-081 (desenho da Fase 3), todas aprovadas; as duas escolhas do bloco V5 na D-082 (7 destaques no Início; mapa em % como seletor) confirmadas pelo autor em 2026-11-10. Não há decisão proposta à espera do autor. As faixas D-053 a D-059 (painel) e D-060 a D-069 (chat) estão reservadas ou usadas; as próximas seguem de D-086 ([`decisoes.md`](decisoes.md)).
 
-## Testes (2026-11-10)
-- Suíte padrão (`uv run pytest`): 442 passed (2026-11-10, PR #18, na `main`), com os 26 testes do JavaScript do mapa e do tema pelo `node --test` (no CI o Node é obrigatório). Cobertura de `src/`: 71% das linhas (`--cov=src`, no CI; indicador, não meta). Não usa a API do Gemini nem a internet. `uv run ruff check .`: sem erro.
+## Testes (2026-11-11)
+- Suíte padrão (`uv run pytest`): 449 passed (2026-11-11, etapa 1, ainda fora da `main`; 442 na `main`), com os testes do JavaScript do mapa e do tema pelo `node --test` (no CI o Node é obrigatório). Cobertura de `src/`: 71% das linhas (`--cov=src`, no CI; indicador, não meta). Não usa a API do Gemini nem a internet. `uv run ruff check .`: sem erro.
 - Navegador (`uv run pytest -m navegador`, ≈ 15 s, precisa de `uv run playwright install chromium`): 4 passed, no modo demonstração; também no CI, job "Navegador (mapa clicável)".
 - Dados reais (`uv run pytest -m dados_reais`, ≈ 25 min, sempre numa cópia do banco): 55 passed, 0 skipped nesta máquina (2026-11-07, depois da carga oficial da D-078; saíram os testes do auditor). Num clone com o modo completo, os de bronze → silver são pulados ("bronze ausente").
 

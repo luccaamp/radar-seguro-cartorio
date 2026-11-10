@@ -1,11 +1,11 @@
-# Tema do painel (docs/painel/padrao_visual.md, quarta rodada, D-052): os mesmos tokens do artefato "Raio-X do
-# Cartório", nos dois temas dele. Como o Raio-X, o painel segue o tema do sistema (claro ou escuro); o menu do
-# Streamlit também troca. Só aparência; nenhum dado.
+# Tema do painel: as cores do protótipo V5 (docs/painel/prototipo_v5.html, D-082), as mesmas do src/painel/estilo.css,
+# nos dois temas. Quem escolhe o tema é o botão Claro · Escuro · Sistema do próprio painel (src/painel/componentes/
+# tema.js), que grava a escolha também para o Streamlit; o padrão é o claro. Só aparência; nenhum dado.
 [theme]
 font = "IBM Plex Sans"
-headingFont = "Newsreader"
+headingFont = "IBM Plex Sans"
 baseFontSize = 14
-baseRadius = "10px"
+baseRadius = "8px"
 
 # Fontes embutidas (D-080): servidas pelo próprio painel (app/static/fontes, licença OFL ao lado), sem pedido ao
 # Google Fonts no navegador do visitante. Arquivos variáveis, subconjunto latino (cobre o português).
@@ -24,45 +24,43 @@ style = "normal"
 [server]
 enableStaticServing = true
 
-# claro: --bg #eceff3, --surface-2 #f5f7fa, --ink #0f1c33, --line #dde2ea, --grid #e6e9ef, --s1 #2a78d6
+# claro (V5): --bg #f4f5f2, --surface-2 #f7f8f5, --ink #16201d, --line #e1e4de, --accent #0f6b5c
 [theme.light]
-primaryColor = "#2a78d6"
-backgroundColor = "#eceff3"
-secondaryBackgroundColor = "#f5f7fa"
-textColor = "#0f1c33"
-borderColor = "#dde2ea"
-dataframeBorderColor = "#e6e9ef"
-linkColor = "#2a78d6"
-chartCategoricalColors = ["#2a78d6", "#d65a26", "#178f64", "#78829a"]
+primaryColor = "#0f6b5c"
+backgroundColor = "#f4f5f2"
+secondaryBackgroundColor = "#f7f8f5"
+textColor = "#16201d"
+borderColor = "#cbd0c8"
+dataframeBorderColor = "#e1e4de"
+linkColor = "#0b5649"
+chartCategoricalColors = ["#1f5c99", "#b06f12", "#0f6b5c", "#6a7570"]
 
 [theme.light.sidebar]
 backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f5f7fa"
-textColor = "#0f1c33"
-borderColor = "#dde2ea"
+secondaryBackgroundColor = "#f7f8f5"
+textColor = "#16201d"
+borderColor = "#e1e4de"
 
-# escuro (2026-11-10): cinza neutro, sem o azul dos dados (era azul-marinho #0c1018, em que o mapa sumia):
-# --fundo #121316, --superficie #1b1d21, --superficie-2 #25262a, --texto #eceef2, --linha #33363c, --grade #2b2e33
+# escuro (V5): --bg #0f1312, --surface-2 #1b2120, --ink #e6ece9, acento #2fa98f
 [theme.dark]
-primaryColor = "#3987e5"
-backgroundColor = "#121316"
-secondaryBackgroundColor = "#25262a"
-textColor = "#eceef2"
-borderColor = "#33363c"
-dataframeBorderColor = "#2b2e33"
-linkColor = "#3987e5"
-chartCategoricalColors = ["#3987e5", "#d95926", "#199e70", "#7b869b"]
+primaryColor = "#2fa98f"
+backgroundColor = "#0f1312"
+secondaryBackgroundColor = "#1b2120"
+textColor = "#e6ece9"
+borderColor = "#3d4945"
+dataframeBorderColor = "#2c3532"
+linkColor = "#7fd0bf"
+chartCategoricalColors = ["#5c9ae0", "#e3a04a", "#46b39e", "#8a9590"]
 
 [theme.dark.sidebar]
-backgroundColor = "#1b1d21"
-secondaryBackgroundColor = "#25262a"
-textColor = "#eceef2"
-borderColor = "#33363c"
+backgroundColor = "#161b1a"
+secondaryBackgroundColor = "#1b2120"
+textColor = "#e6ece9"
+borderColor = "#2c3532"
 
 [client]
-# "viewer": o menu (⋮, canto superior direito) aparece para o visitante, com Settings → tema claro, escuro ou do
-# sistema (2026-11-10; o "minimal" escondia o menu e o visitante não tinha como escolher o tema)
-toolbarMode = "viewer"
+# "minimal": sem o menu ⋮ do Streamlit (a troca de tema é o botão do painel, que funciona também no link público)
+toolbarMode = "minimal"
 
 [browser]
 gatherUsageStats = false

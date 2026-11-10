@@ -1,157 +1,145 @@
-/* Estilo único do painel (docs/painel/padrao_visual.md, quarta rodada, D-052). Os tokens, as medidas e os componentes
-   são os do artefato "Raio-X do Cartório", com os mesmos valores, para que uma página dele caiba no painel sem emenda:
-   fundo #eceff3, superfícies brancas, texto #0f1c33, faixa azul-marinho em degradê (#0f2447 → #183564) com o traço
-   dourado, cartões de 14 px de raio com sombra, quadro azul-claro dos agregados, veredito dourado-claro, selos e a
-   paleta de série (#2a78d6, #d65a26, #178f64, #78829a; as três últimas escurecidas em 2026-11-10 para 3:1). Carregado por src/painel/ui.estilo(), uma vez por página. As
-   cores de dado são as mesmas de src/painel/graficos.py (COR). As fontes vêm de app/static/fontes, declaradas no
-   .streamlit/config.toml ([[theme.fontFaces]], D-080), sem pedido ao Google Fonts. */
+/* Estilo único do painel: o visual do protótipo V5 (docs/painel/prototipo_v5.html, D-082), copiado dele (2026-11-11):
+   fundo neutro #f4f5f2, superfícies brancas com borda fina, texto #16201d, verde-petróleo (#0f6b5c) só na interface
+   (menu ativo, links, destaques), faixa de indicadores com divisórias de 1 px, tabelas com cabeçalho em versalete e a
+   escala do mapa amarelo-claro → verde → azul do V5. Os nomes dos tokens são os de antes (--marinho, --agregado, --ouro
+   etc.) para não mexer nos componentes; os valores são os do V5. Desvios medidos (tests/test_cores.py): o âmbar das
+   séries escurecido (#d08a2c → #b06f12) para 3:1 contra o fundo; a primeira faixa do mapa é a segunda do V5 (a primeira,
+   #eef6d3, some no branco); no escuro a escala se inverte (o maior é o mais claro). Carregado por
+   src/painel/ui.estilo(), uma vez por página. As cores de dado são as mesmas de src/painel/graficos.py (COR). */
 :root {
-  /* tokens do Raio-X (nomes originais entre parênteses) */
-  --fundo: #eceff3;            /* (--bg) */
+  --fundo: #f4f5f2;            /* (V5 --bg) */
   --superficie: #ffffff;       /* (--surface) */
-  --superficie-2: #f5f7fa;     /* (--surface-2) */
-  --titulo: #0f1c33; --texto: #0f1c33;   /* (--ink) */
-  --texto-2: #45506a;          /* (--ink-2) */
-  --mudo: #5c6680;             /* (--muted; era #6b7590: 3,98 sobre o fundo, abaixo dos 4,5 da WCAG AA; Fase 1, item 6) */
-  --linha: #dde2ea;            /* (--line) */
-  --grade: #e6e9ef; --grade-forte: #c2c9d6;   /* (--grid, --grid-strong) */
-  --marinho: #0f2447; --marinho-2: #183564; --sobre-marinho: #f2f5fb; --sobre-marinho-2: #b9c5dd;   /* (--navy …) */
-  --ouro: #c9992e; --ouro-tinta: #7a5a10; --ouro-claro: #fbf3df;   /* (--gold, --gold-ink, --gold-tint) */
-  --agregado: #e8eef8; --agregado-linha: #c3d1e8;   /* (--agg, --agg-line) */
-  --s1: #2a78d6; --s2: #d65a26; --s3: #178f64; --ref: #78829a;   /* séries dos gráficos (s2, s3 e ref escurecidos em
-     2026-11-10 para 3:1 contra o fundo e as superfícies; eram #eb6834, #1baf7a e #8d97ab) */
-  --bom: #17794a; --bom-claro: #e2f4ea; --alerta: #8f5f00; --alerta-claro: #fdf0d2; --ruim: #b42318; --ruim-claro: #fde7e4;
-  --sombra: 0 1px 2px rgba(15, 28, 51, .06), 0 6px 20px rgba(15, 28, 51, .05);
+  --superficie-2: #f7f8f5;     /* (--surface-2) */
+  --afundado: #eceee9;         /* (--sunk) */
+  --titulo: #16201d; --texto: #16201d;   /* (--ink) */
+  --texto-2: #47524e;          /* (--ink-2) */
+  --mudo: #5f6a65;             /* (--muted #6a7570, escurecido: 4,37 sobre o fundo, abaixo dos 4,5 da WCAG AA) */
+  --linha: #e1e4de; --linha-2: #cbd0c8;   /* (--line, --line-2) */
+  --grade: #eceee9; --grade-forte: #cbd0c8;
+  --acento: #0f6b5c; --acento-tinta: #0b5649; --acento-claro: #e2f0ec;   /* (--accent, --accent-ink, --accent-soft) */
+  --marinho: #ffffff; --marinho-2: #0f6b5c; --sobre-marinho: #ffffff; --sobre-marinho-2: #47524e;   /* nomes antigos */
+  --ouro: #b06f12; --ouro-tinta: #8a5500; --ouro-claro: #fbf0d6;   /* âmbar do V5 (--c2, --warn, --warn-soft) */
+  --agregado: #e2f0ec; --agregado-linha: #b9dcd2;
+  --s1: #1f5c99; --s2: #b06f12; --s3: #0f6b5c; --ref: #6a7570;   /* séries (V5 --c3, --c2 escurecido, --accent, --muted) */
+  --bom: #17794a; --bom-claro: #e2f0ec; --alerta: #8a5a00; --alerta-claro: #fbf0d6; --ruim: #b42318; --ruim-claro: #fde7e4;
+  --sombra: 0 1px 2px rgba(20, 30, 25, .05), 0 8px 24px rgba(20, 30, 25, .06);
   --f-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --f-titulo: "Newsreader", Georgia, "Times New Roman", serif;
+  --f-titulo: var(--f-ui);
   --destaque: var(--s1); --comparacao: var(--s2);
-  --s1-texto: #1d66ba;         /* azul das séries em texto pequeno (4,97 sobre o fundo; o --s1 dá 3,83) */
-  /* mapa e quadro de calor (2026-11-10): toda cor de dado com contraste ≥ 3:1 contra o fundo e as superfícies, nos dois
-     temas (tests/test_cores.py). Zero em cinza neutro; 6 faixas de azul de luminância crescente (aqui, do azul médio ao
-     marinho). --mapa-tinta-*: a cor do texto em cada faixa (≥ 4,5:1) */
-  --mapa-zero: #84888e; --mapa-1: #4c8ada; --mapa-2: #2b74d2; --mapa-3: #2461b1; --mapa-4: #1e5294; --mapa-5: #184277;
-  --mapa-6: #12325a;
-  --mapa-sem: #cdd0d6;   /* município sem cartório: tom próprio (nem o fundo, nem o cartão, nem o zero), com contorno */
-  --mapa-tinta-zero: #0f1c33; --mapa-tinta-1: #0f1c33; --mapa-tinta-2: #ffffff; --mapa-tinta-3: #ffffff;
+  --s1-texto: #1f5c99;
+  /* mapa e quadro de calor: a escala do V5 (RAMP), da segunda à última cor; a quarta escurecida (#2687b5 → #2178a8)
+     para o texto branco ler com 4,5:1. Zero em cinza (V5 --c0); sem cartório, o tom afundado com contorno.
+     --mapa-tinta-*: a cor do texto em cada faixa (≥ 4,5:1) */
+  --mapa-zero: #a9b0ab; --mapa-1: #c3e6b4; --mapa-2: #83cdb8; --mapa-3: #45b0c0; --mapa-4: #2178a8; --mapa-5: #21609f;
+  --mapa-6: #1e3b7a;
+  --mapa-sem: #e6e9e4;
+  --mapa-tinta-zero: #16201d; --mapa-tinta-1: #16201d; --mapa-tinta-2: #16201d; --mapa-tinta-3: #16201d;
   --mapa-tinta-4: #ffffff; --mapa-tinta-5: #ffffff; --mapa-tinta-6: #ffffff;
   color-scheme: light;
 }
-/* tema escuro. Quem decide, nesta ordem: (1) o <html data-rd-tema>, posto na hora pelo componente de tema
-   (componentes/tema.js) a partir do menu ⋮ do Streamlit ou do sistema; (2) o marcador .rd-tema-escuro, posto por
-   ui.estilo no servidor; (3) sem nenhum dos dois, a preferência do sistema (bloco @media abaixo, com os mesmos valores). */
+/* tema escuro (V5). Quem decide: o <html data-rd-tema>, posto pelo botão de tema do painel (componentes/tema.js), que
+   também escolhe o tema do Streamlit; antes do componente rodar, o marcador .rd-tema-escuro, posto por ui.estilo. */
 :root[data-rd-tema="escuro"], :root:not([data-rd-tema]):has(.rd-tema-escuro) {
-  --fundo: #121316; --superficie: #1b1d21; --superficie-2: #25262a;   /* cinza neutro, sem o azul dos dados (2026-11-10;
-     era #0c1018, #141a25, #1a2130: o mapa azul-escuro sumia no fundo azul-marinho) */
-  --titulo: #eceef2; --texto: #eceef2; --texto-2: #b4b9c2; --mudo: #8b919c;
-  --linha: #33363c; --grade: #2b2e33; --grade-forte: #484c54;
-  --marinho: #0d1a33; --marinho-2: #15284d;
-  --ouro: #e0b44e; --ouro-tinta: #e8c46a; --ouro-claro: #2a2414;
-  --agregado: #1e2633; --agregado-linha: #34405a;
-  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #7b869b; --s1-texto: #5b9ceb;
-  --bom: #4cc38a; --bom-claro: #12301f; --alerta: #e2b04a; --alerta-claro: #33270c; --ruim: #ff8a7a; --ruim-claro: #3a1a17;
-  --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 20px rgba(0, 0, 0, .25);
-  --mapa-zero: #6f7378; --mapa-1: #2f70c7; --mapa-2: #4b86d5; --mapa-3: #6c9ddd; --mapa-4: #8eb3e5; --mapa-5: #b2cbed;
-  --mapa-6: #d7e4f6; --mapa-sem: #3d4047;   /* no escuro a escala se inverte em luminosidade: o valor maior é o azul mais claro; a faixa mais
-                          baixa já tem 3:1 contra o fundo (era #222936, 1,3:1) */
-  --mapa-tinta-zero: #ffffff; --mapa-tinta-1: #ffffff; --mapa-tinta-2: #121316; --mapa-tinta-3: #121316;
-  --mapa-tinta-4: #121316; --mapa-tinta-5: #121316; --mapa-tinta-6: #121316;
+  --fundo: #0f1312; --superficie: #161b1a; --superficie-2: #1b2120; --afundado: #121716;
+  --titulo: #e6ece9; --texto: #e6ece9; --texto-2: #b2bcb8; --mudo: #8a9590;
+  --linha: #2c3532; --linha-2: #3d4945; --grade: #222a28; --grade-forte: #3d4945;   /* linha um pouco mais forte que a
+     do V5 (#242c2a): os cartões precisam se separar do fundo */
+  --acento: #2fa98f; --acento-tinta: #7fd0bf; --acento-claro: #14302a;   /* (V5 #46b39e, um pouco mais verde: ficava
+     perto da faixa 4 do mapa) */
+  --marinho: #161b1a; --marinho-2: #2fa98f; --sobre-marinho: #0f1312; --sobre-marinho-2: #b2bcb8;
+  --ouro: #e3a04a; --ouro-tinta: #e2b04a; --ouro-claro: #30260f;
+  --agregado: #14302a; --agregado-linha: #24584d;
+  --s1: #5c9ae0; --s2: #e3a04a; --s3: #46b39e; --ref: #8a9590; --s1-texto: #7fb0ea;
+  --bom: #4cc38a; --bom-claro: #14302a; --alerta: #e2b04a; --alerta-claro: #30260f; --ruim: #ff8a7a; --ruim-claro: #3a1a17;
+  --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+  --mapa-zero: #5d6662; --mapa-1: #4f62cc; --mapa-2: #2687b5; --mapa-3: #45b0c0; --mapa-4: #83cdb8; --mapa-5: #c3e6b4;
+  --mapa-6: #f8fbe4; --mapa-sem: #242c2a;
+  --mapa-tinta-zero: #ffffff; --mapa-tinta-1: #ffffff; --mapa-tinta-2: #0f1312; --mapa-tinta-3: #0f1312;
+  --mapa-tinta-4: #0f1312; --mapa-tinta-5: #0f1312; --mapa-tinta-6: #0f1312;
   color-scheme: dark;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-rd-tema]):not(:has(.rd-tema-claro)) {
-  --fundo: #121316; --superficie: #1b1d21; --superficie-2: #25262a;   /* cinza neutro, sem o azul dos dados (2026-11-10;
-     era #0c1018, #141a25, #1a2130: o mapa azul-escuro sumia no fundo azul-marinho) */
-  --titulo: #eceef2; --texto: #eceef2; --texto-2: #b4b9c2; --mudo: #8b919c;
-  --linha: #33363c; --grade: #2b2e33; --grade-forte: #484c54;
-  --marinho: #0d1a33; --marinho-2: #15284d;
-  --ouro: #e0b44e; --ouro-tinta: #e8c46a; --ouro-claro: #2a2414;
-  --agregado: #1e2633; --agregado-linha: #34405a;
-  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #7b869b; --s1-texto: #5b9ceb;
-  --bom: #4cc38a; --bom-claro: #12301f; --alerta: #e2b04a; --alerta-claro: #33270c; --ruim: #ff8a7a; --ruim-claro: #3a1a17;
-  --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 20px rgba(0, 0, 0, .25);
-  --mapa-zero: #6f7378; --mapa-1: #2f70c7; --mapa-2: #4b86d5; --mapa-3: #6c9ddd; --mapa-4: #8eb3e5; --mapa-5: #b2cbed;
-  --mapa-6: #d7e4f6; --mapa-sem: #3d4047;
-  --mapa-tinta-zero: #ffffff; --mapa-tinta-1: #ffffff; --mapa-tinta-2: #121316; --mapa-tinta-3: #121316;
-  --mapa-tinta-4: #121316; --mapa-tinta-5: #121316; --mapa-tinta-6: #121316;
-  color-scheme: dark;
-} }
 
-/* página: fundo, corpo de 14 px e largura de 1.180 px úteis com 16 px de margem, como o .wrap do Raio-X */
+/* página: fundo, corpo de 14 px, largura útil de 1.360 px (o .wrap do V5) com 16 px de margem */
 html, body, .stApp, [data-testid="stAppViewContainer"] { background: var(--fundo); color: var(--texto); font-family: var(--f-ui);
   font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
-.block-container, [data-testid="stMainBlockContainer"] { max-width: 1212px; padding: 0 16px 48px; }
-[data-testid="stApp"]:not(:has(.rd-cab)) [data-testid="stMainBlockContainer"] { padding-top: 72px; }   /* Chat */
-footer, [data-testid="stDecoration"] { display: none; }   /* o menu (⋮) fica: é nele que o visitante escolhe o tema */
-[data-testid="stElementContainer"]:has(.rd-tema-js) { display: none; }   /* o componente de tema não ocupa espaço */
-[data-testid="stMainMenu"] button { color: var(--sobre-marinho, #f2f5fb); }
-[data-testid="stHeader"] { background: var(--fundo); }
-[data-testid="stApp"]:has(.rd-cab) [data-testid="stHeader"] { background: var(--marinho); }
+.block-container, [data-testid="stMainBlockContainer"] { max-width: 1392px; padding: 72px 16px 80px; }
+footer, [data-testid="stDecoration"] { display: none; }
+[data-testid="stHeader"] { background: var(--superficie); border-bottom: 1px solid var(--linha); }
 h1, h2, h3 { color: var(--titulo); }
-h2 { font-family: var(--f-titulo) !important; font-size: 18px !important; font-weight: 600 !important; line-height: 1.25 !important;
-  margin: 8px 0 0 !important; padding: 0 !important; }
-h3 { font-size: 14px !important; font-weight: 600 !important; }
+h2 { font-family: var(--f-ui) !important; font-size: 19px !important; font-weight: 700 !important; line-height: 1.25 !important;
+  letter-spacing: -.01em; margin: 14px 0 0 !important; padding: 0 !important; }
+h3 { font-size: 15px !important; font-weight: 600 !important; }
 [data-testid="stCaptionContainer"], .stCaption { color: var(--mudo) !important; opacity: 1 !important; font-size: 12.5px !important; }
-[data-testid="stVerticalBlock"] { gap: 18px; }
+[data-testid="stVerticalBlock"] { gap: 16px; }
+a { color: var(--acento-tinta); }
+:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
 
-/* faixa do topo (.top do Raio-X): degradê azul-marinho de ponta a ponta, rótulo, título em serifa, texto e traço dourado */
-/* o degradê vai num border-image com recuo lateral: pinta até as bordas sem criar rolagem horizontal (um pseudo-elemento
-   largo fazia o contêiner do Streamlit rolar para o lado e esconder a navegação) */
-.rd-cab { color: var(--sobre-marinho); padding: 76px 0 56px; margin: 0; background-color: var(--marinho);   /* o fundo
-  que o axe enxerga (ele não lê o border-image); a faixa até a borda da tela vem do border-image */
-  border-image: linear-gradient(180deg, var(--marinho) 0%, var(--marinho-2) 100%) fill 0 / 0 / 0 100vmax; }
-.rd-cab .rd-sobre { font-size: 12px; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; color: var(--sobre-marinho-2); }
-.rd-cab h1 { font-family: var(--f-titulo) !important; font-size: clamp(30px, 5vw, 42px) !important; font-weight: 600 !important;
-  line-height: 1.1 !important; margin: 6px 0 6px !important; padding: 0 !important; color: var(--sobre-marinho) !important;
-  max-width: 52rem; text-wrap: balance; }
-.rd-cab .rd-sub { margin: 0; color: var(--sobre-marinho-2); max-width: 62ch; }
-.rd-cab .rd-sub b { color: var(--sobre-marinho); }
-.rd-cab .rd-ouro { width: 44px; height: 3px; background: var(--ouro); border-radius: 2px; margin: 14px 0 0; }
-/* o primeiro bloco depois da faixa sobe sobre ela (main { margin-top: -30px } do Raio-X); uma legenda não sobe (o texto
-   cinza ficaria sobre o azul-marinho, com contraste de 2,7; achado do axe, Fase 1, item 6) */
-[data-testid="stElementContainer"]:has(.rd-cab) + :not(:has(h2)):not(:has([data-testid="stCaptionContainer"])) {
-  margin-top: -30px; position: relative; z-index: 1; }
-[data-testid="stElementContainer"]:has(.rd-cab):has(+ :has(h2)) .rd-cab,
-[data-testid="stElementContainer"]:has(.rd-cab):has(+ :has([data-testid="stCaptionContainer"])) .rd-cab { padding-bottom: 32px; }
+/* menu no topo (V5 .nav): itens em cinza, o ativo em tinta com o traço verde-petróleo embaixo */
+[data-testid="stTopNavLink"] { border-radius: 0; border-bottom: 2px solid transparent; padding: 6px 10px; }
+[data-testid="stTopNavLink"] span, [data-testid="stTopNavLink"] p { color: var(--texto-2); font-weight: 500; font-size: 14px; }
+[data-testid="stTopNavLink"]:hover { background: var(--superficie-2); }
+[data-testid="stTopNavLink"][aria-current="page"] { border-bottom-color: var(--acento); background: transparent; }
+[data-testid="stTopNavLink"][aria-current="page"] span, [data-testid="stTopNavLink"][aria-current="page"] p {
+  color: var(--texto); font-weight: 600; }
+[data-testid="stHeaderLogo"], [data-testid="stSidebarLogo"] { height: 28px; }
+
+/* botão de tema (Claro · Escuro · Sistema; V5 .seg), num lugar fixo no canto do topo. O desenho dos botões está em
+   componentes/tema.css (o componente tem o próprio estilo); aqui só o lugar do contêiner, pela chave do componente */
+.st-key-rd_tema { position: fixed; top: 11px; right: 16px; z-index: 999991; width: auto !important; }
+
+/* título da página (V5 .lede): rótulo pequeno, título em negrito e uma linha de subtítulo, sem faixa colorida */
+.rd-cab { padding: 6px 0 0; margin: 0; }
+.rd-cab .rd-sobre { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--mudo); }
+.rd-cab h1 { font-family: var(--f-ui) !important; font-size: clamp(22px, 3vw, 26px) !important; font-weight: 700 !important;
+  letter-spacing: -.02em; line-height: 1.15 !important; margin: 4px 0 4px !important; padding: 0 !important;
+  color: var(--titulo) !important; max-width: 60rem; text-wrap: balance; }
+.rd-cab .rd-sub { margin: 0; color: var(--texto-2); max-width: 78ch; }
+.rd-cab .rd-sub b { color: var(--texto); }
+.rd-cab .rd-ouro { display: none; }
+/* seletor logo abaixo do título: no cartão, como a barra de recorte do V5 */
 [data-testid="stElementContainer"]:has(.rd-cab) + * [data-testid="stSelectbox"] { background: var(--superficie);
-  border: 1px solid var(--linha); border-radius: 14px; padding: 14px 20px 18px; box-shadow: var(--sombra); }
+  border: 1px solid var(--linha); border-radius: 10px; padding: 10px 16px 14px; }
 
-/* resposta principal (só no Início): .card com a chave colorida, o quadro do agregado (.cagr) e o veredito */
-.rd-resposta { background: var(--superficie); border: 1px solid var(--linha); border-radius: 14px; padding: 20px;
+/* resposta principal (V5 .answer): pergunta em versalete, número grande, faixa e a frase em destaque lateral */
+.rd-resposta { background: var(--superficie); border: 1px solid var(--linha); border-radius: 10px; padding: 16px 20px;
   box-shadow: var(--sombra); }
-.rd-resposta .rd-rot { font-weight: 600; color: var(--texto); display: flex; align-items: center; gap: 8px; }
-.rd-resposta .rd-rot::before { content: ""; width: 14px; height: 4px; border-radius: 2px; background: var(--s1); }
-.rd-resposta .rd-num { font-size: clamp(40px, 6vw, 54px); font-weight: 600; line-height: 1.05; color: var(--texto);
-  letter-spacing: -.02em; margin: 14px 0 0; white-space: nowrap; font-variant-numeric: tabular-nums; display: inline-block;
-  background: var(--agregado); border: 1px solid var(--agregado-linha); border-radius: 12px; padding: 16px 18px; }
-.rd-resposta .rd-num small { font-size: 15px; font-weight: 500; color: var(--texto-2); letter-spacing: 0; }
-.rd-resposta .rd-faixa { font-size: 13px; color: var(--texto-2); margin-top: 6px; }
+.rd-resposta .rd-rot { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--mudo); font-weight: 600; }
+.rd-resposta .rd-num { font-size: clamp(30px, 5vw, 38px); font-weight: 500; line-height: 1.05; color: var(--texto);
+  letter-spacing: -.03em; margin: 8px 0 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.rd-resposta .rd-num small { font-size: 14px; font-weight: 400; color: var(--mudo); letter-spacing: 0; margin-left: 4px; }
+.rd-resposta .rd-faixa { font-size: 13px; color: var(--mudo); margin-top: 4px; font-variant-numeric: tabular-nums; }
 .rd-resposta .rd-faixa b { color: var(--texto); }
-.rd-resposta .rd-frase { margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: var(--ouro-claro);
+.rd-resposta .rd-frase { margin-top: 12px; padding: 8px 12px; background: var(--superficie-2); border-left: 3px solid var(--acento);
   color: var(--texto); font-size: 13.5px; line-height: 1.5; }
-.rd-resposta .rd-frase b { color: var(--ouro-tinta); }
+.rd-resposta .rd-frase b { color: var(--texto); }
 @media (max-width: 640px) { .rd-resposta .rd-num { white-space: normal; } }
 
-/* cartões de número (.tile do Raio-X, como cartão solto: com a sombra do .card) */
-.rd-grade { display: grid; gap: 12px; margin: 0; align-items: stretch; }
+/* indicadores (V5 .kpis): cartões numa faixa única, separados por divisórias de 1 px */
+.rd-grade { display: grid; gap: 1px; margin: 0; align-items: stretch; background: var(--linha); border: 1px solid var(--linha);
+  border-radius: 10px; overflow: hidden; }
 .rd-grade.c1 { grid-template-columns: 1fr; }
 .rd-grade.c2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .rd-grade.c3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-@media (max-width: 760px) { .rd-grade.c2, .rd-grade.c3 { grid-template-columns: 1fr; } }
-.rd-card { background: var(--superficie); border: 1px solid var(--linha); border-radius: 12px; padding: 12px 14px; min-width: 0;
-  height: 100%; box-sizing: border-box; display: flex; flex-direction: column; box-shadow: var(--sombra); }
-.rd-card .rd-rot { font-size: 12px; color: var(--mudo); line-height: 1.4; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.rd-card .rd-num { font-size: 24px; font-weight: 600; line-height: 1.2; color: var(--texto); margin-top: 2px;
+@media (max-width: 760px) { .rd-grade.c3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 420px) { .rd-grade.c2 { grid-template-columns: 1fr; } }   /* os 6 indicadores: 2 por linha (V5) */
+.rd-card { background: var(--superficie); padding: 12px 14px; min-width: 0; height: 100%; box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 4px; }
+.rd-card .rd-rot { font-size: 12px; color: var(--texto-2); font-weight: 500; line-height: 1.4; display: flex; align-items: center;
+  gap: 6px; flex-wrap: wrap; }
+.rd-card .rd-num { font-size: 22px; font-weight: 500; line-height: 1.15; letter-spacing: -.02em; color: var(--texto);
   font-variant-numeric: tabular-nums; }
-.rd-card .rd-nota { font-size: 12.5px; color: var(--texto-2); margin-top: 2px; line-height: 1.45; }
+.rd-card .rd-nota { font-size: 12px; color: var(--mudo); line-height: 1.45; }
 
-/* selos (.badge do Raio-X) */
-.rd-selo { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 2px 10px; font-size: 12px;
-  font-weight: 500; white-space: nowrap; background: var(--superficie-2); border: 1px solid var(--linha); color: var(--texto-2); }
-.rd-selo.dado, .rd-selo.faixa { background: var(--bom-claro); color: var(--bom); border-color: transparent; }
+/* selos (V5 .chip) */
+.rd-selo { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 2px 8px; font-size: 11px;
+  font-weight: 600; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; background: var(--superficie-2);
+  border: 1px solid var(--linha); color: var(--texto-2); }
+.rd-selo.dado, .rd-selo.faixa { background: var(--acento-claro); color: var(--acento-tinta); border-color: transparent; }
 .rd-selo.projecao, .rd-selo.suposicao, .rd-selo.sensibilidade, .rd-selo.comparacao { background: var(--alerta-claro);
   color: var(--alerta); border-color: transparent; }
 .rd-selo.alerta { background: var(--ruim-claro); color: var(--ruim); border-color: transparent; }
 
-/* etiquetas de contexto (só a página do chat usa, por ui.contexto): .badge neutro */
+/* etiquetas de contexto (só a página do chat usa, por ui.contexto) */
 .rd-contexto { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
 .rd-chip { font-size: 12px; font-weight: 500; color: var(--texto-2); background: var(--superficie-2); border: 1px solid var(--linha);
   border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
@@ -160,31 +148,32 @@ h3 { font-size: 14px !important; font-weight: 600 !important; }
 /* termo com explicação ao passar o mouse */
 .rd-termo { border-bottom: 1px dotted var(--mudo); cursor: help; }
 
-/* conclusão de um bloco (.verdict do Raio-X) */
-.rd-frase-bloco { position: relative; margin: 0; padding: 10px 14px 10px 34px; border-radius: 10px; background: var(--ouro-claro);
+/* conclusão de um bloco (V5 .insight): fundo da superfície 2 com o traço verde-petróleo à esquerda */
+.rd-frase-bloco { margin: 0; padding: 8px 12px; background: var(--superficie-2); border-left: 3px solid var(--acento);
   color: var(--texto); font-size: 13.5px; line-height: 1.5; }
-.rd-frase-bloco::before { content: "✓"; position: absolute; left: 14px; top: 10px; font-weight: 700; color: var(--ouro-tinta); }
 .rd-frase-bloco b { color: var(--texto); }
 
-/* tabela compacta (table.st do Raio-X: cabeçalho surface-2, linhas da grade, valores em quadro azul-claro) */
+/* tabela (V5 table): cabeçalho em versalete cinza, linhas finas, números alinhados à direita, dentro de um cartão */
 .rd-tabela { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; background: var(--superficie);
   border: 1px solid var(--linha); border-radius: 10px; overflow: hidden; }
-.rd-tabela th { padding: 7px 9px; text-align: left; font-weight: 600; background: var(--superficie-2); color: var(--texto);
-  border-bottom: 1px solid var(--linha); white-space: nowrap; }
-.rd-tabela td { padding: 7px 9px; border-bottom: 1px solid var(--grade); color: var(--texto); vertical-align: top; }
+.rd-tabela th { padding: 8px 10px; text-align: left; font-size: 11px; letter-spacing: .05em; text-transform: uppercase;
+  font-weight: 600; background: var(--superficie); color: var(--mudo); border-bottom: 1px solid var(--linha-2); white-space: nowrap; }
+.rd-tabela td { padding: 7px 10px; border-bottom: 1px solid var(--linha); color: var(--texto); vertical-align: top; }
+.rd-tabela tbody tr:hover td { background: var(--superficie-2); }
 .rd-tabela tr:last-child td { border-bottom: 0; }
-.rd-tabela td.rd-num { font-weight: 700; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums;
-  background: var(--agregado); }
+.rd-tabela td.rd-num { font-weight: 500; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
 .rd-tabela td.rd-mudo { color: var(--mudo); }
 @media (max-width: 640px) { .rd-tabela .rd-so-pc { display: none; } }   /* colunas secundárias, só no computador */
-/* seletor de opções (st.segmented_control, "Mostrar no mapa"): no item escolhido o Streamlit pinta o texto com a cor
-   primária sobre um fundo azul-claro (contraste 3,4; axe, 2026-11-10); o texto passa à cor do título, em negrito, e o
-   destaque azul fica no fundo e na borda */
+@media (max-width: 640px) {   /* cabeçalho em versalete mais estreito no celular: a tabela cabe sem rolagem lateral */
+  .rd-tabela th, .rd-tabela td { padding: 6px 6px; }
+  .rd-tabela th { letter-spacing: 0; white-space: normal; } }
+/* seletor de opções (st.segmented_control, "Mostrar no mapa"): texto do item escolhido na cor do título */
 [data-testid="stButtonGroup"] button[data-selected="true"] p { color: var(--titulo); font-weight: 600; }
-/* quadro de calor (grade Taxa × adesão, V5): as cores do mapa (--mapa-*), texto escuro nas claras e claro nas escuras
-   (no tema escuro a escala inverte a luminosidade, e o texto inverte junto) */
+/* quadro de calor (grade Taxa × adesão): as cores do mapa (--mapa-*) e o texto legível em cada uma */
 .rd-calor td { text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.rd-calor th[scope="row"] { font-weight: 600; }
+.rd-calor th[scope="row"] { font-weight: 600; text-transform: none; letter-spacing: 0; font-size: 12.5px; color: var(--texto-2); }
+.rd-tabela.rd-calor tbody tr:hover td { filter: brightness(1.04); }
+.rd-tabela.rd-calor td { border-bottom: 2px solid var(--superficie); border-right: 2px solid var(--superficie); }
 .rd-tabela.rd-calor td.rd-calor-zero { background: var(--mapa-zero); color: var(--mapa-tinta-zero); }
 .rd-tabela.rd-calor td.rd-calor-1 { background: var(--mapa-1); color: var(--mapa-tinta-1); }
 .rd-tabela.rd-calor td.rd-calor-2 { background: var(--mapa-2); color: var(--mapa-tinta-2); }
@@ -192,7 +181,7 @@ h3 { font-size: 14px !important; font-weight: 600 !important; }
 .rd-tabela.rd-calor td.rd-calor-4 { background: var(--mapa-4); color: var(--mapa-tinta-4); }
 .rd-tabela.rd-calor td.rd-calor-5 { background: var(--mapa-5); color: var(--mapa-tinta-5); }
 .rd-tabela.rd-calor td.rd-calor-6 { background: var(--mapa-6); color: var(--mapa-tinta-6); }
-.rd-calor-base { outline: 3px solid var(--ouro); outline-offset: -3px; }
+.rd-calor-base { outline: 3px solid var(--texto); outline-offset: -3px; }
 .rd-calor-marca { font-weight: 500; font-size: 11px; }
 @media (max-width: 640px) {   /* cabe em 358 px: letra e espaçamento menores; a marca "base" vai para a linha de baixo */
   .rd-calor th, .rd-calor td { padding: 6px 4px; font-size: 12px; }
@@ -200,55 +189,36 @@ h3 { font-size: 14px !important; font-weight: 600 !important; }
   .rd-calor-marca { display: block; font-size: 10px; }
 }
 
-/* perguntas sugeridas para o chat: .card com título em serifa e botões .btn2 do Raio-X */
-.rd-sugestoes { margin-top: 0; padding: 20px; background: var(--superficie); border: 1px solid var(--linha); border-radius: 14px;
-  box-shadow: var(--sombra); }
-.rd-sugestoes-tit { font-family: var(--f-titulo); font-size: 18px; font-weight: 600; line-height: 1.25; color: var(--titulo);
-  margin: 0 0 12px; }
-.rd-sugestoes-links { display: flex; flex-wrap: wrap; gap: 8px; }
-a.rd-sugestao { display: inline-flex; align-items: center; min-height: 34px; padding: 0 14px; border-radius: 8px;
-  border: 1px solid var(--linha); background: var(--superficie-2); font-size: 14px; font-weight: 500; color: var(--texto) !important;
-  text-decoration: none !important; }
-a.rd-sugestao::before { content: "→\00a0"; color: var(--s1); }
-a.rd-sugestao:hover { background: var(--agregado); }
+/* perguntas sugeridas para o chat (V5 .sugs): pílulas com o texto em verde-petróleo */
+.rd-sugestoes { margin-top: 10px; padding: 14px 0 0; border-top: 1px solid var(--linha); }
+.rd-sugestoes-tit { font-size: 12.5px; font-weight: 600; color: var(--mudo); margin: 0 0 8px; }
+.rd-sugestoes-links { display: flex; flex-wrap: wrap; gap: 6px; }
+a.rd-sugestao { display: inline-flex; align-items: center; min-height: 30px; padding: 4px 12px; border-radius: 999px;
+  border: 1px solid var(--linha-2); background: var(--superficie); font-size: 12.5px; font-weight: 500;
+  color: var(--acento-tinta) !important; text-decoration: none !important; }
+a.rd-sugestao:hover { background: var(--acento-claro); }
 
-/* rodapé de fonte (.foot do Raio-X) */
-.rd-fonte { font-size: 12.5px; line-height: 1.5; color: var(--mudo); margin: 0; }
+/* rodapé de fonte (V5 .foot) */
+.rd-fonte { font-size: 11.5px; line-height: 1.5; color: var(--mudo); margin: 0; }
 
 .rd-resposta, .rd-grade, .rd-tabela { margin-bottom: 0; }
 
-/* componentes nativos: gráficos como .card; seleção e alertas como no Raio-X */
-[data-testid="stPlotlyChart"] { background: var(--superficie); border: 1px solid var(--linha); border-radius: 14px; overflow: hidden;
-  box-shadow: var(--sombra); }
-[data-testid="stSelectbox"] label p { font-size: 12px !important; font-weight: 400; color: var(--mudo) !important; }
-[data-testid="stSelectbox"] [data-baseweb="select"] > div { background: var(--superficie-2); border: 1px solid var(--linha);
+/* componentes nativos: gráficos como cartão; seleção e alertas no padrão do V5 */
+[data-testid="stPlotlyChart"] { background: var(--superficie); border: 1px solid var(--linha); border-radius: 10px; overflow: hidden; }
+[data-testid="stSelectbox"] label p { font-size: 12px !important; font-weight: 500; color: var(--mudo) !important; }
+[data-testid="stSelectbox"] [data-baseweb="select"] > div { background: var(--superficie); border: 1px solid var(--linha-2);
   border-radius: 8px; min-height: 34px; }
-[data-testid="stAlertContainer"] { border-radius: 10px; font-size: 13px; }
-[data-testid="stAlertContentInfo"], [data-testid="stAlert"] [data-baseweb="notification"] { background: var(--agregado); color: var(--texto-2); }
-[data-testid="stExpander"] details { background: var(--superficie); border: 1px solid var(--linha); border-radius: 14px; }
-[data-testid="stExpander"] summary p { font-weight: 600; color: var(--s1-texto); }
-[data-testid="stSliderThumbValue"], [data-testid="stSliderThumbValue"] p { color: var(--s1-texto) !important; }
+[data-testid="stAlertContainer"] { border-radius: 8px; font-size: 13px; }
+[data-testid="stAlertContentInfo"], [data-testid="stAlert"] [data-baseweb="notification"] { background: var(--superficie-2);
+  color: var(--texto-2); }
+[data-testid="stExpander"] details { background: var(--superficie); border: 1px solid var(--linha); border-radius: 10px; }
+[data-testid="stExpander"] summary p { font-weight: 600; color: var(--acento-tinta); }
+[data-testid="stSliderThumbValue"], [data-testid="stSliderThumbValue"] p { color: var(--acento-tinta) !important; }
 
-/* navegação lateral: superfície branca com a linha do Raio-X, marca em serifa, item ativo no azul-claro do agregado */
+/* menu lateral (no celular o menu do topo vira lateral): superfície com a linha, item ativo no verde-petróleo claro */
 [data-testid="stSidebar"] { border-right: 1px solid var(--linha); background: var(--superficie); }
-[data-testid="stSidebarHeader"] { align-items: center; }
-[data-testid="stLogoSpacer"]::before { content: "Radar Seguro-Garantia\A Cartórios de MG"; white-space: pre; display: block;
-  font-family: var(--f-titulo); font-weight: 600; font-size: 18px; line-height: 1.25; color: var(--titulo); }
-[data-testid="stLogoSpacer"] { height: auto !important; }
-[data-testid="stSidebarNavLink"] { border-radius: 8px; padding: 8px 12px; gap: 12px; }
+[data-testid="stSidebarNavLink"] { border-radius: 8px; padding: 8px 12px; }
 [data-testid="stSidebarNavLink"] span p { font-size: 14px; font-weight: 500; color: var(--texto-2); }
 [data-testid="stSidebarNavLink"]:hover { background: var(--superficie-2); }
-[data-testid="stSidebarNavLink"][aria-current="page"] { background: var(--agregado); box-shadow: inset 3px 0 0 var(--ouro); }
+[data-testid="stSidebarNavLink"][aria-current="page"] { background: var(--acento-claro); box-shadow: inset 3px 0 0 var(--acento); }
 [data-testid="stSidebarNavLink"][aria-current="page"] span p { color: var(--texto); font-weight: 600; }
-[data-testid="stSidebarNavLink"]::before { content: ""; flex: none; width: 18px; height: 18px; background: var(--mudo);
-  -webkit-mask: var(--icone) center / contain no-repeat; mask: var(--icone) center / contain no-repeat; }
-[data-testid="stSidebarNavLink"][aria-current="page"]::before { background: var(--s1); }
-/* nth-of-type: com as seções do menu (D-077), o cabeçalho da seção (<header>) é o primeiro filho da lista */
-[data-testid="stSidebarNavItems"] li:nth-of-type(1) a { --icone: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M3 11l9-8 9 8'/><path d='M5 10v10h5v-6h4v6h5V10'/></svg>"); }
-[data-testid="stSidebarNavItems"] li:nth-of-type(2) a { --icone: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M3 12h18'/><path d='M7 8v8'/><path d='M17 8v8'/><circle cx='12' cy='12' r='2'/></svg>"); }
-[data-testid="stSidebarNavItems"] li:nth-of-type(3) a { --icone: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z'/><circle cx='12' cy='10' r='2.5'/></svg>"); }
-[data-testid="stSidebarNavItems"] li:nth-of-type(4) a { --icone: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M3 17l6-6 4 4 8-8'/><path d='M15 7h6v6'/></svg>"); }
-[data-testid="stSidebarNavItems"] li:nth-of-type(5) a { --icone: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M12 11v5'/><path d='M12 8h.01'/></svg>"); }
-[data-testid="stSidebarNavItems"] li:nth-of-type(6) a { --icone: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M4 5h16v11H9l-5 4z'/></svg>"); }
-/* seção "Explorar" do menu (D-077): o ícone vai pelo endereço, porque a contagem por posição recomeça em cada seção */
-[data-testid="stSidebarNavItems"] li a[href$="/Explorar"] { --icone: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M4 6h10'/><path d='M18 6h2'/><circle cx='16' cy='6' r='2'/><path d='M4 12h4'/><path d='M12 12h8'/><circle cx='10' cy='12' r='2'/><path d='M4 18h12'/><path d='M20 18h0'/><circle cx='18' cy='18' r='2'/></svg>"); }
