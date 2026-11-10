@@ -989,3 +989,11 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** a IA conferiu só na própria máquina uma saída que muda com o ambiente.
 - **Correção:** `node --test --test-reporter=tap`, o mesmo formato em qualquer ambiente; conferido também com `CI=true` e `FORCE_COLOR=1`. Regra: ao ler a saída de outra ferramenta num teste, fixar o formato por opção, nunca contar com o padrão.
 - **Bom para os slides?** sim (funciona na minha máquina × no CI)
+
+## 2026-11-10 — Painel rodado sobre o banco real e código acrescentado por comando de terminal
+- **Onde:** checagem dos avisos de depreciação das páginas; `src/agent/avaliacao.py`.
+- **O que aconteceu:** (1) para ver se as páginas davam aviso de depreciação, a IA rodou as 6 páginas com o AppTest sem apontar para uma cópia, e o painel abriu o `data/radar.duckdb` real. Ele abre só para leitura (D-034) e o arquivo não mudou (SHA-256 `7f528a8c…` antes e depois), mas a regra pede cópia. (2) As funções da margem de erro foram acrescentadas ao `.py` com `cat >>`, não com a ferramenta de edição. O conteúdo foi conferido logo depois.
+- **Como foi detectado:** pela própria IA, nos dois casos, logo em seguida.
+- **Causa provável:** checagem "rápida" fora dos testes, sem a fixture que aponta a cópia; e tratar acrescentar código como diferente de editar.
+- **Correção:** nada a desfazer (banco intacto; código conferido e coberto por testes). Regras: qualquer execução do painel fora do servidor de demonstração aponta `RADAR_BANCO` para uma cópia ou um caminho inexistente (modo demonstração); acrescentar código também é editar, só com a ferramenta de edição.
+- **Bom para os slides?** não

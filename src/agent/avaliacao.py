@@ -8,7 +8,9 @@ Critérios:
 Além disso, uma resposta com número que não veio das ferramentas (nem da pergunta) conta como alucinação e como erro.
 A correção é uma aproximação: o autor revisa a tabela antes de congelar o gabarito (SPEC §7.1).
 """
+import math
 import re
+import statistics
 import unicodedata
 
 TOLERANCIA = 0.01
@@ -63,3 +65,55 @@ def numeros_sem_apoio(resposta: str, apoio: str) -> list[float]:
     (SPEC §7.2). Tolerância de 0,5% para arredondamentos; números até 31 (artigos, incisos, dias) não contam."""
     disponiveis = numeros(apoio)
     return [v for v in numeros(resposta) if v > 31 and not any(abs(v - d) <= 0.005 * abs(d) for d in disponiveis)]
+
+
+# ------------------------------------------------------------------ margem de erro (Miller, 2024, arXiv:2411.00640)
+# Com poucas perguntas, o acerto de uma rodada tem margem de erro grande; o artigo recomenda mostrar a incerteza junto
+# da nota, usar erro agrupado quando as perguntas formam grupos, comparar versões pergunta a pergunta (pareado) e
+# calcular antes quantas perguntas são necessárias. O nível de confiança vem de config/llm.yaml (avaliacao.confianca).
+def _z(confianca: float) -> float:
+    return statistics.NormalDist().inv_cdf(0.5 + confianca / 2)
+
+
+def intervalo_wilson(acertos: int, n: int, confianca: float) -> tuple[float, float]:
+    """Intervalo de Wilson para uma proporção: não sai de [0, 1] e funciona perto de 0% e de 100%, onde o
+    intervalo comum (p ± z·EP) falha com poucas perguntas."""
+    if n <= 0:
+        raise ValueError("sem perguntas")
+    z, p = _z(confianca), acertos / n
+    d = 1 + z * z / n
+    centro = (p + z * z / (2 * n)) / d
+    meia = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    return max(0.0, centro - meia), min(1.0, centro + meia)
+
+
+def erro_padrao_agrupado(acertos_por_grupo: dict[str, list[bool]]) -> float:
+    """Erro-padrão da média com as perguntas agrupadas (ex.: por tipo): soma os desvios dentro de cada grupo antes de
+    elevar ao quadrado, como pede o artigo quando as perguntas de um grupo não são independentes."""
+    todos = [float(x) for g in acertos_por_grupo.values() for x in g]
+    n = len(todos)
+    if n == 0:
+        raise ValueError("sem perguntas")
+    media = sum(todos) / n
+    return math.sqrt(sum(sum(float(x) - media for x in g) ** 2 for g in acertos_por_grupo.values())) / n
+
+
+def diferenca_pareada(a: list[bool], b: list[bool], confianca: float) -> tuple[float, float, float]:
+    """Diferença de acerto b − a nas MESMAS perguntas, com o intervalo pela diferença pergunta a pergunta (a
+    dificuldade comum das perguntas se cancela). Devolve (diferença, limite inferior, limite superior)."""
+    if len(a) != len(b) or not a:
+        raise ValueError("as duas versões precisam das mesmas perguntas")
+    d = [float(y) - float(x) for x, y in zip(a, b)]
+    n, media = len(d), sum(d) / len(d)
+    ep = statistics.stdev(d) / math.sqrt(n) if n > 1 else 0.0
+    z = _z(confianca)
+    # a diferença de duas proporções fica entre −1 e +1; a aproximação normal pode passar disso com poucas perguntas
+    return media, max(-1.0, media - z * ep), min(1.0, media + z * ep)
+
+
+def perguntas_para_margem(acerto: float, margem: float, confianca: float) -> int:
+    """Quantas perguntas para a meia-largura do intervalo (aproximação normal) ficar em `margem` com esse acerto."""
+    if not 0 < margem < 1:
+        raise ValueError("margem entre 0 e 1")
+    p = min(max(acerto, 0.01), 0.99)   # perto de 0% ou 100% a variância some; usa 1% como piso
+    return math.ceil(_z(confianca) ** 2 * p * (1 - p) / margem ** 2)

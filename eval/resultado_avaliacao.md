@@ -14,8 +14,26 @@ Modelo `gemini-3.8-flash` (Gemini, nível gratuito; reserva `gemini-3.5-flash-li
 | Sem a linha "Fonte" | 4/52 (8%) | 16/52 (31%) | 4/52 (8%) |
 | "Não sei" corretos | 8/9 (89%) | 7/9 (78%) | 8/9 (89%) |
 | Latência média | 3.8 s | 4.0 s | 6.5 s |
+| Acertos, intervalo de 95% | 9% a 30% | 14% a 36% | 87% a 99% |
 
 **Meta cumprida:** (c) acertou 96% (meta 85%); armadilhas com número inventado: nenhuma.
+
+## Margem de erro
+
+Com 52 perguntas, o acerto de uma rodada tem margem de erro grande. Seguindo Miller (2024, "Adding Error Bars to Evals", arXiv:2411.00640): intervalo de Wilson, erro-padrão agrupado por tipo de pergunta (as do mesmo tipo não são independentes) e comparação pareada (as mesmas perguntas nas duas versões). Nível de confiança: 95% (`config/llm.yaml`). Uma rodada só, com temperatura 0: a variação entre rodadas do modelo ainda não está medida.
+
+| Versão | Acerto | Intervalo (Wilson) | Erro-padrão agrupado por tipo |
+|---|---|---|---|
+| (a) sem ferramentas | 17.3% | 9.4% a 29.7% | 9.7 pontos |
+| (b) normas no prompt | 23.1% | 13.7% a 36.1% | 11.4 pontos |
+| (c) com ferramentas | 96.2% | 87.0% a 98.9% | 2.5 pontos |
+
+| Comparação (mesmas perguntas) | Diferença de acerto | Intervalo |
+|---|---|---|
+| (c) com ferramentas − (a) sem ferramentas | +78.8 pontos | +66.4 a +91.3 pontos |
+| (c) com ferramentas − (b) normas no prompt | +73.1 pontos | +59.8 a +86.4 pontos |
+
+Para a margem ficar em ±3 pontos com acerto perto de 96%, seriam cerca de **158 perguntas** (hoje, 52).
 
 ## Acerto por tipo
 
