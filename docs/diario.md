@@ -1250,3 +1250,14 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Decisões:** nenhuma no código; `publicacao.md` §8 ganhou a exceção ("merge que muda o `src/` pede Reboot app"). O autor confirmou as duas escolhas da D-082 ("Confirmo as duas"): o Início com 7 destaques e o mapa em % como seletor.
 - **Limitações encontradas:** a IA não reinicia o app (é a conta do autor no Cloud); os 4 pontos da versão nova (6 indicadores, grade, clique no mapa, mapa em %) ficam para conferir depois do novo reboot.
 - **Próximo passo:** o autor faz o reboot e confirma as duas escolhas da D-082; depois do merge deste PR, a Fase 3, bloco 1 (`plano_fase3.md`).
+
+## 2026-11-10 (6) — Fase 3, bloco 1: configuração por estado
+- **O que foi feito** (pedido do autor: "siga para a Fase 3 [...] começando pelo bloco 1"; branch `fase-3-bloco-1-estados`):
+  - `config/estados.yaml`, uma entrada por UF, com a fonte de cada valor. MG: código IBGE 31, pacote `RAIS_VINC_PUB_MG_ES_RJ.7z` (registro em `data/bronze/rais/2025/original.json`), os 2 apelidos de municípios, normas locais (nenhuma), totais de controle da arrecadação (os mesmos números de antes) e premissas "vigente".
+  - `src/estados_config.py` (o nome evita confusão com `src/estado.py`, das versões de premissas): `ufs()`, `uf_padrao()`, `estado(uf)` (erro claro sem entrada), `cod_ibge`, `pacote_rais`, `apelidos_municipios`, `controle_arrecadacao`.
+  - Coletores sem `"MG"` literal (RAIS, IBGE e os 3 do CNJ; o padrão é a primeira UF do escopo); silver lê os apelidos da UF; `contratos.controle_arrecadacao` (antes `controle_arrecadacao_mg`) roda por UF, com os mesmos textos de checagem para MG; UF com serventias e sem totais gera um aviso.
+  - Saíram `config/apelidos_municipios.yaml`, `cod_uf_ibge` do `escopo.yaml` e `controle_arrecadacao_mg` do `qualidade.yaml` (fica `bi_cnj.arquivo`, nacional).
+- **Conferência:** script no scratchpad monta o silver do bronze num banco em memória (parquet redirecionado para fora do `data/`) e compara com o banco real aberto só para leitura: as 10 tabelas do silver iguais linha a linha (`EXCEPT ALL` nos dois sentidos) e as 53 checagens do silver iguais. Banco real `7f528a8c` antes e depois. Suíte padrão 408 passed (9 testes novos: `tests/test_estados.py` e casos com a UF sintética "ZZ" em `tests/test_contratos.py`); `-m dados_reais -k rais` 3 passed; `ruff` sem erro.
+- **Decisões:** o seletor de estado não entra no bloco 1 (o `ESTADO_ATUAL.md` sugeria; o `plano_fase3.md` o deixa para depois do primeiro estado novo).
+- **Limitações encontradas:** o auto-merge do PR #15 ficou parado com o CI verde e o estado `CLEAN`; o merge manual não foi permitido nesta sessão. A branch do bloco 1 foi montada sobre a branch do #15.
+- **Próximo passo:** PR do bloco 1 depois do merge do #15; depois, o bloco 2 (coluna `uf` no gold e o motor por UF).

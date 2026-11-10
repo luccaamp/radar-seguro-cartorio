@@ -1,7 +1,6 @@
-# UFs processadas pelo pipeline. Fase 1: só MG. Fase 2 expande.
+# UFs processadas pelo pipeline. Hoje só MG; cada UF daqui precisa de uma entrada em config/estados.yaml
+# (código IBGE, pacote da RAIS, apelidos, totais de controle; Fase 3, D-081).
 ufs: [MG]
-cod_uf_ibge:
-  MG: 31
 # exercício cuja média semestral define a classe (art. 16, § 1º, do Prov. 213: "exercício imediatamente anterior"; D-010)
 ano_enquadramento: 2025
 # snapshots do bronze usados pelo pipeline ("do zero" = a partir destes, sem coletar de novo)

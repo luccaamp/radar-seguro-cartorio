@@ -1,0 +1,37 @@
+# Configuração por estado (Fase 3, D-081): tudo o que só vale para uma UF, com a fonte de cada valor.
+# Quais UFs o pipeline processa continua em config/escopo.yaml (`ufs`); cada UF de lá precisa de uma entrada aqui
+# (tests/test_estados.py). Um estado novo deve ser "só dado novo": uma entrada a mais neste arquivo.
+#
+# Campos de cada UF:
+#   nome, cod_ibge          — identificação (IBGE, localidades)
+#   pacote_rais             — arquivo do PDET (FTP da RAIS) que contém os vínculos da UF
+#   apelidos_municipios     — grafias da fonte (sem acento, maiúsculas) → código IBGE de 7 dígitos
+#   normas_locais           — normas da corregedoria estadual que mudam o modelo (lista; vazia = só as nacionais)
+#   controle_arrecadacao    — totais de controle da arrecadação por semestre (F2, D-024); sem eles, o contrato vira aviso
+#   premissas               — de onde vêm as premissas do modelo da UF (MG: a versão vigente; outro estado herda as de
+#                             MG com `fonte: suposição` até a calibração da Fase 6, D-081)
+
+MG:
+  nome: Minas Gerais
+  cod_ibge: 31
+  fonte_cod_ibge: IBGE, API de localidades (servicodados.ibge.gov.br/api/v1/localidades/estados/31), coleta de 2026-10-18
+  pacote_rais: RAIS_VINC_PUB_MG_ES_RJ.7z
+  fonte_pacote_rais: ftp://ftp.mtps.gov.br/pdet/microdados/RAIS/2025/ (registro em data/bronze/rais/2025/original.json, coleta de 2026-10-17)
+  apelidos_municipios:
+    # Conferido pela IA comparando a grafia da fonte com a lista oficial do IBGE (Fase 1, 2026-10-18).
+    BRASOPOLIS: 3108909        # CNPJ (Receita); IBGE: "Brazópolis"
+    AMPARO DA SERRA: 3102506   # CNPJ (Receita); IBGE: "Amparo do Serra"
+  normas_locais: []            # nenhuma norma da CGJ-MG muda o modelo hoje (plano_fase3.md, levantamento de 2026-11-07)
+  controle_arrecadacao:
+    # Universo: as 2.525 serventias ativas do cadastro de MG.
+    silver:   # contrato 1 (erro): a carga não pode cair mais que a tolerância em relação a estes totais
+      fonte: silver.serventia_arrecadacao (versão 1 de cada período), carga de 2026-10-18 a partir de data/bronze/cnj_justica_aberta/2026-10-18/arrecadacoes_MG.jsonl
+      tolerancia_queda: 0.005
+      totais: {"2025-1": 2379639987.32, "2025-2": 3133904766.00}
+    bi:       # contrato 2 (aviso): conferência cruzada com o BI do CNJ (o arquivo, nacional, fica em config/qualidade.yaml)
+      fonte: CNJ, Painel de Dados Estatísticos das Serventias Extrajudiciais (exportação manual em 2026-10-18)
+      data_referencia: 2025-12-31
+      totais: {"2025-1": 2373919679.17, "2025-2": 3067663494.52}
+      tolerancias: {"2025-1": 0.01, "2025-2": 0.03}
+      motivo_tolerancia_2025_2: BI incompleto no 2º sem/2025 (168 CNS de MG ausentes em 18/10/2026)
+  premissas: vigente          # config/premissas/ (versão vigente); calibradas para MG

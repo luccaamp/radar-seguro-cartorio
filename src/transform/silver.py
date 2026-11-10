@@ -14,6 +14,7 @@ import duckdb
 import pandas as pd
 import yaml
 
+from src import estados_config
 from src.ingest.comum import BRONZE, RAIZ, sha256_arquivo
 from src.transform.normalizar import normalizar_nome, para_float_br
 
@@ -171,7 +172,7 @@ def ler_indices(snap: str, fontes: list) -> pd.DataFrame:
 
 def _indice_municipio(municipios: pd.DataFrame, uf: str) -> dict[str, int]:
     idx = dict(zip(municipios["nome_norm"], municipios["cod_ibge"]))
-    idx.update({k: v for k, v in (_yaml("apelidos_municipios.yaml").get(uf) or {}).items()})
+    idx.update(estados_config.apelidos_municipios(uf))   # config/estados.yaml (Fase 3, D-081)
     return idx
 
 

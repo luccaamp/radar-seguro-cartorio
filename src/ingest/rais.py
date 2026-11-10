@@ -17,12 +17,12 @@ from pathlib import Path
 
 import py7zr
 
+from src import estados_config
 from src.ingest.comum import BRONZE, bronze_de, gravar_meta, ler_original, originais, registrar_original
 
 FTP_HOST = "ftp.mtps.gov.br"
-PACOTE_UF = {"MG": "RAIS_VINC_PUB_MG_ES_RJ.7z"}
-COD_UF_IBGE = {"MG": "31"}
 CNAE = "6912500"
+# o pacote da RAIS e o código IBGE de cada UF ficam em config/estados.yaml (Fase 3, D-081)
 
 
 def baixar(ano: str, nome: str) -> Path:
@@ -89,8 +89,9 @@ def filtrar(pacote: Path, uf: str, saida_extrato: Path | None = None, pasta_extr
             i_cnae, i_mun = cab.index("CNAE 2.0 Subclasse - Codigo"), cab.index("Município - Código")
             w = csv.writer(fo, delimiter=";")
             w.writerow(cab)
+            prefixo = str(estados_config.cod_ibge(uf))
             for row in rd:
-                if row[i_cnae].strip() == CNAE and row[i_mun].strip().startswith(COD_UF_IBGE[uf]):
+                if row[i_cnae].strip() == CNAE and row[i_mun].strip().startswith(prefixo):
                     w.writerow([x.strip() for x in row])
         if saida_extrato is None:
             gravar_meta(destino, origem=f"rais/{pacote.parent.name}/{pacote.name}",
@@ -100,5 +101,5 @@ def filtrar(pacote: Path, uf: str, saida_extrato: Path | None = None, pasta_extr
 
 
 if __name__ == "__main__":
-    ano, uf = (sys.argv[1], sys.argv[2]) if len(sys.argv) > 2 else ("2025", "MG")
-    print("filtrado:", filtrar(baixar(ano, PACOTE_UF[uf]), uf))
+    ano, uf = (sys.argv[1], sys.argv[2]) if len(sys.argv) > 2 else ("2025", estados_config.uf_padrao())
+    print("filtrado:", filtrar(baixar(ano, estados_config.pacote_rais(uf)), uf))

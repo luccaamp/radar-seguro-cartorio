@@ -9,6 +9,7 @@ Uso: uv run python -m src.ingest.cnj_serventias MG
 import sys
 import time
 
+from src import estados_config
 from src.ingest.comum import BRONZE, cliente, gravar_meta, hoje, sha256_bytes
 
 URL = "https://justicaabertaapi.cnj.jus.br/v1/api/serventias"
@@ -43,4 +44,4 @@ def coletar(uf: str) -> None:
 
 
 if __name__ == "__main__":
-    coletar(sys.argv[1] if len(sys.argv) > 1 else "MG")
+    coletar(sys.argv[1] if len(sys.argv) > 1 else estados_config.uf_padrao())

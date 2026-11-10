@@ -1,20 +1,25 @@
-"""Contratos de total de controle da arrecadação de MG (F2, D-024). Banco SINTÉTICO em memória."""
+"""Contratos de total de controle da arrecadação por UF (F2, D-024; Fase 3). Banco SINTÉTICO em memória."""
 from pathlib import Path
 
 import duckdb
 import pytest
 import yaml
 
-from src.quality.contratos import controle_arrecadacao_mg, saltos_arrecadacao
+from src import estados_config
+from src.quality.contratos import controle_arrecadacao, saltos_arrecadacao
 
 CONFIG = Path(__file__).resolve().parents[1] / "config"
 
 
-def _banco(fator: float) -> duckdb.DuckDBPyConnection:
-    tot = yaml.safe_load((CONFIG / "qualidade.yaml").read_text(encoding="utf-8"))["controle_arrecadacao_mg"]["silver"]["totais"]
+def controle_arrecadacao_mg(con):
+    return controle_arrecadacao(con, ["MG"])
+
+
+def _banco(fator: float, uf: str = "MG") -> duckdb.DuckDBPyConnection:
+    tot = estados_config.controle_arrecadacao("MG")["silver"]["totais"]
     con = duckdb.connect()
     con.execute("CREATE SCHEMA silver")
-    con.execute("CREATE TABLE silver.serventia AS SELECT 'x' cns, 'MG' uf, 'Ativo' status")
+    con.execute(f"CREATE TABLE silver.serventia AS SELECT 'x' cns, '{uf}' uf, 'Ativo' status")
     con.execute("CREATE TABLE silver.serventia_arrecadacao (cns VARCHAR, ano INT, semestre DOUBLE, versao INT, arrecadacao DOUBLE)")
     for periodo, v in tot.items():
         ano, sem = periodo.split("-")
@@ -33,6 +38,27 @@ def test_conferencia_com_o_bi_e_aviso():
     bi = [x for x in c if "BI do CNJ" in x.checagem]
     assert len(bi) == 2 and all(x.severidade == "aviso" for x in bi)
     assert all(x.violacoes == 0 for x in bi)   # +0,24% (tol. 1%) e +2,16% (tol. 3%)
+
+
+def test_texto_das_checagens_de_mg_nao_mudou():
+    """Fase 3, bloco 1: o resultado com MG é idêntico ao de antes (os nomes vão para qualidade.checagens e o painel)."""
+    nomes = [x.checagem for x in controle_arrecadacao_mg(_banco(1.0))]
+    assert nomes == ["total MG 2025-1 × controle do silver (queda ≤ 0,5%)",
+                     "total MG 2025-2 × controle do silver (queda ≤ 0,5%)",
+                     "total MG 2025-1 × BI do CNJ (±1,0%)", "total MG 2025-2 × BI do CNJ (±3,0%)"]
+
+
+def test_uf_sem_totais_de_controle_vira_aviso(monkeypatch):
+    """UF SINTÉTICA 'ZZ' com serventias no silver e sem controle_arrecadacao: um aviso, nenhum erro."""
+    con = _banco(1.0, "ZZ")
+    monkeypatch.setattr(estados_config, "controle_arrecadacao", lambda uf: None)
+    c = controle_arrecadacao(con, ["ZZ"])
+    assert [(x.severidade, x.violacoes) for x in c] == [("aviso", 1)]
+    assert "ZZ" in c[0].detalhe
+
+
+def test_uf_sem_serventias_no_silver_nao_gera_checagem():
+    assert controle_arrecadacao(_banco(1.0, "MG"), ["SP"]) == []
 
 
 def test_salto_grosseiro_e_aviso_so_no_ano_de_enquadramento():

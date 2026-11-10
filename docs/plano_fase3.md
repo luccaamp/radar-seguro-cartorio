@@ -35,7 +35,7 @@ Tirar do código o que só vale para MG e levar para a configuração por estado
 7. **Painel e chat:** `uf` vira parâmetro com padrão vindo da config (não mais `"MG"` literal); textos com o nome da UF; seletor de estado e visão "Brasil" ficam para depois do primeiro estado novo (itens 3 da Fase 3 e 5 da Fase 4).
 
 ## Ordem de execução (uma branch e um PR por bloco)
-1. `config/estados.yaml` e leitura nos coletores e contratos (sem mudar nenhum resultado).
+1. `config/estados.yaml` e leitura nos coletores e contratos (sem mudar nenhum resultado). **Feito em 2026-11-10** (branch `fase-3-bloco-1-estados`; silver refeito do bronze idêntico ao do banco real; detalhes no `diario.md`).
 2. Coluna `uf` no gold e o motor por UF; conferir na cópia: 33 tabelas com o mesmo conteúdo (fora a coluna `uf` nova) e os 10 números iguais.
 3. Análises por UF; mesma conferência.
 4. Painel e chat sem `"MG"` literal; testes do painel e do chat iguais.
