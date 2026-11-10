@@ -939,7 +939,7 @@ Formato:
 - **Efeito nos 10 números:** nenhum (desenho do painel).
 - **Consequências / onde aparece:** `docs/painel/prototipo_v5.html` (cerca de 2,4 MB, só CNS e município, sem nome de pessoa: D-038) e `docs/painel/alvo_v5.md`. Toda mudança no alvo entra aqui como uma linha nova.
 - **Status:** aprovada.
-- **2026-11-10 (bloco "painel de MG rumo ao V5", lista aprovada pelo autor):** ao aplicar o V5 em MG, duas escolhas da IA, a confirmar pelo autor:
+- **2026-11-10 (bloco "painel de MG rumo ao V5", lista aprovada pelo autor):** ao aplicar o V5 em MG, duas escolhas da IA, **confirmadas pelo autor em 2026-11-10** ("Confirmo as duas"):
   - o Início é o Panorama do V5, com a resposta e os 6 indicadores; o limite de 3 números em destaque por página da D-051 continua nas outras páginas e não vale para o Início (`tests/test_app_demo.py`, `test_limites_da_pagina`);
   - o "mapa da aba Classes em %" entrou como um seletor no mapa de "Onde está o mercado" (déficit em R$, % obrigados, % na Classe 3), sem criar a aba "Os cartórios": a reorganização em abas fica para a Fase 6.
 
