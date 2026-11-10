@@ -1,11 +1,11 @@
 {
  "descricao": "Conjunto público do Radar Seguro-Garantia Cartórios (D-029, D-038, D-048): as tabelas que o painel lê e o resultado do modelo por serventia (identificada pelo CNS e pelo município). Sem dado de pessoa física.",
- "carga": "2026-11-07",
- "executado_em": "2026-11-07T00:24:31",
+ "carga": "2026-11-10",
+ "executado_em": "2026-11-10T10:35:40",
  "versao_premissas": 4,
- "commit": "639dee6b2275a4fe60d8106856c7560e9791c7bf",
- "alteracoes_sem_commit": true,
- "gerado_em": "2026-11-07T01:18:28",
+ "commit": "7df9f06192b508df98f4370fcd62dc2f8d118622",
+ "alteracoes_sem_commit": false,
+ "gerado_em": "2026-11-10T10:39:44",
  "fontes": [
   {
    "fonte": "cnj_arrecadacao",
@@ -102,9 +102,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 851,
-   "sha256_conteudo": "5ae1a5848080278a952d19cfcbd8ba9172a6c3b2910d3dd8e4e15226abfccd7b",
-   "bytes": 31038,
-   "sha256_arquivo": "96033b8638f628e42ce7c8644b6d6e7f0c1156080d035caaee77d66a4fda7993"
+   "sha256_conteudo": "0938ead50476a7cfd869d5d3a0046eb76a37648f03367045d87c2413f33e1419",
+   "bytes": 31209,
+   "sha256_arquivo": "ba476e0ab1d99ef8211152c5c0f40a5bcc7678195edf22331f14b450648c180a"
   },
   {
    "tabela": "gold.mercado_filtro_uf",
@@ -112,9 +112,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 78,
-   "sha256_conteudo": "4a7dacafa43f7867b779a5752a7022e89be9e92151c6c5a856eba2b6f0003d93",
-   "bytes": 14136,
-   "sha256_arquivo": "4ef7dcac686e12c6c068a36d3cb05dd832f57b9c7c8e89f34b8ce47eb75b73b7"
+   "sha256_conteudo": "2f1eea99233520c9d23928c9dedec0cc844e770d8e1c6d4b5a01e191872039f7",
+   "bytes": 14307,
+   "sha256_arquivo": "9855989b1d635ff30b0169c798f496c98497ba1b06ae868a4473bbef9f27f1d3"
   },
   {
    "tabela": "gold.ranking_municipio_publico",
@@ -122,9 +122,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 3404,
-   "sha256_conteudo": "37293a4293217ec58dec4ac82ffbc83cdc63fd69bef211dab2abaa82960e6698",
-   "bytes": 48247,
-   "sha256_arquivo": "29e72021ab106b6fc1c88d1effc391bb810ea17fe78917bb30bfab6c6a80ea9a"
+   "sha256_conteudo": "d5c007cb3651c8bf7aec5903c2f8f465e6708dcac4cb9d615de1f14046cec888",
+   "bytes": 48418,
+   "sha256_arquivo": "620a5433eda91acc00375eaf9fe6131cfabc2a4a571ba1afcc77ab8638ed4360"
   },
   {
    "tabela": "gold.fato_mercado_municipio_publico",
@@ -132,9 +132,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 851,
-   "sha256_conteudo": "a7b132163ac890facb85045ed21b46b307835a8f8ff59293b76f841cf5402f9f",
-   "bytes": 30223,
-   "sha256_arquivo": "1d972a835169268f61a89fe94631908ee49d0a4c6c5726bb8af37c319c4db953"
+   "sha256_conteudo": "9e97f84adeec8f118cdf2a2e715678d83357ec28266698486df0f80f25818019",
+   "bytes": 30394,
+   "sha256_arquivo": "0ae801298dbb81b5c68f2a4af0aee1c071ee0e32a2bc49911be813eb89f00ace"
   },
   {
    "tabela": "gold.dim_municipio",
@@ -142,9 +142,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 853,
-   "sha256_conteudo": "81d373cb8b4ebce7cb97d7925031179e019049d569f1876e82f7810e5c398446",
-   "bytes": 19828,
-   "sha256_arquivo": "d978e9cd739b6cd2327cd52e3f352d52aa22f6a0431ac03561eb15cef963b423"
+   "sha256_conteudo": "a24c77a9d26f49504a8bdc7595886fa8895fcfdbed0fb3ad3618fd4c166c2d24",
+   "bytes": 19999,
+   "sha256_arquivo": "61fd6ce9ac9594527d2af4171d5a7f17bb3c850a5ea80d6fe1e35fb98d3a259b"
   },
   {
    "tabela": "gold.geo_area_municipio",
@@ -152,9 +152,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 851,
-   "sha256_conteudo": "6d1c410987f646e5cdb43652e139792ef10cb7d9daf0b12b9bf5a29b5cc8a210",
-   "bytes": 8494,
-   "sha256_arquivo": "cc5dc6e655d988fb9e70acb2ad36cfae33f2c0f0abef48d75e0d9c9e7a202063"
+   "sha256_conteudo": "31f2146312d65e8b62543485aeec0cb6fb82452b9ffbb56c01a7f21c1dce2a3e",
+   "bytes": 8665,
+   "sha256_arquivo": "805535ae9ea866fde6229a1caae72e4722e9e1fed9eb0d1e89555848c83cf0f6"
   },
   {
    "tabela": "gold.geo_mapa_publico",
@@ -162,9 +162,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 851,
-   "sha256_conteudo": "c8f23247f0e1fbf9e4072014d0bc1223c2afe51734f20992c754f72f9cde753c",
-   "bytes": 216992,
-   "sha256_arquivo": "3fa9f7b17847c699ce3a7218b869d51f597d5d8f681d3846d2f165c106f4c701"
+   "sha256_conteudo": "dfb2c67e22356c2926f0754b8ae87ea167843e683d8d0c46d686f5694702a1c5",
+   "bytes": 217163,
+   "sha256_arquivo": "e2f93c6275e6152988c7d19a704ec441429e5bb6017419442cdb679ce7454231"
   },
   {
    "tabela": "gold.geo_sem_serventia",
@@ -172,9 +172,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 2,
-   "sha256_conteudo": "b5ab64d71a662b7f62245f4982e0a080c2546de5b35c48d704aed8b7e5e36dec",
-   "bytes": 1637,
-   "sha256_arquivo": "ca64f84184b399ce99e17f4a51646d795b9597d58b835483234e4d2bda8d7ac5"
+   "sha256_conteudo": "dccd3f8eb151f0eb58f7b4b22a6ca8adcf3266549febf37489d94b5214924b1a",
+   "bytes": 1736,
+   "sha256_arquivo": "011830dcfb4c036023abb61627945d3719eb2bcd23526fafa95b92b3f09398be"
   },
   {
    "tabela": "gold.execucao",
@@ -184,9 +184,9 @@
     "executado_em"
    ],
    "linhas": 2,
-   "sha256_conteudo": "72d13a00ca20d7fa082910ee8e5ff0c2a8b19f2bc50021e5165f213b089b8f5d",
-   "bytes": 1355,
-   "sha256_arquivo": "7e7720cceb40bca2b0b4ee23317fe750c9a72d0a15668ecfd3f76c4dac6e74d1"
+   "sha256_conteudo": "7101a951d82df33fe18432f8b0d6a35200360dc32c9c42153e3d356e69bb5f05",
+   "bytes": 1454,
+   "sha256_arquivo": "36200119d051b695bb5ca3f6ddc56a9145a2a43529cfaf08c58c27a40fed5220"
   },
   {
    "tabela": "gold.diferenca_regra_classe",
@@ -194,9 +194,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 3,
-   "sha256_conteudo": "45f54197ca280d050b250ff8ecc8bd80e9228752ef109730f8c99108f2fede2f",
-   "bytes": 1601,
-   "sha256_arquivo": "7cb933f7929ebd86fc0f15275125119260cf98c09d0a8eb173d2ba8154211185"
+   "sha256_conteudo": "92921cb7446e705fb74732b29dcfc177b9413d47ca508aca708563bfb25cddbc",
+   "bytes": 1705,
+   "sha256_arquivo": "3f858a69c9fce8e138c9224c01f334fde5aa5dc4526547b2e2016b5c56c65c00"
   },
   {
    "tabela": "gold.sensibilidade_rateio",
@@ -204,9 +204,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 4,
-   "sha256_conteudo": "e0f7fe74e68658c9564cdd300e9c69ac3e8a82c09c16a211bfd102c00b31bbbc",
-   "bytes": 4120,
-   "sha256_arquivo": "0de5d3f1b9b317432c9cb3c4f6ebaf4151f0f5a42f6a5c0e3fa22956981a57a7"
+   "sha256_conteudo": "0bddee2548657c7e96942daa259eee401b3ee979d968fef2743e340ceaa9cea1",
+   "bytes": 4214,
+   "sha256_arquivo": "d93ad362af452b62cbd11a3a30b9708cd6cd009830c165071c7a089cf3fe38f3"
   },
   {
    "tabela": "gold.sensibilidade_premissas",
@@ -214,9 +214,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 6,
-   "sha256_conteudo": "dab1b21c925c88515f3867898c9bb07ab2cd048bcf527e931f1f88e7cb1818b7",
-   "bytes": 5513,
-   "sha256_arquivo": "2e43f5044d63a3cb9efde3b203953afc265396ca7b1b5cd7c67cb57e04026a7e"
+   "sha256_conteudo": "abb549a8f98b461d592572454239c5dd629f63253b419a311fc732211d37d4f7",
+   "bytes": 5679,
+   "sha256_arquivo": "b42e52ca428da939c0dc6f20dae3f81de21aac189e7b903083faf6fe9567c012"
   },
   {
    "tabela": "gold.simulador_variantes",
@@ -224,9 +224,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 80,
-   "sha256_conteudo": "8d9a104943644a49938278aad92c3c5d7f3c6a38e391e0fa57b24d682d7753db",
-   "bytes": 4991,
-   "sha256_arquivo": "457d3f9d8e7f6faa85b8530d3321ab86eb9c4eb027d3940e112b9755bc587c67"
+   "sha256_conteudo": "7e9af4cf021170572d995caf4a38639d042861d22041fb732da079b1aec7799c",
+   "bytes": 5161,
+   "sha256_arquivo": "ad6d122e602af005ee046087f57944989b7c8b7006a8a0d1f695a50f83032a97"
   },
   {
    "tabela": "gold.simulador_base_classe",
@@ -234,9 +234,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 160,
-   "sha256_conteudo": "cf91d4a02ed59474184edfd79f96223aecbd7e96d1fa73a998780eba851227d3",
-   "bytes": 2922,
-   "sha256_arquivo": "6e06f609cbc3db523fc5551d539186b7fb599ef31e312951eccdd5905a3a045d"
+   "sha256_conteudo": "d1587a7bfb1ede1caf2e3dabf3b71752072e12ced04e6b539109fbf5e64e5ac2",
+   "bytes": 3092,
+   "sha256_arquivo": "78efb4f69aea49cb17e4e4fac133b3c9bcb6d07fb93213b85160fda6c28a8766"
   },
   {
    "tabela": "silver.fonte_metadados",
@@ -316,9 +316,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 2525,
-   "sha256_conteudo": "53adae06a672d2d1fe863355da248be4eec79cda479b87e8f3c0444aa9bd1078",
-   "bytes": 121069,
-   "sha256_arquivo": "f8f6b4d3360c9409966519630392aa3737d442a60011df7c999fa92962358e36"
+   "sha256_conteudo": "503569221dffa6037c45cc4514b2127325e1f5af80fba6beac6f6fdaab18e22e",
+   "bytes": 121065,
+   "sha256_arquivo": "716110301db6670677f8c6305cf69671f763693ef2f3b5f9f043385680087970"
   },
   {
    "tabela": "gold.analise_grupos",
@@ -326,9 +326,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 2444,
-   "sha256_conteudo": "0f1b5bf23ac33418edcfcf9d96b6d33e792226475d43c9efd6685879082f0e9f",
-   "bytes": 16604,
-   "sha256_arquivo": "70ebe9e9fdb5648ee13cac643d0647dd842390b4d0e4faec39ddaf44991b9650"
+   "sha256_conteudo": "d1169ebdf795df4fcb9cbcce0082c7e6c7d3f79e4addb0a654f7042da1b929d1",
+   "bytes": 16775,
+   "sha256_arquivo": "ba2b5a61085a21ad1bd3897bec53285fb5270af1937622e963fb6ac3c14c7d01"
   },
   {
    "tabela": "gold.analise_clt_modelo",
@@ -336,9 +336,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 2444,
-   "sha256_conteudo": "8e6fbcf09e203ea42791d58172bb26f1aeaf8e1651aae7f85afe4912e77a4521",
-   "bytes": 104003,
-   "sha256_arquivo": "af5d4f1e3c85f6335c13ab79f0aaf8aaba14c8a1b4038f44d6088ff1546c5949"
+   "sha256_conteudo": "f310ed643f4b851f260116088c41216080b3ea17c6532f38a5204c8e9cb113c0",
+   "bytes": 104174,
+   "sha256_arquivo": "644344427b838ed939d6f45f524722ff251e36f6f0867c8465721345c9915b63"
   },
   {
    "tabela": "gold.analise_regras",
@@ -346,9 +346,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 10,
-   "sha256_conteudo": "4e3cc809f7bd9dfb5d212b5f6ed38a37fe0c26104bec8360dea00bb5440385f7",
-   "bytes": 2930,
-   "sha256_arquivo": "bebfff7344177dfbf4beec5c10113b44912aacd64b335aa85f474fbea69200e1"
+   "sha256_conteudo": "df8820f7a689cfe22f100b8f872ed5e29131825cf1a6b033e07deac71aed9f69",
+   "bytes": 3097,
+   "sha256_arquivo": "ed2eb516e6f68c2823af35a53a821b1c0748bf75894f4186b5e8b08f0fd03716"
   },
   {
    "tabela": "gold.analise_grupos_perfil",
@@ -356,9 +356,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 6,
-   "sha256_conteudo": "52384a98dd6ae0a11f13273873d3f7113fc925307b14cc69c169fe0ba2b40c5f",
-   "bytes": 4455,
-   "sha256_arquivo": "234a3b3bc56b31bbbd01df902ea3e804cf56ac5aa512f98cf8f9cad4b9cebb4b"
+   "sha256_conteudo": "cd184bb84d14d38b8f9c9c1a9f9dadc3433ed50976c12caffc61d9b0e4a60d88",
+   "bytes": 4621,
+   "sha256_arquivo": "fb891838c66ddf75781738c5ec82f428d73e2c39f6540478e75e6c1bdf9a2614"
   },
   {
    "tabela": "gold.analise_previsao",
@@ -366,9 +366,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 147,
-   "sha256_conteudo": "bb16eb8b555a81df02d6e8b424a0784bb710b6d7a40d9132cc4a4c7aba75f927",
-   "bytes": 5530,
-   "sha256_arquivo": "24ac08608134690e8d5d137f02a68c0339e9cd8499a43f02bc9878d885d79c9b"
+   "sha256_conteudo": "a9f7953d6842dbe9839d6556e2acc1e522abd469a041dc996a18d3b0033fded6",
+   "bytes": 5701,
+   "sha256_arquivo": "05cf69feb7f05e6c1b186b79fa6a183deae9bdbe436df8494f81c8787dd4fae0"
   },
   {
    "tabela": "gold.analise_tornado",
@@ -376,9 +376,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 11,
-   "sha256_conteudo": "04c5cedf8566f85d915d7f0f40114d567590d79ce7438ce5ee412dcb58fd2792",
-   "bytes": 2774,
-   "sha256_arquivo": "fa2e9c28c8b133a9a1749cf47489a9cb77ef79bcca0f6d2600ffe3010f2977e3"
+   "sha256_conteudo": "ecf97544ae4f42db6032eaa18edb448f85777a683340fc2a25fd52209c835fb8",
+   "bytes": 2940,
+   "sha256_arquivo": "4f86a02d633e15660041bbfc458e252b032bb7d507db6ffd598704f41c31890b"
   },
   {
    "tabela": "gold.analise_monte_carlo",
@@ -386,9 +386,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 6,
-   "sha256_conteudo": "52edd6b5f2551ce2e0f6a68da33f6af8ad42ec75732458d291902b53bbc45f9f",
-   "bytes": 2623,
-   "sha256_arquivo": "3ac590e61af65b4b5b3a20a917b2c4b9cd03cb13cda768406d2a99ba2ac4705c"
+   "sha256_conteudo": "9a0be417bf4be73f7694c50e5c034ead6d4dad9b2e56a310091495eac1ab4600",
+   "bytes": 2791,
+   "sha256_arquivo": "5fe349a8ee1bf771c1ae771d272693edfd5dea6a7ded1619da8a4012aea1f41e"
   },
   {
    "tabela": "gold.analise_sensibilidade_metodo",
@@ -396,9 +396,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 6,
-   "sha256_conteudo": "3b538c8ce164e20c9265761b9e30f51f04a99d3b4c36992f746a5b16b56099db",
-   "bytes": 3653,
-   "sha256_arquivo": "2a413a7b47b196f1125d45e9254061abc859c7395bd441fb539aabb80ad94911"
+   "sha256_conteudo": "50c5122207f5efd1ec57f9125a311d7d941060d13578200591790a024d30aae3",
+   "bytes": 3819,
+   "sha256_arquivo": "f9a13383215f7ab5f6fd05426808bf8c7b115ae0d574121cf0fe5726a42c4a59"
   },
   {
    "tabela": "gold.analise_capacidade_faixas",
@@ -406,9 +406,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 5,
-   "sha256_conteudo": "4323b5fb677ac781627156fe2a54d7d85b327f784bfd2d3bf329c24d272d88c6",
-   "bytes": 1322,
-   "sha256_arquivo": "7d4f3681591dd9c61e1a9325fa22719ec84168c218ae181d9745d409c17836ae"
+   "sha256_conteudo": "c578400fb2dc7e9c5e8e75b8493cdf0b234b7885a4404897d8774944a03c267f",
+   "bytes": 1488,
+   "sha256_arquivo": "bdb4f225a5988b464eb5692b518fb0c546ae163da93829f3b854e531065f4ecf"
   },
   {
    "tabela": "gold.analise_capacidade_calibracao",
@@ -416,9 +416,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 9,
-   "sha256_conteudo": "2cf89d8f45437924a0d392b127f700fdfd2fc7315eda207fb6692fc8790558ca",
-   "bytes": 2179,
-   "sha256_arquivo": "e390757ff31b33aabe8c10eb1ebb428f8da245fe04e43ac0f8e2f2e106af29d2"
+   "sha256_conteudo": "069b00d16780eeacba255ccad2de486288ff28c66391530c7a3b789d34901be2",
+   "bytes": 2346,
+   "sha256_arquivo": "abe2e2cc22d09d19915112266bbecf538139f121e07aa825700397f146909acf"
   },
   {
    "tabela": "gold.analise_sinistro",
@@ -426,9 +426,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 6,
-   "sha256_conteudo": "83748d0b9ab97f4ba63896510ec86b243760d12fb0b231ddb893c4abdf838fb0",
-   "bytes": 2435,
-   "sha256_arquivo": "aed731e84d2398490833ec0ee3dec625bb2458d98d797ce895f3ddf117e8b60c"
+   "sha256_conteudo": "74313cca58d40993b29109f4d0841a1d5f1236600fee67e60e2d8b928fd8a440",
+   "bytes": 2601,
+   "sha256_arquivo": "713ab5461fa2c480bd7a78b678debb116dc6e47db7a17f42aefe0632822e8746"
   },
   {
    "tabela": "gold.analise_premio_cenarios",
@@ -436,9 +436,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 3,
-   "sha256_conteudo": "4d3f219f4e5730dcc9f5f5fa2cd340b9153ef7f7fca84cd380b2e93658cb2cd9",
-   "bytes": 2189,
-   "sha256_arquivo": "be9702b3da601462cf9bc6419ef6e504e9b7b11b3c1775408363d52935c234ea"
+   "sha256_conteudo": "bddd51a35e9a3d24c3e7588d224bdf698ea9fe7d30a88627208cbdf167cf95c9",
+   "bytes": 2292,
+   "sha256_arquivo": "17449cad5b9399b666cad40aa1720c6aa20b0a6ded40af2696c5762281700ed0"
   },
   {
    "tabela": "gold.analise_premio_grade",
@@ -446,9 +446,9 @@
    "comparar": true,
    "sem_hash": [],
    "linhas": 9,
-   "sha256_conteudo": "acfe5de9c8d8480d52e7a20ccb4b00f8680bbbf5dce701376d73a7a436e6044f",
-   "bytes": 553,
-   "sha256_arquivo": "6cc5a75e4f4131209686577e914376f4d55654e60f714fe9159fdcd24ddcd70a"
+   "sha256_conteudo": "eed4256cc95a29e9fb96add6a7e1cde0a166efcd7fa38e31f29aea1ecfdacd0c",
+   "bytes": 720,
+   "sha256_arquivo": "a303c8642e7f5adfa0b60b0a0f05e63b2eff7bfa60e7f92deae73d50ebba8d7f"
   }
  ]
 }

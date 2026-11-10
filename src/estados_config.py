@@ -46,6 +46,13 @@ def apelidos_municipios(uf: str) -> dict[str, int]:
     return dict(estado(uf).get("apelidos_municipios") or {})
 
 
+def premissas_da_uf(uf: str, semente_vigente: dict) -> tuple[dict, bool]:
+    """Semente de premissas do modelo da UF e se ela é herdada. `premissas: vigente` usa a versão vigente (MG,
+    calibrada); qualquer outro valor (ou a falta dele) herda a mesma semente, como `fonte: suposição`, até a
+    calibração da Fase 6 (D-081). Devolve (semente, herdada)."""
+    return semente_vigente, estado(uf).get("premissas", "herdada") != "vigente"
+
+
 def controle_arrecadacao(uf: str) -> dict | None:
     """Totais de controle da arrecadação da UF (F2, D-024), ou None se a UF ainda não tem."""
     return estado(uf).get("controle_arrecadacao")

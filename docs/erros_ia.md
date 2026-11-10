@@ -1013,3 +1013,11 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** o recarregamento automático do Streamlit só olha a pasta do script principal (`app/`); a IA tratou "o Cloud puxa o git" como "o processo roda o código novo inteiro", sem conferir no link depois do merge.
 - **Correção:** `publicacao.md` §8 com a exceção (merge que muda o `src/` pede "Reboot app"); o autor reinicia o app. Regra: depois de todo merge que muda o `src/`, conferir o link público antes de dar o bloco como publicado.
 - **Bom para os slides?** sim (o que roda em produção pode não ser o que está no git)
+
+## 2026-11-10 — PR do bloco 2 aberto sem prever o teste do conjunto público
+- **Onde:** Fase 3, bloco 2 (PR #17).
+- **O que aconteceu:** a IA disse que o painel "continua funcionando" sem a carga e abriu o PR do bloco 2 com a coluna `uf` nova no gold. O job "Dados reais" falhou em `test_a_partir_do_silver_parquet_reproduz_o_conjunto_publico`, que compara o gold recalculado com o hash do `data/publico` versionado: mudar o esquema do gold exige regerar o conjunto público na mesma mudança.
+- **Como foi detectado:** pelo CI do PR #17.
+- **Causa provável:** a conferência local comparou o gold com o banco real, mas não rodou os testes de dados reais que comparam com o conjunto público; a IA tratou "conteúdo igual" como suficiente, quando o teste compara o esquema também.
+- **Correção:** a carga oficial (já pedida pelo autor para depois do bloco 3) entrou no mesmo PR, com o conjunto público e o completo regerados. Regra: mudança de esquema no gold vai no mesmo PR que a carga e o `data/publico` novos; antes do PR, rodar `-m dados_reais tests/test_pipeline.py tests/test_publico.py` numa cópia.
+- **Bom para os slides?** não

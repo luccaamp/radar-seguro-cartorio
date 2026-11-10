@@ -88,7 +88,7 @@ def test_grupos_perfil_so_agregado(monkeypatch):
                        "n_atribuicoes": [1, 1, 2, 2, 1, 1], "situacao": ["vaga", "provida"] * 3,
                        "peso_universo": [0, 1, 0, 1, 1, 1.0], "passivo": [10.0] * 6, "n_deficit": [0, 0.5] * 3,
                        "valor_descoberto": [0, 2.0] * 3, **{a: [True, False] * 3 for a in ATRIBUICOES}})
-    monkeypatch.setattr(tabelas.dados, "serventias", lambda con: sv)
+    monkeypatch.setattr(tabelas.dados, "serventias", lambda con, **kw: sv)
     tab = pd.DataFrame({"cns": list("abcdef"), "grupo": [1, 1, 2, 2, 2, 2], "nome_grupo": ["x", "x"] + ["y"] * 4,
                         "grupo_alvo": [False, False] + [True] * 4})
     p = tabelas.grupos_perfil(None, tab).set_index("grupo")

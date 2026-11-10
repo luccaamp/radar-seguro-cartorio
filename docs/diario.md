@@ -1261,3 +1261,34 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Decisões:** o seletor de estado não entra no bloco 1 (o `ESTADO_ATUAL.md` sugeria; o `plano_fase3.md` o deixa para depois do primeiro estado novo).
 - **Limitações encontradas:** o auto-merge do PR #15 ficou parado com o CI verde e o estado `CLEAN`; o merge manual não foi permitido nesta sessão. A branch do bloco 1 foi montada sobre a branch do #15.
 - **Próximo passo:** PR do bloco 1 depois do merge do #15; depois, o bloco 2 (coluna `uf` no gold e o motor por UF).
+
+## 2026-11-10 (7) — Fase 3, bloco 2: coluna `uf` no gold e o motor por UF
+- **O que foi feito** (pedido do autor: "seguir com o projeto e as fases"; branch `fase-3-bloco-2-gold-uf`, a partir da `main` com o bloco 1, PR #16):
+  - `gold.construir` agora percorre as UFs do escopo; o corpo antigo virou `_construir_uf`, que devolve as tabelas de uma UF (sem gravar), e `construir` junta as UFs, põe a coluna `uf` na frente (`_com_uf`) e grava. `construir_visoes_mercado` e `construir_simulador` passaram a devolver DataFrames.
+  - `insumos_da_uf`: serventias e vínculos da RAIS da UF; a UF do vínculo vem de `silver.municipio_ibge` (o silver não muda). A RAIS continua lida na mesma ordem (ordenar por `id_vinculo` poderia mudar as somas nos últimos dígitos); a arrecadação da UF é filtrada em pandas, também sem mudar a ordem.
+  - "Reserva da distribuição = MG inteiro" vira "= {UF} inteiro"; a malha vem por UF (`malha_do_silver(con, uf)`); `geo_sem_serventia` numera "SEM-n" dentro da UF.
+  - `estados_config.premissas_da_uf`: MG usa a versão vigente; outra UF herda a mesma semente (D-081), marcada como herdada.
+- **Conferência:** `scratchpad/conferir_bloco2.py` copia o banco, roda `pipeline.etapa_gold(exportar_parquet=False)` e `etapa_analise` na cópia e compara cada tabela com o banco real (ATTACH READ_ONLY), pelas colunas do real (`EXCEPT ALL` nos dois sentidos; `executado_em` fora). As 33 tabelas iguais; colunas novas só `uf` (16 tabelas; outras 4 já tinham); `fato_mercado_uf` idêntica (os 10 números). Checagens do gold: as 56 iguais; a cópia tem 25 a mais ("sem CPF" e "sem colunas de dados pessoais" das `analise_*` antigas, que já estavam no banco copiado), todas 0. Banco real `7f528a8c` antes e depois. Suíte padrão 411 passed; `ruff` sem erro.
+- **Erros no caminho:** a variável `uf` reaproveitada para um DataFrame dentro da função (diferença v2 × v1) quebrou a malha por UF; achado na primeira rodada e renomeado (`tot`).
+- **Decisões:** `pct_mg` mantém o nome (bloco 4, painel e chat); as `analise_*` sem `uf` até o bloco 3.
+- **Limitações encontradas:** o `data/publico` e o `data/completo` só ganham a coluna com uma carga oficial (pedido do autor).
+- **Próximo passo:** PR do bloco 2; bloco 3 (análises por UF).
+
+## 2026-11-10 (8) — Fase 3, bloco 3: análises por UF
+- **O que foi feito** (o autor pediu a carga oficial "depois do bloco 3"; branch `fase-3-bloco-3-analises-uf`):
+  - `src/analise/tabelas.py`: cada função das `gold.analise_*` recebe a UF (padrão: a primeira do escopo) e usa só os dados dela: serventias e série de arrecadação da UF (filtro novo e opcional em `dados.serventias` e `dados.serie_arrecadacao`), insumos da UF (`insumos_da_uf`, do bloco 2), peso da classe indeterminada da UF em `gold.execucao`, premissas da UF (`premissas_da_uf`) e a linha "sem região" da UF em `gold.sensibilidade_premissas`. `construir` percorre as UFs com serventias no gold (`construir_uf`) e põe a coluna `uf` na frente (`_com_uf`).
+  - Previsão: a série e o "fator" de crescimento passam a ser os da UF (com MG, os mesmos).
+- **Conferência:** o mesmo script do bloco 2, numa cópia nova: as 33 tabelas do gold iguais linha a linha às do banco real, fora a coluna `uf` (agora nas 33); os 10 números iguais. Banco real `7f528a8c` antes e depois. Suíte padrão 411 passed; `ruff` sem erro.
+- **Erros no caminho:** 2 testes falharam na primeira rodada: uma tabela sintética de `tests/test_analise.py` sem a coluna `uf` e um dublê de `tests/test_analise_tabelas.py` que não aceitava o argumento novo. Os dois ajustados (o primeiro ganhou um caso do filtro por UF).
+- **Decisões:** as colunas `pct_obrigadas_mg` e `pct_passivo_obrigadas_mg` mantêm o nome até o bloco 4; os leitores de `gold.execucao` fora das análises ficam para o bloco 4.
+- **Próximo passo:** PR do bloco 3 depois do merge do #17; a carga oficial (pedido do autor), com o conjunto público e o completo regerados com a coluna `uf`; depois, o bloco 4.
+
+## 2026-11-10 (9) — Carga oficial com a coluna `uf`; blocos 2 e 3 num PR só
+- **O que foi feito:** o "Dados reais" do PR #17 (bloco 2) falhou em `test_a_partir_do_silver_parquet_reproduz_o_conjunto_publico`: o gold recalculado tem a coluna `uf`, e o `data/publico` versionado não (o hash de conteúdo muda). Os outros 42 testes de dados reais passaram. Como o autor tinha pedido a carga "depois do bloco 3", o bloco 3 entrou na mesma branch (`fase-3-bloco-2-gold-uf`) e a carga foi feita nela:
+  - backup em `C:\radar_arquivo\antes_carga_2026-11-10_fase3\` (banco `7f528a8c…`, silver, gold, público, completo);
+  - `uv run pipeline.py --a-partir-de silver`, sem erro (log `C:\radar_arquivo\carga_2026-11-10_fase3.log`); banco novo `923b539f…`;
+  - comparação com o backup (as duas cópias só leitura): 50 tabelas iguais, fora a coluna `uf` em 29 do gold; o `estado.log_decisoes` com 5 linhas a mais (o espelho do `decisoes.md`);
+  - `scripts/gerar_publico.py` (36 arquivos, 0,76 MB, contrato "sem dado pessoal" ok) e `scripts/exportar_completo.py` (10 tabelas do silver, 33 do gold, CSV do BI).
+- **Conferência:** suíte padrão 411 passed com o conjunto novo; `ruff` sem erro; `-m dados_reais` de `tests/test_pipeline.py` e `tests/test_publico.py`: 3 passed (inclusive o que falhou no CI), banco real `923b539f` antes e depois.
+- **Decisões:** blocos 2 e 3 num PR só (o #17), porque o CI só passa com o conjunto público regerado, e a carga foi pedida para depois do bloco 3.
+- **Próximo passo:** o PR #17 com os três; depois, o bloco 4.

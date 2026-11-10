@@ -13,7 +13,7 @@ import duckdb
 import pandas as pd
 import yaml
 
-from src import estado
+from src import estado, estados_config
 from src.model.distribuicao import fator_correcao_inpc
 from src.model import simulador
 from src.model.cenario import aplicar_cenario_stf
@@ -45,8 +45,23 @@ def carregar_insumos(con) -> Insumos:
     serv["clt"] = serv["clt"].astype("float")
     fator, mes = fator_correcao_inpc(con.sql("SELECT * FROM silver.indice_preco").df(), 202512)
     regioes = dict(con.execute("SELECT cod_ibge, regiao_imediata FROM silver.municipio_ibge").fetchall())
-    return Insumos(rais=con.sql("SELECT * FROM silver.rais_vinculo").df(), serventias=serv, fator_inpc=fator,
-                   mes_inpc=mes, regioes=regioes)
+    # a UF do vínculo vem do município (silver.municipio_ibge); o silver da RAIS não tem a coluna (Fase 3)
+    rais = con.sql("SELECT * FROM silver.rais_vinculo").df()   # mesma ordem de antes (as somas não mudam)
+    rais["uf"] = rais["cod_ibge"].map(dict(con.execute("SELECT cod_ibge, uf FROM silver.municipio_ibge").fetchall()))
+    return Insumos(rais=rais, serventias=serv, fator_inpc=fator, mes_inpc=mes, regioes=regioes)
+
+
+def insumos_da_uf(ins: Insumos, uf: str) -> Insumos:
+    """Os insumos de uma UF só (Fase 3): as serventias e os vínculos da RAIS da UF. A reserva da distribuição salarial
+    passa a ser a UF inteira (antes, "MG inteiro"; D-022)."""
+    return Insumos(rais=ins.rais[ins.rais["uf"] == uf].reset_index(drop=True),
+                   serventias=ins.serventias[ins.serventias["uf"] == uf].reset_index(drop=True),
+                   fator_inpc=ins.fator_inpc, mes_inpc=ins.mes_inpc, regioes=ins.regioes)
+
+
+def _com_uf(df: pd.DataFrame, uf: str) -> pd.DataFrame:
+    """A coluna `uf` na frente (Fase 3); se a tabela já tem, só a move para a frente."""
+    return df.drop(columns=["uf"], errors="ignore").assign(uf=uf)[["uf", *[c for c in df.columns if c != "uf"]]]
 
 
 _EXPORTAR_PARQUET = True   # definido por construir(); os testes refazem o gold sem tocar em data/gold
@@ -93,10 +108,11 @@ def _metricas(df: pd.DataFrame) -> dict:
             "valor_descoberto": float(df["valor_descoberto"].sum())}
 
 
-def construir_visoes_mercado(con, interno: pd.DataFrame, reg: pd.DataFrame, areas: pd.DataFrame,
-                             regra_base: str, ps: dict, cenarios: dict) -> dict[str, int]:
-    """Tabelas públicas do Mercado: visão geral por município (mapa), totais estaduais por filtro e ranking de todos
-    os municípios com serventia. Sem limiar nem supressão desde a D-078 (D-038, fase 2). O painel não lê interno_*."""
+def construir_visoes_mercado(interno: pd.DataFrame, reg: pd.DataFrame, areas: pd.DataFrame,
+                             regra_base: str, ps: dict, cenarios: dict) -> dict[str, pd.DataFrame]:
+    """Tabelas públicas do Mercado de UMA UF: visão geral por município (mapa), totais estaduais por filtro e ranking
+    de todos os municípios com serventia da UF. Sem limiar nem supressão desde a D-078 (D-038, fase 2). O painel não
+    lê interno_*. Devolve as tabelas (quem grava é construir)."""
     por_rn = {(r, n): g.drop(columns=["nivel", "regra_classe"]) for (n, r), g in interno.groupby(["nivel", "regra_classe"])}
     base = por_rn[(regra_base, "base")]
     ag = base[["cns", "cod_ibge"]].merge(areas[["cod_ibge", "area_id"]], on="cod_ibge")[["cns", "area_id"]]
@@ -106,7 +122,7 @@ def construir_visoes_mercado(con, interno: pd.DataFrame, reg: pd.DataFrame, area
     info = areas.groupby("area_id").agg(area_nome=("area_nome", "first"), tipo=("tipo", "first"),
                                         n_municipios=("cod_ibge", "size")).reset_index()
     geral = [{"area_id": a, **_metricas(g)} for a, g in base.merge(ag, on="cns").groupby("area_id")]
-    cont["mercado_area_publico"] = _gravar(con, "mercado_area_publico", info.merge(pd.DataFrame(geral), on="area_id"))
+    cont["mercado_area_publico"] = info.merge(pd.DataFrame(geral), on="area_id")
 
     # totais estaduais de cada filtro (chat): todas as combinações regra × nível
     uf = []
@@ -115,9 +131,10 @@ def construir_visoes_mercado(con, interno: pd.DataFrame, reg: pd.DataFrame, area
             sub = df[visoes.mascara(df, filtro, valor)]
             uf.append({"visao": visao, "filtro": filtro, "valor": valor, "regra_classe": r, "nivel": n,
                        **resumo_mercado(sub, ps[(r, n)], cenarios, "mantem")})
-    cont["mercado_filtro_uf"] = _gravar(con, "mercado_filtro_uf", pd.DataFrame(uf))
+    cont["mercado_filtro_uf"] = pd.DataFrame(uf)
 
-    # posição de cada município com serventia no ranking estadual (U1), inclusive os de 1 ou 2 serventias
+    # posição de cada município com serventia no ranking estadual (U1), inclusive os de 1 ou 2 serventias.
+    # A coluna pct_mg é a parte do município no total da UF (o nome fica até o bloco 4 da Fase 3, painel e chat)
     todos_mun = pd.DataFrame([{"cod_ibge": c, **_metricas(g)} for c, g in base.groupby("cod_ibge")])
     rk = []
     for met in ("valor_descoberto", "passivo", "n_serventias", "clt"):
@@ -127,17 +144,17 @@ def construir_visoes_mercado(con, interno: pd.DataFrame, reg: pd.DataFrame, area
                                 "posicao": pos, "n_municipios": len(todos_mun),
                                 "pct_mg": todos_mun[met] / total if total else 0.0}))
     rk = pd.concat(rk, ignore_index=True).merge(reg[["cod_ibge", "nome"]], on="cod_ibge")
-    cont["ranking_municipio_publico"] = _gravar(con, "ranking_municipio_publico", rk.rename(columns={"nome": "municipio"}))
+    cont["ranking_municipio_publico"] = rk.rename(columns={"nome": "municipio"})
     return cont
 
 
-def construir_simulador(con, ins: Insumos, semente: dict, regras: dict, execucao: list[dict],
-                        lim_base: dict) -> dict[str, int]:
-    """Tabelas públicas do Simulador no modo demonstração (D-029):
+def construir_simulador(ins: Insumos, semente: dict, regras: dict, execucao: list[dict],
+                        lim_base: dict) -> dict[str, pd.DataFrame]:
+    """Tabelas públicas do Simulador no modo demonstração (D-029), de UMA UF:
     - gold.simulador_variantes: uma linha por variante (regra × método de rateio × uma premissa do passivo por vez,
-      pontos em config/simulador_demo.yaml), com os totais de MG que não dependem das premissas de seguro;
+      pontos em config/simulador_demo.yaml), com os totais da UF que não dependem das premissas de seguro;
     - gold.simulador_base_classe: por variante e faixa de déficit (classe_2, classe_3), os totais A_f e B_f de
-      src/model/simulador.py. Só totais de MG."""
+      src/model/simulador.py. Só totais da UF."""
     pontos = yaml.safe_load((CONFIG / "simulador_demo.yaml").read_text(encoding="utf-8"))["pontos"]
     peso_regra = {x["regra_classe"]: x["peso_classe_indeterminada_base"] for x in execucao}
     p_padrao = premissas_nivel(semente, "base", peso_regra[REGRAS[0]])
@@ -157,8 +174,7 @@ def construir_simulador(con, ins: Insumos, semente: dict, regras: dict, execucao
                 for f in simulador.FAIXAS:
                     faixas.append({"variante_id": vid, "faixa": f, "peso_com_passivo": t[f"peso_com_passivo_{f}"],
                                    "passivo_ponderado": t[f"passivo_ponderado_{f}"]})
-    return {"simulador_variantes": _gravar(con, "simulador_variantes", pd.DataFrame(variantes)),
-            "simulador_base_classe": _gravar(con, "simulador_base_classe", pd.DataFrame(faixas))}
+    return {"simulador_variantes": pd.DataFrame(variantes), "simulador_base_classe": pd.DataFrame(faixas)}
 
 
 def construir(con: duckdb.DuckDBPyConnection, exportar_parquet: bool = True) -> dict[str, int]:
@@ -175,8 +191,35 @@ def construir(con: duckdb.DuckDBPyConnection, exportar_parquet: bool = True) -> 
     regras = yaml.safe_load((CONFIG / "regras_classificacao.yaml").read_text(encoding="utf-8"))
     cenarios = yaml.safe_load((CONFIG / "cenarios_stf.yaml").read_text(encoding="utf-8"))
     ins = carregar_insumos(con)
-    mun = con.sql("SELECT cod_ibge, nome AS municipio, mesorregiao, populacao FROM silver.municipio_ibge").df()
+    mun = con.sql("SELECT uf, cod_ibge, nome AS municipio, mesorregiao, populacao FROM silver.municipio_ibge").df()
+    mun_reg = con.sql("SELECT uf, cod_ibge, nome AS municipio, regiao_imediata, regiao_intermediaria "
+                      "FROM silver.municipio_ibge").df()
+    executado_em = dt.datetime.now().replace(microsecond=0)
 
+    # Fase 3 (D-081): o motor roda por UF do escopo, cada uma com as suas serventias, a sua RAIS e as suas premissas;
+    # cada tabela ganha a coluna `uf`. Com ufs: [MG], o conteúdo é o de antes (fora a coluna nova).
+    partes: dict[str, list[pd.DataFrame]] = {}
+    for uf in estados_config.ufs():
+        if not (ins.serventias["uf"] == uf).any():
+            continue
+        semente_uf, _herdada = estados_config.premissas_da_uf(uf, semente)
+        tabelas = _construir_uf(con, uf, insumos_da_uf(ins, uf), semente_uf, regras, cenarios,
+                                mun[mun["uf"] == uf].drop(columns="uf").reset_index(drop=True),
+                                mun_reg[mun_reg["uf"] == uf].drop(columns="uf").reset_index(drop=True))
+        tabelas["execucao"] = tabelas["execucao"].assign(
+            versao_premissas=versao, executado_em=executado_em, fator_inpc=ins.fator_inpc,
+            mes_inpc_final=ins.mes_inpc, ano_enquadramento=ANO_ENQUADRAMENTO,
+            metodo_rateio=semente_uf["premissas"]["metodo_rateio_padrao"]["valor"])
+        for nome, df in tabelas.items():
+            partes.setdefault(nome, []).append(_com_uf(df, uf))
+    return {nome: _gravar(con, nome, pd.concat(dfs, ignore_index=True)) for nome, dfs in partes.items()}
+
+
+def _construir_uf(con, uf: str, ins: Insumos, semente: dict, regras: dict, cenarios: dict, mun: pd.DataFrame,
+                  mun_reg: pd.DataFrame) -> dict[str, pd.DataFrame]:
+    """As tabelas do gold de UMA UF (sem a coluna `uf`, que construir põe na frente), na ordem em que eram gravadas.
+    `mun` e `mun_reg`: os municípios da UF (silver.municipio_ibge)."""
+    cont: dict[str, pd.DataFrame] = {}
     lim_base = regras["versoes"][regras["versao_base"]]["limites"]  # classe das faixas de déficit (D-019)
     servs, medios, ufs, execucao = [], [], [], []
     for regra in REGRAS:
@@ -192,15 +235,12 @@ def construir(con: duckdb.DuckDBPyConnection, exportar_parquet: bool = True) -> 
             if regra == REGRAS[0]:  # o passivo médio não depende da regra de classe
                 medios.append(medio.assign(nivel=nivel))
             for cen in cenarios["cenarios"]:
-                ufs.append({"uf": "MG", "nivel": nivel, "regra_classe": regra, "cenario_stf": cen,
+                ufs.append({"uf": uf, "nivel": nivel, "regra_classe": regra, "cenario_stf": cen,
                             **resumo_mercado(serv, p, cenarios, cen)})
 
     interno = pd.concat(servs, ignore_index=True)
-    cont = {"interno_serventia": _gravar(con, "interno_serventia", interno)}
-    mun_reg = con.sql("SELECT cod_ibge, nome AS municipio, regiao_imediata, regiao_intermediaria "
-                      "FROM silver.municipio_ibge").df()
-    cont["serventia_publico"] = _gravar(con, "serventia_publico",
-                                        serventia_publico(interno, p_base, cenarios, regras["versao_base"], mun_reg))
+    cont["interno_serventia"] = interno
+    cont["serventia_publico"] = serventia_publico(interno, p_base, cenarios, regras["versao_base"], mun_reg)
 
     # municípios: soma das serventias ativas de cada um, todos os municípios com serventia (sem agrupar, D-078);
     # só nível base e regra base, como antes
@@ -212,22 +252,20 @@ def construir(con: duckdb.DuckDBPyConnection, exportar_parquet: bool = True) -> 
                .reset_index().merge(mun[["cod_ibge", "municipio"]], on="cod_ibge", how="left"))
     por_mun = por_mun[(por_mun["nivel"] == "base") & (por_mun["regra_classe"] == regras["versao_base"])]
     colunas = [c for c in por_mun.columns if c not in ("nivel", "regra_classe")] + ["nivel", "regra_classe"]
-    cont["fato_mercado_municipio_publico"] = _gravar(con, "fato_mercado_municipio_publico",
-                                                     por_mun[colunas].reset_index(drop=True))
+    cont["fato_mercado_municipio_publico"] = por_mun[colunas].reset_index(drop=True)
 
     medio = pd.concat(medios, ignore_index=True).merge(mun[["cod_ibge", "municipio"]], on="cod_ibge", how="left")
-    cont["interno_passivo_municipio"] = _gravar(con, "interno_passivo_municipio", medio)
+    cont["interno_passivo_municipio"] = medio
     # versão pública: todos os municípios com serventia (antes, só os com 3 ou mais; D-078)
     n_serv = ins.serventias.groupby("cod_ibge").size()
-    cont["fato_passivo_municipio"] = _gravar(con, "fato_passivo_municipio",
-                                             medio[medio["cod_ibge"].map(n_serv).fillna(0) > 0])
-    cont["fato_mercado_uf"] = _gravar(con, "fato_mercado_uf", pd.DataFrame(ufs))
+    cont["fato_passivo_municipio"] = medio[medio["cod_ibge"].map(n_serv).fillna(0) > 0]
+    cont["fato_mercado_uf"] = pd.DataFrame(ufs)
 
     # sensibilidade ao método de rateio (base, regra v2, cenário mantém)
     p_base = premissas_nivel(semente, "base", execucao[0]["peso_classe_indeterminada_base"])
     sens = [{"metodo_rateio": m, **resumo_mercado(calcular_serventias(ins, p_base, lim_base, m)[0], p_base, cenarios,
                                                   "mantem")} for m in METODOS]
-    cont["sensibilidade_rateio"] = _gravar(con, "sensibilidade_rateio", pd.DataFrame(sens))
+    cont["sensibilidade_rateio"] = pd.DataFrame(sens)
 
     # sensibilidade a premissas e leituras (base, regra base, cenário mantém): uma mudança por linha
     mes = str(ins.mes_inpc)
@@ -246,9 +284,10 @@ def construir(con: duckdb.DuckDBPyConnection, exportar_parquet: bool = True) -> 
     sp = [linha_sens(chave, rotulo, ins, aj) for chave, rotulo, aj in variacoes]
     # reserva da distribuição salarial direto no estado, sem a região imediata (como era antes da D-022)
     sem_regiao = Insumos(rais=ins.rais, serventias=ins.serventias, fator_inpc=ins.fator_inpc, mes_inpc=ins.mes_inpc)
-    sp.append(linha_sens("sem_regiao", "Reserva da distribuição = MG inteiro", sem_regiao))
+    sp.append(linha_sens("sem_regiao", f"Reserva da distribuição = {uf} inteiro", sem_regiao))
     # leituras alternativas da regra dos R$ 300 mil (D-023); a principal é a do cenário base
     arrec = con.sql("SELECT * FROM silver.serventia_arrecadacao").df()
+    arrec = arrec[arrec["cns"].isin(ins.serventias["cns"])]   # só a UF, na mesma ordem de antes
     for leitura, rotulo in LEITURAS.items():
         alt = receita_referencia_alternativa(arrec, ANO_ENQUADRAMENTO, leitura)
         serv_alt = ins.serventias.drop(columns=["receita_ref", "origem_receita", "semestres_validos"], errors="ignore"
@@ -257,50 +296,45 @@ def construir(con: duckdb.DuckDBPyConnection, exportar_parquet: bool = True) -> 
         ins_alt = Insumos(rais=ins.rais, serventias=serv_alt, fator_inpc=ins.fator_inpc, mes_inpc=ins.mes_inpc,
                           regioes=ins.regioes)
         sp.append(linha_sens(f"leitura_{leitura}", f"Regra: {rotulo}", ins_alt))
-    cont["sensibilidade_premissas"] = _gravar(con, "sensibilidade_premissas", pd.DataFrame(sp))
+    cont["sensibilidade_premissas"] = pd.DataFrame(sp)
 
     # diferença v2 (base) × v1 (sensibilidade), SPEC §3.4
-    uf = pd.DataFrame(ufs)
-    dif = (uf[uf["cenario_stf"] == "mantem"]
+    tot = pd.DataFrame(ufs)
+    dif = (tot[tot["cenario_stf"] == "mantem"]
            .pivot_table(index="nivel", columns="regra_classe",
                         values=["n_universo", "passivo_universo", "mercado_importancia_segurada",
                                 "mercado_premio_emitido"]))
     dif.columns = [f"{v}_{r}" for v, r in dif.columns]
-    cont["diferenca_regra_classe"] = _gravar(con, "diferenca_regra_classe", dif.reset_index())
+    cont["diferenca_regra_classe"] = dif.reset_index()
 
     # classes por serventia (uso interno) e dimensão de município (pública)
     dim = ins.serventias.copy()
     for regra in REGRAS:
         dim[f"classe_{regra}"] = [classificar(r, regras["versoes"][regra]["limites"]) for r in dim["receita_ref"]]
-    cont["interno_dim_serventia"] = _gravar(con, "interno_dim_serventia", dim)
+    cont["interno_dim_serventia"] = dim
     dim_mun = (mun.merge(dim.groupby("cod_ibge").agg(n_serventias=("cns", "size"), clt=("clt", "sum")).reset_index(),
                          on="cod_ibge", how="left").fillna({"n_serventias": 0, "clt": 0}))
-    cont["dim_municipio"] = _gravar(con, "dim_municipio", dim_mun)
+    cont["dim_municipio"] = dim_mun
 
     # geometria pública do mapa (1.2): uma área por município com serventia (D-078)
-    reg = con.sql("SELECT cod_ibge, nome, regiao_imediata, regiao_intermediaria FROM silver.municipio_ibge").df()
+    reg = mun_reg.rename(columns={"municipio": "nome"})
     reg = reg.merge(dim_mun[["cod_ibge", "n_serventias"]], on="cod_ibge", how="left").fillna({"n_serventias": 0})
     areas = areas_do_mapa(reg)
-    malha = malha_do_silver(con)   # do silver, não do bronze: o gold se recalcula só com o silver (D-029)
-    cont["geo_area_municipio"] = _gravar(con, "geo_area_municipio", areas[["cod_ibge", "area_id"]])
-    cont["geo_mapa_publico"] = _gravar(con, "geo_mapa_publico",
-                                       geometria_publica(malha, areas, reg.set_index("cod_ibge")["n_serventias"]))
+    malha = malha_do_silver(con, uf)   # do silver, não do bronze: o gold se recalcula só com o silver (D-029)
+    cont["geo_area_municipio"] = areas[["cod_ibge", "area_id"]]
+    cont["geo_mapa_publico"] = geometria_publica(malha, areas, reg.set_index("cod_ibge")["n_serventias"])
     sem_serv = reg.loc[reg["n_serventias"] == 0, "cod_ibge"]
-    cont["geo_sem_serventia"] = _gravar(con, "geo_sem_serventia", dissolver(   # sem nome (não há cartório)
-        malha, {int(c): f"SEM-{i + 1}" for i, c in enumerate(sem_serv)}))
+    cont["geo_sem_serventia"] = dissolver(   # sem nome (não há cartório); o id é único dentro da UF
+        malha, {int(c): f"SEM-{i + 1}" for i, c in enumerate(sem_serv)})
 
-    # visões do Mercado: geral por município, totais de MG por filtro e ranking (sem supressão desde a D-078)
+    # visões do Mercado: geral por município, totais da UF por filtro e ranking (sem supressão desde a D-078)
     regra_base = regras["versao_base"]
     ps = {(r, n): premissas_nivel(semente, n, next(x["peso_classe_indeterminada_base"] for x in execucao
                                                    if x["regra_classe"] == r)) for r in REGRAS for n in NIVEIS}
-    cont |= construir_visoes_mercado(con, interno, reg, areas, regra_base, ps, cenarios)
+    cont |= construir_visoes_mercado(interno, reg, areas, regra_base, ps, cenarios)
 
     # Simulador sem dados internos (modo demonstração, D-029): totais por faixa e grade de variantes do passivo
-    cont |= construir_simulador(con, ins, semente, regras, execucao, lim_base)
+    cont |= construir_simulador(ins, semente, regras, execucao, lim_base)
 
-    exe = pd.DataFrame(execucao).assign(
-        versao_premissas=versao, executado_em=dt.datetime.now().replace(microsecond=0),
-        fator_inpc=ins.fator_inpc, mes_inpc_final=ins.mes_inpc, ano_enquadramento=ANO_ENQUADRAMENTO,
-        metodo_rateio=semente["premissas"]["metodo_rateio_padrao"]["valor"])
-    cont["execucao"] = _gravar(con, "execucao", exe)
+    cont["execucao"] = pd.DataFrame(execucao)   # construir acrescenta versão, data e parâmetros da carga
     return cont
