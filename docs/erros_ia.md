@@ -1029,3 +1029,11 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** contraste conferido só para texto; elementos gráficos (WCAG 1.4.11, 3:1) fora do teste; o visual dos protótipos copiado sem medir.
 - **Correção:** D-084: toda cor de dado ≥ 3:1 contra fundo e superfícies, fundo neutro no escuro, teste que trava a regra (`tests/test_cores.py`), menu de tema visível e componente que acompanha a troca. Regra: toda cor nova de dado entra no teste de contraste contra o fundo, nos dois temas, antes de ir para o painel.
 - **Bom para os slides?** sim (o teste mede o que o usuário vê, não só o texto)
+
+## 2026-11-10 — Correção D-084 dada como pronta sem conferir no link público e sem mostrar ao autor
+- **Onde:** PR #18 (`painel-cores-tema-mapa`): `.streamlit/config.toml`, `src/painel/estilo.css`, `src/painel/componentes/tema.js`, `tests/test_cores.py`.
+- **O que aconteceu:** (1) o tema foi testado só no servidor local e no endereço interno do app (`.../~/+/`); no link público (`radar-seguro-cartorio.streamlit.app`) o Streamlit Cloud põe o app numa moldura com a barra dele, e o ⋮ dessa barra não oferece a troca de tema: o visitante continua sem como escolher o claro. (2) As 6 faixas do mapa e do quadro Taxa × adesão ficaram no mesmo azul, mudando só a claridade (≈ 1,3:1 entre vizinhas; o teste aceitava 1,25). (3) A interface também ficou azulada (faixa do título, destaques, menu ativo, links, série principal), e os dados se misturam com ela. (4) Tabelas e cartões com fundo quase igual ao da página.
+- **Como foi detectado:** pelo autor, no painel publicado depois do Reboot.
+- **Causa provável:** a IA testou onde era mais fácil, mediu números isolados (cada cor contra o fundo) em vez de olhar a tela como quem usa, tratou a regra "não confundir com o tema" como válida só para os dados e juntou na `main` sem mostrar capturas ao autor.
+- **Correção:** protótipo novo (artefato "Radar · painel novo (claro e escuro)"), à espera da validação do autor; só depois o código, com seletor de tema próprio do painel, escala com mudança de cor entre faixas, teste de diferença entre faixas vizinhas e capturas do link público nos dois temas antes do merge. Regras: mudança de design só depois de protótipo aprovado; conferir sempre no link público.
+- **Bom para os slides?** sim (teste verde não é o mesmo que tela boa)

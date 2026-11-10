@@ -33,7 +33,7 @@ ui.grafico(graficos.tornado(tor, fonte))
 
 st.header("Taxa × adesão")
 ui.frase(f"O prêmio anual para cada par das duas suposições que mais pesam: vai de **{grade['de']}** a "
-         f"**{grade['ate']}**. A célula com contorno dourado é a base do painel ({grade['base']}).")
+         f"**{grade['ate']}**. A célula com contorno grosso é a base do painel ({grade['base']}).")
 ui.quadro_calor("Adesão", "taxa", grade["taxas"],
                 [(linha["adesao"], [{"texto": c["premio"], "faixa": c["faixa"], "base": c["base"]}
                                     for c in linha["celulas"]]) for linha in grade["quadro"]])

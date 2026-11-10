@@ -4,10 +4,12 @@ O painel responde a uma pergunta (docs/painel/corte.md, D-051): quanto dinheiro 
 pode movimentar em MG, e quão certo é esse número. Esta página dá a resposta: o prêmio anual (valor base), a faixa
 provável logo abaixo, uma frase de quão certo é e o funil da escada. Tudo vem de src/painel/analises.py.
 
-O menu tem duas seções (D-077): "A história" (as cinco páginas e o chat) e "Explorar" (o Simulador). Os endereços das
-páginas são os mesmos de antes (os links `Chat?pergunta=` continuam valendo), e cada arquivo de app/pages/ também
-roda sozinho (testes).
+O menu fica no topo, como no V5 (D-082), numa linha só; o Simulador ("Simule") vem antes de "Sobre os dados". Os
+endereços das páginas são os mesmos de antes (os links `Chat?pergunta=` continuam valendo), e cada arquivo de
+app/pages/ também roda sozinho (testes).
 """
+from pathlib import Path
+
 import streamlit as st
 
 from comum import analise, fonte_linha, pagina
@@ -36,18 +38,15 @@ def inicio() -> None:
                   "Quais são os 10 números principais do painel?"], pagina="Início")
 
 
-# url_path: os mesmos endereços do menu automático de antes. Os ícones do menu vêm do estilo.css (padrão do Raio-X),
-# não do st.Page
-st.navigation({
-    "A história": [
-        st.Page(inicio, title="Início", default=True),
-        st.Page("pages/1_Quão_certo_é.py", title="Quão certo é", url_path="Quão_certo_é"),
-        st.Page("pages/2_Onde_está_o_mercado.py", title="Onde está o mercado", url_path="Onde_está_o_mercado"),
-        st.Page("pages/3_Para_onde_vai.py", title="Para onde vai", url_path="Para_onde_vai"),
-        st.Page("pages/4_Sobre_os_dados.py", title="Sobre os dados", url_path="Sobre_os_dados"),
-        st.Page("pages/5_Chat.py", title="Chat", url_path="Chat"),
-    ],
-    "Explorar": [
-        st.Page("pages/6_Explorar.py", title="Simule você mesmo", url_path="Explorar"),
-    ],
-}).run()
+# Menu no topo, como o V5 (D-082): a marca à esquerda e as páginas numa linha só; o Simulador ("Simule") entra antes de
+# "Sobre os dados", como no V5. url_path: os mesmos endereços de antes (os links `Chat?pergunta=` continuam valendo).
+st.logo(str(Path(__file__).with_name("static") / "marca.svg"), size="large")
+st.navigation([
+    st.Page(inicio, title="Início", default=True),
+    st.Page("pages/1_Quão_certo_é.py", title="Quão certo é", url_path="Quão_certo_é"),
+    st.Page("pages/2_Onde_está_o_mercado.py", title="Onde está o mercado", url_path="Onde_está_o_mercado"),
+    st.Page("pages/3_Para_onde_vai.py", title="Para onde vai", url_path="Para_onde_vai"),
+    st.Page("pages/6_Explorar.py", title="Simule", url_path="Explorar"),
+    st.Page("pages/4_Sobre_os_dados.py", title="Sobre os dados", url_path="Sobre_os_dados"),
+    st.Page("pages/5_Chat.py", title="Pergunte à IA", url_path="Chat"),
+], position="top").run()

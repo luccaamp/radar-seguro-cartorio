@@ -16,31 +16,30 @@ import plotly.io as pio
 
 from src.agent.ferramentas import brl
 
-# tokens do "Raio-X do Cartório" (D-052), com os mesmos valores: séries s1 (azul), s2 (laranja), s3 (verde) e ref
-# (cinza); texto ink / ink-2 / muted; grade grid / grid-strong; laranja sempre com rótulo direto (contraste < 3:1)
-# Toda cor de dado tem contraste ≥ 3:1 contra a superfície nos dois temas (tests/test_cores.py; 2026-11-10: s2, s3 e
-# ref escurecidos no claro, eram #eb6834, #1baf7a e #8d97ab)
+# cores do protótipo V5 (D-082), as mesmas do src/painel/estilo.css: séries s1 (azul), s2 (âmbar), s3 (verde-petróleo)
+# e ref (cinza); texto ink / ink-2 / muted; grade e eixo nas linhas do V5. Toda cor de dado tem contraste ≥ 3:1
+# contra a superfície nos dois temas (tests/test_cores.py; o âmbar do V5, #d08a2c, escurecido para #b06f12)
 COR = {
-    "destaque": "#2a78d6", "destaque_claro": "#4c8ada", "comparacao": "#d65a26", "terceira": "#178f64",
-    "neutro": "#2a78d6",          # degraus que levam à resposta: a série s1; o último (o prêmio) vai em s2
-    "extremo": "#78829a",         # extremos teóricos: discretos (ref)
-    "titulo": "#0f1c33", "texto": "#0f1c33", "texto_2": "#45506a", "mudo": "#6b7590",
-    "grade": "#e6e9ef", "eixo": "#c2c9d6", "superficie": "#ffffff", "linha": "#dde2ea",
+    "destaque": "#1f5c99", "destaque_claro": "#45b0c0", "comparacao": "#b06f12", "terceira": "#0f6b5c",
+    "neutro": "#1f5c99",          # degraus que levam à resposta: a série s1; o último (o prêmio) vai em s2
+    "extremo": "#6a7570",         # extremos teóricos: discretos (ref)
+    "titulo": "#16201d", "texto": "#16201d", "texto_2": "#47524e", "mudo": "#5f6a65",
+    "grade": "#eceee9", "eixo": "#cbd0c8", "superficie": "#ffffff", "linha": "#e1e4de",
 }
-FAIXA = "rgba(42,120,214,0.18)"          # faixa provável (P5–P95) e faixa da projeção (P10–P90): s1 translúcido
-BARRA = dict(line=dict(color="#ffffff", width=2), cornerradius=4)   # barras do Raio-X: borda branca de 2 px, cantos de 4 px
-# escala sequencial (a mesma do mapa, --mapa-1 a --mapa-6 do estilo.css): no claro, do azul médio ao marinho
-SEQUENCIAL = ["#4c8ada", "#2b74d2", "#2461b1", "#1e5294", "#184277", "#12325a"]
-SEQUENCIAL_ESCURO = ["#2f70c7", "#4b86d5", "#6c9ddd", "#8eb3e5", "#b2cbed", "#d7e4f6"]
+FAIXA = "rgba(31,92,153,0.16)"          # faixa provável (P5–P95) e faixa da projeção (P10–P90): s1 translúcido
+BARRA = dict(line=dict(color="#ffffff", width=2), cornerradius=4)   # barras: borda da cor da superfície, cantos de 4 px
+# escala sequencial (a mesma do mapa, --mapa-1 a --mapa-6 do estilo.css): a escala do V5, amarelo-claro → verde → azul;
+# no escuro, invertida em luminosidade (o valor maior é o mais claro)
+SEQUENCIAL = ["#c3e6b4", "#83cdb8", "#45b0c0", "#2178a8", "#21609f", "#1e3b7a"]
+SEQUENCIAL_ESCURO = ["#4f62cc", "#2687b5", "#45b0c0", "#83cdb8", "#c3e6b4", "#f8fbe4"]
 
-# tema escuro: cada cor clara acima e a equivalente escura. O fundo e as superfícies são cinza neutro, sem o azul dos
-# dados (2026-11-10; eram azul-marinho). Na escala, o valor maior é o azul mais claro.
+# tema escuro: cada cor clara acima e a equivalente escura do V5 (troca única, sem encadear)
 ESCURO = {
-    "#ffffff": "#1b1d21", "#f5f7fa": "#25262a", "#0f1c33": "#eceef2", "#45506a": "#b4b9c2", "#6b7590": "#8b919c",
-    "#dde2ea": "#33363c", "#e6e9ef": "#2b2e33", "#c2c9d6": "#484c54",
-    "#2a78d6": "#3987e5", "#d65a26": "#d95926", "#178f64": "#199e70", "#78829a": "#7b869b",
+    "#ffffff": "#161b1a", "#f7f8f5": "#1b2120", "#16201d": "#e6ece9", "#47524e": "#b2bcb8", "#5f6a65": "#8a9590",
+    "#e1e4de": "#2c3532", "#eceee9": "#222a28", "#cbd0c8": "#3d4945",
+    "#1f5c99": "#5c9ae0", "#b06f12": "#e3a04a", "#0f6b5c": "#46b39e", "#6a7570": "#8a9590",
     **dict(zip(SEQUENCIAL, SEQUENCIAL_ESCURO)),
-    "rgba(42,120,214,0.18)": "rgba(57,135,229,0.32)", "rgba(255,255,255,0.85)": "rgba(27,29,33,0.85)",
+    "rgba(31,92,153,0.16)": "rgba(92,154,224,0.30)", "rgba(255,255,255,0.85)": "rgba(22,27,26,0.85)",
 }
 _COR_RE = re.compile(r"#[0-9a-fA-F]{6}\b|rgba\([^)]*\)")
 
@@ -54,13 +53,13 @@ def _escurecer(fig: go.Figure) -> go.Figure:
             {"id": "fundo", "type": "background", "paint": {"background-color": ESCURO["#ffffff"]}}]})
     return fig
 FONTE = "'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
-FONTE_TITULO = "Newsreader, Georgia, 'Times New Roman', serif"
+FONTE_TITULO = FONTE   # o V5 não usa serifa: títulos na mesma fonte, em negrito
 BORDA = 24      # px entre a borda do cartão e o título / rodapé (múltiplo de 8)
 TOPO = 80       # px do título + subtítulo
 
 pio.templates["radar"] = go.layout.Template(layout=go.Layout(
     font=dict(family=FONTE, size=12, color=COR["texto_2"]),
-    title=dict(font=dict(family=FONTE_TITULO, size=18, weight=600, color=COR["titulo"]), x=0, xanchor="left",
+    title=dict(font=dict(family=FONTE_TITULO, size=16, weight=600, color=COR["titulo"]), x=0, xanchor="left",
                xref="container", y=1, yref="container",
                yanchor="top", pad=dict(t=BORDA, l=BORDA)),
     paper_bgcolor=COR["superficie"], plot_bgcolor=COR["superficie"], separators=",.",

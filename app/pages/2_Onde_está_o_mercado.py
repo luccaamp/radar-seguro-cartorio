@@ -115,7 +115,7 @@ else:
                  teto_fixo=1.0, rotulos=0)
     nota_cor = f"Cor = {pc['titulo'].lower()} (% dos cartórios do município; classe aproximada)"
 if mun is not None:
-    resumo = (f"Região de {mun['regiao_intermediaria']}, com {mun_nome} em destaque (contorno dourado). As cores "
+    resumo = (f"Região de {mun['regiao_intermediaria']}, com {mun_nome} em destaque (contorno grosso). As cores "
               "seguem a mesma escala de Minas Gerais inteira.")
 mapa_clicavel(dados_mapa(geo_dados, valores, nomes, textos, fundo=geo_sem.values(),
                          selecionado=foco["area_id"] if foco is not None else None, enquadrar=ids_int,

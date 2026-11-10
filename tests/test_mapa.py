@@ -204,7 +204,7 @@ def test_css_tem_uma_classe_por_faixa_e_tokens_nos_dois_temas():
     estilo = (RAIZ / "src" / "painel" / "estilo.css").read_text(encoding="utf-8")
     for f in ["zero", *map(str, range(1, m.N_FAIXAS + 1))]:
         assert f".rd-f-{f} " in css, f
-        assert estilo.count(f"--mapa-{f}:") == 3, f           # claro, escuro do Streamlit e escuro do sistema
+        assert estilo.count(f"--mapa-{f}:") == 2, f           # claro e escuro (o botão de tema do painel decide)
     assert f".rd-f-{m.N_FAIXAS + 1} " not in css
 
 

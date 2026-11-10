@@ -1,6 +1,6 @@
 # Estado atual do projeto
 
-> Leia primeiro. Atualizado ao fim de cada sessão (regra do `CLAUDE.md`). Última atualização: **2026-11-10**.
+> Leia primeiro. Atualizado ao fim de cada sessão (regra do `CLAUDE.md`). Última atualização: **2026-11-11**.
 > O histórico detalhado até 2026-10-31 (Etapas 1 a 3, mineração, chat, cargas) está em [`historico/ESTADO_ATUAL_ate_2026-10-31.md`](historico/ESTADO_ATUAL_ate_2026-10-31.md) e no [`diario.md`](diario.md).
 
 ## O que é
@@ -16,7 +16,15 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito.
 - **Releases:** `v1.0` (2026-11-10, Fase 2: conjuntos público e completo); `dados-2026-10-19` (público: silver e manifesto); `carga-2026-10-19` e `originais-2026` (privados, em `luccaamp/radar-seguro-cartorio-dados`: bronze por fonte, banco e originais). O bronze fica no privado porque tem nome de pessoa (D-030); a procedência dele está no git em `data/procedencia/` (D-070).
 - **Rodar a partir de um clone** (conferido em 2026-10-31): modo demonstração em 2 min; modo completo (README, seção 1b) em ≈ 4 min, com o gold **idêntico** ao do banco real (39 de 39 tabelas) e os 10 números iguais.
 
-## Etapa atual: correção do painel (cores, tema, mapa; D-084) na branch `painel-cores-tema-mapa`; depois, Fase 3, bloco 4. Fase 3, blocos 1 a 3 e a carga de 2026-11-10 na `main` (PRs #16 e #17)
+## Etapa atual: plano de entrega, etapa 1 (painel igual ao V5, D-085), feita na branch `estado-atual-pos-pr20` e à espera do OK do autor pelas capturas. Na `main` (`2395e1c`, CI verde): Fase 3, blocos 1 a 3, a carga de 2026-11-10 e os PRs #18 a #20
+
+**Plano de entrega (aprovado pelo autor em 2026-11-10; uma etapa começa assim que a anterior acaba, um PR por etapa, com os documentos no mesmo PR):**
+1. **Painel igual ao V5** — feito em 2026-11-11, não commitado (D-085): visual do `prototipo_v5.html`, menu no topo, botão Claro · Escuro · Sistema próprio (claro por padrão), escala do mapa do V5. Suíte padrão 449 passed, `-m navegador` 4 passed, `ruff` sem erro; capturas em `docs/qa/v5/` (fora do git), sem rolagem lateral. **Falta:** OK do autor → commit, PR, merge, **Reboot app** (o `src/` muda) e conferência no link público nos dois temas e no celular; depois, a imagem e o GIF do README regerados (`scripts/gif_painel.py`).
+2. Ferramentas do chat como servidor MCP, agente "o que mudou" a cada carga, avaliação do chat no CI com o resultado no README.
+3. Brasil, camada 1 (cadastro do CNJ e IBGE, 27 UFs; mapa do Brasil por UF; MG continua completo), pipeline agendado no GitHub Actions, selo "atualizado em".
+4. Hugging Face e Kaggle, README em português e inglês, artigo técnico curto.
+5. Conferência no link público (claro, escuro, celular), Release `v2.0`, roteiro de demo de 5 min.
+Fora do prazo: Fase 3, bloco 4; Fases 5 e 6 completas; limpeza das branches (bloco D).
 **Plano oficial: [`plano_projeto.md`](plano_projeto.md) (D-071, 2026-11-05)**, com 10 fases, de MG completo ao Brasil inteiro publicado e atualizado sozinho. A IA propõe cada passo e segue com a aprovação do autor.
 
 **Fase 1, andamento (2026-11-06):** PR #3 (`fase-1-simulador`) juntado na `main` (`fd66b03`); o ano projetado segue na branch `fase-1-explorar-2027`. Item 1, o Simulador:
@@ -88,13 +96,15 @@ Radar Seguro-Garantia Cartórios: projeto de portfólio, 100% gratuito.
   - Ainda leem `gold.execucao` só pela regra (certo com uma UF; bloco 4): `src/analise/conclusoes.py`, `app/comum.py`, `app/pages/6_Explorar.py`, `src/painel/analises.py` e `src/agent/ferramentas.py`.
   - [x] **carga oficial 2026-11-10** (o autor: "depois do bloco 3"). O CI do PR #17 mostrou que ela era necessária: `test_a_partir_do_silver_parquet_reproduz_o_conjunto_publico` compara o gold recalculado com o hash do `data/publico` versionado, que ainda não tinha a coluna `uf`. Backup em `C:\radar_arquivo\antes_carga_2026-11-10_fase3\` (banco `7f528a8c…`, silver, gold, público, completo); `uv run pipeline.py --a-partir-de silver` sem erro (log `C:\radar_arquivo\carga_2026-11-10_fase3.log`; contratos do silver 53 e do gold 56, os mesmos avisos); banco novo `923b539f…`. Contra o backup: as 50 tabelas iguais, fora a coluna `uf` (29 do gold), e o `estado.log_decisoes` com 5 linhas a mais (o espelho do `decisoes.md`, que ganhou a D-083 e linhas da D-082). `data/publico` (36 arquivos, 0,76 MB, sem dado pessoal) e `data/completo` (10 tabelas do silver, 33 do gold) regerados. Suíte padrão 411 passed com o conjunto novo.
   - **Próximo:** bloco 4 (painel e chat sem `"MG"` literal; os nomes `pct_mg` e `*_mg`; os leitores de `gold.execucao`; o "Ver Minas Gerais inteira" do mapa).
-- **Correção do painel pedida pelo autor (2026-11-10, D-084; branch `painel-cores-tema-mapa`):** depois do reboot, o autor viu o mapa no escuro e reclamou das cores, da falta de tema claro e do mapa preso. Diagnóstico medido: faixas baixas do mapa com 1,3:1 e 1,8:1 contra o fundo azul-marinho; o menu de tema escondido (`toolbarMode = "minimal"`); sem zoom nem volta ao estado inteiro.
+- **Correção do painel pedida pelo autor (2026-11-10, D-084; PR #18, merge `070b6da`; Reboot feito pelo autor):** depois do reboot, o autor viu o mapa no escuro e reclamou das cores, da falta de tema claro e do mapa preso. Diagnóstico medido: faixas baixas do mapa com 1,3:1 e 1,8:1 contra o fundo azul-marinho; o menu de tema escondido (`toolbarMode = "minimal"`); sem zoom nem volta ao estado inteiro.
   - [x] **cores:** fundo do escuro cinza neutro; toda cor de dado ≥ 3:1 contra o fundo e as superfícies nos dois temas (mapa, quadro de calor, séries); "sem cartório" com tom próprio; `tests/test_cores.py` (35 casos) trava a regra;
   - [x] **tema:** menu ⋮ com System, Light e Dark; o componente `tema.js` faz o painel inteiro seguir a escolha na hora (cores e gráficos) e a mantém entre as páginas; conferido no navegador (claro → escuro e escuro → claro, trocando de página, com o sistema no claro e no escuro);
   - [x] **mapa:** +, −, "Ver Minas Gerais inteira", arrastar (sem escolher município ao soltar), 3 nomes no estado, 8 numa região, até 12 com zoom, sem sobreposição (caixa medida no navegador);
   - [x] **CI:** na `main`, um merge não cancela mais o do anterior (só nos PRs).
   - Conferência: suíte padrão 442 passed (26 testes de JavaScript), `-m navegador` 4 passed, `ruff` sem erro, capturas em 1280 px nos dois temas e em 375 px no escuro, sem rolagem lateral; 10 números sem mudança (só apresentação).
-  - **Depois do merge:** Reboot no Cloud (muda o `src/`).
+  - PR #19 (`8329ec0`): imagem do Início e GIF do README regerados pelo `scripts/gif_painel.py`, que agora gera os dois. PR #20 (`2395e1c`): o teste do tema no navegador, intermitente no CI, espera o `data-rd-tema` antes de ler a cor.
+  - **A D-084 ficou errada** (`erros_ia.md`, 2026-11-10): (1) o seletor de tema não chega a quem abre o link público: o ⋮ do Streamlit foi testado só no servidor local e em `.../~/+/`; no link público a moldura do Cloud fica por cima e não oferece o tema; (2) as 6 faixas do mapa e do quadro Taxa × adesão são do mesmo azul (≈ 1,3:1 entre vizinhas; o teste aceita 1,25); (3) a interface também é azulada e se mistura com os dados; (4) tabelas e cartões quase da cor do fundo.
+  - O protótipo novo da IA (artefato "Radar · painel novo (claro e escuro)") foi **recusado** pelo autor; no lugar dele, o painel igual ao V5 (D-085, etapa 1 do plano de entrega, acima).
 
 **Fase 0 cumprida em 2026-11-06:**
 - [x] item 1: plano novo (D-071) e SPEC, ROADMAP, `CLAUDE.md` e `CONTRIBUTING.md` alinhados;
@@ -115,7 +125,7 @@ A lista de fechamento de MG, combinada com o autor em 2026-10-31, foi distribuí
   - **Falta o A7:** avaliação do chat com a API real (depois do B1 e do bloco C).
 - **B. Decisões e ações do autor:** lista em "O que depende do autor", abaixo.
 - **C. Preparar para outros estados:** tirar do código o que só vale para MG (códigos e pacotes por UF nos coletores, `uf = 'MG'` nos contratos e no gold, "fator de MG" na previsão, textos do painel e do chat) e levar para a configuração por estado. Critério de pronto: com `ufs: [MG]`, o resultado idêntico ao de hoje. **Precisa de um plano antes**, a pedido do autor.
-- **D. Limpeza:** apagar as branches locais antigas e as referências velhas do remoto (`git fetch --prune`); comandos de git só com pedido do autor. ~~O `.claude/launch.json`~~: a pasta `.claude/` inteira foi para o `.gitignore` (autor, 2026-11-07).
+- **D. Limpeza:** apagar as branches locais antigas e as referências velhas do remoto (`git fetch --prune`); comandos de git só com pedido do autor. Em 2026-11-10: 21 branches remotas já juntadas na `main` e `delete_branch_on_merge` desligado no GitHub. Proposta: ligar a opção, apagar as remotas juntadas e as locais antigas (a `main-antiga` pode virar tag); a `backup-MG` só com confirmação do autor (a tag `mg-backup-2026-11-05` guarda o mesmo ponto). ~~O `.claude/launch.json`~~: a pasta `.claude/` inteira foi para o `.gitignore` (autor, 2026-11-07).
 
 ## Números de referência
 Carga **2026-11-10** (Fase 3, coluna `uf`; refeita do silver da carga 2026-10-19: dados coletados em 17 e 18/10; mesmos números das cargas 2026-10-28 e 2026-11-07), premissas **v4** (a v3 da D-046 sem o limiar de 3 serventias, D-078), regra base (Classe 1 até R$ 300 mil, Prov. 243), nível base, regra do STF mantida. Esta tabela é a fonte dos valores.
@@ -130,10 +140,10 @@ Carga **2026-11-10** (Fase 3, coluna `uf`; refeita do silver da carga 2026-10-19
 
 Faixa provável do prêmio (P5–P95): R$ 215 a 687 mil. Linha de base: `~/radar_arquivo/baseline_2026-10-28_d048/linha_de_base.json` (WSL). Banco real desta máquina: SHA-256 `923b539f…` (carga 2026-11-10; antes, `7f528a8c…`, `dd6fc158…` e `c935a190…`).
 
-**Última decisão:** D-084 (cores distintas do fundo, tema escolhível e mapa navegável, pedido do autor, 2026-11-10); antes, D-083 (mapa como componente HTML dentro do Streamlit, 2026-11-10), D-082 (V5 como referência) e D-081 (desenho da Fase 3), todas aprovadas; as duas escolhas do bloco V5 na D-082 (7 destaques no Início; mapa em % como seletor) confirmadas pelo autor em 2026-11-10. Não há decisão proposta à espera do autor. As faixas D-053 a D-059 (painel) e D-060 a D-069 (chat) estão reservadas ou usadas; as próximas seguem de D-085 ([`decisoes.md`](decisoes.md)).
+**Última decisão:** D-085 (painel com o visual do V5 e botão de tema próprio, 2026-11-11; substitui a parte de cores e tema da D-084); antes, D-084 (cores distintas do fundo, tema escolhível e mapa navegável, 2026-11-10), D-083 (mapa como componente HTML dentro do Streamlit, 2026-11-10), D-082 (V5 como referência) e D-081 (desenho da Fase 3), todas aprovadas; as duas escolhas do bloco V5 na D-082 (7 destaques no Início; mapa em % como seletor) confirmadas pelo autor em 2026-11-10. Não há decisão proposta à espera do autor. As faixas D-053 a D-059 (painel) e D-060 a D-069 (chat) estão reservadas ou usadas; as próximas seguem de D-086 ([`decisoes.md`](decisoes.md)).
 
-## Testes (2026-11-10)
-- Suíte padrão (`uv run pytest`): 442 passed (2026-11-10, branch `painel-cores-tema-mapa`), com os 26 testes do JavaScript do mapa e do tema pelo `node --test` (no CI o Node é obrigatório). Cobertura de `src/`: 71% das linhas (`--cov=src`, no CI; indicador, não meta). Não usa a API do Gemini nem a internet. `uv run ruff check .`: sem erro.
+## Testes (2026-11-11)
+- Suíte padrão (`uv run pytest`): 449 passed (2026-11-11, etapa 1, ainda fora da `main`; 442 na `main`), com os testes do JavaScript do mapa e do tema pelo `node --test` (no CI o Node é obrigatório). Cobertura de `src/`: 71% das linhas (`--cov=src`, no CI; indicador, não meta). Não usa a API do Gemini nem a internet. `uv run ruff check .`: sem erro.
 - Navegador (`uv run pytest -m navegador`, ≈ 15 s, precisa de `uv run playwright install chromium`): 4 passed, no modo demonstração; também no CI, job "Navegador (mapa clicável)".
 - Dados reais (`uv run pytest -m dados_reais`, ≈ 25 min, sempre numa cópia do banco): 55 passed, 0 skipped nesta máquina (2026-11-07, depois da carga oficial da D-078; saíram os testes do auditor). Num clone com o modo completo, os de bronze → silver são pulados ("bronze ausente").
 

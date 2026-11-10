@@ -1,68 +1,52 @@
-// Tema do painel (2026-11-10). O visitante escolhe o tema no menu do Streamlit (⋮ → System, Light ou Dark); o
-// Streamlit guarda a escolha no navegador e troca os próprios botões, mas não avisa o servidor. Este componente,
-// invisível, lê o tema ativo, marca o <html> com data-rd-tema="claro" ou "escuro" (o estilo.css troca as cores na
-// hora) e manda o tema ao Python, que redesenha os gráficos (src/painel/ui.tema). Nenhum dado aqui.
-// Testes: tests/js/tema.test.mjs (node --test), rodados pelo tests/test_tema.py.
+// Botão de tema do painel (V5 .seg: Claro · Escuro · Sistema), no canto do topo de todas as páginas (2026-11-11).
+// Substitui o menu ⋮ do Streamlit, que no link público (moldura do Streamlit Cloud) não oferece a troca (erros_ia.md,
+// D-084). O tema padrão é o claro. A escolha fica no navegador ("radar-tema") e vale para o painel inteiro:
+// - marca o <html> com data-rd-tema="claro" ou "escuro" (o estilo.css troca as cores na hora);
+// - grava a mesma escolha na chave do Streamlit da página (stActiveTheme-<caminho>-v2: "Light", "Dark" ou "System"),
+//   para os componentes nativos (seletores, controles, chat) seguirem; o Streamlit só lê essa chave ao carregar, então,
+//   quando ela muda, a página recarrega uma vez;
+// - manda o tema ao Python, que redesenha os gráficos (src/painel/ui.tema).
+// Nenhum dado aqui. Testes: tests/js/tema.test.mjs (node --test).
 
-// Escolha guardada pelo Streamlit para a página: "Light", "Dark", "System" (texto JSON) ou um objeto com `name`.
-export function escolhaDoStreamlit(armazenamento, caminho) {
-  let bruto = null;
+export const CHAVE = "radar-tema";
+export const OPCOES = [["claro", "Claro"], ["escuro", "Escuro"], ["sistema", "Sistema"]];
+const NOME_STREAMLIT = { claro: "Light", escuro: "Dark", sistema: "System" };
+
+// A escolha guardada ("claro", "escuro" ou "sistema"); sem escolha ou armazenamento bloqueado: "claro".
+export function escolhaGuardada(armazenamento) {
+  let v = null;
   try {
-    bruto = armazenamento.getItem(`stActiveTheme-${caminho}-v2`);
+    v = armazenamento.getItem(CHAVE);
   } catch {
-    return "System";
+    v = null;
   }
-  if (bruto === null || bruto === undefined) return "System";
-  let v;
-  try {
-    v = JSON.parse(bruto);
-  } catch {
-    v = bruto;
-  }
-  const nome = typeof v === "string" ? v : (v && (v.name || v.base)) || "System";
-  return String(nome);
+  return v in NOME_STREAMLIT ? v : "claro";
 }
 
-const PREFIXO = "stActiveTheme-";
-
-// Todas as escolhas guardadas pelo Streamlit, {chave: texto bruto}.
-export function lerChaves(armazenamento) {
-  const out = {};
-  try {
-    for (let i = 0; i < armazenamento.length; i++) {
-      const k = armazenamento.key(i);
-      if (k && k.startsWith(PREFIXO)) out[k] = armazenamento.getItem(k);
-    }
-  } catch {
-    // armazenamento bloqueado: fica vazio (vale o sistema)
-  }
-  return out;
-}
-
-// O Streamlit guarda a escolha só na chave da página em que o menu foi usado, mas a aplica ao app inteiro até a
-// página ser recarregada. Por isso: ao carregar, vale a chave da página (o que o Streamlit leu); depois, qualquer
-// chave que mude é uma escolha nova, que passa a valer e deve ser copiada para as outras chaves (`gravar`).
-// `antes`: {escolha, chaves} da checagem anterior neste documento, ou null.
-// `bruto`: o texto guardado da escolha em vigor (para gravar na chave de cada página visitada; null = nenhuma escolha).
-export function proximaEscolha(antes, chaves, caminho) {
-  const chave = `${PREFIXO}${caminho}-v2`;
-  const daPagina = escolhaDoStreamlit({ getItem: (k) => (k in chaves ? chaves[k] : null) }, caminho);
-  if (!antes) return { escolha: daPagina, bruto: chave in chaves ? chaves[chave] : null, chaves: { ...chaves }, gravar: null };
-  for (const [k, v] of Object.entries(chaves)) {
-    if (antes.chaves[k] !== v) {
-      const nova = escolhaDoStreamlit({ getItem: () => v }, "");
-      return { escolha: nova, bruto: v, chaves: { ...chaves }, gravar: v };
-    }
-  }
-  const gravar = antes.bruto !== null && chaves[chave] !== antes.bruto ? antes.bruto : null;   // página nova visitada
-  return { escolha: antes.escolha, bruto: antes.bruto, chaves: { ...chaves }, gravar };
-}
-
-// "claro" ou "escuro": a escolha do menu; "System" (ou desconhecida) segue o sistema.
+// "claro" ou "escuro": "sistema" segue a preferência do aparelho.
 export function temaAtivo(escolha, sistemaEscuro) {
-  if (/light|claro/i.test(escolha)) return "claro";
-  if (/dark|escuro/i.test(escolha)) return "escuro";
-  return sistemaEscuro ? "escuro" : "claro";
+  if (escolha === "escuro") return "escuro";
+  if (escolha === "sistema") return sistemaEscuro ? "escuro" : "claro";
+  return "claro";
+}
+
+// O texto que o Streamlit guarda para a escolha (JSON de "Light", "Dark" ou "System").
+export function valorStreamlit(escolha) {
+  return JSON.stringify(NOME_STREAMLIT[escolha] || "Light");
+}
+
+// Grava a escolha na chave do Streamlit desta página. true quando a chave mudou (o Streamlit carregou com outro tema e
+// a página precisa recarregar).
+export function sincronizarStreamlit(armazenamento, caminho, escolha) {
+  const chave = `stActiveTheme-${caminho}-v2`;
+  const valor = valorStreamlit(escolha);
+  try {
+    if (armazenamento.getItem(chave) === valor) return false;
+    armazenamento.setItem(chave, valor);
+    return armazenamento.getItem(chave) === valor;   // armazenamento que não grava: não recarrega (evita laço)
+  } catch {
+    return false;
+  }
 }
 
 export default function (component) {
@@ -71,39 +55,56 @@ export default function (component) {
   const win = doc.defaultView;
   const html = doc.documentElement;
   const consulta = win.matchMedia ? win.matchMedia("(prefers-color-scheme: dark)") : null;
+  let ls = null;
+  try {
+    ls = win.localStorage;
+  } catch {
+    ls = null;
+  }
+  const guarda = ls || { getItem: () => null, setItem() {} };
   let enviado = (data && data.atual) || "";
+  let escolha = escolhaGuardada(guarda);
+
+  const raiz = parentElement.querySelector ? parentElement.querySelector(".rd-tema") : null;
+  const marcarBotoes = () => {
+    if (!raiz) return;
+    for (const b of raiz.querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.t === escolha));
+  };
 
   const aplicar = () => {
-    let ls = null;
-    try {
-      ls = win.localStorage;
-    } catch {
-      ls = null;
-    }
-    const chaves = ls ? lerChaves(ls) : {};
-    const estado = proximaEscolha(win.__rdTema || null, chaves, win.location.pathname);
-    if (estado.gravar !== null && ls) {
-      try {
-        for (const k of Object.keys(chaves)) if (chaves[k] !== estado.gravar) ls.setItem(k, estado.gravar);
-        ls.setItem(`${PREFIXO}${win.location.pathname}-v2`, estado.gravar);
-        estado.chaves = lerChaves(ls);
-      } catch {
-        // sem gravar: a escolha vale até recarregar
-      }
-    }
-    win.__rdTema = { escolha: estado.escolha, bruto: estado.bruto, chaves: estado.chaves };
-    const t = temaAtivo(estado.escolha, consulta && consulta.matches);
+    const t = temaAtivo(escolha, consulta && consulta.matches);
     if (html.getAttribute("data-rd-tema") !== t) html.setAttribute("data-rd-tema", t);
+    marcarBotoes();
     if (t !== enviado) {
       enviado = t;
       setStateValue("tema", t);   // o Python roda a página de novo com o tema certo (gráficos)
     }
   };
+
+  // O Streamlit já carregou com o tema da chave desta página: se ela não bate com a escolha, recarrega uma vez.
+  if (ls && sincronizarStreamlit(ls, win.location.pathname, escolha)) {
+    aplicar();
+    win.location.reload();
+    return () => {};
+  }
+
+  if (raiz) {
+    raiz.onclick = (ev) => {
+      const b = ev.target && ev.target.closest ? ev.target.closest("button[data-t]") : null;
+      if (!b || b.dataset.t === escolha) return;
+      escolha = b.dataset.t;
+      try {
+        guarda.setItem(CHAVE, escolha);
+      } catch {
+        // sem gravar: vale até sair da página
+      }
+      aplicar();
+      if (ls && sincronizarStreamlit(ls, win.location.pathname, escolha)) win.location.reload();
+    };
+  }
   aplicar();
-  const relogio = win.setInterval(aplicar, 400);   // a troca no menu não dispara evento; uma checagem leve basta
   if (consulta && consulta.addEventListener) consulta.addEventListener("change", aplicar);
   return () => {
-    win.clearInterval(relogio);
     if (consulta && consulta.removeEventListener) consulta.removeEventListener("change", aplicar);
   };
 }
