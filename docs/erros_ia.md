@@ -1005,3 +1005,11 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** os testes conferiam que os rótulos existiam e estavam no lugar certo, não o tamanho na tela nem a sobreposição; o tamanho saía de uma fração fixa do viewBox, sem saber a escala real do desenho.
 - **Correção:** o JS mede o mapa e converte 13 px (11 px no celular) pela MENOR escala (largura ou altura) e pula os rótulos que se sobrepõem; testes novos no Node (`tamanhoLetra`, `escolherRotulos`) e no navegador (letra entre 10,5 e 13,5 px na tela, nenhum rótulo sobre outro, com e sem zoom). Regra: o que é visual tem teste do que se vê (tamanho na tela, sobreposição), não só da estrutura; e capturas antes de dar como pronto.
 - **Bom para os slides?** sim (teste de estrutura × teste do que se vê)
+
+## 2026-11-10 — "Cada merge republica o painel sozinho": não vale para o `src/`
+- **Onde:** `docs/publicacao.md` §8 (Fase 2) e a conferência do bloco V5 (PR #14).
+- **O que aconteceu:** o guia de publicação, escrito pela IA, dizia que cada merge na `main` republica o painel sozinho. Depois do PR #14, o Cloud pegou o `app/` novo, mas manteve o `src/painel/analises.py` antigo na memória; o Início e "Quão certo é" pararam num `KeyError` no link público.
+- **Como foi detectado:** pela IA, ao conferir o link público na sessão seguinte, a pedido do autor.
+- **Causa provável:** o recarregamento automático do Streamlit só olha a pasta do script principal (`app/`); a IA tratou "o Cloud puxa o git" como "o processo roda o código novo inteiro", sem conferir no link depois do merge.
+- **Correção:** `publicacao.md` §8 com a exceção (merge que muda o `src/` pede "Reboot app"); o autor reinicia o app. Regra: depois de todo merge que muda o `src/`, conferir o link público antes de dar o bloco como publicado.
+- **Bom para os slides?** sim (o que roda em produção pode não ser o que está no git)
