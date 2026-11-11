@@ -32,6 +32,7 @@ from src.transform import brasil  # noqa: E402
 
 CONFIG = RAIZ / "config" / "brasil.yaml"
 SAIDA = RAIZ / "data" / "brasil"
+REFERENCIA_IBGE = SAIDA / "ibge"   # a última coleta do IBGE que deu certo, no git (≈ 350 KB)
 CASAS_MALHA = 3   # casas decimais das coordenadas da malha publicada (≈ 100 m; o mapa tem 1000 px de largura)
 ARQUIVOS_IBGE = ("brasil_estados.json", "brasil_municipios.json", "brasil_populacao.json", "brasil_malha_uf.geojson")
 
@@ -48,21 +49,43 @@ def apelidos(c: dict) -> dict[str, dict[str, int]]:
     return out
 
 
-def coletar(base: Path, c: dict) -> tuple[Path, Path]:
-    from src.ingest import cnj_serventias
+def coletar(base: Path, c: dict, coletar_ibge=None) -> tuple[Path, Path]:
+    """Coleta o IBGE e o cadastro do CNJ das 27 UFs. O IBGE muda no máximo uma vez por ano (estados, municípios,
+    população estimada, malha) e não aceita conexão do GitHub Actions (2026-11-11): sem resposta, usa a referência
+    versionada (REFERENCIA_IBGE) e o manifesto diz isso. O CNJ, que muda todo mês, é obrigatório."""
+    from src.ingest import cnj_serventias, ibge
     hoje = f"{dt.date.today():%Y-%m-%d}"
     cnj, pasta_ibge = base / "cnj_justica_aberta" / hoje, base / "ibge" / hoje
-    ufs = [e["sigla"] for e in _ler_ibge(pasta_ibge, coletar=True)["brasil_estados.json"]]
+    try:
+        (coletar_ibge or ibge.coletar_brasil)(pasta_ibge)
+    except Exception as e:   # noqa: BLE001 (qualquer falha do IBGE: a referência versionada serve)
+        print(f"IBGE sem resposta ({type(e).__name__}): usando a referência versionada em {REFERENCIA_IBGE}")
+        pasta_ibge = REFERENCIA_IBGE
+    ufs = [e["sigla"] for e in _ler_ibge(pasta_ibge)["brasil_estados.json"]]
     for uf in sorted(ufs):
         cnj_serventias.coletar(uf, cnj, tolerancia=int(c["tolerancia_meta_total"]))
     return cnj, pasta_ibge
 
 
-def _ler_ibge(pasta: Path, coletar: bool = False) -> dict:
-    if coletar:
-        from src.ingest import ibge
-        ibge.coletar_brasil(pasta)
+def _ler_ibge(pasta: Path) -> dict:
     return {n: json.loads((pasta / n).read_text(encoding="utf-8")) for n in ARQUIVOS_IBGE}
+
+
+def atualizar_referencia_ibge(origem: Path, destino: Path = None) -> None:
+    """Grava a referência versionada a partir de uma coleta do IBGE que deu certo (rodar quando o IBGE publicar uma
+    estimativa de população ou uma malha nova): municípios na forma compacta e os .meta.json da coleta."""
+    destino = destino or REFERENCIA_IBGE
+    destino.mkdir(parents=True, exist_ok=True)
+    d = _ler_ibge(origem)
+    from src.transform.brasil import _uf_do_municipio
+    d["brasil_municipios.json"] = [{"id": m["id"], "nome": m["nome"], "uf": _uf_do_municipio(m)}
+                                   for m in d["brasil_municipios.json"]]
+    for n, v in d.items():
+        (destino / n).write_text(json.dumps(v, ensure_ascii=False, separators=(",", ":")), encoding="utf-8",
+                                 newline="\n")
+        meta = origem / f"{n}.meta.json"
+        if meta.exists():
+            (destino / meta.name).write_bytes(meta.read_bytes())
 
 
 def ler_csv(arq: Path) -> list[dict]:
@@ -164,6 +187,8 @@ def main(cnj: Path, pasta_ibge: Path, saida: Path, anterior: Path | None, c: dic
             "cnj_cadastro": {"orgao": "CNJ, Justiça Aberta (cadastro de serventias)", "coletado_em": datas_cnj,
                              "url": "https://justicaaberta.cnj.jus.br/"},
             "ibge": {"orgao": "IBGE (localidades, SIDRA tabela 6579 e malhas v3)", "coletado_em": datas_ibge,
+                     "origem": ("referência versionada (data/brasil/ibge): o IBGE não respondeu nesta execução"
+                                if pasta_ibge.resolve() == REFERENCIA_IBGE.resolve() else "coleta desta execução"),
                      "populacao_estimada": pop_ano, "url": "https://servicodados.ibge.gov.br/"},
         },
         "totais": {"ufs": len(linhas), "serventias_ativas": sum(x["serventias_ativas"] for x in linhas),
@@ -190,8 +215,13 @@ if __name__ == "__main__":
     a.add_argument("--saida", type=Path, default=SAIDA)
     a.add_argument("--simular-falha", action="store_true",
                    help="acrescenta um problema de propósito: prova que a falha bloqueia a publicação e abre a issue")
+    a.add_argument("--atualizar-referencia-ibge", type=Path, metavar="PASTA",
+                   help="grava data/brasil/ibge a partir de uma coleta do IBGE que deu certo, e sai")
     x = a.parse_args()
     c = config()
+    if x.atualizar_referencia_ibge:
+        atualizar_referencia_ibge(x.atualizar_referencia_ibge)
+        raise SystemExit(0)
     if x.coletar:
         x.cnj, x.ibge = coletar(x.bronze, c)
     if not (x.cnj and x.ibge):

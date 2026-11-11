@@ -1,0 +1,8 @@
+{
+ "coletado_em": "2026-11-11T02:01:57-03:00",
+ "versao_coletor": "fase1-0.1",
+ "url": "https://servicodados.ibge.gov.br/api/v3/malhas/paises/BR?formato=application/vnd.geo+json&intrarregiao=UF&qualidade=minima",
+ "metodo": "GET",
+ "bytes": 98502,
+ "sha256": "07c671aa87aa1ab296c446de6294df9827112782537b996c0a160284907e7c0f"
+}

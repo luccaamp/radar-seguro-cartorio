@@ -1053,3 +1053,11 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** (1) arredondamento escolhido para a tabela sem pensar no caso da fronteira da meta; (2) o laço só tratava resposta vazia (`""`), não resposta sem conteúdo.
 - **Correção:** uma casa decimal em todos os acertos do relatório; o chat pede a resposta escrita mais uma vez quando ela não tem palavra nem número; 3 testes. Regra: número comparado com uma meta aparece com precisão suficiente para o veredito ser visível.
 - **Bom para os slides?** sim (a avaliação contínua achou um defeito que as rodadas locais não mostraram)
+
+## 2026-11-11 — Pipeline agendado testado só da máquina local; e uma edição de código por sed
+- **Onde:** `src/ingest/ibge.py`, `scripts/pipeline_brasil.py`, `.github/workflows/pipeline-brasil.yml` (D-087); `src/ingest/ibge.py` (import).
+- **O que aconteceu:** (1) a IA conferiu o pipeline do Brasil de ponta a ponta só a partir deste computador, no Brasil, e deu o workflow como pronto; no GitHub Actions (servidores fora do Brasil), o IBGE não aceitou conexão e a primeira execução caiu. O coletor também só tentava de novo depois de uma resposta HTTP, não de um erro de rede. (2) Na correção, a IA trocou uma linha de import com `sed`, contra a regra do `CLAUDE.md` (editar código só com a ferramenta de edição).
+- **Como foi detectado:** (1) pelo autor, na primeira execução manual depois do merge do PR #26 (o bloqueio funcionou: nada publicado, issue #27); (2) pela IA, ao revisar o que fez.
+- **Causa provável:** (1) "funciona aqui" tratado como "funciona no lugar onde vai rodar"; o ensaio no próprio runner só seria possível depois do merge, e o workflow não tinha modo de ensaio. (2) pressa numa troca de uma linha.
+- **Correção:** (1) referência versionada do IBGE, novas tentativas em erro de rede, publicação só da `main` e ensaio completo em branch antes do merge; (2) a linha foi conferida (o import está certo) e a regra continua: nenhuma edição de código por script. Regra: todo job agendado é ensaiado no runner antes de ir para a `main`.
+- **Bom para os slides?** sim (o lugar onde roda faz parte do teste)

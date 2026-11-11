@@ -7,10 +7,9 @@ Saída: data/bronze/cnj_justica_aberta/<data>/serventias_<UF>.json (+ .meta.json
 Uso: uv run python -m src.ingest.cnj_serventias MG
 """
 import sys
-import time
 
 from src import estados_config
-from src.ingest.comum import BRONZE, cliente, gravar_meta, hoje, sha256_bytes
+from src.ingest.comum import BRONZE, cliente, gravar_meta, hoje, pedir, sha256_bytes
 
 URL = "https://justicaabertaapi.cnj.jus.br/v1/api/serventias"
 HEADERS = {"Origin": "https://justicaaberta.cnj.jus.br", "Referer": "https://justicaaberta.cnj.jus.br/"}
@@ -28,12 +27,8 @@ def coletar(uf: str, pasta=None, tolerancia: int = 0) -> None:
     destino.parent.mkdir(parents=True, exist_ok=True)
     corpo = {"cidade_id": 0, "uf": uf, "cns": None}
     params = {"assignments": "", "page": 1, "perPage": POR_PAGINA, "search": ""}
-    with cliente(timeout=300, **HEADERS) as c:
-        for _ in range(3):
-            r = c.post(URL, params=params, json=corpo)
-            if r.status_code == 200:
-                break
-            time.sleep(10)
+    with cliente(timeout=300, conectar=30, **HEADERS) as c:
+        r = pedir(c, "POST", URL, params=params, json=corpo)   # 3 tentativas, também para erro de rede
     r.raise_for_status()
     d = r.json()
     itens = d["data"]

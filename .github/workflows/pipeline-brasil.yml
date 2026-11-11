@@ -4,7 +4,9 @@
 # (src/painel/brasil.py); sem ela, a cópia versionada em data/brasil/.
 #
 # Qualquer problema bloqueia a publicação e abre uma issue (ou comenta na que já estiver aberta). "Simular falha" no
-# Run workflow prova isso sem mexer em nada. Custo zero (D-072): fontes públicas sem chave, sem segredo; o
+# Run workflow prova isso sem mexer em nada. Só a main publica: rodado numa branch (Run workflow → branch), é um
+# ensaio completo sem Release. O IBGE não aceita conexão do GitHub Actions (2026-11-11): o pipeline usa então a
+# referência versionada em data/brasil/ibge (muda no máximo uma vez por ano) e o manifesto registra isso. Custo zero (D-072): fontes públicas sem chave, sem segredo; o
 # GITHUB_TOKEN da execução cria a Release e a issue.
 name: Pipeline do Brasil
 
@@ -57,13 +59,18 @@ jobs:
           uv run python scripts/pipeline_brasil.py --coletar --bronze trabalho/bronze --anterior anterior --saida saida $extra | tee saida.log
       - name: Testes da pasta gerada (o mesmo teste que confere data/brasil)
         run: RADAR_BRASIL_TESTE=saida uv run pytest -q tests/test_brasil.py
-      - name: Publicar a Release
+      - name: Publicar a Release (só da main; numa branch, a execução é um ensaio)
+        if: github.ref == 'refs/heads/main'
         run: |
           tag="brasil-$(date -u +%Y-%m-%d)"
           if gh release view "$tag" >/dev/null 2>&1; then tag="${tag}-r${{ github.run_number }}"; fi
           gh release create "$tag" saida/brasil_uf.csv saida/malha_uf.geojson saida/manifesto.json saida/o_que_mudou.md \
             --title "Brasil, camada 1 — $(date -u +%d/%m/%Y)" --notes-file saida/o_que_mudou.md
           { echo "✅ Publicado: **$tag** (anterior: ${{ steps.anterior.outputs.tag }})"; echo; cat saida/o_que_mudou.md; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Ensaio numa branch (nada publicado)
+        if: github.ref != 'refs/heads/main'
+        run: |
+          { echo "🧪 Ensaio na branch \`${{ github.ref_name }}\`: tudo conferido, **nada publicado** (só a main publica)."; echo; cat saida/o_que_mudou.md; } >> "$GITHUB_STEP_SUMMARY"
       - name: Falhou? Nada publicado; abrir ou comentar a issue
         if: failure()
         run: |

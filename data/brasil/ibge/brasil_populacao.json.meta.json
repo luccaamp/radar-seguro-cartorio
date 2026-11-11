@@ -1,0 +1,8 @@
+{
+ "coletado_em": "2026-11-11T02:01:56-03:00",
+ "versao_coletor": "fase1-0.1",
+ "url": "https://apisidra.ibge.gov.br/values/t/6579/n3/all/v/9324/p/last%201",
+ "metodo": "GET",
+ "bytes": 7745,
+ "sha256": "6095ae268b9fd302d81eff35d2e4b617a5e06fee975fa4eb98be452b9532898c"
+}

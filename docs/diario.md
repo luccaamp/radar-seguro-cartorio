@@ -1365,3 +1365,9 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Ponta a ponta com coleta nova (2026-11-11, numa pasta temporária, contra `data/brasil` como publicação anterior):** as 27 UFs coletadas do CNJ e o IBGE; contrato ok (SP com 1 a menos que o meta.total, registrado); 12.113 serventias ativas (−8 desde 17/10), "o que mudou" com 17 mudanças por UF. MG tem 2.517 ativas no cadastro de hoje, contra as 2.525 da carga de 17/10 que o estudo de MG usa: a página mostra a data do cadastro no selo. Suíte padrão 481 passed (13 testes novos do Brasil, entre eles a página rodando sem internet); `ruff` sem erro.
 - **Não conferido:** o workflow no GitHub (depois do merge) e a página no link público.
 - **Próximo passo:** o autor aprova o visual; PR; rodar o pipeline uma vez e a falha simulada uma vez; conferir no link público; etapa 4.
+
+## 2026-11-11 (8) — Primeira execução do pipeline do Brasil caiu no IBGE; referência versionada e ensaio em branch
+- **O que foi feito:** PR #26 juntado; o autor rodou "Pipeline do Brasil". A execução caiu na primeira chamada ao IBGE (`ConnectTimeout` depois de ≈ 2 min: o IBGE não aceita conexão do GitHub Actions); o bloqueio funcionou (nada publicado, issue #27 aberta). Ajuste na branch `pipeline-brasil-rede`: novas tentativas também em erro de rede (`pedir`), limite de conexão curto, referência versionada do IBGE em `data/brasil/ibge/` (a mesma tabela que a coleta completa, conferida), publicação só da `main` (numa branch, ensaio).
+- **Conferência:** 2 testes novos (IBGE fora do ar usa a referência; nova tentativa em erro de rede); a tabela montada com a referência compacta é idêntica à anterior.
+- **Não conferido:** se a API do CNJ aceita conexão do GitHub Actions (só um ensaio na branch mostra).
+- **Próximo passo:** ensaio do workflow na branch; se o CNJ responder, PR e a primeira Release.
