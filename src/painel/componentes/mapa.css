@@ -24,8 +24,9 @@
 .rd-areas path { stroke: var(--superficie, #ffffff); stroke-width: 0.45; vector-effect: non-scaling-stroke;
   fill-rule: evenodd; cursor: pointer; }
 .rd-areas path:hover { stroke: var(--texto, #16201d); stroke-width: 1.6; }
-/* selecionado (V5 path.sel): contorno grosso na cor do texto */
-.rd-areas path.rd-sel { stroke: var(--texto, #16201d); stroke-width: 2.4; }
+/* selecionado: contorno grosso em âmbar (o --ouro), que se vê sobre todas as faixas nos dois temas; a cor do texto
+   (V5 path.sel) sumia, no escuro, sobre a faixa mais clara (link público, 2026-11-11) */
+.rd-areas path.rd-sel { stroke: var(--ouro, #b06f12); stroke-width: 3; }
 .rd-fundo path { fill: var(--mapa-sem, #e6e9e4); stroke: var(--linha-2, #cbd0c8); stroke-width: 1;
   vector-effect: non-scaling-stroke; fill-rule: evenodd; pointer-events: none; }
 .rd-f-zero { fill: var(--mapa-zero, #a9b0ab); background: var(--mapa-zero, #a9b0ab); }

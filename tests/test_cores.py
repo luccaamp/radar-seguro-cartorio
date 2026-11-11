@@ -116,6 +116,15 @@ def test_interface_nao_se_confunde_com_os_dados(tema):
         assert delta_e(t["acento"], t[f]) >= 15, (tema, f, round(delta_e(t["acento"], t[f]), 1))
 
 
+@pytest.mark.parametrize("tema", ["claro", "escuro"])
+def test_contorno_do_municipio_escolhido_se_ve_em_todas_as_faixas(tema):
+    """O contorno do município escolhido (--ouro, mapa.css) fica longe de todas as faixas: a cor do texto sumia, no
+    escuro, sobre a faixa mais clara (link público, 2026-11-11)."""
+    t = TEMAS[tema]
+    for f in ["mapa-zero", *FAIXAS]:
+        assert delta_e(t["ouro"], t[f]) >= 20, (tema, f, round(delta_e(t["ouro"], t[f]), 1))
+
+
 def test_fundo_do_escuro_e_neutro():
     for f in FUNDOS:
         r, g, b = (int(TEMAS["escuro"][f][i:i + 2], 16) for i in (1, 3, 5))

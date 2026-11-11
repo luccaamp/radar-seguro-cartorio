@@ -1,0 +1,65 @@
+# Avaliação do chat com a API real do Gemini (D-065, D-086), fora do CI dos pull requests: a suíte padrão nunca usa a
+# API. Roda toda segunda de manhã e quando alguém pede (Actions → "Avaliação do chat" → Run workflow): as 52 perguntas
+# do gabarito congelado na versão do painel (c, com as 5 ferramentas), do zero (--refazer), sobre o conjunto público.
+# Falha se a meta não for cumprida (acerto ≥ 85% e nenhum número inventado nas armadilhas). O relatório vai para o
+# resumo da execução e fica como artefato por 90 dias; o selo no README mostra o resultado da última execução.
+#
+# Custo zero (CLAUDE.md, D-061, D-072): nível gratuito do Gemini, com o faturamento desligado no projeto da chave; a
+# chave vem do segredo GEMINI_API_KEY do repositório (Settings → Secrets and variables → Actions), posto pelo autor,
+# e nunca aparece no log. Sem o segredo, a execução avisa e para sem erro. Uma rodada faz ≈ 52 a 200 chamadas, com
+# 15 s de pausa entre as perguntas (config/llm.yaml), e leva ≈ 20 a 30 min.
+name: Avaliação do chat
+
+on:
+  schedule:
+    - cron: "17 9 * * 1"   # segunda, 06:17 em Brasília (fora da hora cheia, quando o GitHub atrasa os agendados)
+  workflow_dispatch:
+
+concurrency:
+  group: avaliacao-chat
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  avaliar:
+    name: Gabarito de 52 perguntas (versão do painel)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 75
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - name: Segredo presente?
+        id: chave
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "Sem o segredo GEMINI_API_KEY no repositório: a avaliação não roda." >> "$GITHUB_STEP_SUMMARY"
+            echo "tem=nao" >> "$GITHUB_OUTPUT"
+          else
+            echo "tem=sim" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v7
+        if: steps.chave.outputs.tem == 'sim'
+      - uses: astral-sh/setup-uv@v10.3.3
+        if: steps.chave.outputs.tem == 'sim'
+        with:
+          enable-cache: true
+      - name: Dependências (versões do uv.lock)
+        if: steps.chave.outputs.tem == 'sim'
+        run: uv sync --locked
+      - name: Avaliação (API real, do zero)
+        if: steps.chave.outputs.tem == 'sim'
+        run: uv run python scripts/avaliar_chat.py --versoes c --refazer --exigir-meta
+      - name: Relatório no resumo da execução
+        if: always() && steps.chave.outputs.tem == 'sim'
+        run: |
+          if [ -f eval/resultado_avaliacao.md ]; then head -n 40 eval/resultado_avaliacao.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v7   # v7.0.2 (2026-10-07), Node 24; conferido nas releases em 2026-11-11
+        if: always() && steps.chave.outputs.tem == 'sim'
+        with:
+          name: avaliacao-chat
+          path: |
+            eval/resultado_avaliacao.md
+            eval/respostas/c.jsonl
+          retention-days: 90

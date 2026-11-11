@@ -1325,3 +1325,17 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Conferência:** suíte padrão 449 passed (com os testes do JavaScript); `-m navegador` 4 passed (teste novo: abre no claro com o sistema no escuro, "Escuro" passa o mapa e o fundo do Streamlit ao escuro, "Sistema" e "Claro" voltam); `ruff` sem erro. Capturas em `docs/qa/v5/` (fora do git): 5 páginas × claro/escuro × 1280/390 px, todas sem rolagem lateral. Achado nas capturas e corrigido: rótulos da legenda do mapa se sobrepondo, tabela larga demais em 390 px (cabeçalho em versalete), indicadores em 1 coluna no celular (o V5 usa 2). 10 números sem mudança (só apresentação).
 - **Não conferido ainda:** o link público (só depois do merge e do Reboot, porque o `src/` muda) e o axe.
 - **Próximo passo:** o autor olha as capturas; com o OK, commit, PR, merge, Reboot e conferência no link público nos dois temas; depois, etapa 2 (MCP e avaliação do chat no CI).
+- **Depois (mesmo dia):** o autor aprovou; PR #22 juntado (`1c9a0e9`), com o auto-merge e o aviso de falha ligados.
+
+## 2026-11-11 (2) — Link público conferido; limpeza das branches
+- **Link público** (depois do Reboot feito pelo autor): abre no claro com o botão de tema; "Escuro" troca tudo e continua entre páginas; o clique no mapa abre o quadro do município; celular sem rolagem lateral. Achado: no escuro, o contorno do município escolhido (cor do texto, como no V5) sumia sobre a faixa mais clara. Corrigido para âmbar (`--ouro`), conferido no navegador, com teste novo (ΔE ≥ 20 contra todas as faixas, nos dois temas).
+- **README:** imagem do Início e GIF regerados com o visual novo; o `scripts/gif_painel.py` escolhe o tema pelo botão (o sistema não decide mais).
+- **Branches** (pedido do autor): ficaram `main`, `estado-atual-pos-pr20`, `backup-MG` e `versao-antiga` (nova, da `etapa-5-chat`, enviada ao GitHub porque só existia nesta máquina). 20 remotas apagadas, todas contidas na `main` (conferido antes); locais antigas apagadas.
+- **Conferência:** suíte padrão 451 passed; `-m navegador` 4 passed; `ruff` sem erro.
+- **Próximo passo:** commit dos ajustes (no PR da etapa 2 ou num PR curto, a critério do autor); etapa 2.
+
+## 2026-11-11 (3) — Etapa 2: servidor MCP, "o que mudou" e avaliação do chat no CI (D-086)
+- **O que foi feito:** servidor MCP com as 5 ferramentas do chat (stdio, JSON-RPC, sem dependência nova), testado como processo: inicializa, lista as ferramentas com os esquemas do chat, devolve os números do painel com a linha `citar` e responde erro sem cair. Agente "o que mudou": relatório determinístico entre dois conjuntos públicos (aceita uma tag do git) e resumo do Gemini com trava de número. Rodado de verdade contra a v1.0: 10 números iguais, 28 tabelas com a coluna `uf` nova; o resumo do Gemini passou na trava (`docs/o_que_mudou.md`). Workflow "Avaliação do chat" (segunda e sob pedido; `--exigir-meta` novo no `avaliar_chat.py`), com selo e linha no README. Os ajustes da etapa 1 (contorno âmbar, imagem e GIF) entram neste mesmo PR.
+- **Conferência:** suíte padrão 462 passed; `ruff` sem erro. O relatório da avaliação refeito com as respostas guardadas ficou igual ao do git (nenhuma chamada nova à API).
+- **Não conferido:** o workflow da avaliação no GitHub (precisa do segredo, que só o autor põe).
+- **Próximo passo:** o autor põe o segredo `GEMINI_API_KEY` e roda a avaliação uma vez; etapa 3 (Brasil, camada 1, e pipeline agendado).

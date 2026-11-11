@@ -4,7 +4,7 @@ percurso. Precisa do Chromium do Playwright (`uv run playwright install chromium
 
 Percurso: Início (resposta e 6 indicadores) → Quão certo é (grade Taxa × adesão) → Onde está o mercado (mapa) →
 clique em Belo Horizonte (quadro dos cartórios) → mapa em % de obrigados → Para onde vai → Sobre os dados → o mapa
-no tema escuro (D-084). Também grava a imagem do Início do README (docs/img/painel_inicio.png, 1280 × 880, tema claro).
+no tema escuro (escolhido pelo botão do painel, D-085). Também grava a imagem do Início do README (docs/img/painel_inicio.png, 1280 × 880, tema claro).
 
 Uso: uv run python scripts/gif_painel.py [--saida docs/img/painel_tour.gif] [--largura 900]
                                          [--imagem docs/img/painel_inicio.png]
@@ -86,17 +86,29 @@ def _clicar_municipio(page, area_id: str) -> None:
     page.mouse.click(*ponto)
 
 
+# Tema pelo botão do painel (D-085): a escolha guardada no navegador e a chave do Streamlit já certa, para a página não
+# recarregar no meio do percurso (componentes/tema.js recarrega quando a chave não bate).
+TEMA = """(() => { try { localStorage.setItem('radar-tema', '%s');
+  localStorage.setItem('stActiveTheme-' + location.pathname + '-v2', JSON.stringify('%s')); } catch (e) {} })();"""
+
+
+def _pagina(nav, viewport: dict, tema: str = "claro"):
+    ctx = nav.new_context(viewport=viewport)
+    ctx.add_init_script(TEMA % (tema, "Dark" if tema == "escuro" else "Light"))
+    return ctx.new_page()
+
+
 def gravar(saida: Path, largura: int, imagem: Path | None = None) -> int:
     quadros = []
     with painel_demo() as url, sync_playwright() as p:
         nav = p.chromium.launch()
         if imagem:   # imagem do Início do README, na resolução da tela
-            pag = nav.new_page(viewport={"width": 1280, "height": 880}, color_scheme="light")
+            pag = _pagina(nav, {"width": 1280, "height": 880})
             _ir(pag, url + "/", "Prêmio anual estimado")
             imagem.parent.mkdir(parents=True, exist_ok=True)
             pag.screenshot(path=str(imagem))
             pag.close()
-        page = nav.new_page(viewport=VIEWPORT, color_scheme="light")
+        page = _pagina(nav, VIEWPORT)
         _ir(page, url + "/", "Prêmio anual estimado")
         quadros.append(_quadro(page, largura))
         page.locator(".rd-grade").first.scroll_into_view_if_needed()   # o Streamlit rola um contêiner, não a janela
@@ -124,8 +136,8 @@ def gravar(saida: Path, largura: int, imagem: Path | None = None) -> int:
         quadros.append(_quadro(page, largura))
         _ir(page, url + "/Sobre_os_dados", "Os 10 números oficiais")
         quadros.append(_quadro(page, largura))
-        # o mapa no tema escuro: fundo neutro e cores de dado com 3:1 ou mais (D-084)
-        escuro = nav.new_page(viewport=VIEWPORT, color_scheme="dark")
+        # o mapa no tema escuro, escolhido pelo botão do painel (D-085)
+        escuro = _pagina(nav, VIEWPORT, "escuro")
         _ir(escuro, url + "/Onde_está_o_mercado", "Os maiores déficits", ".rd-mapa svg")
         escuro.wait_for_timeout(800)
         quadros.append(_quadro(escuro, largura))
