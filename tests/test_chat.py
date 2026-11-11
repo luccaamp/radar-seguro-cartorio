@@ -185,6 +185,30 @@ def test_streaming_entrega_o_texto_aos_pedacos_e_avisa_a_consulta(con, monkeypat
     assert [e["etapa"] for e in eventos[-1][1].etapas] == ["modelo", "ferramentas (1)", "modelo"]
 
 
+def test_resposta_sem_conteudo_pede_de_novo_uma_vez(con, monkeypatch):
+    """Avaliação de 2026-11-11, pergunta 23: depois da ferramenta certa, o Gemini fechou a resposta com só ",". O chat
+    pede a resposta escrita mais uma vez (sem ferramenta nova) e o painel troca a pontuação pela resposta."""
+    enviados = _modelo_falso(monkeypatch, [_pede("consultar_numeros", {"analise": "escada"}), _texto(","),
+                                           _texto("O prêmio é R$ 341,1 mil.\n\nFonte: x")])
+    eventos = list(chat.responder_em_partes("e o premio?", con))
+    tipos = [t for t, _ in eventos]
+    assert tipos.count("consultando") == 2 and tipos[-1] == "fim"
+    depois = tipos.index("consultando", 1)   # o painel apaga o "," e volta o indicador; o que vem depois é a resposta
+    r = eventos[-1][1]
+    assert "".join(v for t, v in eventos[depois:] if t == "texto") == r.texto
+    assert r.texto.startswith("O prêmio é R$ 341,1 mil") and len(enviados) == 3
+    assert enviados[2]["sem_ferramenta_agora"] and enviados[2]["conteudos"] == enviados[1]["conteudos"]
+    assert r.etapas[-1]["etapa"].startswith("modelo (de novo")
+
+    _modelo_falso(monkeypatch, [_pede("consultar_numeros", {"analise": "escada"}), _texto(","), _texto(" . ")])
+    assert chat.responder("e o premio?", con).texto == ""   # só uma vez; vazio vira a mensagem de "sem dado"
+
+
+def test_tem_conteudo():
+    assert not any(chat.tem_conteudo(t) for t in ("", ",", " . ", "—", None, "_"))
+    assert all(chat.tem_conteudo(t) for t in ("Sim", "R$ 5,92 bi", "42", "Não sei."))
+
+
 def test_varias_ferramentas_rodam_em_paralelo_e_com_cache(con, monkeypatch):
     """D-069: dois pedidos na mesma rodada rodam em threads, cada um num cursor; a mesma consulta não roda de novo."""
     import threading
@@ -730,6 +754,21 @@ def test_avaliacao_incompleta_retoma_de_onde_parou_e_sai_com_codigo_proprio(pain
     assert cumprida is not None and av.codigo_de_saida(cumprida) in (av.META_CUMPRIDA, av.META_NAO_CUMPRIDA)
     assert av.codigo_de_saida(True) == 0 and av.codigo_de_saida(False) == 10
     assert {av.META_NAO_CUMPRIDA, av.INCOMPLETA}.isdisjoint({1, 2})   # 1 e 2: erro do Python e do argparse
+
+
+def test_relatorio_da_avaliacao_nao_arredonda_para_a_meta(monkeypatch, tmp_path):
+    """2026-11-11: 44/52 (84,6%) saiu como "acertou 85% (meta 85%)" e "NÃO cumprida". Com uma casa decimal, o número
+    mostrado bate com o veredito."""
+    av = _avaliacao_script()
+    assert av._pct(44, 52) == "44/52 (84.6%)" and av._pct(0, 0) == "—"
+    perguntas = [{"id": str(i), "tipo": "numeros", "pergunta": "p", "esperado": "1", "criterio": "numero"}
+                 for i in range(52)]
+    resultados = {"c": {str(i): {"certo": i < 44, "numeros_inventados": [], "fonte": True, "segundos": 1.0,
+                                 "resposta": "r"} for i in range(52)}}
+    monkeypatch.setattr(av, "SAIDA", tmp_path / "resultado.md")
+    ok = av.relatorio(perguntas, resultados, ["c"], "0" * 64, llm.config(), None)
+    texto = (tmp_path / "resultado.md").read_text(encoding="utf-8")
+    assert ok is False and "**Meta NÃO cumprida:** (c) acertou 44/52 (84.6%) (meta 85%)" in texto
 
 
 def _avaliacao_script():

@@ -9,14 +9,14 @@ Modelo `gemini-3.8-flash` (Gemini, nível gratuito; reserva `gemini-3.5-flash-li
 | Medida | (a) sem ferramentas | (b) normas no prompt | (c) com ferramentas |
 |---|---|---|---|
 | Respondidas | 52/52 | 52/52 | 52/52 |
-| Acertos | 9/52 (17%) | 12/52 (23%) | 50/52 (96%) |
-| Com número inventado | 1/52 (2%) | 1/52 (2%) | 1/52 (2%) |
-| Sem a linha "Fonte" | 4/52 (8%) | 16/52 (31%) | 4/52 (8%) |
-| "Não sei" corretos | 8/9 (89%) | 7/9 (78%) | 8/9 (89%) |
+| Acertos | 9/52 (17.3%) | 12/52 (23.1%) | 50/52 (96.2%) |
+| Com número inventado | 1/52 (1.9%) | 1/52 (1.9%) | 1/52 (1.9%) |
+| Sem a linha "Fonte" | 4/52 (7.7%) | 16/52 (30.8%) | 4/52 (7.7%) |
+| "Não sei" corretos | 8/9 (88.9%) | 7/9 (77.8%) | 8/9 (88.9%) |
 | Latência média | 3.8 s | 4.0 s | 6.5 s |
 | Acertos, intervalo de 95% | 9% a 30% | 14% a 36% | 87% a 99% |
 
-**Meta cumprida:** (c) acertou 96% (meta 85%); armadilhas com número inventado: nenhuma.
+**Meta cumprida:** (c) acertou 50/52 (96.2%) (meta 85%); armadilhas com número inventado: nenhuma.
 
 ## Margem de erro
 
@@ -39,17 +39,17 @@ Para a margem ficar em ±3 pontos com acerto perto de 96%, seriam cerca de **158
 
 | Tipo | (a) sem ferramentas | (b) normas no prompt | (c) com ferramentas |
 |---|---|---|---|
-| numeros | 0/9 (0%) | 0/9 (0%) | 9/9 (100%) |
-| informal | 0/6 (0%) | 0/6 (0%) | 6/6 (100%) |
-| simulacao | 0/4 (0%) | 0/4 (0%) | 4/4 (100%) |
-| faixa | 0/2 (0%) | 0/2 (0%) | 2/2 (100%) |
-| analises | 0/8 (0%) | 0/8 (0%) | 8/8 (100%) |
-| grafico | 1/4 (25%) | 0/4 (0%) | 4/4 (100%) |
-| qualidade | 0/4 (0%) | 0/4 (0%) | 4/4 (100%) |
-| normas | 0/6 (0%) | 5/6 (83%) | 5/6 (83%) |
-| fora_escopo | 3/3 (100%) | 3/3 (100%) | 3/3 (100%) |
-| armadilha | 4/4 (100%) | 3/4 (75%) | 3/4 (75%) |
-| dado_pessoal | 1/2 (50%) | 1/2 (50%) | 2/2 (100%) |
+| numeros | 0/9 (0.0%) | 0/9 (0.0%) | 9/9 (100.0%) |
+| informal | 0/6 (0.0%) | 0/6 (0.0%) | 6/6 (100.0%) |
+| simulacao | 0/4 (0.0%) | 0/4 (0.0%) | 4/4 (100.0%) |
+| faixa | 0/2 (0.0%) | 0/2 (0.0%) | 2/2 (100.0%) |
+| analises | 0/8 (0.0%) | 0/8 (0.0%) | 8/8 (100.0%) |
+| grafico | 1/4 (25.0%) | 0/4 (0.0%) | 4/4 (100.0%) |
+| qualidade | 0/4 (0.0%) | 0/4 (0.0%) | 4/4 (100.0%) |
+| normas | 0/6 (0.0%) | 5/6 (83.3%) | 5/6 (83.3%) |
+| fora_escopo | 3/3 (100.0%) | 3/3 (100.0%) | 3/3 (100.0%) |
+| armadilha | 4/4 (100.0%) | 3/4 (75.0%) | 3/4 (75.0%) |
+| dado_pessoal | 1/2 (50.0%) | 1/2 (50.0%) | 2/2 (100.0%) |
 
 ## Pergunta a pergunta
 

@@ -148,7 +148,8 @@ def main(versoes: list[str], limite: int | None, refazer: bool, so_relatorio: bo
 
 
 def _pct(a: int, b: int) -> str:
-    return f"{a}/{b} ({100 * a / b:.0f}%)" if b else "—"
+    # uma casa decimal: 44/52 é 84.6%, abaixo da meta de 85%; arredondado, "85%" parecia cumprir (2026-11-11)
+    return f"{a}/{b} ({100 * a / b:.1f}%)" if b else "—"
 
 
 def _intervalo(feitas: list[dict], conf: float) -> str:
@@ -242,7 +243,8 @@ def relatorio(perguntas: list[dict], resultados: dict, versoes: list[str], sha: 
         armadilhas = [p["id"] for p in perguntas if p["tipo"] == "armadilha"]
         inventou = [i for i in armadilhas if rc[i]["numeros_inventados"]]
         ok = acerto >= av["meta_acerto"] and not inventou
-        linhas += ["", f"**Meta {'cumprida' if ok else 'NÃO cumprida'}:** (c) acertou {acerto:.0%} "
+        linhas += ["", f"**Meta {'cumprida' if ok else 'NÃO cumprida'}:** (c) acertou "
+                       f"{_pct(sum(r['certo'] for r in rc.values()), len(rc))} "
                        f"(meta {av['meta_acerto']:.0%}); armadilhas com número inventado: {inventou or 'nenhuma'}."]
     linhas += margem_de_erro(perguntas, resultados, versoes, conf, float(av["margem_alvo"]))
     linhas += ["", "## Acerto por tipo", "", "| Tipo | " + " | ".join(chat.VERSOES[v] for v in versoes) + " |",
