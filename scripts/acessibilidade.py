@@ -18,7 +18,7 @@ from playwright.sync_api import sync_playwright  # noqa: E402
 from qa_painel import RAIZ, esperar, servidor  # noqa: E402
 
 PAGINAS = {"Início": "", "Quão certo é": "Quão_certo_é", "Onde está o mercado": "Onde_está_o_mercado",
-           "Para onde vai": "Para_onde_vai", "Sobre os dados": "Sobre_os_dados", "Chat": "Chat",
+           "Para onde vai": "Para_onde_vai", "Brasil": "Brasil", "Sobre os dados": "Sobre_os_dados", "Chat": "Chat",
            "Simule você mesmo (Explorar)": "Explorar"}
 ORDEM = ["critical", "serious", "moderate", "minor"]
 NOME = {"critical": "Crítica", "serious": "Séria", "moderate": "Moderada", "minor": "Menor"}
@@ -29,6 +29,20 @@ NOSSAS = {"color-contrast", "label", "aria-input-field-name", "select-name", "im
 CORES_DO_TEMA = {"#83858c": "cor de legenda do tema (st.caption)", "#adadb2": "rótulo de widget desabilitado",
                  "#ff4b4b": "cor primária do tema (valor do slider)"}
 CAUSA = {"heading-order": "st.subheader (h3) logo após st.title (h1), sem h2"}
+
+
+def _rotulo_com_halo(n: dict) -> bool:
+    """Nome no mapa (`.rd-rotulos text`, com data-id): letra com halo da cor da superfície, que o axe não enxerga."""
+    return n["html"].startswith("<text") and "data-id=" in n["html"]
+
+
+def _sem_rotulos_do_mapa(v: dict) -> dict | None:
+    """O achado sem os nomes do mapa (falso positivo do axe: ele compara a letra com a faixa, mas a letra é lida contra
+    o halo; o contraste real, letra × halo, está em tests/test_cores.py). None se só sobravam eles."""
+    if v["id"] != "color-contrast":
+        return v
+    nos = [n for n in v["nodes"] if not _rotulo_com_halo(n)]
+    return {**v, "nodes": nos} if nos else None
 
 
 def _origem(v: dict) -> tuple[bool, str]:
@@ -50,7 +64,7 @@ def rodar(saida: Path) -> list[dict]:
         for nome, caminho in PAGINAS.items():
             page.goto(f"{url}/{caminho}")
             esperar(page, 3000)
-            for v in axe.run(page).response["violations"]:
+            for v in filter(None, map(_sem_rotulos_do_mapa, axe.run(page).response["violations"])):
                 nossa, causa = _origem(v)
                 achados.append({"pagina": nome, "regra": v["id"], "gravidade": v.get("impact") or "minor",
                                 "descricao": v["help"], "n": len(v["nodes"]), "causa": causa, "nossa": nossa})
@@ -73,6 +87,9 @@ def rodar(saida: Path) -> list[dict]:
     md += ["## Limitação conhecida (decisão do autor, 2026-10-19)", "",
            "- `list` e `listitem` (todas as páginas): a lista do menu lateral do próprio Streamlit (`st.navigation`), "
            "com itens fora da estrutura de lista que o leitor de tela espera; não é código nosso.",
+           "- Nomes nos mapas (`.rd-rotulos text`): o axe compara a letra com a cor da faixa embaixo, mas a letra tem "
+           "um contorno largo (halo) da cor da superfície e é lida contra ele; o contraste real (letra × halo, ≥ 4,5:1 "
+           "nos dois temas) é conferido em `tests/test_cores.py`. Esses achados ficam fora da contagem (2026-11-11).",
            "- Corrigidos em 2026-11-07 (Fase 1, item 6): contraste do texto apagado (`--mudo`) e do azul em texto "
            "pequeno (`--s1-texto`), a legenda que subia sobre a faixa do cabeçalho e a ordem dos títulos do Explorar.",
            "- O contraste das cores padrão do Streamlit (legenda `st.caption`, cor primária no valor do slider) fica "

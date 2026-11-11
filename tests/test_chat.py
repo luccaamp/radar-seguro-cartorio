@@ -437,7 +437,7 @@ def test_perguntas_prontas_respondem_sem_modelo_com_os_numeros_do_painel(con):
 # ------------------------------------------------------------------ página do chat
 def _pagina():
     from streamlit.testing.v1 import AppTest
-    return AppTest.from_file(str(RAIZ / "app/pages/5_Chat.py"), default_timeout=120)
+    return AppTest.from_file(str(RAIZ / "app/paginas/5_Chat.py"), default_timeout=120)
 
 
 PROIBIDOS_NA_TELA = ("sem o modelo", "sem chat", "respondidas direto pelo painel", "modo reserva", "fallback",
@@ -598,7 +598,7 @@ def test_pagina_do_chat_descarta_contexto_falso(painel_demo, monkeypatch):
 
 def test_mercado_com_municipio_oferece_perguntar_sobre_ele(painel_demo):
     from streamlit.testing.v1 import AppTest
-    at = AppTest.from_file(str(RAIZ / "app/pages/2_Onde_está_o_mercado.py"), default_timeout=120).run()
+    at = AppTest.from_file(str(RAIZ / "app/paginas/2_Onde_está_o_mercado.py"), default_timeout=120).run()
     at.selectbox(key="f_mun").set_value("Uberaba").run()
     tela = " ".join(m.value for m in at.markdown)
     links = re.findall(r'href="(Chat\?[^"]+)"', tela)

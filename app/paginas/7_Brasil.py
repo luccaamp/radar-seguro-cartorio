@@ -87,7 +87,7 @@ if uf in por_uf:
                                            ("Títulos e Documentos", "rtd"), ("Pessoas Jurídicas", "rcpj"))],
               numericas={1})
     if uf == "MG":
-        st.page_link("pages/2_Onde_está_o_mercado.py", label="Ver o estudo completo de Minas Gerais: o mercado do "
+        st.page_link("paginas/2_Onde_está_o_mercado.py", label="Ver o estudo completo de Minas Gerais: o mercado do "
                      "seguro por município →")
     else:
         ui.frase("O prêmio do seguro e o déficit de cobertura deste estado ainda não foram calculados: exigem a RAIS "

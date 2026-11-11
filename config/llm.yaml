@@ -1,5 +1,5 @@
 # Chat do painel (E5; D-060): Gemini no nível gratuito do Google AI Studio, com o faturamento desligado no projeto
-# da chave (D-061). Lido só por src/llm.py, src/agent/, app/pages/5_Chat.py e os scripts do chat.
+# da chave (D-061). Lido só por src/llm.py, src/agent/, app/paginas/5_Chat.py e os scripts do chat.
 # A chave NUNCA fica aqui: vem da variável GEMINI_API_KEY (ambiente ou .env, fora do git) ou, no Streamlit Community
 # Cloud, de st.secrets. Nome documentado no .env.example.
 

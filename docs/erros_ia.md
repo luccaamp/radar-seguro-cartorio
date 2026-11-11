@@ -1061,3 +1061,11 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** (1) "funciona aqui" tratado como "funciona no lugar onde vai rodar"; o ensaio no próprio runner só seria possível depois do merge, e o workflow não tinha modo de ensaio. (2) pressa numa troca de uma linha.
 - **Correção:** (1) referência versionada do IBGE, novas tentativas em erro de rede, publicação só da `main` e ensaio completo em branch antes do merge; (2) a linha foi conferida (o import está certo) e a regra continua: nenhuma edição de código por script. Regra: todo job agendado é ensaiado no runner antes de ir para a `main`.
 - **Bom para os slides?** sim (o lugar onde roda faz parte do teste)
+
+## 2026-11-11 — Página nova no menu sem conferir o menu em telas médias; e a pasta `pages/` que o Streamlit lê duas vezes
+- **Onde:** `app/Inicio.py` (navegação), `src/painel/estilo.css`, `app/pages/` (agora `app/paginas/`), `src/painel/componentes/mapa.js`.
+- **O que aconteceu:** (1) a IA acrescentou a 8ª página ("Brasil", D-087) e conferiu o painel em 1.280 px e no celular, mas não em telas médias: entre ≈ 800 e 1.100 px os últimos itens do menu ficavam debaixo do botão de tema ("Pergunte à IA" sumia). (2) Abrir direto o endereço de uma página num servidor recém-ligado mostrava o menu lateral antigo, com os nomes dos arquivos: a IA tinha visto isso duas vezes no servidor local e tratou como "carregando". (3) O rótulo do mapa aparecia do tamanho do mapa por um instante no carregamento.
+- **Como foi detectado:** (1) e (3) pela IA, na captura do link público depois do Reboot; (2) pela IA, na avaliação geral pedida pelo autor, ao medir o menu no Playwright.
+- **Causa provável:** (1) larguras conferidas só nos extremos; (2) um sintoma que some ao recarregar foi tratado como passageiro, sem perguntar por que aparecia; (3) a letra calculada uma vez só, com a primeira medida da tela.
+- **Correção:** ver a D-087 ("Correções depois da primeira Release"); testes de navegador em 800, 1.024 e 1.280 px e num servidor recém-ligado. Regras: mudança no menu é conferida em pelo menos três larguras (celular, ≈ 1.000 px e computador); um sintoma estranho que "some sozinho" é investigado antes de ser descartado.
+- **Bom para os slides?** não

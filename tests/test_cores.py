@@ -158,3 +158,15 @@ def test_graficos_com_as_mesmas_cores_e_contraste():
     assert graficos.SEQUENCIAL == [TEMAS["claro"][f] for f in FAIXAS]
     assert graficos.SEQUENCIAL_ESCURO == [TEMAS["escuro"][f] for f in FAIXAS]
     assert [graficos.COR[n] for n in ("destaque", "comparacao", "terceira")] == [TEMAS["claro"][s] for s in SERIES[:3]]
+
+
+@pytest.mark.parametrize("tema", ["claro", "escuro"])
+def test_rotulo_do_mapa_legivel_contra_o_halo(tema):
+    """Os nomes no mapa (componentes/mapa.css, `.rd-rotulos text`) têm a letra em --texto com um contorno largo (halo,
+    25% da letra) em --superficie: é contra o halo que a letra é lida, em qualquer faixa. O axe não vê o halo e acusa
+    o contraste letra × faixa (página Brasil, 2026-11-11); este teste confere o que vale."""
+    css = (RAIZ / "src" / "painel" / "componentes" / "mapa.css").read_text(encoding="utf-8")
+    regra = re.search(r"\.rd-rotulos text \{([^}]*)\}", css).group(1)
+    assert "fill: var(--texto" in regra and "stroke: var(--superficie" in regra and "paint-order: stroke" in regra
+    t = TEMAS[tema]
+    assert contraste(t["texto"], t["superficie"]) >= 4.5

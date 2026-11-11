@@ -137,7 +137,7 @@ O painel cruza várias fontes, porque nenhuma traz tudo sozinha. A qualidade dos
 
 ### 2.3 Estrutura de pastas
 
-A estrutura atual está na seção "Estrutura do projeto" do `README.md` da raiz. O chat (E5) está em `config/llm.yaml`, `src/llm.py` (interface única para o LLM local), `src/agent/` (ferramentas, laço do chat e correção da avaliação), `app/pages/5_Chat.py` e `eval/` (gabarito e resultado). Ainda não existem: `src/radar/` e, se houver radar, `eval/gabarito_radar.csv`.
+A estrutura atual está na seção "Estrutura do projeto" do `README.md` da raiz. O chat (E5) está em `config/llm.yaml`, `src/llm.py` (interface única para o LLM local), `src/agent/` (ferramentas, laço do chat e correção da avaliação), `app/paginas/5_Chat.py` e `eval/` (gabarito e resultado). Ainda não existem: `src/radar/` e, se houver radar, `eval/gabarito_radar.csv`.
 
 **"Do zero"** significa rodar o pipeline **a partir dos snapshots do bronze**, sem coletar de novo.
 

@@ -17,8 +17,8 @@ from apoio_painel import RAIZ, mapa_componente
 
 # dados_reais: lê o banco completo; fora da suíte padrão
 pytestmark = [pytest.mark.dados_reais, pytest.mark.usefixtures("banco_temporario")]
-MERCADO = str(RAIZ / "app/pages/2_Onde_está_o_mercado.py")
-SIMULADOR = str(RAIZ / "app/pages/6_Explorar.py")
+MERCADO = str(RAIZ / "app/paginas/2_Onde_está_o_mercado.py")
+SIMULADOR = str(RAIZ / "app/paginas/6_Explorar.py")
 
 
 # ------------------------------------------------------------------ apoio
@@ -126,7 +126,7 @@ def test_faixas_ordenadas_em_cada_filtro(db):
 def test_kpis_iguais_entre_sobre_os_dados_e_simulador():
     """D-051: os 10 números ficam na tabela de "Sobre os dados"; o Simulador (fora da navegação) bate com ela."""
     from streamlit.testing.v1 import AppTest
-    sob = AppTest.from_file(str(RAIZ / "app/pages/4_Sobre_os_dados.py"), default_timeout=120).run()
+    sob = AppTest.from_file(str(RAIZ / "app/paginas/4_Sobre_os_dados.py"), default_timeout=120).run()
     sim = AppTest.from_file(SIMULADOR, default_timeout=120).run()
     v = lambda at, rot: [m.value for m in at.metric if m.label == rot]  # noqa: E731
     tela = html(sob)

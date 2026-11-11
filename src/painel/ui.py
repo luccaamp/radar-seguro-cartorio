@@ -12,7 +12,7 @@ import streamlit as st
 ESTILO = Path(__file__).with_name("estilo.css")
 SELOS = {"dado": "dado", "suposicao": "suposição", "projecao": "projeção", "faixa": "faixa provável",
          "sensibilidade": "sensibilidade", "comparacao": "comparação", "alerta": "alerta"}
-CHAT = "Chat"   # endereço da página do chat (app/pages/5_Chat.py)
+CHAT = "Chat"   # endereço da página do chat (app/paginas/5_Chat.py)
 
 
 def _t(texto) -> str:

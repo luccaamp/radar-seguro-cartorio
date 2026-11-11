@@ -248,7 +248,7 @@ def test_pagina_brasil_roda_sem_internet(monkeypatch):
     sys.path.insert(0, str(RAIZ / "app"))
     from apoio_painel import mapa_componente
     monkeypatch.setenv("RADAR_BRASIL_RELEASE", "0")
-    at = AppTest.from_file(str(RAIZ / "app" / "pages" / "7_Brasil.py"), default_timeout=60).run()
+    at = AppTest.from_file(str(RAIZ / "app" / "paginas" / "7_Brasil.py"), default_timeout=60).run()
     assert not at.exception
     html = " ".join(m.value for m in at.markdown)
     assert html.count('class="rd-card"') == 4 and "cópia do repositório" in html and "Atualizado em" in html
@@ -270,6 +270,7 @@ def test_workflow_so_publica_depois_do_contrato_e_dos_testes():
     assert i_pipe < i_test < i_pub   # publicar é o último passo normal: qualquer falha antes impede
     passos = fluxo["jobs"]["brasil"]["steps"]
     assert passos[i_pub]["if"] == "github.ref == 'refs/heads/main'"   # numa branch, ensaio sem Release
+    assert "--latest=false" in passos[i_pub]["run"]   # a publicação mensal não vira a Release principal
     falha = passos[-1]
     assert falha["if"] == "failure()" and "gh issue create" in falha["run"]
     assert "--simular-falha" in fluxo["jobs"]["brasil"]["steps"][i_pipe]["run"]

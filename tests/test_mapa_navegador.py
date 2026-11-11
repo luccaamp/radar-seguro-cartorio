@@ -233,3 +233,50 @@ def test_botao_de_tema_claro_por_padrao_e_escuro_com_um_clique(nav):
     _esperar_tema(page, "claro")
     assert not erros, erros
     page.close()
+
+
+MENU = """() => {
+  const nav = document.querySelector('[data-testid="stTopNav"]');
+  const tema = document.querySelector('.st-key-rd_tema').getBoundingClientRect();
+  const itens = [...nav.querySelectorAll('.rc-overflow-item')].filter(i => getComputedStyle(i).opacity !== '0');
+  const caixas = itens.map(i => ({texto: i.innerText.trim(), dir: i.getBoundingClientRect().right}));
+  return {temaEsq: tema.left, caixas};
+}"""
+
+
+@pytest.mark.parametrize("largura", [800, 1024, 1280])
+def test_menu_do_topo_nao_fica_debaixo_do_botao_de_tema(nav, largura):
+    """Com 8 páginas (a "Brasil", D-087), os últimos itens do menu ficavam debaixo do botão de tema abaixo de ≈ 1.100 px
+    (2026-11-11). O menu termina antes do botão e o que não cabe vai para o "… more" do Streamlit, onde "Pergunte à IA"
+    continua alcançável."""
+    url, b = nav
+    page = b.new_page(viewport={"width": largura, "height": 800})
+    page.add_init_script(PREPARAR_TEMA)
+    page.goto(url + "/")
+    page.locator(".rd-card").first.wait_for(timeout=60_000)
+    page.wait_for_timeout(1500)
+    m = page.evaluate(MENU)
+    assert m["caixas"] and all(c["dir"] <= m["temaEsq"] for c in m["caixas"]), m
+    textos = [c["texto"] for c in m["caixas"]]
+    if "Pergunte à IA" not in textos:   # recolhido: o "… more" abre a lista com o resto
+        page.locator('[data-testid="stTopNav"] .rc-overflow-item-rest').click()
+        page.get_by_test_id("stTopNavDropdownLink").filter(has_text="Pergunte à IA").wait_for(timeout=10_000)
+    page.close()
+
+
+def test_link_direto_num_servidor_recem_ligado_usa_o_menu_do_topo(nav):
+    """O Streamlit Cloud dorme e acorda o app num servidor novo. Com as páginas numa pasta chamada `pages/`, quem abria
+    direto o endereço de uma página (um link do README, um link compartilhado) nesse servidor via o menu lateral antigo,
+    com os nomes dos arquivos ("Inicio", "Chat", "Explorar") (2026-11-11). A pasta virou `app/paginas/`: servidor
+    próprio, recém-ligado, aberto direto em /Brasil."""
+    _, b = nav   # o navegador dos outros testes; o servidor, novo (o deles já está "aquecido")
+    with painel_demo() as url:
+        page = b.new_page(viewport={"width": 1280, "height": 800})
+        page.add_init_script(PREPARAR_TEMA)
+        page.goto(url + "/Brasil")
+        page.locator(".rd-areas path").first.wait_for(timeout=60_000)
+        page.locator('[data-testid="stTopNav"]').wait_for(timeout=30_000)
+        assert page.locator('[data-testid="stSidebarNav"]').count() == 0
+        assert page.get_by_role("heading", name="Cartórios do Brasil").count() == 1
+        page.close()
+    assert not (RAIZ / "app" / "pages").exists()

@@ -18,7 +18,7 @@ from apoio_painel import RAIZ
 
 pytestmark = pytest.mark.usefixtures("painel_demo")
 # terceira rodada (D-051): os 10 números foram para "Sobre os dados"; a projeção, para "Para onde vai"
-INICIO, SOBRE, PROJECAO = "app/Inicio.py", "app/pages/4_Sobre_os_dados.py", "app/pages/3_Para_onde_vai.py"
+INICIO, SOBRE, PROJECAO = "app/Inicio.py", "app/paginas/4_Sobre_os_dados.py", "app/paginas/3_Para_onde_vai.py"
 CPF = re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b")
 
 

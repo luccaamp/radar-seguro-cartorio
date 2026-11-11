@@ -6,7 +6,9 @@ provável logo abaixo, uma frase de quão certo é e o funil da escada. Tudo vem
 
 O menu fica no topo, como no V5 (D-082), numa linha só; o Simulador ("Simule") vem antes de "Sobre os dados". Os
 endereços das páginas são os mesmos de antes (os links `Chat?pergunta=` continuam valendo), e cada arquivo de
-app/pages/ também roda sozinho (testes).
+app/paginas/ também roda sozinho (testes). A pasta NÃO se chama `pages/`: com esse nome, o Streamlit também a lê no
+modo antigo de páginas, e quem abria direto o endereço de uma página num servidor recém-ligado (o Cloud acorda o app
+assim) via o menu lateral com os nomes dos arquivos (2026-11-11).
 """
 from pathlib import Path
 
@@ -43,11 +45,11 @@ def inicio() -> None:
 st.logo(str(Path(__file__).with_name("static") / "marca.svg"), size="large")
 st.navigation([
     st.Page(inicio, title="Início", default=True),
-    st.Page("pages/1_Quão_certo_é.py", title="Quão certo é", url_path="Quão_certo_é"),
-    st.Page("pages/2_Onde_está_o_mercado.py", title="Onde está o mercado", url_path="Onde_está_o_mercado"),
-    st.Page("pages/3_Para_onde_vai.py", title="Para onde vai", url_path="Para_onde_vai"),
-    st.Page("pages/7_Brasil.py", title="Brasil", url_path="Brasil"),
-    st.Page("pages/6_Explorar.py", title="Simule", url_path="Explorar"),
-    st.Page("pages/4_Sobre_os_dados.py", title="Sobre os dados", url_path="Sobre_os_dados"),
-    st.Page("pages/5_Chat.py", title="Pergunte à IA", url_path="Chat"),
+    st.Page("paginas/1_Quão_certo_é.py", title="Quão certo é", url_path="Quão_certo_é"),
+    st.Page("paginas/2_Onde_está_o_mercado.py", title="Onde está o mercado", url_path="Onde_está_o_mercado"),
+    st.Page("paginas/3_Para_onde_vai.py", title="Para onde vai", url_path="Para_onde_vai"),
+    st.Page("paginas/7_Brasil.py", title="Brasil", url_path="Brasil"),
+    st.Page("paginas/6_Explorar.py", title="Simule", url_path="Explorar"),
+    st.Page("paginas/4_Sobre_os_dados.py", title="Sobre os dados", url_path="Sobre_os_dados"),
+    st.Page("paginas/5_Chat.py", title="Pergunte à IA", url_path="Chat"),
 ], position="top").run()
