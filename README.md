@@ -40,11 +40,15 @@ flowchart LR
     P --> D["painel<br/>Streamlit"]
     P --> CH["chat<br/>Gemini + ferramentas"]
     CH --> D
+    P --> M["servidor MCP<br/>as mesmas ferramentas"]
+    P --> Q["o que mudou<br/>a cada carga"]
 ```
 
 - **Pipeline em camadas** (DuckDB): o bronze guarda os originais com o hash; o silver limpa; o gold calcula o modelo (premissas versionadas em `config/`, cada uma com fonte ou marcada `fonte: suposição`). Um contrato de qualidade violado interrompe a carga.
 - **Conjunto público** (`data/publico/`, < 1 MB, no git): as tabelas que o painel lê, auditadas para que nenhum nome nem CPF de pessoa física saia (D-038).
 - **Chat que não inventa número:** o modelo (Gemini, nível gratuito) só responde chamando ferramentas que leem as mesmas tabelas do painel, e cita a fonte. Quando o dado não existe, diz que não encontrou.
+- **Servidor MCP:** as mesmas 5 ferramentas do chat, para qualquer cliente MCP (Claude Desktop, Claude Code, IDEs) consultar os números com a fonte, de um clone, sem chave nem internet: `uv run python -m src.agent.servidor_mcp` (no Claude Code: `claude mcp add radar -- uv run --directory <pasta do clone> python -m src.agent.servidor_mcp`). Só lê o conjunto público; implementado sem dependência nova ([`src/agent/servidor_mcp.py`](src/agent/servidor_mcp.py)).
+- **O que mudou a cada carga:** um agente compara o conjunto publicado antes com o novo (os 10 números, as datas das fontes, as tabelas e as colunas) e o Gemini resume em 2 a 4 frases; cada número do resumo é conferido no relatório, e um número sem apoio descarta o resumo ([`scripts/o_que_mudou.py`](scripts/o_que_mudou.py); a última comparação em [`docs/o_que_mudou.md`](docs/o_que_mudou.md)).
 - **Tudo gratuito e reproduzível:** de um clone, `uv sync` e o painel abre com os números da carga oficial; com `data/completo/` o gold é recalculado e confere com o publicado pelo hash.
 
 ## Qualidade medida
@@ -52,10 +56,11 @@ flowchart LR
 | Medida | Resultado | Onde |
 |---|---|---|
 | Acerto do chat no gabarito congelado (52 perguntas) | **96%** com ferramentas (intervalo de 95%: 87% a 99%); 23% com as normas no prompt; 17% sem nada | [`eval/resultado_avaliacao.md`](eval/resultado_avaliacao.md) |
+| Avaliação do chat toda semana, com a API real | [![Avaliação do chat](https://github.com/luccaamp/radar-seguro-cartorio/actions/workflows/avaliacao-chat.yml/badge.svg)](https://github.com/luccaamp/radar-seguro-cartorio/actions/workflows/avaliacao-chat.yml) verde = meta cumprida (acerto ≥ 85%, nenhum número inventado nas armadilhas); o relatório fica no resumo de cada execução | [`.github/workflows/avaliacao-chat.yml`](.github/workflows/avaliacao-chat.yml) |
 | Ganho das ferramentas, nas mesmas perguntas | +78,8 pontos sobre o modelo sozinho (intervalo: +66,4 a +91,3) | idem, seção "Margem de erro" |
 | Número inventado nas perguntas-armadilha | nenhum | idem |
 | Contratos de qualidade na carga | 109 checagens; nenhum erro violado | página "Sobre os dados" |
-| Testes a cada pull request (GitHub Actions) | suíte padrão (399 testes, entre eles os 15 do JavaScript do mapa), o mapa num navegador de verdade (4) e o modo completo com os dados reais | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+| Testes a cada pull request (GitHub Actions) | suíte padrão (462 testes, entre eles os do JavaScript do mapa e do botão de tema, e os do servidor MCP), o mapa num navegador de verdade (4) e o modo completo com os dados reais | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
 | Cobertura dos testes em `src/` | 71% das linhas (indicador, não meta: cobertura alta não garante teste bom; Inozemtseva e Holmes, ICSE 2014) | `uv run pytest --cov=src` |
 | Acessibilidade (axe) nas 7 páginas | 0 falhas do código do projeto | `scripts/acessibilidade.py` |
 | Custo | R$ 0 (níveis gratuitos, sem cartão) | [`CLAUDE.md`](CLAUDE.md) |

@@ -17,6 +17,7 @@ Uso:
   uv run python scripts/avaliar_chat.py --versoes c      # só (c)
   uv run python scripts/avaliar_chat.py --limite 5       # só as 5 primeiras perguntas (teste rápido da cota)
   uv run python scripts/avaliar_chat.py --relatorio      # só refaz o relatório com as respostas guardadas
+  uv run python scripts/avaliar_chat.py --versoes c --refazer --exigir-meta   # o que o CI roda (avaliacao-chat.yml)
 """
 import argparse
 import csv
@@ -82,7 +83,7 @@ def corrigir(p: dict, r: dict, versao: str) -> dict:
             "certo": avaliacao.corrigir(r["resposta"], p["criterio"], p["esperado"]) and not inventados}
 
 
-def main(versoes: list[str], limite: int | None, refazer: bool, so_relatorio: bool) -> None:
+def main(versoes: list[str], limite: int | None, refazer: bool, so_relatorio: bool) -> bool | None:
     c = llm.config()
     sha = hashlib.sha256(GABARITO.read_bytes()).hexdigest()
     if sha != c["avaliacao"]["gabarito_sha256"]:
@@ -117,7 +118,7 @@ def main(versoes: list[str], limite: int | None, refazer: bool, so_relatorio: bo
             print(f"{p['id']:>2} {v} {'ok ' if x['certo'] else 'ERR'} {x['segundos']:5.1f}s {x['resposta'][:90]!r}",
                   flush=True)
             time.sleep(float(c["avaliacao"]["pausa_s"]))
-    relatorio(perguntas, resultados, versoes, sha, c, parou)
+    return relatorio(perguntas, resultados, versoes, sha, c, parou)
 
 
 def _pct(a: int, b: int) -> str:
@@ -172,7 +173,9 @@ def margem_de_erro(perguntas: list[dict], resultados: dict, versoes: list[str], 
 
 
 def relatorio(perguntas: list[dict], resultados: dict, versoes: list[str], sha: str, c: dict,
-              parou: str | None) -> None:
+              parou: str | None) -> bool | None:
+    """Grava eval/resultado_avaliacao.md. Devolve se a meta foi cumprida (None: rodada sem a versão (c) completa)."""
+    ok = None
     av = c["avaliacao"]
     tipos = list(dict.fromkeys(p["tipo"] for p in perguntas))
     # data das respostas (guardadas com "em"); as feitas agora são de hoje. Refazer só o relatório não muda a data.
@@ -234,6 +237,7 @@ def relatorio(perguntas: list[dict], resultados: dict, versoes: list[str], sha: 
                       + " | ".join(celulas) + " |")
     SAIDA.write_text("\n".join(linhas) + "\n", encoding="utf-8")
     print("\n".join(linhas[:40]))
+    return ok
 
 
 if __name__ == "__main__":
@@ -244,5 +248,9 @@ if __name__ == "__main__":
     a.add_argument("--limite", type=int, help="só as N primeiras perguntas")
     a.add_argument("--refazer", action="store_true", help="ignora as respostas guardadas em eval/respostas/")
     a.add_argument("--relatorio", action="store_true", help="só refaz o relatório com as respostas guardadas")
+    a.add_argument("--exigir-meta", action="store_true",
+                   help="sai com erro se a meta não for cumprida ou a rodada ficar incompleta (o CI usa)")
     x = a.parse_args()
-    main([v for v in x.versoes if v in chat.VERSOES], x.limite, x.refazer, x.relatorio)
+    cumprida = main([v for v in x.versoes if v in chat.VERSOES], x.limite, x.refazer, x.relatorio)
+    if x.exigir_meta and not cumprida:
+        raise SystemExit("meta da avaliação não cumprida (ou rodada incompleta): veja eval/resultado_avaliacao.md")
