@@ -1045,3 +1045,11 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** a IA escreveu as novas tentativas pensando na cota do nível gratuito, que era o problema conhecido nas rodadas locais, e não testou o workflow de ponta a ponta (sem o segredo, não dava); tratou "falha" como uma coisa só, sem separar falha de infraestrutura de falha de qualidade.
 - **Correção:** novas tentativas em toda falha passageira (429, demora, 5xx), códigos de saída próprios (0 / 10 / 11, longe dos códigos de erro do Python e do argparse), retomada no workflow sem refazer o que já foi respondido e veredito escrito no resumo; 3 testes novos. Regra: em avaliação automática, separar "não deu para medir" de "mediu e falhou".
 - **Bom para os slides?** sim (avaliação de LLM precisa distinguir erro do modelo de erro da infraestrutura)
+
+## 2026-11-11 — Relatório da avaliação arredondando o acerto para a meta, e resposta "," aceita pelo chat
+- **Onde:** `scripts/avaliar_chat.py` (relatório) e `src/agent/chat.py` (`responder_em_partes`).
+- **O que aconteceu:** (1) o relatório escrito pela IA mostrava os percentuais sem casa decimal: 44/52 (84,6%) saiu como "acertou 85% (meta 85%)" ao lado de "Meta NÃO cumprida", o que parece contradição. (2) O laço do chat entregava qualquer texto final do Gemini; na execução #2, a pergunta 23 recebeu só "," depois da ferramenta certa, e no painel um visitante veria o mesmo.
+- **Como foi detectado:** pela IA, ao ler a primeira execução completa no GitHub, a pedido do autor.
+- **Causa provável:** (1) arredondamento escolhido para a tabela sem pensar no caso da fronteira da meta; (2) o laço só tratava resposta vazia (`""`), não resposta sem conteúdo.
+- **Correção:** uma casa decimal em todos os acertos do relatório; o chat pede a resposta escrita mais uma vez quando ela não tem palavra nem número; 3 testes. Regra: número comparado com uma meta aparece com precisão suficiente para o veredito ser visível.
+- **Bom para os slides?** sim (a avaliação contínua achou um defeito que as rodadas locais não mostraram)

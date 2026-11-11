@@ -120,6 +120,11 @@ def texto_contexto(pagina: str | None, municipio: str | None, municipios_validos
 
 
 # ------------------------------------------------------------------ resposta
+def tem_conteudo(texto: str) -> bool:
+    """Se a resposta tem ao menos uma palavra ou número (2 letras ou dígitos seguidos); "", "," ou "." não têm."""
+    return bool(re.search(r"[^\W_]{2,}", texto or ""))
+
+
 def responder_em_partes(pergunta: str, con: duckdb.DuckDBPyConnection | None, historico: list[dict] | None = None,
                         versao: str = "c", banco: str = "", contexto: str = ""):
     """A resposta em streaming: ("texto", trecho) enquanto o texto chega, ("consultando", None) quando o modelo pede
@@ -152,7 +157,22 @@ def responder_em_partes(pergunta: str, con: duckdb.DuckDBPyConnection | None, hi
         etapas.append({"etapa": "modelo", "s": time.perf_counter() - t})
         pedidos = llm.chamadas(msg)
         if not pedidos or ultima:
-            yield "fim", Resposta(llm.texto(msg), chamadas, etapas=etapas)
+            texto = llm.texto(msg)
+            if not tem_conteudo(texto):
+                # o Gemini às vezes fecha a resposta sem texto útil (só "," na avaliação de 2026-11-11, pergunta 23,
+                # depois de consultar a ferramenta certa): pede a resposta escrita uma vez mais, sem ferramenta nova
+                yield "consultando", None
+                t = time.perf_counter()
+                for tipo, valor in llm.conversar_em_partes(conteudos, sistema, esquemas,
+                                                           sem_ferramenta_agora=bool(esquemas)):
+                    if tipo == "texto":
+                        yield "texto", valor
+                    else:
+                        msg = valor
+                etapas.append({"etapa": "modelo (de novo: resposta sem conteúdo)", "s": time.perf_counter() - t})
+                texto = llm.texto(msg)
+            # ainda sem conteúdo: vazio, e o painel mostra a mensagem de "sem dado" em vez da pontuação solta
+            yield "fim", Resposta(texto if tem_conteudo(texto) else "", chamadas, etapas=etapas)
             return
         yield "consultando", None
         conteudos.append(msg)   # como veio: as assinaturas de raciocínio do Gemini precisam voltar
