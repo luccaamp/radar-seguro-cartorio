@@ -1,0 +1,29 @@
+# Visão do Brasil, camada 1 (D-087): pipeline agendado (scripts/pipeline_brasil.py, .github/workflows/pipeline-brasil.yml).
+
+# Registros que a API do Justiça Aberta pode entregar a menos que o meta.total dela, por UF, sem CNS repetido.
+# fonte: medição. SP: a API informa 1.680 e entrega 1.679 (Fase 0, 2026-10-17; de novo em 2026-11-11). As outras 26 UFs
+# entregam tudo. Diferença maior que esta = coleta com problema: não publica.
+tolerancia_meta_total: 2
+
+# Fração máxima das cidades com cartório de uma UF que pode ficar sem código do IBGE (nome escrito diferente).
+# fonte: suposição; acima disso, o "% de municípios com cartório" daquela UF ficaria enganoso: não publica.
+limite_cidades_sem_codigo: 0.05
+
+# Cidades que o cadastro do CNJ escreve diferente do IBGE (nome normalizado: código do IBGE), fora de MG (os de MG
+# ficam em config/estados.yaml). fonte: comparação do cadastro de 2026-10-17 com a lista de municípios do IBGE de
+# 2026-11-11; cada código conferido na lista do IBGE. O DF não precisa: com um município só, toda cidade é Brasília.
+apelidos_municipios:
+  RN:
+    ACU: 2400208    # Assu
+    ARES: 2401206   # Arez
+  RR:
+    SAO LUIZ: 1400605   # São Luiz (IBGE: São Luiz do Anauá)
+
+# Variação máxima das serventias ativas do Brasil entre duas publicações seguidas (fração).
+# fonte: suposição; o cadastro muda devagar (criações e extinções de serventias); um salto maior que este sugere
+# coleta incompleta ou mudança na API: não publica e abre uma issue para alguém olhar.
+variacao_maxima_ativas: 0.05
+
+# Onde o painel procura a publicação mais recente: as Releases do repositório com esta etiqueta no começo.
+repositorio: luccaamp/radar-seguro-cartorio
+prefixo_release: brasil-

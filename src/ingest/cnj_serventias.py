@@ -17,8 +17,11 @@ HEADERS = {"Origin": "https://justicaaberta.cnj.jus.br", "Referer": "https://jus
 POR_PAGINA = 10000
 
 
-def coletar(uf: str) -> None:
-    destino = BRONZE / "cnj_justica_aberta" / hoje() / f"serventias_{uf}.json"
+def coletar(uf: str, pasta=None, tolerancia: int = 0) -> None:
+    """`pasta`: onde gravar (padrão data/bronze/cnj_justica_aberta/<data>; o pipeline do Brasil passa a dele).
+    `tolerancia`: quantos registros a API pode entregar a menos que o meta.total dela, sem CNS repetido (SP: a API
+    informa 1.680 e entrega 1.679 desde a Fase 0; conferido de novo em 2026-11-11). A diferença fica no .meta.json."""
+    destino = (pasta or BRONZE / "cnj_justica_aberta" / hoje()) / f"serventias_{uf}.json"
     if destino.exists():
         print(f"{destino.name}: já existe, mantido")
         return
@@ -34,13 +37,22 @@ def coletar(uf: str) -> None:
     r.raise_for_status()
     d = r.json()
     itens = d["data"]
-    ok = d["meta"]["total"] == len(itens) == len({i["cns"] for i in itens})
-    if not ok:
+    faltando = integridade(d["meta"]["total"], [i["cns"] for i in itens], tolerancia)
+    if faltando is None:
         raise RuntimeError(f"{uf}: integridade falhou (meta.total={d['meta']['total']}, registros={len(itens)})")
     destino.write_bytes(r.content)
     gravar_meta(destino, url=URL, metodo="POST", params=params, corpo=corpo, registros=len(itens),
-                meta_total=d["meta"]["total"], sha256=sha256_bytes(r.content))
-    print(f"{uf}: {len(itens)} registros, integridade ok")
+                meta_total=d["meta"]["total"], faltando_na_api=faltando, sha256=sha256_bytes(r.content))
+    print(f"{uf}: {len(itens)} registros, integridade ok" + (f" ({faltando} a menos que o meta.total)" if faltando else ""))
+
+
+def integridade(meta_total: int, cns: list[str], tolerancia: int = 0) -> int | None:
+    """Quantos registros faltam em relação ao meta.total da API, se a coleta é aceitável; None se não é (CNS repetido,
+    registros a mais ou faltando mais que a `tolerancia`)."""
+    faltando = meta_total - len(cns)
+    if len(set(cns)) != len(cns) or not 0 <= faltando <= tolerancia:
+        return None
+    return faltando
 
 
 if __name__ == "__main__":

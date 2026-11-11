@@ -1,10 +1,10 @@
 # Radar Seguro-Garantia Cartórios
 
-[![CI](https://github.com/luccaamp/radar-seguro-cartorio/actions/workflows/ci.yml/badge.svg)](https://github.com/luccaamp/radar-seguro-cartorio/actions/workflows/ci.yml)
+[![CI](https://github.com/luccaamp/radar-seguro-cartorio/actions/workflows/ci.yml/badge.svg)](https://github.com/luccaamp/radar-seguro-cartorio/actions/workflows/ci.yml) [![Pipeline do Brasil](https://github.com/luccaamp/radar-seguro-cartorio/actions/workflows/pipeline-brasil.yml/badge.svg)](https://github.com/luccaamp/radar-seguro-cartorio/actions/workflows/pipeline-brasil.yml) [![Avaliação do chat](https://github.com/luccaamp/radar-seguro-cartorio/actions/workflows/avaliacao-chat.yml/badge.svg)](https://github.com/luccaamp/radar-seguro-cartorio/actions/workflows/avaliacao-chat.yml)
 
 **Quanto dinheiro o seguro obrigatório dos cartórios pode movimentar, e quão certo é esse número?** O Provimento CNJ 227/2026 obriga parte dos cartórios a garantir a dívida trabalhista com seus empregados. Este projeto estima esse mercado com dados públicos oficiais, mostra a incerteza de cada número e deixa qualquer pessoa conferir as contas: um painel, um simulador e um chat que só responde com número tirado dos dados, com a fonte.
 
-**Painel público:** **[radar-seguro-cartorio.streamlit.app](https://radar-seguro-cartorio.streamlit.app)** (Streamlit Community Cloud, modo demonstração com o conjunto público; a primeira visita pode levar alguns segundos para acordar o app). Hoje cobre **Minas Gerais**; os outros estados entram nas próximas fases ([`docs/plano_projeto.md`](docs/plano_projeto.md)).
+**Painel público:** **[radar-seguro-cartorio.streamlit.app](https://radar-seguro-cartorio.streamlit.app)** (Streamlit Community Cloud, modo demonstração com o conjunto público; a primeira visita pode levar alguns segundos para acordar o app). O estudo completo do seguro cobre **Minas Gerais**; a página **Brasil** mostra os cartórios das **27 UFs** (camada 1: cadastro do CNJ e IBGE), atualizada todo mês por um pipeline agendado, com a data no selo "atualizado em". O prêmio dos outros estados entra nas próximas fases ([`docs/plano_projeto.md`](docs/plano_projeto.md)).
 
 ![Início do painel: o prêmio anual estimado de R$ 341,1 mil, com a faixa provável de R$ 215 a 687 mil, e os 6 indicadores de MG (2.525 cartórios ativos, arrecadação anual ≈ R$ 5,60 bi, ≈ 1.121 obrigados, 12.134 empregados CLT, R$ 34,1 mi de déficit e o prêmio)](docs/img/painel_inicio.png)
 
@@ -42,6 +42,10 @@ flowchart LR
     CH --> D
     P --> M["servidor MCP<br/>as mesmas ferramentas"]
     P --> Q["o que mudou<br/>a cada carga"]
+    A["GitHub Actions, todo mês<br/>CNJ + IBGE, 27 UFs"] --> K{"contrato<br/>e testes"}
+    K -- ok --> R["Release brasil-AAAA-MM-DD<br/>+ o que mudou"]
+    K -- falha --> I["nada publicado<br/>+ issue aberta"]
+    R --> D
 ```
 
 - **Pipeline em camadas** (DuckDB): o bronze guarda os originais com o hash; o silver limpa; o gold calcula o modelo (premissas versionadas em `config/`, cada uma com fonte ou marcada `fonte: suposição`). Um contrato de qualidade violado interrompe a carga.
@@ -49,13 +53,14 @@ flowchart LR
 - **Chat que não inventa número:** o modelo (Gemini, nível gratuito) só responde chamando ferramentas que leem as mesmas tabelas do painel, e cita a fonte. Quando o dado não existe, diz que não encontrou.
 - **Servidor MCP:** as mesmas 5 ferramentas do chat, para qualquer cliente MCP (Claude Desktop, Claude Code, IDEs) consultar os números com a fonte, de um clone, sem chave nem internet: `uv run python -m src.agent.servidor_mcp` (no Claude Code: `claude mcp add radar -- uv run --directory <pasta do clone> python -m src.agent.servidor_mcp`). Só lê o conjunto público; implementado sem dependência nova ([`src/agent/servidor_mcp.py`](src/agent/servidor_mcp.py)).
 - **O que mudou a cada carga:** um agente compara o conjunto publicado antes com o novo (os 10 números, as datas das fontes, as tabelas e as colunas) e o Gemini resume em 2 a 4 frases; cada número do resumo é conferido no relatório, e um número sem apoio descarta o resumo ([`scripts/o_que_mudou.py`](scripts/o_que_mudou.py); a última comparação em [`docs/o_que_mudou.md`](docs/o_que_mudou.md)).
+- **Brasil, camada 1, atualizado sozinho:** todo dia 5, o workflow [`pipeline-brasil.yml`](.github/workflows/pipeline-brasil.yml) coleta o cadastro do CNJ das 27 UFs e o IBGE, monta a tabela por UF (só contagens: cartórios ativos, sem titular, municípios com cartório, por 100 mil habitantes), confere (27 UFs, soma igual ao cadastro, cidades casadas com o IBGE, variação contra a publicação anterior, os testes da pasta) e publica uma Release datada com o "o que mudou". Qualquer falha bloqueia a publicação e abre uma issue. O painel lê a Release mais recente, conferida pelo SHA-256, e usa a cópia em [`data/brasil/`](data/brasil) se o GitHub não responder ([`scripts/pipeline_brasil.py`](scripts/pipeline_brasil.py), D-087).
 - **Tudo gratuito e reproduzível:** de um clone, `uv sync` e o painel abre com os números da carga oficial; com `data/completo/` o gold é recalculado e confere com o publicado pelo hash.
 
 ## Qualidade medida
 
 | Medida | Resultado | Onde |
 |---|---|---|
-| Acerto do chat no gabarito congelado (52 perguntas) | **96%** com ferramentas (intervalo de 95%: 87% a 99%); 23% com as normas no prompt; 17% sem nada | [`eval/resultado_avaliacao.md`](eval/resultado_avaliacao.md) |
+| Acerto do chat no gabarito congelado (52 perguntas) | **96%** com ferramentas na rodada local de 2026-10-28 (intervalo de 95%: 87% a 99%); 23% com as normas no prompt; 17% sem nada. Na primeira rodada completa no CI (2026-11-11): **86,5%** (75% a 93%). Com 52 perguntas, o acerto varia de uma rodada para outra | [`eval/resultado_avaliacao.md`](eval/resultado_avaliacao.md) |
 | Avaliação do chat toda semana, com a API real | [![Avaliação do chat](https://github.com/luccaamp/radar-seguro-cartorio/actions/workflows/avaliacao-chat.yml/badge.svg)](https://github.com/luccaamp/radar-seguro-cartorio/actions/workflows/avaliacao-chat.yml) verde = meta cumprida (acerto ≥ 85%, nenhum número inventado nas armadilhas); o relatório fica no resumo de cada execução | [`.github/workflows/avaliacao-chat.yml`](.github/workflows/avaliacao-chat.yml) |
 | Ganho das ferramentas, nas mesmas perguntas | +78,8 pontos sobre o modelo sozinho (intervalo: +66,4 a +91,3) | idem, seção "Margem de erro" |
 | Número inventado nas perguntas-armadilha | nenhum | idem |

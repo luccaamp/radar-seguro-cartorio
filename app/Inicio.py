@@ -46,6 +46,7 @@ st.navigation([
     st.Page("pages/1_Quão_certo_é.py", title="Quão certo é", url_path="Quão_certo_é"),
     st.Page("pages/2_Onde_está_o_mercado.py", title="Onde está o mercado", url_path="Onde_está_o_mercado"),
     st.Page("pages/3_Para_onde_vai.py", title="Para onde vai", url_path="Para_onde_vai"),
+    st.Page("pages/7_Brasil.py", title="Brasil", url_path="Brasil"),
     st.Page("pages/6_Explorar.py", title="Simule", url_path="Explorar"),
     st.Page("pages/4_Sobre_os_dados.py", title="Sobre os dados", url_path="Sobre_os_dados"),
     st.Page("pages/5_Chat.py", title="Pergunte à IA", url_path="Chat"),

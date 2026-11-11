@@ -1,0 +1,40 @@
+{
+ "publicacao": "2026-11-11",
+ "camada": 1,
+ "decisao": "D-087",
+ "fontes": {
+  "cnj_cadastro": {
+   "orgao": "CNJ, Justiça Aberta (cadastro de serventias)",
+   "coletado_em": [
+    "2026-10-17"
+   ],
+   "url": "https://justicaaberta.cnj.jus.br/"
+  },
+  "ibge": {
+   "orgao": "IBGE (localidades, SIDRA tabela 6579 e malhas v3)",
+   "coletado_em": [
+    "2026-11-11"
+   ],
+   "populacao_estimada": "2026",
+   "url": "https://servicodados.ibge.gov.br/"
+  }
+ },
+ "totais": {
+  "ufs": 27,
+  "serventias_ativas": 12121,
+  "municipios_com_cartorio": 5330
+ },
+ "arquivos": [
+  {
+   "arquivo": "brasil_uf.csv",
+   "bytes": 3076,
+   "sha256": "d17ad1ae549ecf2412137907bc64dba19cafdb6e4d5986675e5ec2fa7f6829b4",
+   "linhas": 27
+  },
+  {
+   "arquivo": "malha_uf.geojson",
+   "bytes": 88377,
+   "sha256": "a0bc568ecbe9c03615580ae99de2cbefd4870e04bdb6ae221396a2c45fe04cbe"
+  }
+ ]
+}
