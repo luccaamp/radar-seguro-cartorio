@@ -49,7 +49,10 @@ def _situacao(s) -> str:
 
 
 def _uf_do_municipio(m: dict) -> str:
-    """Sigla da UF de um município da API de localidades (a microrregião vem nula em municípios novos)."""
+    """Sigla da UF de um município da API de localidades (a microrregião vem nula em municípios novos), ou da forma
+    compacta da referência versionada ({"id", "nome", "uf"})."""
+    if "uf" in m:
+        return m["uf"]
     micro = m.get("microrregiao")
     if micro:
         return micro["mesorregiao"]["UF"]["sigla"]

@@ -9,7 +9,7 @@ import sys
 import time
 
 from src import estados_config
-from src.ingest.comum import BRONZE, cliente, gravar_meta, hoje, sha256_bytes
+from src.ingest.comum import BRONZE, cliente, gravar_meta, hoje, pedir, sha256_bytes
 
 SIDRA = "https://apisidra.ibge.gov.br/values"
 
@@ -49,17 +49,13 @@ def coletar_brasil(destino=None) -> None:
 
 def _baixar(alvos: dict[str, str], destino, obrigatorio: bool = False) -> None:
     destino.mkdir(parents=True, exist_ok=True)
-    with cliente(timeout=180) as c:
+    with cliente(timeout=180, conectar=20) as c:
         for nome, url in alvos.items():
             arq = destino / nome
             if arq.exists():
                 print(f"{nome}: já existe, mantido")
                 continue
-            for tentativa in range(3):
-                r = c.get(url)
-                if r.status_code == 200:
-                    break
-                time.sleep(10 * (tentativa + 1))
+            r = pedir(c, "GET", url)   # 3 tentativas, também para erro de rede (o erro final sobe)
             if r.status_code != 200:
                 if obrigatorio:
                     raise RuntimeError(f"IBGE {nome}: HTTP {r.status_code} {r.text[:200]}")

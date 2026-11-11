@@ -146,6 +146,44 @@ def test_simular_falha_sai_com_codigo_1_e_nao_grava(tmp_path):
     assert r.returncode == 1 and "NÃO publicar" in r.stdout and not (tmp_path / "saida").exists()
 
 
+def test_ibge_fora_do_ar_usa_a_referencia_versionada(tmp_path, monkeypatch):
+    """2026-11-11: o IBGE não aceitou conexão do GitHub Actions e a primeira execução caiu. Agora a coleta segue com a
+    referência versionada (data/brasil/ibge), e o manifesto diz isso; o CNJ continua obrigatório."""
+    p = _script()
+    uf_coletadas = []
+    monkeypatch.setattr("src.ingest.cnj_serventias.coletar", lambda uf, pasta, tolerancia: uf_coletadas.append(uf))
+
+    def ibge_fora(pasta):
+        raise httpx.ConnectTimeout("[Errno 110] Connection timed out")
+    cnj, pasta_ibge = p.coletar(tmp_path, p.config(), coletar_ibge=ibge_fora)
+    assert pasta_ibge == p.REFERENCIA_IBGE and len(uf_coletadas) == 27
+    referencia = p._ler_ibge(p.REFERENCIA_IBGE)
+    assert len(referencia["brasil_estados.json"]) == 27 and len(referencia["brasil_malha_uf.geojson"]["features"]) == 27
+    assert len(referencia["brasil_municipios.json"]) > 5500 and set(referencia["brasil_municipios.json"][0]) == {
+        "id", "nome", "uf"}
+    # a referência dá a mesma tabela que a coleta completa do IBGE (a cópia publicada foi montada com ela)
+    manifesto = json.loads((PUBLICADA / "manifesto.json").read_text(encoding="utf-8"))
+    assert "origem" in manifesto["fontes"]["ibge"]
+
+
+def test_pedido_tenta_de_novo_em_erro_de_rede():
+    from src.ingest.comum import pedir
+    respostas = [httpx.ConnectTimeout("timeout"), httpx.Response(503), httpx.Response(200, text="ok")]
+
+    def transporte(req):
+        r = respostas.pop(0)
+        if isinstance(r, Exception):
+            raise r
+        return r
+    esperas = []
+    with httpx.Client(transport=httpx.MockTransport(transporte)) as c:
+        assert pedir(c, "GET", "https://exemplo.test/", dormir=esperas.append).text == "ok"
+    assert esperas == [10, 20]
+    respostas[:] = [httpx.ConnectTimeout("x")] * 3
+    with httpx.Client(transport=httpx.MockTransport(transporte)) as c, pytest.raises(httpx.ConnectTimeout):
+        pedir(c, "GET", "https://exemplo.test/", dormir=esperas.append)
+
+
 # ------------------------------------------------------------------ a pasta publicada (data/brasil ou a do workflow)
 def test_pasta_publicada_confere():
     p = painel_brasil.local(PUBLICADA)   # confere os SHA-256 do manifesto e as colunas
@@ -230,6 +268,8 @@ def test_workflow_so_publica_depois_do_contrato_e_dos_testes():
     i_pipe, i_test, i_pub = (next(i for i, n in enumerate(nomes) if n.startswith(t))
                              for t in ("Coleta e montagem", "Testes da pasta", "Publicar"))
     assert i_pipe < i_test < i_pub   # publicar é o último passo normal: qualquer falha antes impede
-    falha = fluxo["jobs"]["brasil"]["steps"][-1]
+    passos = fluxo["jobs"]["brasil"]["steps"]
+    assert passos[i_pub]["if"] == "github.ref == 'refs/heads/main'"   # numa branch, ensaio sem Release
+    falha = passos[-1]
     assert falha["if"] == "failure()" and "gh issue create" in falha["run"]
     assert "--simular-falha" in fluxo["jobs"]["brasil"]["steps"][i_pipe]["run"]

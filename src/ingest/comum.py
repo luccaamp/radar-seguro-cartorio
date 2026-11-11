@@ -2,6 +2,7 @@
 import datetime as dt
 import hashlib
 import json
+import time
 from pathlib import Path
 
 import httpx
@@ -20,8 +21,29 @@ def agora() -> str:
     return dt.datetime.now().astimezone().isoformat(timespec="seconds")
 
 
-def cliente(timeout: float = 60, **headers) -> httpx.Client:
-    return httpx.Client(headers={"User-Agent": USER_AGENT, **headers}, timeout=timeout, follow_redirects=True)
+def cliente(timeout: float = 60, conectar: float | None = None, **headers) -> httpx.Client:
+    """`conectar`: limite só para abrir a conexão (padrão: o mesmo `timeout`). Um servidor que não aceita conexão
+    (o IBGE visto do GitHub Actions, 2026-11-11) falha em `conectar` segundos, não em `timeout`."""
+    return httpx.Client(headers={"User-Agent": USER_AGENT, **headers}, follow_redirects=True,
+                        timeout=httpx.Timeout(timeout, connect=conectar or timeout))
+
+
+def pedir(c: httpx.Client, metodo: str, url: str, tentativas: int = 3, espera: float = 10, dormir=None,
+          **kwargs) -> httpx.Response:
+    """Um pedido com novas tentativas para erro de rede (conexão recusada, timeout) e para resposta que não é 200,
+    esperando `espera` × o número da tentativa. Devolve a última resposta; se a última tentativa foi erro de rede,
+    levanta o erro."""
+    dormir = dormir or time.sleep
+    for i in range(1, tentativas + 1):
+        try:
+            r = c.request(metodo, url, **kwargs)
+            if r.status_code == 200 or i == tentativas:
+                return r
+        except httpx.TransportError:
+            if i == tentativas:
+                raise
+        dormir(espera * i)
+    raise AssertionError("inalcançável")
 
 
 def sha256_bytes(dados: bytes) -> str:
