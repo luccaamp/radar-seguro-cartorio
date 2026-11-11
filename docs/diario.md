@@ -1339,3 +1339,9 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Conferência:** suíte padrão 462 passed; `ruff` sem erro. O relatório da avaliação refeito com as respostas guardadas ficou igual ao do git (nenhuma chamada nova à API).
 - **Não conferido:** o workflow da avaliação no GitHub (precisa do segredo, que só o autor põe).
 - **Próximo passo:** o autor põe o segredo `GEMINI_API_KEY` e roda a avaliação uma vez; etapa 3 (Brasil, camada 1, e pipeline agendado).
+
+## 2026-11-11 (4) — Primeira avaliação no CI parou num 503 do Gemini; avaliação passa a retomar
+- **O que foi feito:** PR #23 juntado; o autor pôs o segredo `GEMINI_API_KEY` e rodou "Avaliação do chat" (#1). A execução acertou as 3 primeiras perguntas e parou na 4 com HTTP 503 ("high demand") do Gemini, no principal e na reserva. Ajuste (D-086): até 4 tentativas por pergunta em 429, demora ou 5xx, com espera crescente; códigos de saída 0 / 10 / 11 (meta cumprida / não cumprida / rodada incompleta); o workflow retoma a rodada incompleta sem `--refazer` (até 3 passadas, 5 min entre elas) e escreve no resumo qual caso aconteceu.
+- **Conferência:** suíte padrão 465 passed (3 testes novos: novas tentativas com 503, 429 e demora e saída imediata no 400; rodada interrompida que retoma sem repetir pergunta; workflow coerente com os códigos do script); `ruff` sem erro; o laço do workflow simulado no bash nos casos incompleta → cumprida, incompleta → não cumprida, três incompletas e cumprida de primeira.
+- **Não conferido:** a execução completa no GitHub (depende do merge e de o autor rodar de novo).
+- **Próximo passo:** juntar o ajuste; o autor roda "Run workflow" e faz o Reboot; a IA confere o resultado e o link público; etapa 3.

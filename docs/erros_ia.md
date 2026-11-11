@@ -1037,3 +1037,11 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** a IA testou onde era mais fácil, mediu números isolados (cada cor contra o fundo) em vez de olhar a tela como quem usa, tratou a regra "não confundir com o tema" como válida só para os dados e juntou na `main` sem mostrar capturas ao autor.
 - **Correção:** protótipo novo (artefato "Radar · painel novo (claro e escuro)"), à espera da validação do autor; só depois o código, com seletor de tema próprio do painel, escala com mudança de cor entre faixas, teste de diferença entre faixas vizinhas e capturas do link público nos dois temas antes do merge. Regras: mudança de design só depois de protótipo aprovado; conferir sempre no link público.
 - **Bom para os slides?** sim (teste verde não é o mesmo que tela boa)
+
+## 2026-11-11 — Avaliação no CI sem tratar servidor ocupado do Gemini (HTTP 503)
+- **Onde:** `scripts/avaliar_chat.py` (`perguntar`) e `.github/workflows/avaliacao-chat.yml` (D-086).
+- **O que aconteceu:** a primeira execução da avaliação no GitHub parou na pergunta 4 com HTTP 503 ("high demand") e ficou vermelha em 1 min 32 s. O script só tentava de novo depois de um 429 (cota), e o workflow não tinha como continuar; com `--exigir-meta`, uma queda da API e um chat que erra saíam com o mesmo código 1, e o selo do README ficaria vermelho como se o chat tivesse errado.
+- **Como foi detectado:** pelo autor, na primeira execução manual depois do merge do PR #23.
+- **Causa provável:** a IA escreveu as novas tentativas pensando na cota do nível gratuito, que era o problema conhecido nas rodadas locais, e não testou o workflow de ponta a ponta (sem o segredo, não dava); tratou "falha" como uma coisa só, sem separar falha de infraestrutura de falha de qualidade.
+- **Correção:** novas tentativas em toda falha passageira (429, demora, 5xx), códigos de saída próprios (0 / 10 / 11, longe dos códigos de erro do Python e do argparse), retomada no workflow sem refazer o que já foi respondido e veredito escrito no resumo; 3 testes novos. Regra: em avaliação automática, separar "não deu para medir" de "mediu e falhou".
+- **Bom para os slides?** sim (avaliação de LLM precisa distinguir erro do modelo de erro da infraestrutura)

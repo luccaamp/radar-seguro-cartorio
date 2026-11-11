@@ -1,7 +1,8 @@
 # Avaliação do chat com a API real do Gemini (D-065, D-086), fora do CI dos pull requests: a suíte padrão nunca usa a
 # API. Roda toda segunda de manhã e quando alguém pede (Actions → "Avaliação do chat" → Run workflow): as 52 perguntas
 # do gabarito congelado na versão do painel (c, com as 5 ferramentas), do zero (--refazer), sobre o conjunto público.
-# Falha se a meta não for cumprida (acerto ≥ 85% e nenhum número inventado nas armadilhas). O relatório vai para o
+# Falha se a meta não for cumprida (acerto ≥ 85% e nenhum número inventado nas armadilhas) ou se o Gemini ficar fora
+# do ar mesmo depois das retomadas; o resumo diz qual dos dois aconteceu. O relatório vai para o
 # resumo da execução e fica como artefato por 90 dias; o selo no README mostra o resultado da última execução.
 #
 # Custo zero (CLAUDE.md, D-061, D-072): nível gratuito do Gemini, com o faturamento desligado no projeto da chave; a
@@ -26,7 +27,7 @@ jobs:
   avaliar:
     name: Gabarito de 52 perguntas (versão do painel)
     runs-on: ubuntu-26.04
-    timeout-minutes: 75
+    timeout-minutes: 100   # ≈ 25 min por rodada completa, mais as retomadas e as esperas entre tentativas
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
     steps:
@@ -48,12 +49,43 @@ jobs:
       - name: Dependências (versões do uv.lock)
         if: steps.chave.outputs.tem == 'sim'
         run: uv sync --locked
-      - name: Avaliação (API real, do zero)
+      # Código de saída do script: 0 meta cumprida, 10 meta não cumprida, 11 rodada incompleta (Gemini indisponível,
+      # como o 503 "high demand" que parou a primeira execução em 2026-11-11); outro código é erro do próprio script.
+      # No 11, espera e continua sem --refazer: as respostas já feitas ficam em eval/respostas/ e não são pedidas de
+      # novo. Só o 10 diz algo sobre o chat.
+      - name: Avaliação (API real, do zero; retoma se o Gemini cair)
+        id: avaliacao
         if: steps.chave.outputs.tem == 'sim'
-        run: uv run python scripts/avaliar_chat.py --versoes c --refazer --exigir-meta
+        env:
+          PASSADAS: "3"          # fonte: suposição; a primeira do zero e até duas retomadas
+          ESPERA_RETOMAR_S: "300"  # fonte: suposição; o 503 de 2026-11-11 era "temporary"
+        run: |
+          set +e
+          for passada in $(seq 1 "$PASSADAS"); do
+            if [ "$passada" -eq 1 ]; then extra="--refazer"; else extra=""; fi
+            uv run python scripts/avaliar_chat.py --versoes c $extra --exigir-meta
+            codigo=$?
+            echo "passada $passada: código $codigo"
+            if [ "$codigo" -ne 11 ] || [ "$passada" -eq "$PASSADAS" ]; then break; fi
+            echo "::warning::Rodada incompleta (Gemini indisponível); retomando em $ESPERA_RETOMAR_S s"
+            sleep "$ESPERA_RETOMAR_S"
+          done
+          echo "codigo=$codigo" >> "$GITHUB_OUTPUT"
+          echo "passadas=$passada" >> "$GITHUB_OUTPUT"
+          exit "$codigo"
       - name: Relatório no resumo da execução
         if: always() && steps.chave.outputs.tem == 'sim'
+        env:
+          CODIGO: ${{ steps.avaliacao.outputs.codigo }}
+          PASSADAS_FEITAS: ${{ steps.avaliacao.outputs.passadas }}
         run: |
+          case "$CODIGO" in
+            0) veredito="✅ **Meta cumprida.**" ;;
+            10) veredito="❌ **Meta NÃO cumprida:** o chat errou mais que o permitido ou inventou número numa armadilha." ;;
+            11) veredito="⚠️ **Rodada incompleta:** o Gemini ficou indisponível mesmo depois das retomadas. Isto não mede a qualidade do chat; rode de novo mais tarde." ;;
+            *) veredito="⚠️ **A avaliação não chegou ao fim** (erro antes do relatório; veja o log)." ;;
+          esac
+          { echo "$veredito (passadas: ${PASSADAS_FEITAS:-?})"; echo; } >> "$GITHUB_STEP_SUMMARY"
           if [ -f eval/resultado_avaliacao.md ]; then head -n 40 eval/resultado_avaliacao.md >> "$GITHUB_STEP_SUMMARY"; fi
       - uses: actions/upload-artifact@v7   # v7.0.2 (2026-10-07), Node 24; conferido nas releases em 2026-11-11
         if: always() && steps.chave.outputs.tem == 'sim'
