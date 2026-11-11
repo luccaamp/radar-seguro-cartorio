@@ -5,7 +5,7 @@ acertos, alucinações (número sem apoio nas ferramentas, na pergunta ou no pro
 corretos (fora do escopo, armadilhas e dados pessoais) e latência. A meta (config/llm.yaml, `avaliacao`) foi fixada
 antes da primeira rodada: (c) com acerto ≥ meta e nenhum número inventado nas armadilhas.
 
-Cuida da cota gratuita: pausa entre as perguntas, uma nova tentativa depois de um 429 e respostas guardadas em
+Cuida da cota gratuita: pausa entre as perguntas, novas tentativas depois de 429, demora ou 5xx e respostas guardadas em
 eval/respostas/ (uma linha por pergunta e versão): rodar de novo só chama a API para o que falta. As respostas
 guardadas valem para o mesmo gabarito, modelo e versão do prompt; `--refazer` ignora o que foi guardado.
 
@@ -18,6 +18,9 @@ Uso:
   uv run python scripts/avaliar_chat.py --limite 5       # só as 5 primeiras perguntas (teste rápido da cota)
   uv run python scripts/avaliar_chat.py --relatorio      # só refaz o relatório com as respostas guardadas
   uv run python scripts/avaliar_chat.py --versoes c --refazer --exigir-meta   # o que o CI roda (avaliacao-chat.yml)
+
+Com --exigir-meta, o código de saída diz o resultado: 0 meta cumprida, 10 meta não cumprida, 11 rodada incompleta
+(Gemini indisponível; o CI espera e continua sem --refazer, aproveitando o que ficou guardado).
 """
 import argparse
 import csv
@@ -60,20 +63,43 @@ def guardar(versao: str, registro: dict) -> None:
         f.write(json.dumps(registro, ensure_ascii=False) + "\n")
 
 
-def perguntar(p: dict, versao: str, con, c: dict) -> dict:
-    """Uma pergunta com uma nova tentativa depois de cota esgotada. Levanta LLMIndisponivel se não der."""
-    for tentativa in range(2):
+# Códigos de saída com --exigir-meta, para o CI separar o que é qualidade do chat do que é a API fora do ar. Longe de
+# 1 (erro inesperado do Python) e 2 (linha de comando errada, argparse): um bug no script não vira "meta não cumprida".
+META_CUMPRIDA, META_NAO_CUMPRIDA, INCOMPLETA = 0, 10, 11
+MENSAGEM_SAIDA = {
+    META_NAO_CUMPRIDA: "meta da avaliação NÃO cumprida: veja eval/resultado_avaliacao.md",
+    INCOMPLETA: "rodada incompleta: o Gemini ficou indisponível (não mede a qualidade do chat); rode de novo sem "
+                "--refazer para continuar de onde parou",
+}
+
+
+def codigo_de_saida(cumprida: bool | None) -> int:
+    """`main` devolve True (meta cumprida), False (não cumprida) ou None (a versão (c) não ficou completa)."""
+    return {True: META_CUMPRIDA, False: META_NAO_CUMPRIDA}.get(cumprida, INCOMPLETA)
+
+
+def passageiro(e: llm.LLMIndisponivel) -> bool:
+    """Falha que costuma passar sozinha: cota esgotada (429), demora ou servidor ocupado (HTTP 5xx, como o 503 de
+    "high demand"). Outros erros (pedido inválido, chave errada) não melhoram esperando."""
+    return e.motivo in ("cota", "lento") or (e.motivo == "erro" and "(HTTP 5" in str(e))
+
+
+def perguntar(p: dict, versao: str, con, c: dict, dormir=None) -> dict:
+    """Uma pergunta, com novas tentativas depois de falha passageira (`avaliacao.tentativas`, esperando
+    `espera_cota_s` vezes o número da tentativa). Levanta LLMIndisponivel se não der."""
+    tentativas = int(c["avaliacao"]["tentativas"])
+    for tentativa in range(1, tentativas + 1):
         t = time.time()
         try:
             r = chat.responder(p["pergunta"], con, versao=versao)
             return {"resposta": r.texto, "segundos": round(time.time() - t, 1), "apoio": chat.apoio(r),
                     "ferramentas": [{"ferramenta": x["ferramenta"], "argumentos": x["argumentos"]} for x in r.chamadas]}
         except llm.LLMIndisponivel as e:
-            if e.motivo != "cota" or tentativa:
+            if not passageiro(e) or tentativa == tentativas:
                 raise
-            espera = int(c["avaliacao"]["espera_cota_s"])
-            print(f"   cota esgotada; esperando {espera} s para tentar de novo", flush=True)
-            time.sleep(espera)
+            espera = int(c["avaliacao"]["espera_cota_s"]) * tentativa
+            print(f"   {e.motivo} ({tentativa}/{tentativas}); esperando {espera} s para tentar de novo", flush=True)
+            (dormir or time.sleep)(espera)   # time.sleep lido na hora: os testes o trocam
 
 
 def corrigir(p: dict, r: dict, versao: str) -> dict:
@@ -252,5 +278,6 @@ if __name__ == "__main__":
                    help="sai com erro se a meta não for cumprida ou a rodada ficar incompleta (o CI usa)")
     x = a.parse_args()
     cumprida = main([v for v in x.versoes if v in chat.VERSOES], x.limite, x.refazer, x.relatorio)
-    if x.exigir_meta and not cumprida:
-        raise SystemExit("meta da avaliação não cumprida (ou rodada incompleta): veja eval/resultado_avaliacao.md")
+    if x.exigir_meta and codigo_de_saida(cumprida):
+        print(MENSAGEM_SAIDA[codigo_de_saida(cumprida)], file=sys.stderr)
+        raise SystemExit(codigo_de_saida(cumprida))

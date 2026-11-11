@@ -673,6 +673,87 @@ def test_avaliacao_guarda_as_respostas_e_nao_repete_chamadas(painel_demo, monkey
     assert "chave-de-teste" not in (tmp_path / "respostas" / "c.jsonl").read_text(encoding="utf-8")
 
 
+def test_avaliacao_tenta_de_novo_com_servidor_ocupado(monkeypatch):
+    """O 503 "high demand" do Gemini (que parou o CI em 2026-11-11) é passageiro: a avaliação espera e tenta de novo,
+    cada vez esperando mais. Um 400 (pedido inválido) não melhora esperando: sai na hora."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("avaliar_chat", RAIZ / "scripts" / "avaliar_chat.py")
+    av = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(av)
+    c = {"avaliacao": {"tentativas": 4, "espera_cota_s": 10}}
+    ocupado = llm.LLMIndisponivel("erro", "O Gemini devolveu um erro. (HTTP 503) high demand")
+    falhas, esperas = [ocupado, llm.LLMIndisponivel("cota", "cota"), llm.LLMIndisponivel("lento", "lento")], []
+
+    def falso(pergunta, con, historico=None, versao="c"):
+        if falhas:
+            raise falhas.pop(0)
+        return chat.Resposta("São 2.525 serventias. Fonte: x")
+    monkeypatch.setattr(av.chat, "responder", falso)
+    r = av.perguntar({"pergunta": "quantas?"}, "c", None, c, dormir=esperas.append)
+    assert r["resposta"].startswith("São 2.525") and esperas == [10, 20, 30]
+
+    falhas[:] = [ocupado] * 4
+    with pytest.raises(llm.LLMIndisponivel):
+        av.perguntar({"pergunta": "quantas?"}, "c", None, c, dormir=esperas.append)
+    falhas[:] = [llm.LLMIndisponivel("erro", "O Gemini devolveu um erro. (HTTP 400) pedido inválido")]
+    esperas.clear()
+    with pytest.raises(llm.LLMIndisponivel):
+        av.perguntar({"pergunta": "quantas?"}, "c", None, c, dormir=esperas.append)
+    assert esperas == []
+
+
+def test_avaliacao_incompleta_retoma_de_onde_parou_e_sai_com_codigo_proprio(painel_demo, monkeypatch, tmp_path):
+    """Se o Gemini cai no meio, a rodada sai com o código 2 (incompleta, não é falha de qualidade), guarda o que foi
+    feito e a passada seguinte, sem --refazer, só pergunta o que faltou: é o que o workflow faz."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("avaliar_chat", RAIZ / "scripts" / "avaliar_chat.py")
+    av = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(av)
+    monkeypatch.setattr(av, "RESPOSTAS", tmp_path / "respostas")
+    monkeypatch.setattr(av, "SAIDA", tmp_path / "resultado.md")
+    monkeypatch.setenv("GEMINI_API_KEY", "chave-de-teste-123")
+    monkeypatch.setattr(av.time, "sleep", lambda s: None)
+    perguntas, fora_do_ar = [], [True]
+
+    def falso(pergunta, con, historico=None, versao="c"):
+        if len(perguntas) == 2 and fora_do_ar[0]:
+            raise llm.LLMIndisponivel("erro", "O Gemini devolveu um erro. (HTTP 503) high demand")
+        perguntas.append(pergunta)
+        return chat.Resposta("São 2.525 serventias. Fonte: x")
+    monkeypatch.setattr(av.chat, "responder", falso)
+    cumprida = av.main(["c"], 4, refazer=True, so_relatorio=False)
+    assert cumprida is None and av.codigo_de_saida(cumprida) == av.INCOMPLETA == 11
+    assert "Rodada incompleta" in (tmp_path / "resultado.md").read_text(encoding="utf-8")
+    fora_do_ar[0] = False
+    cumprida = av.main(["c"], 4, refazer=False, so_relatorio=False)
+    assert len(perguntas) == 4 and len(set(perguntas)) == 4   # retomou: nenhuma pergunta repetida
+    assert cumprida is not None and av.codigo_de_saida(cumprida) in (av.META_CUMPRIDA, av.META_NAO_CUMPRIDA)
+    assert av.codigo_de_saida(True) == 0 and av.codigo_de_saida(False) == 10
+    assert {av.META_NAO_CUMPRIDA, av.INCOMPLETA}.isdisjoint({1, 2})   # 1 e 2: erro do Python e do argparse
+
+
+def _avaliacao_script():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("avaliar_chat", RAIZ / "scripts" / "avaliar_chat.py")
+    av = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(av)
+    return av
+
+
+def test_workflow_da_avaliacao_retoma_sem_refazer():
+    """O workflow só usa --refazer na primeira passada, retoma no código de rodada incompleta (o mesmo do script) e
+    põe no resumo um veredito para cada código."""
+    av = _avaliacao_script()
+    fluxo = yaml.safe_load((RAIZ / ".github" / "workflows" / "avaliacao-chat.yml").read_text(encoding="utf-8"))
+    passos = {p.get("id"): p for p in fluxo["jobs"]["avaliar"]["steps"] if p.get("id")}
+    roda = passos["avaliacao"]["run"]
+    assert 'extra="--refazer"' in roda and "--exigir-meta" in roda and "sleep" in roda
+    assert f'-ne {av.INCOMPLETA} ]' in roda and 'exit "$codigo"' in roda
+    assert int(passos["avaliacao"]["env"]["PASSADAS"]) >= 2
+    resumo = next(p for p in fluxo["jobs"]["avaliar"]["steps"] if p.get("name") == "Relatório no resumo da execução")
+    assert all(f"{c})" in resumo["run"] for c in (av.META_CUMPRIDA, av.META_NAO_CUMPRIDA, av.INCOMPLETA))
+
+
 # ------------------------------------------------------------------ correção do gabarito
 def test_correcao_do_gabarito():
     assert avaliacao.numeros("R$ 238,1 mi; ≈ 1.121; 2.525; R$ 368,7 mil") == [238.1e6, 1121, 2525, 368700]

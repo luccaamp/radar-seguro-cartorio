@@ -138,7 +138,8 @@ avaliacao:
   # gabarito congelado: mudar eval/gabarito_chat.csv exige hash novo aqui e uma decisão registrada
   gabarito_sha256: 7f7f471d713ca1ab7d63383f2cec91824a23f674af6b8ca239d144303509da43
   pausa_s: 15                    # fonte: suposição; espera entre perguntas (ajuste pelos limites do seu AI Studio)
-  espera_cota_s: 65              # fonte: suposição; espera depois de um 429 antes de tentar de novo (uma vez)
+  espera_cota_s: 65              # fonte: suposição; espera depois de 429, demora ou 5xx (vezes o número da tentativa)
+  tentativas: 4                  # fonte: suposição; até 4 chamadas por pergunta (o 503 "high demand" de 2026-11-11 passa em minutos)
   normas_no_prompt: ["227", "243", "213"]   # versão (b): o texto destas normas vai inteiro no prompt
   # margem de erro do relatório (Miller, 2024, "Adding Error Bars to Evals", arXiv:2411.00640; conferido em 2026-11-10)
   confianca: 0.95                # fonte: convenção estatística (intervalo de 95%)
