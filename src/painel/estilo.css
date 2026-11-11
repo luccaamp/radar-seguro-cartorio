@@ -120,7 +120,8 @@ a { color: var(--acento-tinta); }
 .rd-grade.c1 { grid-template-columns: 1fr; }
 .rd-grade.c2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .rd-grade.c3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-@media (max-width: 760px) { .rd-grade.c3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.rd-grade.c4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }   /* os 4 indicadores do Brasil (D-087) */
+@media (max-width: 760px) { .rd-grade.c3, .rd-grade.c4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 420px) { .rd-grade.c2 { grid-template-columns: 1fr; } }   /* os 6 indicadores: 2 por linha (V5) */
 .rd-card { background: var(--superficie); padding: 12px 14px; min-width: 0; height: 100%; box-sizing: border-box;
   display: flex; flex-direction: column; gap: 4px; }

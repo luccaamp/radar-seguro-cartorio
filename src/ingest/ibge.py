@@ -28,6 +28,49 @@ def urls(uf: str) -> dict[str, str]:
     }
 
 
+def urls_brasil() -> dict[str, str]:
+    """O que a visão do Brasil (camada 1, D-087) usa do IBGE: estados, todos os municípios, população estimada por UF e
+    a malha dos estados."""
+    return {
+        "brasil_estados.json": "https://servicodados.ibge.gov.br/api/v1/localidades/estados",
+        "brasil_municipios.json": "https://servicodados.ibge.gov.br/api/v1/localidades/municipios",
+        # n3 = unidade da federação; tabela 6579 / variável 9324, como em urls()
+        "brasil_populacao.json": f"{SIDRA}/t/6579/n3/all/v/9324/p/last%201",
+        "brasil_malha_uf.geojson": ("https://servicodados.ibge.gov.br/api/v3/malhas/paises/BR"
+                                    "?formato=application/vnd.geo+json&intrarregiao=UF&qualidade=minima"),
+    }
+
+
+def coletar_brasil(destino=None) -> None:
+    """Coleta urls_brasil() em data/bronze/ibge/<data>/ (ou `destino`). Idempotente; falha com erro (o pipeline
+    agendado não pode publicar com um arquivo faltando)."""
+    _baixar(urls_brasil(), destino or BRONZE / "ibge" / hoje(), obrigatorio=True)
+
+
+def _baixar(alvos: dict[str, str], destino, obrigatorio: bool = False) -> None:
+    destino.mkdir(parents=True, exist_ok=True)
+    with cliente(timeout=180) as c:
+        for nome, url in alvos.items():
+            arq = destino / nome
+            if arq.exists():
+                print(f"{nome}: já existe, mantido")
+                continue
+            for tentativa in range(3):
+                r = c.get(url)
+                if r.status_code == 200:
+                    break
+                time.sleep(10 * (tentativa + 1))
+            if r.status_code != 200:
+                if obrigatorio:
+                    raise RuntimeError(f"IBGE {nome}: HTTP {r.status_code} {r.text[:200]}")
+                print(f"{nome}: FALHOU {r.status_code} {r.text[:200]}")
+                continue
+            arq.write_bytes(r.content)
+            gravar_meta(arq, url=url, metodo="GET", bytes=len(r.content), sha256=sha256_bytes(r.content))
+            print(f"{nome}: {len(r.content):,} bytes")
+            time.sleep(1)
+
+
 def coletar(uf: str) -> None:
     destino = BRONZE / "ibge" / hoje()
     destino.mkdir(parents=True, exist_ok=True)
@@ -48,4 +91,5 @@ def coletar(uf: str) -> None:
 
 
 if __name__ == "__main__":
-    coletar(sys.argv[1] if len(sys.argv) > 1 else estados_config.uf_padrao())
+    alvo = sys.argv[1] if len(sys.argv) > 1 else estados_config.uf_padrao()
+    coletar_brasil() if alvo == "BR" else coletar(alvo)   # "BR": a visão do Brasil (D-087)

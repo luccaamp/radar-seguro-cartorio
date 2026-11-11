@@ -1,0 +1,8 @@
+{
+ "coletado_em": "2026-11-11T02:01:54-03:00",
+ "versao_coletor": "fase1-0.1",
+ "url": "https://servicodados.ibge.gov.br/api/v1/localidades/estados",
+ "metodo": "GET",
+ "bytes": 2446,
+ "sha256": "7ca1368dea3af83cba1af84ae8a7e88f1173c97586831d086cc8b3c1ba9c6596"
+}
