@@ -322,6 +322,14 @@ def ler_susep(snap: str, fontes: list) -> pd.DataFrame:
 
 # ---------- orquestração ----------
 
+def snapshots_da_uf(esc: dict, uf: str) -> dict[str, str]:
+    """As datas de coleta que a UF usa: as de `snapshots` (as de MG) com as de `snapshots_por_uf[uf]` por cima. Um
+    estado que entra depois tem as coletas dele em outra data (D-088). `cnj_colaboradores` (dados complementares) vem
+    da mesma pasta do cadastro, salvo indicação."""
+    s = {**esc["snapshots"], **(esc.get("snapshots_por_uf") or {}).get(uf, {})}
+    s.setdefault("cnj_colaboradores", s["cnj_justica_aberta"])
+    return s
+
 def construir(con: duckdb.DuckDBPyConnection | None = None) -> dict[str, int]:
     esc = _yaml("escopo.yaml")
     snaps = esc["snapshots"]
@@ -336,16 +344,29 @@ def construir(con: duckdb.DuckDBPyConnection | None = None) -> dict[str, int]:
                                                "serventia_arrecadacao", "rais_vinculo", "cnpj_estabelecimento",
                                                "malha_municipio")}
     for uf in esc["ufs"]:
-        mun = ler_municipios(snaps["ibge"], uf, fontes)
+        n_fontes = len(fontes)
+        s = snapshots_da_uf(esc, uf)
+        mun = ler_municipios(s["ibge"], uf, fontes)
         partes["municipio_ibge"].append(mun)
-        partes["malha_municipio"].append(ler_malha(snaps["ibge"], uf))
-        partes["serventia"].append(ler_serventias(snaps["cnj_justica_aberta"], uf, mun, fontes))
-        partes["serventia_colaboradores"].append(ler_colaboradores(snaps["cnj_justica_aberta"], uf, fontes))
-        partes["serventia_arrecadacao"].append(ler_arrecadacoes(snaps["cnj_arrecadacoes"], uf, fontes))
-        partes["rais_vinculo"].append(ler_rais(snaps["rais"], uf, mun, fontes))
-        partes["cnpj_estabelecimento"].append(ler_cnpj(snaps["cnpj"], uf, mun, fontes))
+        partes["malha_municipio"].append(ler_malha(s["ibge"], uf))
+        partes["serventia"].append(ler_serventias(s["cnj_justica_aberta"], uf, mun, fontes))
+        partes["serventia_colaboradores"].append(ler_colaboradores(s["cnj_colaboradores"], uf, fontes))
+        partes["serventia_arrecadacao"].append(ler_arrecadacoes(s["cnj_arrecadacoes"], uf, fontes))
+        partes["rais_vinculo"].append(ler_rais(s["rais"], uf, mun, fontes))
+        partes["cnpj_estabelecimento"].append(ler_cnpj(s["cnpj"], uf, mun, fontes))
+        for f in fontes[n_fontes:]:
+            f["uf"] = uf   # de qual UF é o arquivo (D-088): cada número cita a data da fonte da própria UF
     tabelas.update({k: pd.concat(v, ignore_index=True) for k, v in partes.items()})
-    tabelas["fonte_metadados"] = pd.DataFrame(fontes)
+    # com mais de uma UF (D-088): a numeração dos vínculos recomeçava em cada UF; agora é única no silver (MG vem
+    # primeiro no escopo, então os números de MG não mudam) ...
+    tabelas["rais_vinculo"]["id_vinculo"] = range(1, len(tabelas["rais_vinculo"]) + 1)
+    # ... e um arquivo nacional (o extrato do CNPJ) lido para cada UF entra uma vez só nos metadados, sem UF (vale
+    # para todas), como os lidos fora do laço (índices de preço, SUSEP)
+    fm = pd.DataFrame(fontes)
+    if "uf" not in fm:
+        fm["uf"] = None
+    fm.loc[fm["arquivo"].duplicated(keep=False), "uf"] = None
+    tabelas["fonte_metadados"] = fm.drop_duplicates("arquivo", ignore_index=True)
 
     contagens = {}
     for nome, df in tabelas.items():

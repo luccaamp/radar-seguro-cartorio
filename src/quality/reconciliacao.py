@@ -50,7 +50,7 @@ def reconciliar(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
              cnpj AS (SELECT cod_ibge, count(*) n_cnpj FROM silver.cnpj_estabelecimento
                       WHERE situacao = 'ativa' AND cnae_principal GROUP BY 1),
              rais AS (SELECT cod_ibge, count(*) vinc_rais FROM silver.rais_vinculo WHERE ativo_31_12 GROUP BY 1)
-        SELECT m.cod_ibge, m.nome AS municipio, m.regiao_imediata, coalesce(n_cnj, 0) n_cnj, coalesce(n_cnpj, 0) n_cnpj,
+        SELECT m.cod_ibge, m.uf, m.nome AS municipio, m.regiao_imediata, coalesce(n_cnj, 0) n_cnj, coalesce(n_cnpj, 0) n_cnpj,
                coalesce(clt_cnj, 0) clt_cnj, coalesce(vinc_rais, 0) vinc_rais
         FROM silver.municipio_ibge m LEFT JOIN cnj USING (cod_ibge) LEFT JOIN cnpj USING (cod_ibge)
         LEFT JOIN rais USING (cod_ibge)""").df()
@@ -62,9 +62,30 @@ def reconciliar(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
         con.execute(f"CREATE OR REPLACE TABLE qualidade.{nome} AS SELECT * FROM _df")
         con.unregister("_df")
 
+    # resumo PÚBLICO (só contagens agregadas) para o painel, que não lê tabelas interno_* (1.7); por UF (D-088)
+    resumo = []
+    linhas = []
+    for uf in rec_mun.loc[rec_mun.n_cnj > 0, "uf"].drop_duplicates():
+        r, l_ = _conferencias_da_uf(con, rec_mun[rec_mun.uf == uf], uf, tol)
+        resumo += r
+        linhas += l_
+    df_resumo = pd.DataFrame(resumo, columns=["uf", "chave", "valor", "descricao"])
+    con.register("_df", df_resumo)
+    con.execute("CREATE OR REPLACE TABLE qualidade.resumo_publico AS SELECT * FROM _df")
+    con.unregister("_df")
+    df = pd.DataFrame(linhas)
+    con.register("_df", df)
+    con.execute("CREATE OR REPLACE TABLE qualidade.reconciliacoes AS SELECT * FROM _df")
+    con.unregister("_df")
+    return df
+
+
+def _conferencias_da_uf(con, rec_mun: pd.DataFrame, uf: str, tol: dict) -> tuple[list, list]:
+    """As conferências entre fontes de uma UF (até a D-088 eram de MG, a única UF). Os nomes das checagens de MG são
+    os mesmos de antes; cada linha leva a `uf`."""
     t = rec_mun.sum(numeric_only=True)
     corr = rec_mun[(rec_mun.clt_cnj > 0) | (rec_mun.vinc_rais > 0)][["clt_cnj", "vinc_rais"]].corr().iloc[0, 1]
-    # C1: métricas por município que não são dominadas por BH
+    # C1: métricas por município que não são dominadas pela capital
     com_dado = rec_mun[(rec_mun.clt_cnj > 0) | (rec_mun.vinc_rais > 0)]
     ambos = com_dado[(com_dado.clt_cnj > 0) & (com_dado.vinc_rais > 0)]
     corr_log = float(np.log(ambos.clt_cnj).corr(np.log(ambos.vinc_rais)))
@@ -73,31 +94,28 @@ def reconciliar(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
     erro = ((f5.vinc_rais - f5.clt_cnj).abs() / f5.clt_cnj.where(f5.clt_cnj > 0)).fillna(np.inf)
     zero_rais = int(((com_dado.vinc_rais == 0) & (com_dado.clt_cnj > 0)).sum())
     zero_cnj = int(((com_dado.clt_cnj == 0) & (com_dado.vinc_rais > 0)).sum())
-    # resumo PÚBLICO (só contagens agregadas) para o painel, que não lê tabelas interno_* (1.7)
-    resumo = [("municipios_rais_zero_cnj_positivo", zero_rais, "municípios com RAIS = 0 e CNJ > 0"),
-              ("municipios_cnj_zero_rais_positivo", zero_cnj, "municípios com CNJ = 0 e RAIS > 0")]
+    resumo = [(uf, "municipios_rais_zero_cnj_positivo", zero_rais, "municípios com RAIS = 0 e CNJ > 0"),
+              (uf, "municipios_cnj_zero_rais_positivo", zero_cnj, "municípios com CNJ = 0 e RAIS > 0")]
     for origem_d, n, v in con.execute("""SELECT origem_distribuicao, count(*), sum(n_vinculos_rais)
-                                         FROM gold.interno_passivo_municipio WHERE nivel = 'base' GROUP BY 1
-                                         ORDER BY 1""").fetchall():
-        resumo += [(f"distribuicao_{origem_d}_municipios", n, f"municípios com distribuição salarial: {origem_d}"),
-                   (f"distribuicao_{origem_d}_vinculos", v, f"vínculos próprios desses municípios: {origem_d}")]
-    df_resumo = pd.DataFrame(resumo, columns=["chave", "valor", "descricao"])
-    con.register("_df", df_resumo)
-    con.execute("CREATE OR REPLACE TABLE qualidade.resumo_publico AS SELECT * FROM _df")
-    con.unregister("_df")
+                                         FROM gold.interno_passivo_municipio WHERE nivel = 'base' AND uf = ?
+                                         GROUP BY 1 ORDER BY 1""", [uf]).fetchall():
+        resumo += [(uf, f"distribuicao_{origem_d}_municipios", n, f"municípios com distribuição salarial: {origem_d}"),
+                   (uf, f"distribuicao_{origem_d}_vinculos", v, f"vínculos próprios desses municípios: {origem_d}")]
     n_iguais = int((rec_mun.n_cnj == rec_mun.n_cnpj).sum())
     # ORDER BY: sem ele a ordem do texto do detalhe muda entre cargas (achado na prova de reprodutibilidade, D-029)
-    origem = con.sql("SELECT origem_receita, count(*) n FROM gold.interno_dim_serventia GROUP BY 1 ORDER BY 1").df()
+    origem = con.execute("SELECT origem_receita, count(*) n FROM gold.interno_dim_serventia WHERE uf = ? GROUP BY 1 "
+                         "ORDER BY 1", [uf]).df()
     validas = origem.loc[origem.origem_receita.isin(["media_2_semestres", "um_semestre"]), "n"].sum() / origem.n.sum()
-    colab = con.sql("SELECT avg(informado::INT) FROM silver.serventia_colaboradores").fetchone()[0]
-    dist = con.sql("""SELECT sum(n_vinculos_rais) FILTER (WHERE origem_distribuicao = 'municipio') / sum(n_vinculos_rais),
-                             count(*) FILTER (WHERE origem_distribuicao = 'municipio'), count(*)
-                      FROM gold.interno_passivo_municipio WHERE nivel = 'base'""").fetchone()
+    colab = con.execute("SELECT avg(k.informado::INT) FROM silver.serventia_colaboradores k JOIN silver.serventia s "
+                        "USING (cns) WHERE s.uf = ?", [uf]).fetchone()[0]
+    dist = con.execute("""SELECT sum(n_vinculos_rais) FILTER (WHERE origem_distribuicao = 'municipio') / sum(n_vinculos_rais),
+                                 count(*) FILTER (WHERE origem_distribuicao = 'municipio'), count(*)
+                          FROM gold.interno_passivo_municipio WHERE nivel = 'base' AND uf = ?""", [uf]).fetchone()
     linhas = [
-        _linha("serventias ativas: CNPJ × CNJ (MG)", "CNPJ ativos, CNAE principal 6912-5/00", t.n_cnpj, "CNJ ativas",
+        _linha(f"serventias ativas: CNPJ × CNJ ({uf})", "CNPJ ativos, CNAE principal 6912-5/00", t.n_cnpj, "CNJ ativas",
                t.n_cnj, tol["serventias_cnj_x_cnpj_pct"],
                detalhe=f"{n_iguais} de {len(rec_mun)} municípios com a mesma contagem; o CNPJ guarda CNPJs não baixados"),
-        _linha("empregados: RAIS × CNJ (MG)", "RAIS vínculos ativos em 31/12/2025", t.vinc_rais, "CNJ colaboradores CLT",
+        _linha(f"empregados: RAIS × CNJ ({uf})", "RAIS vínculos ativos em 31/12/2025", t.vinc_rais, "CNJ colaboradores CLT",
                t.clt_cnj, tol["empregados_cnj_x_rais_pct"]),
         _linha("empregados por município: correlação RAIS × CNJ", "correlação", corr, None, None,
                tol["correlacao_minima_municipio"], "minimo",
@@ -120,13 +138,9 @@ def reconciliar(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
         _linha("vínculos com distribuição do próprio município", "fração dos vínculos", dist[0], None, None,
                tol["vinculos_com_distribuicao_municipal_min"], "minimo",
                detalhe=f"{dist[1]} de {dist[2]} municípios com serventia usam a distribuição própria; os demais, a da "
-                       "região imediata ou, se ela tiver menos de 20 vínculos, a de MG (D-022)"),
+                       f"região imediata ou, se ela tiver menos de 20 vínculos, a de {uf} (D-022)"),
     ]
-    df = pd.DataFrame(linhas)
-    con.register("_df", df)
-    con.execute("CREATE OR REPLACE TABLE qualidade.reconciliacoes AS SELECT * FROM _df")
-    con.unregister("_df")
-    return df
+    return resumo, [{"uf": uf, **x} for x in linhas]
 
 
 def _regra_base() -> str:
@@ -179,15 +193,24 @@ def contratos_gold(con: duckdb.DuckDBPyConnection) -> list[Checagem]:
                  f"cod_ibge IN (SELECT cod_ibge FROM {g}.dim_municipio WHERE n_serventias > 0) AND area_id IS NULL"),
         classe_api_x_bi(con),
         chave_unica(con, f"{g}.serventia_publico", "cns"),
-        condicao(con, f"{g}.fato_mercado_uf", "por serventia (D-038): a soma de gold.serventia_publico dá o total de MG "
+        # com mais de uma UF (D-088), toda comparação entre linhas de fato_mercado_uf é feita dentro da mesma UF
+        condicao(con, f"{g}.fato_mercado_uf", "por serventia (D-038): a soma de gold.serventia_publico dá o total da UF "
                  "(nível e regra base, STF mantém)",
                  f"nivel = 'base' AND regra_classe = '{_regra_base()}' AND cenario_stf = 'mantem' AND (abs(n_serventias_ativas - "
-                 f"(SELECT count(*) FROM {g}.serventia_publico)) > 0 OR abs(valor_descoberto - (SELECT sum(valor_descoberto) "
-                 f"FROM {g}.serventia_publico)) > 0.01 OR abs(mercado_premio_emitido - (SELECT sum(premio_emitido) "
-                 f"FROM {g}.serventia_publico)) > 0.01)"),
+                 f"(SELECT count(*) FROM {g}.serventia_publico p WHERE p.uf = fato_mercado_uf.uf)) > 0 OR "
+                 f"abs(valor_descoberto - (SELECT sum(valor_descoberto) FROM {g}.serventia_publico p WHERE "
+                 f"p.uf = fato_mercado_uf.uf)) > 0.01 OR abs(mercado_premio_emitido - (SELECT sum(premio_emitido) "
+                 f"FROM {g}.serventia_publico p WHERE p.uf = fato_mercado_uf.uf)) > 0.01)"),
+        # situação e classe particionam a UF (cada serventia tem uma só): a soma dos recortes dá o total (D-088)
+        condicao(con, f"{g}.fato_mercado_uf", "recortes por situação e por classe somam o total da UF (D-088)",
+                 "cenario_stf = 'mantem' AND EXISTS (SELECT 1 FROM (SELECT filtro, sum(n_serventias_ativas) AS n, "
+                 f"sum(valor_descoberto) AS d FROM {g}.mercado_filtro_uf f WHERE f.uf = fato_mercado_uf.uf AND "
+                 "f.regra_classe = fato_mercado_uf.regra_classe AND f.nivel = fato_mercado_uf.nivel AND "
+                 "f.filtro IN ('situacao', 'classe') GROUP BY filtro) s WHERE s.n <> fato_mercado_uf.n_serventias_ativas "
+                 "OR abs(s.d - fato_mercado_uf.valor_descoberto) > 0.01)"),
         condicao(con, f"{g}.fato_mercado_uf", "mercado ≥ seguradora hipotética",
                  "mercado_premio_emitido < seguradora_premio_emitido"),
-        condicao(con, f"({g}.fato_mercado_uf v1 JOIN {g}.fato_mercado_uf v2 USING (nivel, cenario_stf))",
+        condicao(con, f"({g}.fato_mercado_uf v1 JOIN {g}.fato_mercado_uf v2 USING (uf, nivel, cenario_stf))",
                  "monotonicidade: regra v1 (universo maior) ≥ v2 em déficit, IS e prêmio (D-019)",
                  "v1.regra_classe = 'v1' AND v2.regra_classe = 'v2' AND (v1.valor_descoberto < v2.valor_descoberto - 1e-6 "
                  "OR v1.mercado_importancia_segurada < v2.mercado_importancia_segurada - 1e-6 "
@@ -196,8 +219,8 @@ def contratos_gold(con: duckdb.DuckDBPyConnection) -> list[Checagem]:
                  "cenario_stf = 'suspende_8_17' AND mercado_importancia_segurada <> 0"),
         condicao(con, f"{g}.fato_mercado_uf", "faixa ordenada (min ≤ base ≤ max) no déficit",
                  f"nivel = 'base' AND (valor_descoberto < (SELECT valor_descoberto FROM {g}.fato_mercado_uf x WHERE "
-                 "x.nivel = 'min' AND x.regra_classe = fato_mercado_uf.regra_classe AND x.cenario_stf = "
-                 "fato_mercado_uf.cenario_stf) OR valor_descoberto > (SELECT valor_descoberto FROM "
-                 f"{g}.fato_mercado_uf x WHERE x.nivel = 'max' AND x.regra_classe = fato_mercado_uf.regra_classe "
-                 "AND x.cenario_stf = fato_mercado_uf.cenario_stf))"),
+                 "x.uf = fato_mercado_uf.uf AND x.nivel = 'min' AND x.regra_classe = fato_mercado_uf.regra_classe AND "
+                 "x.cenario_stf = fato_mercado_uf.cenario_stf) OR valor_descoberto > (SELECT valor_descoberto FROM "
+                 f"{g}.fato_mercado_uf x WHERE x.uf = fato_mercado_uf.uf AND x.nivel = 'max' AND "
+                 "x.regra_classe = fato_mercado_uf.regra_classe AND x.cenario_stf = fato_mercado_uf.cenario_stf))"),
     ] + sem_dados_pessoais(con, g)

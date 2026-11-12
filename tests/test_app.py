@@ -165,15 +165,15 @@ def test_painel_com_banco_marcado_somente_leitura(banco_temporario, tmp_path):
 def test_mercado_municipio_pequeno_aparece_sozinho(banco_temporario):
     """D-078 (D-038, fase 2): um município com 1 serventia tem área própria no mapa, os números dele e a posição no
     ranking, sem aviso de agregação."""
-    from streamlit.testing.v1 import AppTest
-    at = AppTest.from_file(str(RAIZ / MERCADO), default_timeout=120).run()
+    from apoio_painel import SELETOR_MUNICIPIO_MG, pagina_em_mg
+    at = pagina_em_mg(MERCADO)   # o padrão é o Sudeste (D-088); o teste é o de MG
     with duckdb.connect(str(banco_temporario["copia"]), read_only=True) as con:  # mesma configuração da conexão do app
         nome, cod = con.sql("SELECT municipio, cod_ibge FROM gold.dim_municipio WHERE n_serventias = 1 "
-                            "ORDER BY municipio LIMIT 1").fetchone()
+                            "AND uf = 'MG' ORDER BY municipio LIMIT 1").fetchone()
         pos, total = con.execute("SELECT posicao, n_municipios FROM gold.ranking_municipio_publico "
                                  "WHERE metrica = 'valor_descoberto' AND cod_ibge = ?", [cod]).fetchone()
-        com_serv = con.sql("SELECT count(*) FROM gold.dim_municipio WHERE n_serventias > 0").fetchone()[0]
-    at.selectbox[0].set_value(nome).run()
+        com_serv = con.sql("SELECT count(*) FROM gold.dim_municipio WHERE n_serventias > 0 AND uf = 'MG'").fetchone()[0]
+    at.selectbox(key=SELETOR_MUNICIPIO_MG).set_value(nome).run()
     assert not at.exception
     assert not any("agregad" in i.value for i in at.info)
     tela = "\n".join(m.value for m in at.markdown).replace("&#36;", "$")
@@ -200,10 +200,11 @@ def test_tabelas_por_municipio_tem_todos_os_municipios(banco_temporario):
         assert q("SELECT count(*) FROM gold.fato_mercado_municipio_publico") == com_serv
         assert q("SELECT count(DISTINCT cod_ibge) FROM gold.fato_passivo_municipio") == com_serv
         assert q("SELECT count(*) FROM qualidade.rec_municipio") == q("SELECT count(*) FROM silver.municipio_ibge")
-        # as somas por município fecham o total de MG (nível e regra base, STF mantém)
-        assert q("SELECT sum(valor_descoberto) FROM gold.mercado_area_publico") == pytest.approx(
-            q("SELECT valor_descoberto FROM gold.fato_mercado_uf WHERE nivel = 'base' AND regra_classe = 'v2' "
-              "AND cenario_stf = 'mantem'"), rel=1e-9)
+        # as somas por município fecham o total de cada UF (nível e regra base, STF mantém; 4 UFs, D-088)
+        for (uf,) in con.sql("SELECT DISTINCT uf FROM gold.fato_mercado_uf").fetchall():
+            assert q(f"SELECT sum(valor_descoberto) FROM gold.mercado_area_publico WHERE uf = '{uf}'") == pytest.approx(
+                q("SELECT valor_descoberto FROM gold.fato_mercado_uf WHERE nivel = 'base' AND regra_classe = 'v2' "
+                  f"AND cenario_stf = 'mantem' AND uf = '{uf}'"), rel=1e-9), uf
 
 
 def test_sem_formula_latex_nos_textos(banco_temporario):

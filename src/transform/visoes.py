@@ -10,7 +10,10 @@ import pandas as pd
 ATRIBUICOES = {"notas": "Notas", "rcpn": "Registro Civil (PN)", "ri": "Registro de Imóveis",
                "rtd_rcpj": "Títulos e Documentos / Pessoa Jurídica", "protesto": "Protesto"}
 COLUNAS_ATRIBUICAO = {"rtd_rcpj": ("rtd", "rcpj")}
-SITUACOES = ["PROVIDO", "VAGO", "SOB INTERVENÇÃO", "CONVERSÃO EM DILIGÊNCIA"]
+# NÃO INFORMADA: ativas sem situação jurídica no cadastro do CNJ (vazio na fonte; nenhuma em MG; D-088). O recorte
+# mostra o que a fonte diz; o modelo, à parte, as trata como não vagas (suposição). Assim a situação particiona o total.
+NAO_INFORMADA = "NÃO INFORMADA"
+SITUACOES = ["PROVIDO", "VAGO", "SOB INTERVENÇÃO", "CONVERSÃO EM DILIGÊNCIA", NAO_INFORMADA]
 CLASSES = ["1", "2", "3", "indeterminada"]
 
 
@@ -27,5 +30,7 @@ def mascara(df: pd.DataFrame, filtro: str, valor: str) -> pd.Series:
         cols = list(COLUNAS_ATRIBUICAO.get(valor, (valor,)))
         return df[cols].fillna(False).astype(bool).any(axis=1)
     if filtro == "situacao":
+        if valor == NAO_INFORMADA:
+            return df["situacao_juridica"].fillna("").astype(str).str.strip() == ""
         return df["situacao_juridica"] == valor
     return df["classe_faixa"] == valor   # classe pela regra base (D-019)

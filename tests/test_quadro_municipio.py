@@ -21,14 +21,16 @@ def con(painel_demo):
 def test_todos_os_cartorios_do_municipio_do_maior_para_o_menor_deficit(con):
     from src.painel import analises
     r = analises.cartorios_do_municipio(con, "MG", municipio="Belo Horizonte")
-    n = con.execute("SELECT count(*) FROM gold.serventia_publico WHERE municipio = 'Belo Horizonte'").fetchone()[0]
+    n = con.execute("SELECT count(*) FROM gold.serventia_publico WHERE municipio = 'Belo Horizonte' AND uf = 'MG'"
+                    ).fetchone()[0]
     assert len(r["cartorios"]) == n > 30                    # todos (a consulta antiga do chat parava em 30)
     deficits = [c["deficit_cru"] for c in r["cartorios"]]
     assert deficits == sorted(deficits, reverse=True)
     assert all(re.fullmatch(r"\d{6}", c["cns"]) for c in r["cartorios"])
     assert {c["situacao"] for c in r["cartorios"]} <= set(analises.SITUACAO.values())
     todas = {s for (s,) in con.execute("SELECT DISTINCT situacao_juridica FROM gold.serventia_publico").fetchall()}
-    assert todas <= set(analises.SITUACAO), todas - set(analises.SITUACAO)   # toda situação da carga tem tradução
+    # toda situação da carga tem tradução; a vazia (a fonte não informou, D-088) vira "não informada"
+    assert todas - {None, ""} <= set(analises.SITUACAO), todas - set(analises.SITUACAO)
     assert r["citar"].startswith("Fonte:") and r["fonte"] == "gold.serventia_publico"
     soma = con.execute("SELECT sum(valor_descoberto) FROM gold.serventia_publico WHERE municipio = 'Belo Horizonte'"
                        ).fetchone()[0]
@@ -41,7 +43,7 @@ def test_nome_sem_acento_municipio_inexistente_e_sem_municipio(con):
     assert "erro" in analises.cartorios_do_municipio(con, "MG", municipio="Cidade Que Não Existe")
     vazio = analises.cartorios_do_municipio(con, "MG")
     assert vazio["cartorios"] == [] and "erro" not in vazio
-    assert analises.cartorios_do_municipio(con, "SP", municipio="Uberaba").get("erro")
+    assert analises.cartorios_do_municipio(con, "BA", municipio="Uberaba").get("erro")   # fora do estudo (D-088)
 
 
 def test_quadro_sem_nome_de_pessoa(con):
@@ -59,11 +61,11 @@ def test_chat_alcanca_o_quadro():
 
 
 def test_pagina_mostra_o_quadro_quando_ha_municipio(con):
-    from streamlit.testing.v1 import AppTest
-    at = AppTest.from_file(str(RAIZ / MERCADO), default_timeout=120).run()
+    from apoio_painel import SELETOR_MUNICIPIO_MG, pagina_em_mg
+    at = pagina_em_mg(MERCADO)
     assert not at.exception
     assert not [h for h in at.header if h.value.startswith("Os cartórios de")]   # MG inteira: sem quadro
-    at.selectbox(key="f_mun").set_value("Uberaba").run()
+    at.selectbox(key=SELETOR_MUNICIPIO_MG).set_value("Uberaba").run()
     assert not at.exception
     assert [h.value for h in at.header] == ["Os cartórios de Uberaba"]
     tela = "\n".join(m.value for m in at.markdown)

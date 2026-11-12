@@ -114,13 +114,13 @@ def test_carregar_le_do_banco_quando_existe(tmp_path, monkeypatch):
         con.execute("CREATE SCHEMA gold")
         for t in cc.NOMES_09:
             con.execute(f"CREATE TABLE gold.{t} AS SELECT 1 AS x")
-    monkeypatch.setattr(tabelas, "construir", lambda con: pytest.fail("não devia recalcular"))
+    monkeypatch.setattr(tabelas, "construir_uf", lambda con, uf: pytest.fail("não devia recalcular"))
     with duckdb.connect(str(banco), read_only=True) as con:
         tabs, origem = cc.carregar(con)
     assert set(tabs) == set(cc.NOMES_09) and set(NOMES_ANALISE) <= set(tabs) and origem.startswith("banco")
     with duckdb.connect(str(banco)) as con:
         con.execute("DROP TABLE gold.analise_regras")
-    monkeypatch.setattr(tabelas, "construir", lambda con: {"calculado": pd.DataFrame()})
+    monkeypatch.setattr(tabelas, "construir_uf", lambda con, uf: {"calculado": pd.DataFrame()})
     with duckdb.connect(str(banco), read_only=True) as con:
         assert cc.carregar(con)[1].startswith("calculadas")
 
@@ -147,12 +147,12 @@ def test_tabelas_rapidas_e_numeros_oficiais(_copia_real):
     06 e 08 (10 regras; MAE da floresta 1,86; P5–P95 do prêmio R$ 215–687 mil com as premissas v3, D-046; com a v2,
     R$ 206–736 mil)."""
     with duckdb.connect(str(_copia_real["copia"]), read_only=True) as con:
-        of = cc.numeros_oficiais(con)
+        of = cc.numeros_oficiais(con)   # sem UF: a primeira do escopo, MG (o banco tem o Sudeste, D-088)
         premio = con.execute("SELECT mercado_premio_emitido FROM gold.fato_mercado_uf WHERE nivel = 'base' AND "
-                             "regra_classe = 'v2' AND cenario_stf = 'mantem'").fetchone()[0]
-        regras = tabelas.regras(con)
-        clt = tabelas.clt_modelo(con)
-        tor, mc = tabelas.tornado_e_monte_carlo(con)
+                             "regra_classe = 'v2' AND cenario_stf = 'mantem' AND uf = 'MG'").fetchone()[0]
+        regras = tabelas.regras(con, "MG")
+        clt = tabelas.clt_modelo(con, "MG")
+        tor, mc = tabelas.tornado_e_monte_carlo(con, "MG")
     assert of.loc["prêmio anual", "base"] == premio and len(of) == 10
     assert of.loc["teto teórico", "base"] == pytest.approx(of.loc["passivo (obrigadas)", "base"] * 0.02)
     assert len(regras) == 10 and (regras.entao == "obrigada").all()
@@ -163,14 +163,23 @@ def test_tabelas_rapidas_e_numeros_oficiais(_copia_real):
 
 
 @pytest.mark.dados_reais
+def test_monte_carlo_da_regiao_com_uma_uf_e_o_da_propria_uf(_copia_real):
+    """A região somada sorteio a sorteio (D-088): com uma UF só, é a simulação da própria UF, número a número."""
+    with duckdb.connect(str(_copia_real["copia"]), read_only=True) as con:
+        _, mc_mg = tabelas.tornado_e_monte_carlo(con, "MG")
+        regiao = tabelas.monte_carlo_regiao(con, ["MG"])
+    pd.testing.assert_frame_equal(regiao.reset_index(drop=True), mc_mg.reset_index(drop=True))
+
+
+@pytest.mark.dados_reais
 def test_sensibilidade_metodo_repete_o_notebook_08(_copia_real):
     """Numa CÓPIA do banco: a gold.analise_sensibilidade_metodo (D-042, D-044) tem a base igual aos números oficiais e
     as variações do notebook 08 (receita líquida: universo −20%; T5 +0,6%; T6 −1,6%; MG inteiro +5,9% no passivo) e a
     regra do salto (D-046: −11,3 obrigadas, como no notebook 01). O prêmio da receita líquida cai 2,7% com as premissas v3
     (−8,5% com a v2, no notebook 08)."""
     with duckdb.connect(str(_copia_real["copia"]), read_only=True) as con:
-        s = tabelas.sensibilidade_metodo(con).set_index("chave")
-        of = cc.numeros_oficiais(con)
+        s = tabelas.sensibilidade_metodo(con, "MG").set_index("chave")
+        of = cc.numeros_oficiais(con, "MG")
     assert s.loc["base", "mercado_premio_emitido"] == pytest.approx(of.loc["prêmio anual", "base"])
     assert s.loc["receita_liquida", "n_universo"] == pytest.approx(893.6, abs=0.05)
     assert s.loc["receita_liquida", "var_mercado_premio_emitido"] == pytest.approx(-0.027, abs=0.0005)

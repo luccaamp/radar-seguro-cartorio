@@ -96,7 +96,7 @@ def test_serventias_mantem_quem_nao_tem_municipio():
 def test_serventias_reproduzem_os_numeros_do_painel(_copia_real):
     """Numa CÓPIA do banco real: as somas de serventias() batem com gold.fato_mercado_uf (os 10 números do painel)."""
     with duckdb.connect(str(_copia_real["copia"]), read_only=True) as con:
-        sv = dados.serventias(con)
+        sv = dados.serventias(con, uf="MG")   # o banco tem as 4 UFs do Sudeste (D-088)
         ref = con.execute("""SELECT n_serventias_ativas, n_universo, passivo_todas, passivo_universo, n_deficit,
             valor_descoberto FROM gold.fato_mercado_uf WHERE uf = 'MG' AND nivel = 'base' AND regra_classe = 'v2'
             AND cenario_stf = 'mantem'""").df().iloc[0]

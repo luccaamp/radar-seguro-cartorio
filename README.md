@@ -4,7 +4,7 @@
 
 **Quanto dinheiro o seguro obrigatório dos cartórios pode movimentar, e quão certo é esse número?** O Provimento CNJ 227/2026 obriga parte dos cartórios a garantir a dívida trabalhista com seus empregados. Este projeto estima esse mercado com dados públicos oficiais, mostra a incerteza de cada número e deixa qualquer pessoa conferir as contas: um painel, um simulador e um chat que só responde com número tirado dos dados, com a fonte.
 
-**Painel público:** **[radar-seguro-cartorio.streamlit.app](https://radar-seguro-cartorio.streamlit.app)** (Streamlit Community Cloud, modo demonstração com o conjunto público; a primeira visita pode levar alguns segundos para acordar o app). O estudo completo do seguro cobre **Minas Gerais**; a página **Brasil** mostra os cartórios das **27 UFs** (camada 1: cadastro do CNJ e IBGE), atualizada todo mês por um pipeline agendado, com a data no selo "atualizado em". O prêmio dos outros estados entra nas próximas fases ([`docs/plano_projeto.md`](docs/plano_projeto.md)).
+**Painel público:** **[radar-seguro-cartorio.streamlit.app](https://radar-seguro-cartorio.streamlit.app)** (Streamlit Community Cloud, modo demonstração com o conjunto público; a primeira visita pode levar alguns segundos para acordar o app). O estudo do seguro cobre o **Sudeste** (D-088): **Minas Gerais calibrado**; **São Paulo, Rio de Janeiro e Espírito Santo** com as premissas de MG herdadas, marcados como **"estimativa preliminar"**. O seletor "Estado" troca o estado em todas as páginas, e o link já pode abrir num estado: [`?estado=SP`](https://radar-seguro-cartorio.streamlit.app/?estado=SP) (ou `MG`, `RJ`, `ES`). A página **Brasil** mostra os cartórios das **27 UFs** (camada 1: cadastro do CNJ e IBGE), atualizada todo mês por um pipeline agendado, com a data no selo "atualizado em". O prêmio das outras regiões entra nas próximas fases ([`docs/plano_projeto.md`](docs/plano_projeto.md)).
 
 ![Início do painel: o prêmio anual estimado de R$ 341,1 mil, com a faixa provável de R$ 215 a 687 mil, e os 6 indicadores de MG (2.525 cartórios ativos, arrecadação anual ≈ R$ 5,60 bi, ≈ 1.121 obrigados, 12.134 empregados CLT, R$ 34,1 mi de déficit e o prêmio)](docs/img/painel_inicio.png)
 
@@ -26,7 +26,19 @@
 | Quantos não teriam bens para cobri-la, e quanto falta? | ≈ 148, com R$ 34,1 milhões de déficit | modelo |
 | Quanto as seguradoras receberiam por ano? | **R$ 341,1 mil** (faixa provável de R$ 215 a 687 mil) | modelo, com 2 suposições sem fonte pública (taxa e adesão) |
 
-O painel tem a história em 5 páginas (o número com os 6 indicadores principais, quão certo ele é, onde está o mercado, para onde vai e de onde vêm os dados), o mapa clicável dos 851 municípios com cartório (déficit em R$, % de obrigados ou % na Classe 3; o clique abre os cartórios do município, pelo CNS), um simulador ("e se a taxa fosse 3%?", "e se o STF suspender a obrigação?") e o chat. Os dez números oficiais, com os extremos, estão em [`docs/ESTADO_ATUAL.md`](docs/ESTADO_ATUAL.md#números-de-referência).
+### O Sudeste (carga de 2026-11-12; SP, RJ e ES são estimativa preliminar)
+
+Regra atual do Provimento, STF mantém, nível base. Os totais da região são somas; a faixa provável do Sudeste é simulada sorteio a sorteio (200 mil sorteios), nunca a soma das faixas.
+
+| | Cartórios ativos | Empregados CLT | Obrigados | Dívida trabalhista dos obrigados | Déficit | Prêmio anual (faixa provável) |
+|---|---|---|---|---|---|---|
+| **Sudeste** | 4.873 | 42.544 | ≈ 2.535 | R$ 1,54 bi | R$ 243,3 mi | **R$ 2,43 mi** (R$ 1,51 a 4,91 mi) |
+| SP | 1.559 | 21.875 | ≈ 961 | R$ 1,02 bi | R$ 163,9 mi | R$ 1,64 mi (R$ 1,01 a 3,31 mi) |
+| RJ | 457 | 6.506 | ≈ 273 | R$ 238,1 mi | R$ 38,0 mi | R$ 380,3 mil (R$ 235 a 767 mil) |
+| MG (calibrado) | 2.525 | 12.134 | ≈ 1.121 | R$ 238,1 mi | R$ 34,1 mi | R$ 341,1 mil (R$ 215 a 687 mil) |
+| ES | 332 | 2.029 | ≈ 180 | R$ 50,1 mi | R$ 7,3 mi | R$ 72,9 mil (R$ 46 a 147 mil) |
+
+O painel tem a história em 5 páginas (o número com os 6 indicadores principais, quão certo ele é, onde está o mercado, para onde vai e de onde vêm os dados), o mapa clicável dos municípios com cartório (851 em MG; 1.666 no Sudeste) (déficit em R$, % de obrigados ou % na Classe 3; o clique abre os cartórios do município, pelo CNS), um simulador ("e se a taxa fosse 3%?", "e se o STF suspender a obrigação?") e o chat. Os dez números oficiais, com os extremos, estão em [`docs/ESTADO_ATUAL.md`](docs/ESTADO_ATUAL.md#números-de-referência).
 
 ## Como funciona
 
@@ -49,7 +61,7 @@ flowchart LR
 ```
 
 - **Pipeline em camadas** (DuckDB): o bronze guarda os originais com o hash; o silver limpa; o gold calcula o modelo (premissas versionadas em `config/`, cada uma com fonte ou marcada `fonte: suposição`). Um contrato de qualidade violado interrompe a carga.
-- **Conjunto público** (`data/publico/`, < 1 MB, no git): as tabelas que o painel lê, auditadas para que nenhum nome nem CPF de pessoa física saia (D-038).
+- **Conjunto público** (`data/publico/`, ≈ 1,4 MB, no git): as tabelas que o painel lê, auditadas para que nenhum nome nem CPF de pessoa física saia (D-038).
 - **Chat que não inventa número:** o modelo (Gemini, nível gratuito) só responde chamando ferramentas que leem as mesmas tabelas do painel, e cita a fonte. Quando o dado não existe, diz que não encontrou.
 - **Servidor MCP:** as mesmas 5 ferramentas do chat, para qualquer cliente MCP (Claude Desktop, Claude Code, IDEs) consultar os números com a fonte, de um clone, sem chave nem internet: `uv run python -m src.agent.servidor_mcp` (no Claude Code: `claude mcp add radar -- uv run --directory <pasta do clone> python -m src.agent.servidor_mcp`). Só lê o conjunto público; implementado sem dependência nova ([`src/agent/servidor_mcp.py`](src/agent/servidor_mcp.py)).
 - **O que mudou a cada carga:** um agente compara o conjunto publicado antes com o novo (os 10 números, as datas das fontes, as tabelas e as colunas) e o Gemini resume em 2 a 4 frases; cada número do resumo é conferido no relatório, e um número sem apoio descarta o resumo ([`scripts/o_que_mudou.py`](scripts/o_que_mudou.py); a última comparação em [`docs/o_que_mudou.md`](docs/o_que_mudou.md)).
@@ -64,8 +76,8 @@ flowchart LR
 | Avaliação do chat toda semana, com a API real | [![Avaliação do chat](https://github.com/luccaamp/radar-seguro-cartorio/actions/workflows/avaliacao-chat.yml/badge.svg)](https://github.com/luccaamp/radar-seguro-cartorio/actions/workflows/avaliacao-chat.yml) verde = meta cumprida (acerto ≥ 85%, nenhum número inventado nas armadilhas); o relatório fica no resumo de cada execução | [`.github/workflows/avaliacao-chat.yml`](.github/workflows/avaliacao-chat.yml) |
 | Ganho das ferramentas, nas mesmas perguntas | +78,8 pontos sobre o modelo sozinho (intervalo: +66,4 a +91,3) | idem, seção "Margem de erro" |
 | Número inventado nas perguntas-armadilha | nenhum | idem |
-| Contratos de qualidade na carga | 109 checagens; nenhum erro violado | página "Sobre os dados" |
-| Testes a cada pull request (GitHub Actions) | suíte padrão (462 testes, entre eles os do JavaScript do mapa e do botão de tema, e os do servidor MCP), o mapa num navegador de verdade (4) e o modo completo com os dados reais | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+| Contratos de qualidade na carga | 120 checagens (4 UFs); nenhum erro violado | página "Sobre os dados" |
+| Testes a cada pull request (GitHub Actions) | suíte padrão (494 testes, entre eles os do JavaScript do mapa e do botão de tema, e os do servidor MCP), o mapa num navegador de verdade (8) e o modo completo com os dados reais | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
 | Cobertura dos testes em `src/` | 71% das linhas (indicador, não meta: cobertura alta não garante teste bom; Inozemtseva e Holmes, ICSE 2014) | `uv run pytest --cov=src` |
 | Acessibilidade (axe) nas 7 páginas | 0 falhas do código do projeto | `scripts/acessibilidade.py` |
 | Custo | R$ 0 (níveis gratuitos, sem cartão) | [`CLAUDE.md`](CLAUDE.md) |
@@ -78,7 +90,7 @@ A margem de erro do chat segue Miller (2024, "Adding Error Bars to Evals", arXiv
 - **Classe aproximada:** a arrecadação publicada pelo CNJ não é exatamente a receita bruta da norma.
 - **Dívida trabalhista:** a RAIS não traz a maior remuneração fixa nem as verbas de convenção coletiva.
 - **Taxa e adesão ao seguro:** nenhuma fonte pública as traz; por isso a faixa provável é larga.
-- **Um estado só**, por enquanto.
+- **Só MG calibrado:** SP, RJ e ES herdam as premissas de MG (suposição, "estimativa preliminar"). Nos empregados, RAIS × CNJ passa da tolerância de 5% em SP (+16,0%) e no RJ (+7,5%); o BI do CNJ cobre menos cartórios no ES; 107 cartórios ativos (80 no RJ, 26 no ES, 1 em SP) estão sem situação jurídica no cadastro do CNJ: aparecem como "não informada" e o modelo os trata como não vagos (suposição). Fora do Sudeste, só a contagem de cartórios (página Brasil), nunca prêmio.
 
 ## Como o projeto foi feito
 

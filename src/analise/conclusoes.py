@@ -7,7 +7,7 @@ import pandas as pd
 from src import estado
 from src.analise import dados, estatistica as est, grupos as gr, regressao as rg, sensibilidade as se, tabelas
 from src.motor import calcular_serventias, peso_indeterminada, premissas_nivel, resumo_mercado
-from src.transform.gold import carregar_insumos
+from src.transform.gold import carregar_insumos, insumos_da_uf
 
 COLUNAS_OFICIAIS = {"n_serventias_ativas": "serventias ativas", "clt": "empregados CLT", "n_universo": "obrigadas",
                     "passivo_todas": "passivo (todas)", "passivo_universo": "passivo (obrigadas)",
@@ -15,11 +15,13 @@ COLUNAS_OFICIAIS = {"n_serventias_ativas": "serventias ativas", "clt": "empregad
                     "mercado_importancia_segurada": "IS do mercado", "mercado_premio_emitido": "prêmio anual"}
 
 
-def numeros_oficiais(con) -> pd.DataFrame:
+def numeros_oficiais(con, uf: str | None = None) -> pd.DataFrame:
     """Os 10 números oficiais (regra v2, cenário do STF "mantém") nos níveis mínimo, base e máximo das premissas, de
-    gold.fato_mercado_uf, mais o teto teórico (passivo das obrigadas × taxa do nível). Uma linha por número."""
+    gold.fato_mercado_uf, mais o teto teórico (passivo das obrigadas × taxa do nível). Uma linha por número.
+    `uf`: a UF (sem ela, a primeira do escopo, MG; D-088)."""
     f = con.execute(f"""SELECT nivel, {', '.join(COLUNAS_OFICIAIS)} FROM gold.fato_mercado_uf
-                        WHERE regra_classe = 'v2' AND cenario_stf = 'mantem'""").df().set_index("nivel").T
+                        WHERE regra_classe = 'v2' AND cenario_stf = 'mantem' AND uf = ?""",
+                    [tabelas._uf(uf)]).df().set_index("nivel").T
     taxa = estado.ler_semente()["premissas"]["taxa_seguro_anual"]["valores"]
     f.loc["teto"] = [f.loc["passivo_universo", n] * taxa[n] for n in f.columns]
     f.index = list(COLUNAS_OFICIAIS.values()) + ["teto teórico"]
@@ -31,17 +33,20 @@ NOMES_09 = ["analise_regras", "analise_grupos", "analise_clt_modelo", "analise_p
             "analise_premio_cenarios"]
 
 
-def carregar(con) -> tuple[dict[str, pd.DataFrame], str]:
+def carregar(con, uf: str | None = None) -> tuple[dict[str, pd.DataFrame], str]:
     """As tabelas gold.analise_* que o notebook 09 lê (NOMES_09: as seis da D-043, a sensibilidade de método da D-044
     e três das melhorias, D-045; a linha "sem os saltos" é da D-046): do
     banco, se o pipeline já as gravou, ou calculadas agora pelas mesmas funções do pipeline (src/analise/tabelas.py).
-    Devolve as tabelas e de onde vieram."""
+    Só as linhas de uma UF (`uf`; sem ela, a primeira do escopo, MG; D-088). Devolve as tabelas e de onde vieram."""
+    uf = tabelas._uf(uf)
     no_banco = {t for (t,) in con.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'gold' "
                                           "AND table_name LIKE 'analise_%'").fetchall()}
     nomes = NOMES_09
     if set(nomes) <= no_banco:
-        return {t: con.execute(f"SELECT * FROM gold.{t}").df() for t in nomes}, "banco (gold.analise_*)"
-    return tabelas.construir(con), "calculadas agora (src/analise/tabelas.py)"
+        tabs = {t: con.execute(f"SELECT * FROM gold.{t}").df() for t in nomes}
+        return ({t: df[df["uf"] == uf].reset_index(drop=True) if "uf" in df else df for t, df in tabs.items()},
+                "banco (gold.analise_*)")
+    return tabelas.construir_uf(con, uf), "calculadas agora (src/analise/tabelas.py)"
 
 
 def concentracao(sv: pd.DataFrame, topo: float) -> pd.DataFrame:
@@ -77,14 +82,17 @@ def erro_clt(tab_clt: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     return m, reg.sort_values("erro_total_pct")
 
 
-def efeito_receita_liquida(con: duckdb.DuckDBPyConnection, limites: dict, cenarios: dict) -> pd.DataFrame:
+def efeito_receita_liquida(con: duckdb.DuckDBPyConnection, limites: dict, cenarios: dict,
+                           uf: str | None = None) -> pd.DataFrame:
     """Sensibilidade do notebook 08 (seção 5): o universo e o mercado com a receita de referência descontada do
     repasse (art. 2º, XXIV, do Prov. 213; fração de repasse do BI do CNJ em 2025), com a faixa de déficit da base
-    (D-019). Duas linhas (base e receita líquida) e as colunas de resumo_mercado."""
+    (D-019). Duas linhas (base e receita líquida) e as colunas de resumo_mercado. `uf`: a UF (sem ela, a primeira do
+    escopo, MG; D-088)."""
+    uf = tabelas._uf(uf)
     semente = estado.ler_semente()
-    ins = carregar_insumos(con)
-    peso = con.execute("SELECT peso_classe_indeterminada_base FROM gold.execucao WHERE regra_classe = 'v2'"
-                       ).fetchone()[0]
+    ins = insumos_da_uf(carregar_insumos(con), uf)
+    peso = con.execute("SELECT peso_classe_indeterminada_base FROM gold.execucao WHERE regra_classe = 'v2' AND uf = ?",
+                       [uf]).fetchone()[0]
     p = premissas_nivel(semente, "base", peso)
     serv0 = calcular_serventias(ins, p, limites, limites_faixa=limites)[0]
     bi = dados.arrecadacao_bi(con)

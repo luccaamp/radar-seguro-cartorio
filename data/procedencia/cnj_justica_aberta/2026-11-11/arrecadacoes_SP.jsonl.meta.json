@@ -1,0 +1,13 @@
+{
+ "coletado_em": "2026-11-11T23:18:18-03:00",
+ "versao_coletor": "fase1-0.1",
+ "url": "https://justicaabertaapi.cnj.jus.br/v1/api/serventias/{cns}/arrecadacoes",
+ "metodo": "GET",
+ "params": {
+  "page": 1,
+  "perPage": 200
+ },
+ "origem_lista": "cnj_justica_aberta\\2026-10-17\\serventias_SP.json",
+ "serventias_ativas": 1559,
+ "sha256": "95a0f718b57619cff49b1560d90e6efc12cab97ef329f251ae384d6b8c0ea8df"
+}

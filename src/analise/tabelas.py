@@ -326,14 +326,43 @@ def construir_uf(con, uf: str) -> dict[str, pd.DataFrame]:
             "analise_sensibilidade_metodo": sensibilidade_metodo(con, uf), **melhorias(con, monte_carlo, uf)}
 
 
+REGIAO = "SUDESTE"   # a "UF" das linhas somadas da região (D-088): as UFs do escopo, juntas
+
+
+def monte_carlo_regiao(con, ufs: list[str]) -> pd.DataFrame:
+    """A faixa da REGIÃO (as UFs do escopo somadas), sorteio a sorteio: a faixa de uma soma não é a soma das faixas.
+    Os sorteios das seis suposições saem da mesma semente para todas as UFs (as mesmas suposições valem para todas: as
+    de MG, herdadas pelas outras como suposição, D-081); em cada sorteio, o déficit, a IS e o prêmio da região são a
+    soma dos das UFs. Os cantos (mínimo, base e máximo) também são somas."""
+    cfg = config()
+    semente, n = cfg["semente"], cfg["sensibilidade"]["sorteios"]
+    soma_ind: dict = {}
+    soma_jun: dict = {}
+    cantos: dict = {nv: {} for nv in ("min", "base", "max")}
+    for uf in ufs:
+        totais = simulador.totais(dados.serventias(con, uf=uf))
+        faixas = se.faixas_suposicoes(_semente(uf))
+        for alvo, x in ((soma_ind, se.sortear(faixas, n, semente)),
+                        (soma_jun, se.sortear(faixas, n, semente, juntas=se.PATRIMONIO))):
+            for medida, v in se.premio_vetorial(totais, x).items():
+                alvo[medida] = alvo.get(medida, 0) + v
+        for nv in cantos:
+            for medida, v in se.premio_vetorial(totais, {s: np.array([faixas.loc[s, nv]]) for s in faixas.index}).items():
+                cantos[nv][medida] = cantos[nv].get(medida, 0.0) + float(v[0])
+    res = {"independentes": se.resumo_sorteios(soma_ind), "patrimônio junto": se.resumo_sorteios(soma_jun)}
+    return se.tabela_monte_carlo(res, cantos, n, semente)
+
+
 def construir(con) -> dict[str, pd.DataFrame]:
     """As tabelas gold.analise_* de todas as UFs do escopo com serventias no gold (Fase 3, bloco 3), cada uma com a
-    coluna `uf` na frente. Com ufs: [MG], o conteúdo é o de antes (fora a coluna nova)."""
+    coluna `uf` na frente. Com ufs: [MG], o conteúdo é o de antes (fora a coluna nova). Com mais de uma UF (D-088),
+    `analise_monte_carlo` ganha as linhas da região somada (uf = REGIAO)."""
     presentes = {u for (u,) in con.execute("SELECT DISTINCT uf FROM gold.interno_serventia").fetchall()}
     partes: dict[str, list[pd.DataFrame]] = {}
-    for uf in estados_config.ufs():
-        if uf not in presentes:
-            continue
+    ufs = [uf for uf in estados_config.ufs() if uf in presentes]
+    for uf in ufs:
         for nome, df in construir_uf(con, uf).items():
             partes.setdefault(nome, []).append(_com_uf(df, uf))
+    if len(ufs) > 1:
+        partes["analise_monte_carlo"].append(_com_uf(monte_carlo_regiao(con, ufs), REGIAO))
     return {nome: pd.concat(dfs, ignore_index=True) for nome, dfs in partes.items()}

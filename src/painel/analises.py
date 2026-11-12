@@ -20,8 +20,8 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from src import estado
-from src.agent.ferramentas import _br, _citar, _obrigada, _sem_acento, _sem_uf, _uf, aprox, brl, pct
+from src import estado, estados_config
+from src.agent.ferramentas import _br, _citar, _obrigada, _sem_acento, _sem_uf, _uf, aprox, brl, pct, preliminar
 from src.painel import artefatos
 
 RAIZ = Path(__file__).resolve().parents[2]
@@ -64,22 +64,34 @@ def _linhas(df: pd.DataFrame) -> list[dict]:
     return [{k: _py(v) for k, v in r.items()} for r in df.to_dict("records")]
 
 
-def _meta(con, tabela: str, fontes=FONTES_MODELO, rotulo: str | None = None) -> dict:
-    """Fonte, data de referência, carga e versão das premissas de um resultado."""
+def _tem_coluna(con, schema: str, tabela: str, coluna: str) -> bool:
+    return bool(con.execute("SELECT count(*) FROM information_schema.columns WHERE table_schema = ? AND table_name = ? "
+                            "AND column_name = ?", [schema, tabela, coluna]).fetchone()[0])
+
+
+def _fontes_da_uf(con, uf: str) -> str:
+    """Filtro SQL de silver.fonte_metadados para a UF: os arquivos dela e os que valem para todas (sem UF). Banco
+    anterior à D-088 (sem a coluna `uf`): todos. `uf` já validada por _uf (só siglas do escopo)."""
+    return f" AND (uf = '{uf}' OR uf IS NULL)" if _tem_coluna(con, "silver", "fonte_metadados", "uf") else ""
+
+
+def _meta(con, tabela: str, fontes=FONTES_MODELO, rotulo: str | None = None, uf: str = "MG") -> dict:
+    """Fonte, data de referência, carga e versão das premissas de um resultado (da UF)."""
     versao, executado = con.execute("SELECT versao_premissas, executado_em FROM gold.execucao "
-                                    "WHERE regra_classe = 'v2'").fetchone()
-    refs = con.execute("SELECT fonte, data_referencia FROM silver.fonte_metadados WHERE fonte IN (SELECT unnest(?)) "
-                       "ORDER BY fonte", [list(fontes)]).fetchall()
+                                    "WHERE regra_classe = 'v2' AND uf = ?", [uf]).fetchone()
+    refs = con.execute("SELECT fonte, data_referencia FROM silver.fonte_metadados WHERE fonte IN (SELECT unnest(?))"
+                       + _fontes_da_uf(con, uf) + " ORDER BY fonte", [list(fontes)]).fetchall()
     out = {"fonte": tabela, "data_referencia": "; ".join(f"{f}: {d}" for f, d in refs),
-           "carga": f"{executado:%Y-%m-%d}", "versao_premissas": int(versao), "citar": _citar(con, tabela)}
+           "carga": f"{executado:%Y-%m-%d}", "versao_premissas": int(versao), "citar": _citar(con, tabela, uf),
+           "preliminar": preliminar(uf)}
     if rotulo:
         out["rotulo"] = rotulo
     return out
 
 
-def _uf_mercado(con, cenario: str = "mantem") -> pd.DataFrame:
-    return con.execute("SELECT * FROM gold.fato_mercado_uf WHERE regra_classe = 'v2' AND cenario_stf = ?",
-                       [cenario]).df().set_index("nivel")
+def _uf_mercado(con, cenario: str = "mantem", uf: str = "MG") -> pd.DataFrame:
+    return con.execute("SELECT * FROM gold.fato_mercado_uf WHERE regra_classe = 'v2' AND cenario_stf = ? AND uf = ?",
+                       [cenario, uf]).df().set_index("nivel")
 
 
 def _faixa_txt(lo: float, hi: float) -> str:
@@ -113,7 +125,8 @@ def numeros_oficiais(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     premissas. O teto teórico é o passivo das obrigadas × a taxa do nível (como se ninguém tivesse bens)."""
     if not _uf(uf):
         return _sem_uf(uf)
-    f = _uf_mercado(con)
+    uf = _uf(uf)
+    f = _uf_mercado(con, uf=uf)
     taxa = estado.premissas_vigentes(con)[0]["premissas"]["taxa_seguro_anual"]["valores"]
     linhas = []
     for i, (chave, col, rotulo, fmt, natureza) in enumerate(OFICIAIS, start=1):
@@ -122,11 +135,11 @@ def numeros_oficiais(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
         linhas.append({"numero": i, "chave": chave, "rotulo": rotulo, "natureza": natureza,
                        "valor": _FMT[fmt](v["base"]), "minimo": _FMT[fmt](v["min"]), "maximo": _FMT[fmt](v["max"]),
                        "base_cru": v["base"], "min_cru": v["min"], "max_cru": v["max"]})
-    return {"uf": "MG", "numeros": linhas,
+    return {"uf": uf, "numeros": linhas,
             "conta": "gold.fato_mercado_uf (regra v2, cenário 'mantém'); teto = passivo das obrigadas × taxa do nível",
             "observacao": "1 a 5 vêm de dados públicos; 6 a 10 dependem de suposições (D-016, D-046)",
             "valores": {r["chave"]: r["base_cru"] for r in linhas}, "tabela": linhas,
-            **_meta(con, "gold.fato_mercado_uf")}
+            **_meta(con, uf=uf, tabela="gold.fato_mercado_uf")}
 
 
 def panorama(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
@@ -136,10 +149,12 @@ def panorama(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     superestima um pouco quem tem um semestre só)."""
     if not _uf(uf):
         return _sem_uf(uf)
+    uf = _uf(uf)
     of = numeros_oficiais(con, uf)["valores"]
     fx = faixa_d042(con, uf, medida="premio")
     r = con.execute("SELECT sum(receita_ref) AS soma, count(receita_ref) AS com, "
-                    "count(*) FILTER (WHERE semestres_validos = 1) AS um FROM gold.serventia_publico").fetchone()
+                    "count(*) FILTER (WHERE semestres_validos = 1) AS um FROM gold.serventia_publico WHERE uf = ?",
+                    [uf]).fetchone()
     arrecadacao = 2 * float(r[0])
     kpis = [
         {"chave": "serventias", "rotulo": "Cartórios ativos", "valor": _br(of["serventias"], 0),
@@ -155,14 +170,14 @@ def panorama(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
         {"chave": "premio", "rotulo": "Prêmio anual estimado", "valor": brl(of["premio"]),
          "nota": f"provavelmente de {fx['faixa_provavel']}"},
     ]
-    return {"uf": "MG", "kpis": kpis, "tabela": kpis,
+    return {"uf": uf, "kpis": kpis, "tabela": kpis,
             "valores": {**{k: of[k] for k in ("serventias", "obrigadas", "clt", "deficit", "premio")},
                         "arrecadacao": arrecadacao, "cartorios_um_semestre": int(r[2])},
             "conta": ("números oficiais (gold.fato_mercado_uf) e a faixa provável do prêmio; arrecadação anual ≈ 2 × a "
                       "soma da receita de referência de 2025 (gold.serventia_publico)"),
             "observacao": (f"a arrecadação anual é aproximada: a receita de referência é a média dos semestres válidos "
                            f"de 2025, e {_br(int(r[2]), 0)} cartórios têm um semestre só"),
-            **_meta(con, "gold.fato_mercado_uf e gold.serventia_publico")}
+            **_meta(con, uf=uf, tabela="gold.fato_mercado_uf e gold.serventia_publico")}
 
 
 def faixa_d042(con: duckdb.DuckDBPyConnection, uf: str = "MG", medida: str = "premio") -> dict:
@@ -171,15 +186,17 @@ def faixa_d042(con: duckdb.DuckDBPyConnection, uf: str = "MG", medida: str = "pr
     junto". Faixa e sorteios de gold.analise_monte_carlo; base e extremos de gold.fato_mercado_uf."""
     if not _uf(uf):
         return _sem_uf(uf)
+    uf = _uf(uf)
     if medida not in MEDIDAS_D042:
         return {"erro": f"medida {medida!r} não existe; use {list(MEDIDAS_D042)}"}
     col, titulo = MEDIDAS_D042[medida]
-    mc = con.execute("SELECT * FROM gold.analise_monte_carlo WHERE medida = ?", [medida]).df().set_index("variante")
+    mc = con.execute("SELECT * FROM gold.analise_monte_carlo WHERE medida = ? AND uf = ?",
+                     [medida, uf]).df().set_index("variante")
     ind, junto = mc.loc["independentes"], mc.loc["patrimônio junto"]
-    f = _uf_mercado(con)
+    f = _uf_mercado(con, uf=uf)
     base, lo, hi = float(f.at["base", col]), float(f.at["min", col]), float(f.at["max", col])
     p05, p50, p95 = float(ind["p05"]), float(ind["p50"]), float(ind["p95"])
-    return {"uf": "MG", "medida": titulo, "valor_base": brl(base), "faixa_provavel": _faixa_txt(p05, p95),
+    return {"uf": uf, "medida": titulo, "valor_base": brl(base), "faixa_provavel": _faixa_txt(p05, p95),
             "faixa_provavel_exata": f"{brl(p05)} a {brl(p95)}", "rotulo_faixa": FAIXA, "subrotulo_faixa": FAIXA_SUB,
             "extremos": f"{brl(lo)} a {brl(hi)}", "rotulo_extremos": EXTREMOS,
             "mediana_sorteios": brl(p50), "sorteios": _br(int(ind["n_sorteios"]), 0),
@@ -196,13 +213,14 @@ def faixa_d042(con: duckdb.DuckDBPyConnection, uf: str = "MG", medida: str = "pr
                         "canto_mc_min": float(ind["canto_min"]), "canto_mc_max": float(ind["canto_max"]),
                         "base_mc": float(ind["valor_base"]), "junto_p05": float(junto["p05"]),
                         "junto_p95": float(junto["p95"]), "largura_vezes": (hi - lo) / (p95 - p05)},
-            **_meta(con, "gold.analise_monte_carlo e gold.fato_mercado_uf", rotulo=FAIXA)}
+            **_meta(con, uf=uf, tabela="gold.analise_monte_carlo e gold.fato_mercado_uf", rotulo=FAIXA)}
 
 
 def escada(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     """Do passivo ao prêmio (achado 1 do 09): cada degrau é uma parte do anterior, em % do passivo das obrigadas."""
     if not _uf(uf):
         return _sem_uf(uf)
+    uf = _uf(uf)
     n = numeros_oficiais(con, uf)["valores"]
     ref = n["passivo_obrigadas"]
     degraus = [("Passivo de todas as serventias", "passivo_todas", "dado"),
@@ -212,11 +230,11 @@ def escada(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
                ("Prêmio anual do mercado", "premio", "suposição")]
     linhas = [{"degrau": d, "valor": n[k], "valor_txt": brl(n[k]), "pct_passivo_obrigadas": n[k] / ref,
                "pct_txt": pct(n[k] / ref), "natureza": nat} for d, k, nat in degraus]
-    return {"uf": "MG", "premio_sobre_teto": pct(n["premio"] / n["teto"]),
+    return {"uf": uf, "premio_sobre_teto": pct(n["premio"] / n["teto"]),
             "is_sobre_passivo": pct(n["importancia_segurada"] / ref), "deficit_sobre_passivo": pct(n["deficit"] / ref),
             "conta": "degraus 4 a 8 da escada no nível base; % do passivo das obrigadas",
             "valores": {"premio_sobre_teto": n["premio"] / n["teto"], "teto": n["teto"]}, "tabela": linhas,
-            **_meta(con, "gold.fato_mercado_uf")}
+            **_meta(con, uf=uf, tabela="gold.fato_mercado_uf")}
 
 
 def situacao_adi() -> dict:
@@ -232,18 +250,19 @@ def premio_por_cenario_stf(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> di
     """Prêmio base e faixa provável em cada cenário do STF (M7): mantém, decisão parcial (hipotética) e suspende."""
     if not _uf(uf):
         return _sem_uf(uf)
-    c = con.execute("SELECT * FROM gold.analise_premio_cenarios").df()
+    uf = _uf(uf)
+    c = con.execute("SELECT * FROM gold.analise_premio_cenarios WHERE uf = ?", [uf]).df()
     nomes = {"mantem": "Regra mantida", "parcial": "Decisão parcial (hipotética)", "suspende_8_17": "STF suspende os arts. 8º a 17"}
     linhas = [{"cenario": r.cenario, "nome": nomes.get(r.cenario, r.cenario), "fracao_exigida": float(r.fracao_exigida),
                "premio_base": float(r.premio_base), "p05": float(r.premio_p05), "p95": float(r.premio_p95),
                "premio_txt": brl(r.premio_base), "faixa_txt": _faixa_txt(r.premio_p05, r.premio_p95)
                if r.premio_p95 > 0 else "—", "descricao": " ".join(str(r.descricao).split())}
               for r in c.itertuples()]
-    return {"uf": "MG", "cenarios": {r["cenario"]: f"{r['premio_txt']} (faixa provável {r['faixa_txt']})"
+    return {"uf": uf, "cenarios": {r["cenario"]: f"{r['premio_txt']} (faixa provável {r['faixa_txt']})"
                                      for r in linhas},
             "conta": "prêmio do cenário = prêmio da regra mantida × fração exigida (config/cenarios_stf.yaml)",
             "observacao": "o efeito do STF é binário e fica fora da faixa provável; 'parcial' é hipotético",
-            "tabela": linhas, **_meta(con, "gold.analise_premio_cenarios", rotulo=FAIXA)}
+            "tabela": linhas, **_meta(con, uf=uf, tabela="gold.analise_premio_cenarios", rotulo=FAIXA)}
 
 
 # ------------------------------------------------------------------ Mercado
@@ -251,18 +270,19 @@ def grupos(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     """Os seis tipos de cartório do k-means (notebook 04) e o grupo-alvo do seguro, com a parte de MG de cada um."""
     if not _uf(uf):
         return _sem_uf(uf)
-    g = con.execute("SELECT * FROM gold.analise_grupos_perfil ORDER BY grupo").df()
+    uf = _uf(uf)
+    g = con.execute("SELECT * FROM gold.analise_grupos_perfil WHERE uf = ? ORDER BY grupo", [uf]).df()
     linhas = _linhas(g)
     alvo = g[g["grupo_alvo"]].iloc[0]
-    return {"uf": "MG", "grupo_alvo": f"grupo {int(alvo.grupo)}: {alvo.nome_grupo}",
+    return {"uf": uf, "grupo_alvo": f"grupo {int(alvo.grupo)}: {alvo.nome_grupo}",
             "serventias_do_alvo": _br(alvo.n_serventias, 0), "parte_das_serventias": pct(alvo.pct_serventias),
             "parte_das_obrigadas": pct(alvo.pct_obrigadas_mg),
             "parte_do_passivo_das_obrigadas": pct(alvo.pct_passivo_obrigadas_mg),
             "parte_do_deficit": pct(alvo.pct_deficit_mg), "deficit_por_obrigada": brl(alvo.deficit_por_obrigada),
-            "conta": "k-means em escala log (receita, CLT, nº de atribuições, situação; notebook 04); partes de MG "
-                     "somadas por grupo",
+            "conta": "k-means em escala log (receita, CLT, nº de atribuições, situação; notebook 04); partes de "
+                     f"{uf} somadas por grupo",
             "observacao": "passivo = dado; déficit = pela capacidade de pagar (premissas v3, D-046)",
-            "valores": {"alvo": int(alvo.grupo)}, "tabela": linhas, **_meta(con, "gold.analise_grupos_perfil")}
+            "valores": {"alvo": int(alvo.grupo)}, "tabela": linhas, **_meta(con, uf=uf, tabela="gold.analise_grupos_perfil")}
 
 
 ATRIBUICOES_09 = {"Notas": "Notas", "Registro Civil das Pessoas Naturais": "RCPN", "Registro de Imóveis": "RI",
@@ -276,8 +296,11 @@ def quem_e_obrigado(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     regras de associação mais fortes (gold.analise_regras)."""
     if not _uf(uf):
         return _sem_uf(uf)
+    uf = _uf(uf)
     s = con.execute("SELECT atribuicoes, clt, peso_universo FROM gold.serventia_publico "
-                    "WHERE classe IN ('1', '2', '3')").df()
+                    "WHERE classe IN ('1', '2', '3') AND uf = ?", [uf]).df()
+    (n_indet,) = con.execute("SELECT count(*) FROM gold.serventia_publico WHERE classe NOT IN ('1', '2', '3') "
+                             "AND uf = ?", [uf]).fetchone()
     s["obrigada"] = s["peso_universo"] > 0
     linhas = []
     for nome, curto in ATRIBUICOES_09.items():
@@ -288,17 +311,17 @@ def quem_e_obrigado(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
         m = s["clt"].between(lo, hi)   # sem CLT declarado fica fora do porte, como no notebook 09
         linhas.append({"tipo": "porte", "item": rot, "serventias": int(m.sum()),
                        "obrigadas": int(s.loc[m, "obrigada"].sum()), "pct": float(s.loc[m, "obrigada"].mean())})
-    regras = con.execute("SELECT se, entao, serventias_com_se, confianca, lift FROM gold.analise_regras "
-                         "ORDER BY posicao LIMIT 3").df()
+    regras = con.execute("SELECT se, entao, serventias_com_se, confianca, lift FROM gold.analise_regras WHERE uf = ? "
+                         "ORDER BY posicao LIMIT 3", [uf]).df()
     media = float(s["obrigada"].mean())
-    return {"uf": "MG", "media_obrigadas": pct(media), "serventias_classe_conhecida": _br(len(s), 0),
+    return {"uf": uf, "media_obrigadas": pct(media), "serventias_classe_conhecida": _br(len(s), 0),
             "por_item": {r["item"]: pct(r["pct"]) for r in linhas},
             "regras": [f"{r.se} → {r.entao}: acerta {pct(r.confianca)} de {_br(r.serventias_com_se, 0)} (lift "
                        f"{_br(r.lift, 2)})" for r in regras.itertuples()],
             "conta": "obrigada = peso no universo > 0 (provida e Classe 2 ou 3), entre as serventias de classe conhecida",
-            "observacao": "descrição de 2025, não previsão; as 78 de classe indeterminada ficam fora",
+            "observacao": f"descrição de 2025, não previsão; as {n_indet} de classe indeterminada ficam fora",
             "valores": {"media": media}, "tabela": linhas,
-            **_meta(con, "gold.serventia_publico e gold.analise_regras")}
+            **_meta(con, uf=uf, tabela="gold.serventia_publico e gold.analise_regras")}
 
 
 # ------------------------------------------------------------------ Análises
@@ -313,21 +336,24 @@ def cartorios_do_municipio(con: duckdb.DuckDBPyConnection, uf: str = "MG", munic
     passivo, déficit e prêmio esperados (nível base, regra v2, STF mantém). Sem `municipio`, só explica o que pedir."""
     if not _uf(uf):
         return _sem_uf(uf)
-    meta = _meta(con, "gold.serventia_publico")
+    uf = _uf(uf)
+    meta = _meta(con, uf=uf, tabela="gold.serventia_publico")
     if not municipio:
-        return {"uf": "MG", "municipio": None, "cartorios": [], "tabela": [],
+        return {"uf": uf, "municipio": None, "cartorios": [], "tabela": [],
                 "observacao": "informe o município para ver os cartórios dele", **meta}
-    s = con.execute("SELECT * FROM gold.serventia_publico").df()
+    s = con.execute("SELECT * FROM gold.serventia_publico WHERE uf = ?", [uf]).df()
     s = s[s["municipio"].map(_sem_acento) == _sem_acento(municipio)]
     if s.empty:
-        return {"erro": f"município {municipio!r} sem cartório ativo em MG nesta carga (confira a grafia)"}
+        return {"erro": f"município {municipio!r} sem cartório ativo em {uf} nesta carga (confira a grafia e a UF)"}
     s = s.sort_values(["valor_descoberto", "cns"], ascending=[False, True])
 
     def linha(r) -> dict:
         receita = None if pd.isna(r["receita_ref"]) else float(r["receita_ref"])
         clt = None if pd.isna(r["clt"]) else float(r["clt"])
         return {"cns": r["cns"], "atribuicoes": r["atribuicoes"],
-                "situacao": SITUACAO.get(str(r["situacao_juridica"]), str(r["situacao_juridica"]).lower()),
+                # vazia = a fonte não informou (107 ativas no Sudeste, quase todas no RJ e no ES; D-088)
+                "situacao": ("não informada" if pd.isna(r["situacao_juridica"]) or not r["situacao_juridica"]
+                             else SITUACAO.get(str(r["situacao_juridica"]), str(r["situacao_juridica"]).lower())),
                 "classe": r["classe"], "classe_regra_anterior": r["classe_v1"],
                 "obrigado": _obrigada(float(r["peso_universo"])),
                 "empregados_clt": "não declarado" if clt is None else _br(clt, 0),
@@ -336,7 +362,7 @@ def cartorios_do_municipio(con: duckdb.DuckDBPyConnection, uf: str = "MG", munic
                 "premio_anual": brl(r["premio_emitido"]),
                 "deficit_cru": float(r["valor_descoberto"]), "premio_cru": float(r["premio_emitido"])}
     linhas = [linha(r) for _, r in s.iterrows()]
-    return {"uf": "MG", "municipio": str(s["municipio"].iloc[0]), "n_cartorios": _br(len(s), 0),
+    return {"uf": uf, "municipio": str(s["municipio"].iloc[0]), "n_cartorios": _br(len(s), 0),
             "obrigados": aprox(s["peso_universo"].sum()), "deficit_esperado": brl(s["valor_descoberto"].sum()),
             "premio_anual": brl(s["premio_emitido"].sum()), "cartorios": linhas, "tabela": linhas,
             "conta": "gold.serventia_publico do município, ordenado pelo déficit esperado (maior primeiro)",
@@ -348,9 +374,9 @@ def cartorios_do_municipio(con: duckdb.DuckDBPyConnection, uf: str = "MG", munic
 # mapa em % (V5, D-082, mapa da aba Classes): indicador → (título da legenda, conta, frase do estado)
 INDICADORES_PCT = {
     "obrigados": ("Cartórios obrigados pelo Prov. 227", "obrigados (peso no universo) ÷ cartórios ativos do município",
-                  "dos cartórios de MG são obrigados pelo Prov. 227"),
+                  "dos cartórios de {uf} são obrigados pelo Prov. 227"),
     "classe_3": ("Cartórios na Classe 3", "cartórios na Classe 3 ÷ cartórios ativos do município (regra atual)",
-                 "dos cartórios de MG estão na Classe 3"),
+                 "dos cartórios de {uf} estão na Classe 3"),
 }
 
 
@@ -359,21 +385,23 @@ def percentual_por_municipio(con: duckdb.DuckDBPyConnection, uf: str = "MG", ind
     indeterminada) ou na Classe 3 (regra atual). Valores por área do mapa (gold.geo_area_municipio), de 0 a 1."""
     if not _uf(uf):
         return _sem_uf(uf)
+    uf = _uf(uf)
     if indicador not in INDICADORES_PCT:
         return {"erro": f"indicador {indicador!r} não existe; use {list(INDICADORES_PCT)}"}
     titulo, conta, frase = INDICADORES_PCT[indicador]
+    frase = frase.format(uf=uf)
     g = con.execute("""SELECT a.area_id, s.municipio, count(*) AS n, sum(s.peso_universo) AS obrigados,
                               count(*) FILTER (WHERE s.classe = '3') AS classe_3
                        FROM gold.serventia_publico s JOIN gold.geo_area_municipio a USING (cod_ibge)
-                       GROUP BY a.area_id, s.municipio ORDER BY a.area_id""").df()
+                       WHERE s.uf = ? GROUP BY a.area_id, s.municipio ORDER BY a.area_id""", [uf]).df()
     g["parte"] = g[indicador] / g["n"]
     estado_ = float(g[indicador].sum() / g["n"].sum())
     maiores = g[g["n"] >= 5].sort_values(["parte", "n"], ascending=[False, False]).head(3)
-    return {"uf": "MG", "indicador": indicador, "titulo": titulo, "estado": pct(estado_),
+    return {"uf": uf, "indicador": indicador, "titulo": titulo, "estado": pct(estado_),
             "frase_estado": f"{pct(estado_)} {frase}", "zeros": int((g["parte"] <= 0).sum()), "areas": len(g),
             "maiores_com_5_ou_mais": [f"{r.municipio} ({pct(r.parte)} de {_br(r.n, 0)})" for r in maiores.itertuples()],
             "valores": {str(r.area_id): float(r.parte) for r in g.itertuples()},
-            "conta": conta, **_meta(con, "gold.serventia_publico")}
+            "conta": conta, **_meta(con, uf=uf, tabela="gold.serventia_publico")}
 
 
 def concentracao(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
@@ -381,11 +409,12 @@ def concentracao(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     de Lorenz (a mesma conta de src/analise/conclusoes.concentracao, sobre gold.serventia_publico)."""
     if not _uf(uf):
         return _sem_uf(uf)
+    uf = _uf(uf)
     from src.analise import estatistica as est
     topo = float(yaml.safe_load((RAIZ / "config" / "analise.yaml").read_text(encoding="utf-8"))
                  ["sensibilidade"]["topo_concentracao"])
     s = con.execute("SELECT passivo, peso_universo, valor_descoberto FROM gold.serventia_publico "
-                    "WHERE peso_universo > 0").df()
+                    "WHERE peso_universo > 0 AND uf = ?", [uf]).df()
     series = {"passivo das obrigadas": s["passivo"] * s["peso_universo"], "déficit esperado": s["valor_descoberto"]}
     medidas, curvas = [], []
     for nome, serie in series.items():
@@ -396,7 +425,7 @@ def concentracao(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
         curvas += [{"medida": nome, "fracao_unidades": float(a), "fracao_valor": float(b)}
                    for a, b in lz.iloc[idx][["fracao_unidades", "fracao_valor"]].to_numpy()]
     m = {r["medida"]: r for r in medidas}
-    return {"uf": "MG", "gini_passivo": _br(m["passivo das obrigadas"]["gini"], 2),
+    return {"uf": uf, "gini_passivo": _br(m["passivo das obrigadas"]["gini"], 2),
             "parte_dos_maiores_no_passivo": pct(m["passivo das obrigadas"]["parte_do_topo"]),
             "gini_deficit": _br(m["déficit esperado"]["gini"], 2),
             "parte_dos_maiores_no_deficit": pct(m["déficit esperado"]["parte_do_topo"]),
@@ -407,32 +436,34 @@ def concentracao(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
                         "topo_passivo": m["passivo das obrigadas"]["parte_do_topo"],
                         "gini_deficit": m["déficit esperado"]["gini"],
                         "topo_deficit": m["déficit esperado"]["parte_do_topo"], "topo": topo, "n": len(s)},
-            "tabela": medidas, "curva": curvas, **_meta(con, "gold.serventia_publico")}
+            "tabela": medidas, "curva": curvas, **_meta(con, uf=uf, tabela="gold.serventia_publico")}
 
 
 def tornado(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     """Sensibilidade do prêmio a cada suposição, uma por vez do mínimo ao máximo (D-042, notebook 08)."""
     if not _uf(uf):
         return _sem_uf(uf)
-    t = con.execute("SELECT * FROM gold.analise_tornado ORDER BY ordem").df()
+    uf = _uf(uf)
+    t = con.execute("SELECT * FROM gold.analise_tornado WHERE uf = ? ORDER BY ordem", [uf]).df()
     soma = float(t["amplitude"].sum())
     duas = float(t["amplitude"].iloc[:2].sum()) / soma
     passivo_max = float((t.loc[t["grupo"] == "passivo e universo", "amplitude"].max()) / t["premio_base"].iloc[0])
     linhas = _linhas(t)
-    return {"uf": "MG", "premio_base": brl(float(t["premio_base"].iloc[0])),
+    return {"uf": uf, "premio_base": brl(float(t["premio_base"].iloc[0])),
             "mais_pesam": [f"{r.rotulo}: {brl(min(r.premio_no_min, r.premio_no_max))} a "
                            f"{brl(max(r.premio_no_min, r.premio_no_max))}" for r in t.head(3).itertuples()],
             "parte_das_duas_primeiras": pct(duas), "passivo_e_universo_no_maximo": pct(passivo_max),
             "conta": "cada suposição sozinha no mínimo e no máximo, as outras no base; amplitude = prêmio no máx. − no mín.",
             "valores": {"duas_primeiras": duas, "passivo_max": passivo_max}, "tabela": linhas,
-            **_meta(con, "gold.analise_tornado", rotulo=SENSIBILIDADE)}
+            **_meta(con, uf=uf, tabela="gold.analise_tornado", rotulo=SENSIBILIDADE)}
 
 
 def grade_taxa_adesao(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     """Prêmio numa grade de taxa × parte do déficit que escolhe seguro (M8): a taxa não tem fonte pública."""
     if not _uf(uf):
         return _sem_uf(uf)
-    g = con.execute("SELECT * FROM gold.analise_premio_grade ORDER BY adesao, taxa").df()
+    uf = _uf(uf)
+    g = con.execute("SELECT * FROM gold.analise_premio_grade WHERE uf = ? ORDER BY adesao, taxa", [uf]).df()
     prem = estado.premissas_vigentes(con)[0]["premissas"]
     taxa_base = float(prem["taxa_seguro_anual"]["valores"]["base"])
     adesao_base = float(prem["escolha_garantia"]["valores"]["base"]["seguro"])
@@ -445,37 +476,41 @@ def grade_taxa_adesao(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
         {"taxa": f"{_br(100 * t, 1).removesuffix(',0')}%", "premio": brl(valor[(a, t)]), "faixa": cor[f"{a}|{t}"],
          "base": bool(abs(a - adesao_base) < 1e-9 and abs(t - taxa_base) < 1e-9)} for t in taxas]}
               for a in adesoes]
-    return {"uf": "MG", "de": brl(g["premio"].min()), "ate": brl(g["premio"].max()),
+    return {"uf": uf, "de": brl(g["premio"].min()), "ate": brl(g["premio"].max()),
             "taxas": [c["taxa"] for c in quadro[0]["celulas"]], "quadro": quadro,
             "base": f"taxa de {_br(100 * taxa_base, 1).removesuffix(',0')}% e adesão de {_br(100 * adesao_base, 0)}%",
             "observacao": "a SES da SUSEP não publica a importância segurada; a taxa média não sai dela (M8)",
             "conta": "prêmio = IS da base × (adesão ÷ adesão base) × taxa", "tabela": _linhas(g),
-            **_meta(con, "gold.analise_premio_grade", rotulo=SENSIBILIDADE)}
+            **_meta(con, uf=uf, tabela="gold.analise_premio_grade", rotulo=SENSIBILIDADE)}
 
 
 def previsao_arrecadacao(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
-    """Arrecadação semestral de MG prevista para 2026–27 (tendência do T2, notebook 07), com P10–P90, e o 2026-1
+    """Arrecadação semestral da UF prevista para 2026–27 (tendência do T2, notebook 07), com P10–P90, e o 2026-1
     realizado (parcial). Sempre projeção."""
     if not _uf(uf):
         return _sem_uf(uf)
+    uf = _uf(uf)
     var = config()["projecao"]["variante_principal"].replace(" (principal)", "")
-    p = con.execute("SELECT * FROM gold.analise_previsao WHERE bloco = 'arrecadacao_mg' ORDER BY variante, periodo").df()
+    # o bloco guarda o nome de quando só havia MG ('arrecadacao_mg'); a UF vem da coluna `uf`
+    p = con.execute("SELECT * FROM gold.analise_previsao WHERE bloco = 'arrecadacao_mg' AND uf = ? "
+                    "ORDER BY variante, periodo", [uf]).df()
     principal = p[p["variante"].str.startswith(var) & p["variante"].str.contains("principal")]
     anual = principal.assign(ano=principal["periodo"].str[:4]).groupby("ano")[["p10", "central", "p90"]].sum()
     real = principal.dropna(subset=["realizado"])
     acima = [f"{r.periodo}: realizado {brl(r.realizado)} contra P90 de {brl(r.p90)}" for r in real.itertuples()
              if r.realizado > r.p90]
-    return {"uf": "MG", "rotulo": PROJECAO,
+    return {"uf": uf, "rotulo": PROJECAO,
             "por_ano": {a: f"{brl(r.central)} (soma dos P10 e P90 dos semestres: {brl(r.p10)} a {brl(r.p90)})"
                         for a, r in anual.iterrows()},
             "realizado_acima_do_p90": acima,
             "observacao": ("o 2026-1 realizado é parcial (serventias ainda sem informar na coleta de 18/10) e já passou "
                            "do P90: a projeção principal tende a ser conservadora") if acima else "",
-            "conta": "tendência log-linear com efeito de semestre, treinada até 2025-2 (teste T2, MAPE 7,4%); faixa "
-                     "P10–P90 dos erros do teste no passado",
+            "conta": "tendência log-linear com efeito de semestre, treinada até 2025-2 "
+                     + ("(teste T2, MAPE 7,4%)" if uf == "MG" else "(o mesmo método do teste T2 de MG)")
+                     + "; faixa P10–P90 dos erros do teste no passado",
             "valores": {a: float(r.central) for a, r in anual.iterrows()},
             "tabela": _linhas(p[["variante", "periodo", "p10", "central", "p90", "realizado"]]),
-            **_meta(con, "gold.analise_previsao", fontes=("cnj_arrecadacao",), rotulo=PROJECAO)}
+            **_meta(con, uf=uf, tabela="gold.analise_previsao", fontes=("cnj_arrecadacao",), rotulo=PROJECAO)}
 
 
 MEDIDAS_PROJ = {"n_universo": ("Obrigadas", aprox), "subidas": ("Subidas da Classe 1 para a 2", aprox),
@@ -489,17 +524,18 @@ def previsao_mercado(con: duckdb.DuckDBPyConnection, uf: str = "MG", ano: int = 
     escolhida (principal: config/painel.yaml) e na outra, como comparação. Passivo de cada serventia fixo no de 2025."""
     if not _uf(uf):
         return _sem_uf(uf)
+    uf = _uf(uf)
     cfg = config()["projecao"]
     principal = leitura_limite or cfg["leitura_limite_principal"]
     leituras = [cfg["leitura_limite_principal"], cfg["leitura_limite_comparacao"]]
     if principal not in leituras:
         return {"erro": f"leitura do limite {leitura_limite!r} não existe; use {leituras}"}
     outra = leituras[1 - leituras.index(principal)]
-    p = con.execute("SELECT * FROM gold.analise_previsao WHERE bloco = 'mercado' AND variante = ?",
-                    [cfg["variante_principal"]]).df()
+    p = con.execute("SELECT * FROM gold.analise_previsao WHERE bloco = 'mercado' AND variante = ? AND uf = ?",
+                    [cfg["variante_principal"], uf]).df()
     if str(ano) not in set(p["periodo"]):
         return {"erro": f"ano {ano} fora da projeção; use {sorted(set(p['periodo']))}"}
-    base = _uf_mercado(con).loc["base"]
+    base = _uf_mercado(con, uf=uf).loc["base"]
 
     def leitura(c):
         d = p[(p["periodo"] == str(ano)) & (p["cenario_limite"] == c)].set_index("medida")
@@ -508,8 +544,8 @@ def previsao_mercado(con: duckdb.DuckDBPyConnection, uf: str = "MG", ano: int = 
                 for m, (_, fmt) in MEDIDAS_PROJ.items()}
     a, b = leitura(principal), leitura(outra)
     serie = p[p["medida"].isin(["n_universo", "mercado_premio_emitido"])]
-    m5 = passivo_m5()
-    return {"uf": "MG", "ano": ano, "rotulo": PROJECAO, "leitura_do_limite": principal, "comparacao": outra,
+    m5 = passivo_m5() if uf == "MG" else {}   # o M5 é do notebook 10, só de MG
+    return {"uf": uf, "ano": ano, "rotulo": PROJECAO, "leitura_do_limite": principal, "comparacao": outra,
             "principal": {MEDIDAS_PROJ[m][0]: v["txt"] for m, v in a.items()},
             "na_comparacao": {MEDIDAS_PROJ[m][0]: v["txt"] for m, v in b.items()},
             "diferenca_obrigadas": _br(a["n_universo"]["central"] - b["n_universo"]["central"], 0),
@@ -517,12 +553,12 @@ def previsao_mercado(con: duckdb.DuckDBPyConnection, uf: str = "MG", ano: int = 
             "nota_passivo": ("O passivo de cada serventia fica o de 2025; com o passivo de cada ano (M5, notebook 10), "
                              f"o passivo das obrigadas seria {m5['texto']}, e o prêmio subiria na mesma proporção."
                              if "texto" in m5 else ""),
-            "conta": "receita de 2025 × crescimento projetado de MG × desvio sorteado da serventia (500 sorteios); "
+            "conta": f"receita de 2025 × crescimento projetado de {uf} × desvio sorteado da serventia (500 sorteios); "
                      "modelo refeito com a receita de cada ano",
             "valores": {"principal": a, "comparacao": b, "base_2025": {"n_universo": float(base["n_universo"]),
                                                                        "premio": float(base["mercado_premio_emitido"])}},
             "tabela": _linhas(serie[["periodo", "cenario_limite", "medida", "p10", "central", "p90"]]),
-            **_meta(con, "gold.analise_previsao", rotulo=PROJECAO)}
+            **_meta(con, uf=uf, tabela="gold.analise_previsao", rotulo=PROJECAO)}
 
 
 def passivo_m5() -> dict:
@@ -546,10 +582,13 @@ def subidas_comparacao(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     05b com as duas leituras (sem e com a recalibração de Platt; D-047), lidas da saída gravada do notebook 05."""
     if not _uf(uf):
         return _sem_uf(uf)
+    uf = _uf(uf)
+    if uf != "MG":   # a comparação com o 05b vem de um notebook de MG
+        return {"erro": f"a comparação das subidas (notebook 05b) existe só para MG; para {uf}, use previsao_mercado"}
     cfg = config()
     a = cfg["artefatos"]["subidas_05b"]
     p = con.execute("SELECT * FROM gold.analise_previsao WHERE bloco = 'mercado' AND variante = ? AND medida = 'subidas' "
-                    "AND periodo = ?", [cfg["projecao"]["variante_principal"], str(a["ano"])]).df()
+                    "AND periodo = ? AND uf = ?", [cfg["projecao"]["variante_principal"], str(a["ano"]), uf]).df()
     p = p.set_index("cenario_limite")
     pr, co = cfg["projecao"]["leitura_limite_principal"], cfg["projecao"]["leitura_limite_comparacao"]
     t = artefatos.tabela_do_notebook(a["notebook"], a["marcador"])
@@ -557,7 +596,7 @@ def subidas_comparacao(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     b5 = {r.modelo: {"esperado": artefatos.numero_br(r.esperado), "p10": artefatos.numero_br(r.p10),
                      "p90": artefatos.numero_br(r.p90)} for r in t.itertuples()}
     lo, hi = min(v["esperado"] for v in b5.values()), max(v["esperado"] for v in b5.values())
-    return {"uf": "MG", "ano": a["ano"], "rotulo": PROJECAO,
+    return {"uf": uf, "ano": a["ano"], "rotulo": PROJECAO,
             "notebook_07": f"{aprox(p.at[pr, 'central'])} ({pr}; P10–P90 {aprox(p.at[pr, 'p10'])} a {aprox(p.at[pr, 'p90'])})",
             "notebook_07_comparacao": f"{aprox(p.at[co, 'central'])} ({co})",
             "notebook_05b": f"{_br(lo, 0)} a {_br(hi, 0)} subidas (sem e com a recalibração; comparação)",
@@ -566,7 +605,7 @@ def subidas_comparacao(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
             "conta": "07: contagem acima do limite na projeção por serventia; 05b: soma das probabilidades da floresta",
             "valores": {"07": {c: {k: float(p.at[c, k]) for k in ("p10", "central", "p90")} for c in (pr, co)},
                         "05b": b5, "05b_faixa": [lo, hi]},
-            **_meta(con, f"gold.analise_previsao e {a['notebook']} (tabela 'entrega')", fontes=("cnj_arrecadacao",),
+            **_meta(con, uf=uf, tabela=f"gold.analise_previsao e {a['notebook']} (tabela 'entrega')", fontes=("cnj_arrecadacao",),
                     rotulo=PROJECAO)}
 
 
@@ -575,9 +614,10 @@ def pergunta_9(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     (notebook 05c) e a parte da IS que o titular não paga, com e sem a capacidade de pagar (M1)."""
     if not _uf(uf):
         return _sem_uf(uf)
-    s = con.execute("SELECT * FROM gold.analise_sinistro").df()
+    uf = _uf(uf)
+    s = con.execute("SELECT * FROM gold.analise_sinistro WHERE uf = ?", [uf]).df()
     com, sem = s[s["leitura"].str.startswith("com")], s[s["leitura"].str.startswith("sem")]
-    return {"uf": "MG",
+    return {"uf": uf,
             "com_a_capacidade_de_pagar": (f"sinistralidade de {pct(com['sinistralidade'].min())} a "
                                           f"{pct(com['sinistralidade'].max())}; resultado técnico de "
                                           f"{brl(com['resultado_tecnico'].min())} a {brl(com['resultado_tecnico'].max())} por ano"),
@@ -588,31 +628,34 @@ def pergunta_9(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
                      "+ comissão + despesa",
             "observacao": "renda não é patrimônio; a P(fim) tem viés de sobrevivência (05c); sem impostos, resseguro "
                           "e capital",
-            "tabela": _linhas(s), **_meta(con, "gold.analise_sinistro", rotulo=SENSIBILIDADE)}
+            "tabela": _linhas(s), **_meta(con, uf=uf, tabela="gold.analise_sinistro", rotulo=SENSIBILIDADE)}
 
 
 def capacidade_pagar(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     """Capacidade de pagar (M1): obrigadas por meses de saldo para cobrir o passivo e a calibração por classe."""
     if not _uf(uf):
         return _sem_uf(uf)
-    fx = con.execute("SELECT * FROM gold.analise_capacidade_faixas").df()
-    cal = con.execute("SELECT * FROM gold.analise_capacidade_calibracao ORDER BY horizonte_meses, faixa_deficit").df()
-    return {"uf": "MG", "conta": "meses de saldo (arrecadação − repasse − custeio, BI do CNJ, 2025) para pagar o passivo",
+    uf = _uf(uf)
+    fx = con.execute("SELECT * FROM gold.analise_capacidade_faixas WHERE uf = ?", [uf]).df()
+    cal = con.execute("SELECT * FROM gold.analise_capacidade_calibracao WHERE uf = ? ORDER BY horizonte_meses, "
+                      "faixa_deficit", [uf]).df()
+    return {"uf": uf, "conta": "meses de saldo (arrecadação − repasse − custeio, BI do CNJ, 2025) para pagar o passivo",
             "observacao": "o horizonte de 12 meses de saldo é suposição (6 e 24 como sensibilidade)",
             "tabela": _linhas(fx), "calibracao": _linhas(cal),
-            **_meta(con, "gold.analise_capacidade_faixas e gold.analise_capacidade_calibracao")}
+            **_meta(con, uf=uf, tabela="gold.analise_capacidade_faixas e gold.analise_capacidade_calibracao")}
 
 
 # ------------------------------------------------------------------ Qualidade dos dados
-def _sens_metodo(con) -> pd.DataFrame:
-    return con.execute("SELECT * FROM gold.analise_sensibilidade_metodo").df().set_index("chave")
+def _sens_metodo(con, uf: str = "MG") -> pd.DataFrame:
+    return con.execute("SELECT * FROM gold.analise_sensibilidade_metodo WHERE uf = ?", [uf]).df().set_index("chave")
 
 
 def escolhas_metodo_passivo(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     """Bloco "Passivo: escolhas de método" da D-042: T5, T6 e a reserva no estado inteiro, no passivo de todas."""
     if not _uf(uf):
         return _sem_uf(uf)
-    s = _sens_metodo(con)
+    uf = _uf(uf)
+    s = _sens_metodo(con, uf)
     b = s[s["bloco"] == "passivo: escolhas de método"]
     lo, hi = float(b["var_passivo_todas"].min()), float(b["var_passivo_todas"].max())
     reserva = b["var_passivo_todas"].abs().idxmax()
@@ -621,7 +664,7 @@ def escolhas_metodo_passivo(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> d
                "passivo_todas": float(r.passivo_todas), "efeito_premio": float(r.var_mercado_premio_emitido)}
               for k, r in b.iterrows()]
     sinal = lambda v: f"{'+' if v > 0 else ''}{pct(v)}"  # noqa: E731
-    return {"uf": "MG", "bloco": BLOCO_PASSIVO,
+    return {"uf": uf, "bloco": BLOCO_PASSIVO,
             "frase": (f"o passivo varia de {sinal(lo)} a {sinal(hi)} conforme o método; "
                       + ("a escolha da reserva pesa mais que os detalhes" if reserva == "sem_regiao" else
                          "nenhuma escolha domina")),
@@ -630,45 +673,47 @@ def escolhas_metodo_passivo(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> d
                        "afastados, que nem deveriam entrar no passivo",
             "conta": "passivo de todas as ativas com cada método ÷ passivo da base − 1 (D-015 e D-022 continuam na base)",
             "valores": {"min": lo, "max": hi}, "tabela": linhas,
-            **_meta(con, "gold.analise_sensibilidade_metodo", rotulo=SENSIBILIDADE)}
+            **_meta(con, uf=uf, tabela="gold.analise_sensibilidade_metodo", rotulo=SENSIBILIDADE)}
 
 
 def leitura_literal_receita(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     """Leitura literal do art. 2º, XXIV, do Prov. 213 (receita líquida do repasse), com a faixa de déficit da base."""
     if not _uf(uf):
         return _sem_uf(uf)
-    s = _sens_metodo(con)
+    uf = _uf(uf)
+    s = _sens_metodo(con, uf)
     b, r = s.loc["base"], s.loc["receita_liquida"]
     cols = {"n_universo": ("Obrigadas", aprox), "passivo_universo": ("Passivo das obrigadas", brl),
             "valor_descoberto": ("Déficit", brl), "mercado_premio_emitido": ("Prêmio anual", brl)}
     linhas = [{"medida": nome, "base": float(b[c]), "leitura_literal": float(r[c]), "variacao": float(r[f"var_{c}"]),
                "base_txt": fmt(b[c]), "literal_txt": fmt(r[c]), "variacao_txt": pct(r[f"var_{c}"])}
               for c, (nome, fmt) in cols.items()]
-    return {"uf": "MG", "rotulo": LEITURA_LITERAL,
+    return {"uf": uf, "rotulo": LEITURA_LITERAL,
             "obrigadas": f"{aprox(b['n_universo'])} → {aprox(r['n_universo'])} ({pct(r['var_n_universo'])})",
             "premio": f"{brl(b['mercado_premio_emitido'])} → {brl(r['mercado_premio_emitido'])} "
                       f"({pct(r['var_mercado_premio_emitido'])})",
             "conta": "receita de referência − fração de repasse declarada no BI do CNJ (2025); faixa de déficit da base",
             "observacao": "sensibilidade: a base do painel continua com a arrecadação (D-002, D-042)",
             "valores": {"var_universo": float(r["var_n_universo"]), "var_premio": float(r["var_mercado_premio_emitido"])},
-            "tipo": SENSIBILIDADE, "tabela": linhas, **_meta(con, "gold.analise_sensibilidade_metodo")}
+            "tipo": SENSIBILIDADE, "tabela": linhas, **_meta(con, uf=uf, tabela="gold.analise_sensibilidade_metodo")}
 
 
 def saltos_declaracao(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     """Semestres com salto grosseiro (aviso do pipeline, D-046) e a sensibilidade "sem os saltos"."""
     if not _uf(uf):
         return _sem_uf(uf)
+    uf = _uf(uf)
     c = con.execute("SELECT violacoes, detalhe FROM qualidade.checagens WHERE checagem LIKE '%salto grosseiro%'").fetchone()
-    s = _sens_metodo(con)
+    s = _sens_metodo(con, uf)
     r, b = s.loc["sem_saltos"], s.loc["base"]
-    return {"uf": "MG", "aviso_do_pipeline": c[1] if c else "checagem não encontrada",
+    return {"uf": uf, "aviso_do_pipeline": c[1] if c else "checagem não encontrada",
             "sem_os_saltos": (f"{_br(r['n_universo'] - b['n_universo'], 1)} obrigadas ({pct(r['var_n_universo'])}); "
                               f"prêmio {pct(r['var_mercado_premio_emitido'])}"),
             "conta": "semestre 10 vezes acima ou abaixo da mediana dos 4 anteriores; sem eles, a receita vira a média "
                      "dos semestres sem salto",
             "observacao": "a classe usa o valor declarado (D-046)",
             "valores": {"violacoes": int(c[0]) if c else None, "var_universo": float(r["var_n_universo"])},
-            **_meta(con, "qualidade.checagens e gold.analise_sensibilidade_metodo", rotulo=SENSIBILIDADE)}
+            **_meta(con, uf=uf, tabela="qualidade.checagens e gold.analise_sensibilidade_metodo", rotulo=SENSIBILIDADE)}
 
 
 def lacunas() -> dict:
@@ -684,10 +729,14 @@ def qualidade_fontes(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     """Data de referência de cada fonte, conferências entre fontes e contratos das tabelas (ok × aviso)."""
     if not _uf(uf):
         return _sem_uf(uf)
-    f = con.execute("SELECT fonte, data_referencia, coletado_em FROM silver.fonte_metadados ORDER BY fonte").df()
-    r = con.execute("SELECT checagem, status FROM qualidade.reconciliacoes").df()
+    uf = _uf(uf)
+    f = con.execute("SELECT fonte, data_referencia, coletado_em FROM silver.fonte_metadados WHERE true"
+                    + _fontes_da_uf(con, uf) + " ORDER BY fonte").df()
+    r = con.execute("SELECT checagem, status FROM qualidade.reconciliacoes"
+                    + (" WHERE uf = ?" if _tem_coluna(con, "qualidade", "reconciliacoes", "uf") else ""),
+                    [uf] if _tem_coluna(con, "qualidade", "reconciliacoes", "uf") else []).df()
     c = con.execute("SELECT checagem, tabela, severidade, violacoes FROM qualidade.checagens").df()
-    return {"uf": "MG", "fontes": {x.fonte: str(x.data_referencia) for x in f.itertuples()},
+    return {"uf": uf, "fontes": {x.fonte: str(x.data_referencia) for x in f.itertuples()},
             "conferencias": f"{int((r['status'] == 'ok').sum())} ok e {int((r['status'] != 'ok').sum())} com aviso, "
                             f"de {len(r)}",
             "contratos": f"{int((c['violacoes'] == 0).sum())} de {len(c)} sem violação; avisos: "
@@ -697,7 +746,7 @@ def qualidade_fontes(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
                       "erros_violados": int(((c["severidade"] == "erro") & (c["violacoes"] > 0)).sum()),
                       "conferencias": len(r), "conferencias_ok": int((r["status"] == "ok").sum())},
             "tabela": _linhas(f.astype(str)),
-            **_meta(con, "silver.fonte_metadados, qualidade.reconciliacoes e qualidade.checagens")}
+            **_meta(con, uf=uf, tabela="silver.fonte_metadados, qualidade.reconciliacoes e qualidade.checagens")}
 
 
 def clt_outros_estados(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
@@ -705,7 +754,8 @@ def clt_outros_estados(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     deixada de fora. Para outros estados, só o total estadual com ±10% como piso (D-042, item 4)."""
     if not _uf(uf):
         return _sem_uf(uf)
-    t = con.execute("SELECT * FROM gold.analise_clt_modelo").df()
+    uf = _uf(uf)
+    t = con.execute("SELECT * FROM gold.analise_clt_modelo WHERE uf = ?", [uf]).df()
     mae = {m: float((t[c] - t["clt_declarado"]).abs().mean()) for m, c in
            (("floresta", "clt_previsto_floresta"), ("referencia", "clt_previsto_referencia"))}
     reg = t.groupby("regiao_intermediaria")[["clt_declarado", "clt_previsto_floresta"]].sum()
@@ -713,14 +763,15 @@ def clt_outros_estados(con: duckdb.DuckDBPyConnection, uf: str = "MG") -> dict:
     margem = float(yaml.safe_load((RAIZ / "config" / "analise.yaml").read_text(encoding="utf-8"))
                    ["regressao"]["margem_total"])
     tot = float(t["clt_previsto_floresta"].sum() / t["clt_declarado"].sum() - 1)
-    return {"uf": "MG", "erro_medio_por_serventia": f"{_br(mae['floresta'], 2)} empregado (referência {_br(mae['referencia'], 2)})",
+    return {"uf": uf, "erro_medio_por_serventia": f"{_br(mae['floresta'], 2)} empregado (referência {_br(mae['referencia'], 2)})",
             "regioes_fora_da_margem": f"{int((reg['erro'].abs() > margem).sum())} de {len(reg)}",
             "maior_erro_regional": pct(float(reg["erro"].abs().max())), "erro_total_mg": pct(tot),
-            "observacao": f"fora de MG, só o total estadual, com ±{_br(100 * margem, 0)}% como piso; nenhum mapa nem "
+            "observacao": f"fora de {uf}, só o total estadual, com ±{_br(100 * margem, 0)}% como piso; nenhum mapa nem "
                           "ranking estimado",
-            "conta": "cada uma das 13 regiões intermediárias prevista com o modelo treinado nas outras 12",
+            "conta": f"cada uma das {len(reg)} regiões intermediárias prevista com o modelo treinado nas outras "
+                     f"{len(reg) - 1}",
             "valores": {"mae_floresta": mae["floresta"], "mae_referencia": mae["referencia"], "erro_total": tot},
-            "tabela": _linhas(reg.reset_index()), **_meta(con, "gold.analise_clt_modelo")}
+            "tabela": _linhas(reg.reset_index()), **_meta(con, uf=uf, tabela="gold.analise_clt_modelo")}
 
 
 def decisoes(numeros: tuple[str, ...] = ("D-042", "D-046", "D-047", "D-048", "D-049")) -> dict:
@@ -733,11 +784,63 @@ def decisoes(numeros: tuple[str, ...] = ("D-042", "D-046", "D-047", "D-048", "D-
 
 
 # ferramentas novas que a Etapa 5 pode expor ao chat (mesma assinatura: con, uf)
+def regiao(con: duckdb.DuckDBPyConnection, uf: str = "SUDESTE") -> dict:
+    """O Sudeste somado (D-088): os totais das UFs do estudo, a faixa provável do prêmio da REGIÃO (simulada sorteio a
+    sorteio em gold.analise_monte_carlo, uf = 'SUDESTE'; não é a soma das faixas) e uma linha por UF, com o selo de
+    calibrada ou preliminar. Regra v2, nível base, STF mantém. `uf`: "SUDESTE" ou uma UF do estudo (o chat passa a
+    padrão, MG); a região é sempre a do escopo. Outra UF: o mesmo erro das outras análises."""
+    if uf != "SUDESTE" and not _uf(uf):
+        return _sem_uf(uf)
+    ufs = [u for (u,) in con.execute("SELECT DISTINCT uf FROM gold.fato_mercado_uf ORDER BY uf").fetchall()]
+    linhas = []
+    for u in ufs:
+        n = numeros_oficiais(con, u)["valores"]
+        fx = faixa_d042(con, u, "premio")["valores"]
+        (receita,) = con.execute("SELECT sum(receita_ref) FROM gold.serventia_publico WHERE uf = ?", [u]).fetchone()
+        linhas.append({"uf": u, "estado": estados_config.estado(u)["nome"], "preliminar": preliminar(u),
+                       "serventias": n["serventias"], "clt": n["clt"], "obrigadas": n["obrigadas"],
+                       "passivo_obrigadas": n["passivo_obrigadas"], "deficit": n["deficit"], "premio": n["premio"],
+                       "p05": fx["p05"], "p95": fx["p95"], "arrecadacao": 2 * float(receita or 0)})
+    linhas.sort(key=lambda r: -r["premio"])
+    soma = {k: sum(r[k] for r in linhas) for k in ("serventias", "clt", "obrigadas", "passivo_obrigadas", "deficit",
+                                                     "premio", "arrecadacao")}
+    mc = con.execute("SELECT p05, p95 FROM gold.analise_monte_carlo WHERE uf = 'SUDESTE' AND medida = 'premio' AND "
+                     "variante = 'independentes'").fetchone()
+    p05, p95 = mc if mc else (linhas[0]["p05"], linhas[0]["p95"])   # uma UF só: a faixa dela
+    kpis = [
+        {"chave": "serventias", "rotulo": "Cartórios ativos", "valor": _br(soma["serventias"], 0),
+         "nota": f"nos {len(linhas)} estados do estudo"},
+        {"chave": "arrecadacao", "rotulo": "Arrecadação anual", "valor": f"≈ {brl(soma['arrecadacao'])}",
+         "nota": "2025, pela receita de referência de cada cartório"},
+        {"chave": "obrigadas", "rotulo": "Obrigados à garantia", "valor": aprox(soma["obrigadas"]),
+         "nota": f"{_br(100 * soma['obrigadas'] / soma['serventias'], 0)}% dos ativos (Prov. 227)"},
+        {"chave": "clt", "rotulo": "Empregados CLT", "valor": _br(soma["clt"], 0),
+         "nota": f"{_br(soma['clt'] / soma['serventias'], 1)} por cartório"},
+        {"chave": "deficit", "rotulo": "Déficit de cobertura", "valor": brl(soma["deficit"]),
+         "nota": f"{_br(100 * soma['deficit'] / soma['passivo_obrigadas'], 0)}% do passivo das obrigadas"},
+        {"chave": "premio", "rotulo": "Prêmio anual estimado", "valor": brl(soma["premio"]),
+         "nota": f"provavelmente de {_faixa_txt(p05, p95)}"},
+    ]
+    tabela = [{**r, "premio_txt": brl(r["premio"]), "faixa_txt": _faixa_txt(r["p05"], r["p95"]),
+               "selo": "estimativa preliminar" if r["preliminar"] else "calibrado"} for r in linhas]
+    return {"uf": "SUDESTE", "estados": [r["uf"] for r in linhas], "valor_base": brl(soma["premio"]),
+            "faixa_provavel": _faixa_txt(p05, p95), "rotulo_faixa": FAIXA, "kpis": kpis, "tabela": tabela,
+            "preliminares": [r["uf"] for r in linhas if r["preliminar"]],
+            "conta": ("soma das UFs no nível base; faixa provável da região: P5 e P95 dos sorteios somados UF a UF, "
+                      "com as mesmas suposições em todas"),
+            "observacao": ("os números de " + ", ".join(r["uf"] for r in linhas if r["preliminar"]) + " usam as "
+                           "premissas de MG herdadas como suposição (estimativa preliminar)")
+            if any(r["preliminar"] for r in linhas) else "",
+            "valores": {**soma, "p05": p05, "p95": p95}, **_meta(con, uf="MG", tabela="gold.fato_mercado_uf e "
+                                                                   "gold.analise_monte_carlo (uf = SUDESTE)",
+                                                                   rotulo=FAIXA)}
+
+
 PARA_O_CHAT = {f.__name__: f for f in (numeros_oficiais, panorama, faixa_d042, escada, premio_por_cenario_stf, grupos,
                                        quem_e_obrigado, cartorios_do_municipio, percentual_por_municipio,
                                        concentracao, tornado,
                                        grade_taxa_adesao, previsao_arrecadacao,
                                        previsao_mercado, subidas_comparacao, pergunta_9, capacidade_pagar,
                                        escolhas_metodo_passivo, leitura_literal_receita, saltos_declaracao,
-                                       qualidade_fontes, clt_outros_estados)}
+                                       qualidade_fontes, clt_outros_estados, regiao)}
 SEM_CONEXAO = {"situacao_adi": situacao_adi, "lacunas": lacunas, "decisoes": decisoes}

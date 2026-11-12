@@ -33,10 +33,11 @@ def test_seis_indicadores_batem_com_os_numeros_oficiais(con):
 def test_arrecadacao_anual_aproximada_e_explicada(con):
     from src.painel import analises
     r = analises.panorama(con, "MG")
-    soma = con.execute("SELECT sum(receita_ref) FROM gold.serventia_publico").fetchone()[0]
+    soma = con.execute("SELECT sum(receita_ref) FROM gold.serventia_publico WHERE uf = 'MG'").fetchone()[0]
     assert r["valores"]["arrecadacao"] == pytest.approx(2 * soma)
     assert r["kpis"][1]["valor"].startswith("≈ R$ ")                    # aproximada, e o painel diz
-    um = con.execute("SELECT count(*) FROM gold.serventia_publico WHERE semestres_validos = 1").fetchone()[0]
+    um = con.execute("SELECT count(*) FROM gold.serventia_publico WHERE semestres_validos = 1 AND uf = 'MG'"
+                     ).fetchone()[0]
     assert r["valores"]["cartorios_um_semestre"] == um and str(um) in r["observacao"]
     assert "receita de referência" in r["conta"]
 

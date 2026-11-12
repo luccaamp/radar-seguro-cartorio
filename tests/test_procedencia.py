@@ -44,7 +44,9 @@ def test_cada_arquivo_registra_url_e_hash():
     for p in ARQUIVOS:
         dados = json.loads(p.read_text(encoding="utf-8"))
         if "origem" in dados and not any(URL.fullmatch(t) for t in _textos(dados)):
-            original = json.loads((p.parent / "original.json").read_text(encoding="utf-8"))["arquivos"]
+            # o original.json fica na pasta da coleta; o extrato pode estar numa subpasta (rais/2025/extraido, D-088)
+            pasta = next(d for d in (p.parent, *p.parent.parents) if (d / "original.json").exists())
+            original = json.loads((pasta / "original.json").read_text(encoding="utf-8"))["arquivos"]
             dados = original[dados["origem"].replace("\\", "/").rsplit("/", 1)[-1]]
         assert any(URL.fullmatch(t) for t in _textos(dados)), p.relative_to(PASTA)
         assert any(HASH.fullmatch(t) for t in _textos(dados)) or "url" in dados, p.relative_to(PASTA)

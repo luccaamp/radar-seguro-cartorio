@@ -1,6 +1,7 @@
-# UFs processadas pelo pipeline. Hoje só MG; cada UF daqui precisa de uma entrada em config/estados.yaml
-# (código IBGE, pacote da RAIS, apelidos, totais de controle; Fase 3, D-081).
-ufs: [MG]
+# UFs processadas pelo pipeline: o Sudeste (D-088; MG com as premissas calibradas, SP, RJ e ES com as de MG herdadas
+# como suposição, D-081). Cada UF daqui precisa de uma entrada em config/estados.yaml (código IBGE, pacote da RAIS,
+# apelidos, totais de controle; Fase 3). MG vem primeiro: é a UF padrão do painel e dos coletores.
+ufs: [MG, SP, RJ, ES]
 # exercício cuja média semestral define a classe (art. 16, § 1º, do Prov. 213: "exercício imediatamente anterior"; D-010)
 ano_enquadramento: 2025
 # snapshots do bronze usados pelo pipeline ("do zero" = a partir destes, sem coletar de novo)
@@ -11,6 +12,12 @@ snapshots:
   cnpj: "2026-10"
   susep_ses: "2026-10-17"
   ibge: "2026-10-18"
+# datas de coleta próprias de um estado que entrou depois (sobrepõem as de cima só para ele; src/transform/silver.py,
+# snapshots_da_uf). O cadastro (cnj_justica_aberta), a RAIS 2025, o CNPJ e a SUSEP são os mesmos de MG.
+snapshots_por_uf:
+  SP: &sudeste_2026_11_11 {ibge: "2026-11-11", cnj_arrecadacoes: "2026-11-11", cnj_colaboradores: "2026-11-11"}
+  RJ: *sudeste_2026_11_11
+  ES: *sudeste_2026_11_11
 # versão do DADO (não a data do download) quando a fonte não a informa no arquivo (C5)
 versoes_dado:
   ibge_malha: "2022"   # malha municipal 2022: o arquivo do bronze tem o mesmo SHA-256 da API v3 com periodo=2022 (conferido em 2026-10-18)

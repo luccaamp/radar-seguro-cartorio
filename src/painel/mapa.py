@@ -209,7 +209,8 @@ def dados_mapa(geometrias: dict[str, dict], valores: dict[str, float | None], no
                textos: dict[str, str], *, fundo: Iterable[dict] = (), selecionado: str | None = None,
                enquadrar: Iterable[str] | None = None, titulo_legenda: str = "", resumo: str = "",
                legenda_fundo: str = "", rotulos: int | None = None, rotulo_inteiro: str = "Ver o estado inteiro",
-               fmt_legenda: Callable[[float], str] | None = None, teto_fixo: float | None = None) -> dict[str, Any]:
+               fmt_legenda: Callable[[float], str] | None = None, teto_fixo: float | None = None,
+               legenda_sem: str = "", rotular_todas: bool = False) -> dict[str, Any]:
     """O que o componente recebe (JSON): viewBox, áreas com caminho, faixa, nome e texto do balão, áreas de fundo
     (não clicáveis), legenda, o selecionado e os rótulos. `enquadrar` limita o viewBox a essas áreas (zoom num
     recorte); `viewBoxInteiro` é o estado inteiro, para o botão `rotulo_inteiro` e os limites do zoom e do arrastar.
@@ -227,6 +228,8 @@ def dados_mapa(geometrias: dict[str, dict], valores: dict[str, float | None], no
     if rotulos is None:
         rotulos = N_ROTULOS_RECORTE if no_recorte else N_ROTULOS
     def _maiores(ids) -> list[str]:
+        if rotular_todas:   # todas as áreas, as de maior valor primeiro (o mapa do Brasil, D-088: o nome de cada UF)
+            return sorted(ids, key=lambda a: (-(_valor(valores.get(a)) or 0), a))[:max(rotulos, 0)]
         com_valor = [a for a in ids if (_valor(valores.get(a)) or 0) > 0]
         return sorted(com_valor, key=lambda a: (-float(valores[a]), a))[:N_CANDIDATOS if rotulos > 0 else 0]
 
@@ -245,7 +248,8 @@ def dados_mapa(geometrias: dict[str, dict], valores: dict[str, float | None], no
                    "nome": nomes.get(a, a), "texto": textos.get(a, "")} for a, g in geometrias.items()],
         "fundo": [{"d": proj.caminho(g)} for g in fundo],
         "selecionado": sel,
-        "legenda": legenda,
+        # áreas sem valor (o mapa do Brasil: as UFs sem o estudo do seguro) ganham um item na legenda, em hachura
+        "legenda": legenda + ([{"faixa": "sem", "texto": legenda_sem}] if legenda_sem else []),
         "tituloLegenda": titulo_legenda,
         "legendaFundo": legenda_fundo,
         "resumo": resumo,

@@ -7,15 +7,16 @@ src/painel/analises.py.
 """
 import streamlit as st
 
-from comum import analise, fonte_linha, pagina
+from comum import analise, avisar_se_preliminar, do_escopo, fonte_linha, pagina, uf_atual
 from src.painel import graficos, ui
 
 premio = analise("faixa_d042", medida="premio")
 tor = analise("tornado")
 grade = analise("grade_taxa_adesao")
-pagina("Quão certo é", "🎯", "Quão certo é o número?",
+pagina("Quão certo é", "🎯", f"Quão certo é o número {do_escopo(uf_atual())}?",
        "A faixa é larga porque duas suposições sem dado público, a taxa e a adesão ao seguro, decidem quase tudo.",
-       sobre="Quão certo é")
+       sobre="Quão certo é", seletor="uf")
+avisar_se_preliminar()
 
 ui.grade([ui.kpi("Taxa e adesão ao seguro", tor["parte_das_duas_primeiras"],
                  "da incerteza do prêmio vem dessas duas suposições",

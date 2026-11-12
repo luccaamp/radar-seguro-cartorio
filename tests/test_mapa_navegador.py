@@ -26,7 +26,7 @@ httpx = pytest.importorskip("httpx")
 
 pytestmark = pytest.mark.navegador
 RAIZ = Path(__file__).resolve().parents[1]
-PAGINA = "/Onde_está_o_mercado"
+PAGINA = "/Onde_está_o_mercado?estado=MG"   # o recorte de MG (o padrão é o Sudeste, D-088): estes testes conferem MG
 BH = "3106200"            # Belo Horizonte (código IBGE): o maior déficit de MG
 CONTAGEM = "3118601"      # vizinha de BH, na mesma região intermediária
 UBERABA = "3170107"

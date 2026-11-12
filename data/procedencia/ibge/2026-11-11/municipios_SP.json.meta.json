@@ -1,0 +1,8 @@
+{
+ "coletado_em": "2026-11-11T22:14:12-03:00",
+ "versao_coletor": "fase1-0.1",
+ "url": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/35/municipios",
+ "metodo": "GET",
+ "bytes": 284370,
+ "sha256": "c06b7327c3bf7475d0c63c90c5f8c9122464fd0ed84bc98709a2a7f82649d14b"
+}
