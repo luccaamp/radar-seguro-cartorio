@@ -78,7 +78,17 @@ def conexao() -> duckdb.DuckDBPyConnection:
                  "Veja 'Como rodar' no README.")
         st.stop()
     # modo demonstração: banco temporário montado a partir do conjunto público (fora do repositório)
-    return _abrir(str(caminho_banco() if m == "completo" else publico.banco_demonstracao(pasta_publico())))
+    try:
+        base = _abrir(str(caminho_banco() if m == "completo" else publico.banco_demonstracao(pasta_publico())))
+    except Exception:   # noqa: BLE001  nenhum traceback chega ao visitante (D-089); o erro fica no log do servidor
+        import logging
+        logging.getLogger(__name__).exception("falha ao abrir o banco do painel")
+        st.info("Os dados estão sendo preparados. Recarregue a página em alguns segundos.")
+        st.stop()
+    # um cursor por chamada (D-089): a conexão de _abrir é a mesma para todas as visitas (cache_resource), e o
+    # DuckDB não aceita duas consultas ao mesmo tempo na mesma conexão (uma lia o resultado da outra: TypeError no
+    # link público, 2026-11-12). O cursor é uma conexão própria sobre o mesmo banco, barata e segura entre threads.
+    return base.cursor()
 
 
 def carga_em_uso() -> str:

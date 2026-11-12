@@ -7,8 +7,11 @@
 """
 import hashlib
 import json
+import os
 import re
 import tempfile
+import threading
+import uuid
 from pathlib import Path
 
 import duckdb
@@ -148,15 +151,34 @@ def montar_banco(pasta: Path, destino: Path) -> Path:
     return destino
 
 
+_TRAVA_DEMONSTRACAO = threading.Lock()
+
+
 def banco_demonstracao(pasta: Path = PASTA) -> Path:
-    """Banco temporário do modo demonstração, fora do repositório. Remontado só quando o manifesto muda."""
+    """Banco temporário do modo demonstração, fora do repositório. Remontado só quando o manifesto muda.
+
+    Seguro com várias visitas ao mesmo tempo (D-089): dentro do processo, uma trava deixa só uma thread montar; entre
+    processos, cada um monta num arquivo temporário próprio e troca de uma vez (os.replace). Quem chega depois usa o
+    banco que já existe e descarta o seu."""
     man = ler_manifesto(pasta)
     chave = hashlib.sha256(json.dumps(man, sort_keys=True).encode()).hexdigest()[:12]
     destino = Path(tempfile.gettempdir()) / f"radar_demonstracao_{chave}.duckdb"
-    if not destino.exists():
-        temp = destino.with_name(destino.name + ".novo")
-        montar_banco(pasta, temp)
-        temp.replace(destino)
+    if destino.exists():
+        return destino
+    with _TRAVA_DEMONSTRACAO:
+        if destino.exists():   # outra thread montou enquanto esta esperava
+            return destino
+        temp = destino.with_name(f"{destino.name}.{os.getpid()}.{uuid.uuid4().hex}.novo")
+        try:
+            montar_banco(pasta, temp)
+            try:
+                os.replace(temp, destino)
+            except OSError:
+                if not destino.exists():   # o erro não foi "outro processo já montou e o arquivo está em uso"
+                    raise
+        finally:
+            temp.unlink(missing_ok=True)
+            temp.with_name(temp.name + ".wal").unlink(missing_ok=True)
     return destino
 
 
