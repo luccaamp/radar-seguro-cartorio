@@ -30,11 +30,10 @@ def _data(iso: str) -> str:
 p = publicacao()
 t = brasil.totais(p)
 cnj = p.manifesto["fontes"]["cnj_cadastro"]["coletado_em"]
+# a origem (Release ou cópia) e o motivo de uma falha ficam em p.origem e p.avisos (testes e log); o visitante vê só
+# a data dos dados (D-089: nenhum texto de infraestrutura na tela)
 ui.contexto([("Atualizado em", _data(p.data)), ("Cadastro do CNJ de", ", ".join(_data(d) for d in cnj)),
-             ("População", f"IBGE, estimativa {p.manifesto['fontes']['ibge']['populacao_estimada']}"),
-             ("Origem", p.origem)])
-if p.avisos:   # o motivo técnico fica em p.avisos (testes); o visitante lê só a consequência
-    st.caption("A publicação mensal não respondeu agora; os números são da cópia guardada no repositório.")
+             ("População", f"IBGE, estimativa {p.manifesto['fontes']['ibge']['populacao_estimada']}")])
 
 ui.grade([ui.kpi("Cartórios ativos", num(t["serventias_ativas"]), "nas 27 unidades da federação"),
           ui.kpi("Sem titular", pct(t["pct_vagas"]), f"{num(t['vagas'])} vagos, respondidos por interino",
@@ -45,14 +44,15 @@ ui.grade([ui.kpi("Cartórios ativos", num(t["serventias_ativas"]), "nas 27 unida
 
 # ------------------------------------------------------------------ mapa por UF (o mesmo componente do mapa de MG)
 PREMIO = "Prêmio do seguro"
+INICIAL = "Por 100 mil hab."   # cobre as 27 UFs; o prêmio só existe no Sudeste e deixava 23 estados cinza (D-089)
 INDICADORES = {
-    PREMIO: ("premio", brl, None),   # só as UFs do estudo completo (o Sudeste, D-088); as outras ficam em hachura
-    "Por 100 mil hab.": ("por_100mil_hab", lambda v: num(v, 1), None),
+    INICIAL: ("por_100mil_hab", lambda v: num(v, 1), None),
     "Cartórios": ("serventias_ativas", lambda v: num(v), None),
     "% sem titular": ("pct_vagas", pct, 1.0),
     "% municípios com cartório": ("pct_municipios_com_cartorio", pct, 1.0),
+    PREMIO: ("premio", brl, None),   # só as UFs do estudo completo (o Sudeste, D-088); as outras ficam em hachura
 }
-escolha = st.segmented_control("Mostrar no mapa", list(INDICADORES), default=PREMIO, key="f_ind_br") or PREMIO
+escolha = st.segmented_control("Mostrar no mapa", list(INDICADORES), default=INICIAL, key="f_ind_br") or INICIAL
 coluna, fmt, teto = INDICADORES[escolha]
 por_uf = {x["uf"]: x for x in p.linhas}
 estudo = {x["uf"]: x for x in analise("regiao")["tabela"]}   # prêmio e faixa das UFs do estudo completo

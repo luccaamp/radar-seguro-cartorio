@@ -243,7 +243,8 @@ def test_totais_do_brasil_sao_razoes_das_somas():
 # ------------------------------------------------------------------ a página do painel
 def test_pagina_brasil_roda_sem_internet(monkeypatch):
     """A página com a cópia local (RADAR_BRASIL_RELEASE=0: a suíte não usa a internet): 4 indicadores, o mapa com as
-    27 UFs, a origem no selo e o quadro do estado escolhido, com a preposição certa."""
+    27 UFs coloridas na primeira vista, nenhum texto de infraestrutura (D-089) e o quadro do estado escolhido, com a
+    preposição certa."""
     from streamlit.testing.v1 import AppTest
     sys.path.insert(0, str(RAIZ / "app"))
     from apoio_painel import mapa_componente
@@ -251,8 +252,11 @@ def test_pagina_brasil_roda_sem_internet(monkeypatch):
     at = AppTest.from_file(str(RAIZ / "app" / "paginas" / "7_Brasil.py"), default_timeout=60).run()
     assert not at.exception
     html = " ".join(m.value for m in at.markdown)
-    assert html.count('class="rd-card"') == 4 and "cópia do repositório" in html and "Atualizado em" in html
-    assert len(mapa_componente(at)["areas"]) == 27
+    assert html.count('class="rd-card"') == 4 and "Atualizado em" in html
+    tela = html + " ".join(c.value for c in at.caption)
+    assert not any(t in tela for t in ("cópia do repositório", "Origem", "Release", "não respondeu"))
+    mapa = mapa_componente(at)
+    assert len(mapa["areas"]) == 27 and all(a["valor"] is not None for a in mapa["areas"])   # nenhuma UF cinza
     at.session_state["f_uf"] = "BA"
     at.run()
     assert not at.exception and any(h.value == "Os cartórios da Bahia" for h in at.header)

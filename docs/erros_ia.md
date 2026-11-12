@@ -1093,3 +1093,11 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** o modo automático da sessão permite edição pelo shell, e a IA tratou "acrescentar no fim" como diferente de "substituir texto".
 - **Correção:** o conteúdo foi conferido (os testes rodam na suíte); não foi refeito. Regra reforçada: acrescentar, trocar ou apagar código é sempre pela ferramenta de edição, mesmo quando o ambiente permite o shell.
 - **Bom para os slides?** não
+
+## 2026-11-12 — Uma conexão do DuckDB para todas as visitas do painel
+- **Onde:** `app/comum.py`, `_abrir` com `st.cache_resource` e `conexao()` devolvendo essa conexão para todas as sessões.
+- **O que aconteceu:** com duas visitas ao mesmo tempo (o normal logo depois de um Reboot), uma consulta lia o resultado da outra e a página Início mostrou um `TypeError` com o traceback inteiro no link público. A IA tinha declarado o Sudeste pronto com todos os testes verdes.
+- **Como foi detectado:** pelo autor, no link público, depois do Reboot.
+- **Causa provável:** o DuckDB não aceita consultas simultâneas na mesma conexão (pede um cursor por thread), e nenhum teste abria o painel com mais de uma visita; o AppTest roda uma sessão por vez.
+- **Correção:** `conexao()` devolve um cursor por chamada; `tests/test_concorrencia.py` consulta pelo painel em 8 threads (o padrão antigo dá 21 `TypeError` em 1.600 consultas). Regra: depois de todo deploy, a conferência do link público abre várias abas ao mesmo tempo.
+- **Bom para os slides?** sim (bug de concorrência que só aparece em produção, achado pelo usuário, reproduzido e coberto por teste)

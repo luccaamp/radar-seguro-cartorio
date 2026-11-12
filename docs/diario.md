@@ -1401,3 +1401,10 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Erros da IA:** a conferência na cópia não rodou o `dados_reais` com 4 UFs; testes acrescentados por heredoc no shell (`docs/erros_ia.md`).
 - **Não conferido:** o link público (depois do merge e do Reboot); os notebooks 07, 08 e 10 rodados de novo com 4 UFs (chamam `carregar_insumos` sem filtrar; etapa 4).
 - **Próximo passo:** PR com auto-merge; Reboot pelo autor; conferência do link público no Playwright; etapa 4.
+
+## 2026-11-12 (4) — PR #30 juntado, erro no link público e PR A da auditoria de UX (D-089)
+- **PR #30:** o CI caiu duas vezes: o teste do mapa no navegador (clique durante o redesenho do `?estado=MG`; novas tentativas por até 15 s) e o limite de 60 min do job "Dados reais" (passou para 120 min; a rodada levou 50 min). Juntado às 11:47 UTC; o CI da `main` passou.
+- **Depois do Reboot:** o autor viu um traceback (`TypeError`) na página Início e o mapa do Sudeste ilegível, e trouxe uma auditoria externa de UX. Avaliação e plano em 4 PRs aprovados pelo autor (D-089); a auditoria está em `docs/painel/auditoria_ux_2026-11-12.md`.
+- **PR A (branch `painel-robustez`):** causa confirmada (uma conexão do DuckDB para todas as visitas; reproduzido com 8 threads: 21 `TypeError`); `conexao()` devolve um cursor por chamada; `banco_demonstracao` com trava e arquivo temporário único; `client.showErrorDetails = "none"` e mensagem "Os dados estão sendo preparados" se o banco não abrir; página Brasil abre em "Por 100 mil hab." (27 UFs coloridas) e sem "Origem" nem o aviso da cópia do repositório. Testes novos em `tests/test_concorrencia.py` (4) e `tests/test_brasil.py`. Suíte padrão 498 passed; `-m navegador` 8 passed; `ruff` sem erro.
+- **Erro da IA:** a conexão compartilhada (`docs/erros_ia.md`).
+- **Próximo passo:** merge, Reboot pelo autor e conferência do link público com várias abas ao mesmo tempo; depois o protótipo do PR B (mapa).

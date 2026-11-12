@@ -61,6 +61,8 @@ borderColor = "#2c3532"
 [client]
 # "minimal": sem o menu ⋮ do Streamlit (a troca de tema é o botão do painel, que funciona também no link público)
 toolbarMode = "minimal"
+# nenhum traceback na tela do visitante (D-089): o erro fica no log do servidor
+showErrorDetails = "none"
 
 [browser]
 gatherUsageStats = false
