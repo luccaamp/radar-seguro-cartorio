@@ -74,6 +74,9 @@ test("tamanhoLetra: px fixos na tela viram unidades do viewBox, pela menor escal
   // a altura limita: 980 × 560 px mostrando 1000 × 818 → escala 560 / 818 (não 980 / 1000)
   assert.equal(mod.tamanhoLetra(T(980, 560), T(1000, 818), 14), 14 / (560 / 818));
   assert.equal(mod.tamanhoLetra(T(0, 0), T(1000, 800), 13), null);       // fora da página: usa a reserva
+  // durante o carregamento (2026-11-11): 982 × 20 px dariam uma letra de 13 / (20 / 1027) ≈ 668 unidades, o mapa todo
+  assert.equal(mod.tamanhoLetra(T(982, 20), T(1000, 1027), 13), null);
+  assert.equal(mod.tamanhoLetra(T(982, mod.MEDIDA_MINIMA), T(1000, 1027), 13), 13 / (mod.MEDIDA_MINIMA / 1027));
 });
 
 test("escolherRotulos: pula o que se sobrepõe e para no máximo, na ordem recebida", () => {

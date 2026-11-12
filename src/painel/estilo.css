@@ -86,6 +86,11 @@ a { color: var(--acento-tinta); }
 /* botão de tema (Claro · Escuro · Sistema; V5 .seg), num lugar fixo no canto do topo. O desenho dos botões está em
    componentes/tema.css (o componente tem o próprio estilo); aqui só o lugar do contêiner, pela chave do componente */
 .st-key-rd_tema { position: fixed; top: 11px; right: 16px; z-index: 999991; width: auto !important; }
+/* o menu do topo fica junto da marca e termina antes do botão de tema (marca ≈ 42 px, botão ≈ 193 px, mais folga): o
+   Streamlit recolhe no "… more" o que não couber. Sem isto, com 8 páginas (a "Brasil", D-087), os últimos itens
+   ficavam debaixo do botão abaixo de ≈ 1.100 px (medido no Playwright em 800, 900 e 1.024 px, 2026-11-11;
+   tests/test_mapa_navegador.py confere) */
+[data-testid="stTopNav"] { max-width: calc(100% - 250px); margin-right: auto; }
 
 /* título da página (V5 .lede): rótulo pequeno, título em negrito e uma linha de subtítulo, sem faixa colorida */
 .rd-cab { padding: 6px 0 0; margin: 0; }

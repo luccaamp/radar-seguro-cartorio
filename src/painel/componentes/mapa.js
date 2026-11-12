@@ -22,7 +22,11 @@ function classeFaixa(faixa) {
 // Letra do rótulo com tamanho fixo NA TELA (px), convertida para unidades do viewBox; null se a tela não foi medida.
 // Com preserveAspectRatio "meet", a escala do desenho é a MENOR entre a da largura e a da altura (o mapa tem altura
 // máxima de 560 px, então muitas vezes é a altura que limita).
+// Uma medida menor que MEDIDA_MINIMA px é o mapa ainda se ajeitando na página (durante o carregamento ele chega a ter
+// poucos px de altura): conta como "sem medida", senão 13 px na tela viram uma letra do tamanho do mapa (2026-11-11).
+export const MEDIDA_MINIMA = 120;
 export function tamanhoLetra(tela, viewBox, px) {
+  if (!(tela.largura >= MEDIDA_MINIMA && tela.altura >= MEDIDA_MINIMA)) return null;
   const escalas = [tela.largura / viewBox.largura, tela.altura / viewBox.altura].filter((e) => Number.isFinite(e) && e > 0);
   return escalas.length ? px / Math.min(...escalas) : null;
 }
@@ -182,6 +186,16 @@ export function desenhar(raiz, dados, aoEscolher, doc = globalThis.document) {
   };
   if (inicial) mostrar(inicial); else rotular();
   if (inicial) arrastar(svg, inteiro, () => vista, mostrar, medir);
+  // o tamanho final do mapa só existe depois que a página se ajeita: refaz os rótulos quando ele muda
+  const Observador = doc.defaultView && doc.defaultView.ResizeObserver;
+  if (Observador) {
+    let ultima = "";
+    new Observador(() => {
+      const r = medir();
+      const chave = `${Math.round(r.width)}x${Math.round(r.height)}`;
+      if (chave !== ultima) { ultima = chave; rotular(); }
+    }).observe(svg);
+  }
   raiz.appendChild(legenda(doc, dados));
   return svg;
 }

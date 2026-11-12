@@ -13,11 +13,11 @@ import duckdb
 RAIZ = Path(__file__).resolve().parents[1]
 BANCO_REAL = RAIZ / "data" / "radar.duckdb"
 # painel da terceira rodada (D-051): as cinco páginas da história e o chat; o Simulador fica na seção "Explorar" do
-# menu (D-077), em app/pages/6_Explorar.py
-HISTORIA = ["app/Inicio.py", "app/pages/1_Quão_certo_é.py", "app/pages/2_Onde_está_o_mercado.py",
-            "app/pages/3_Para_onde_vai.py", "app/pages/4_Sobre_os_dados.py"]
-SOBRE, MERCADO, SIMULADOR = HISTORIA[4], HISTORIA[2], "app/pages/6_Explorar.py"
-PAGINAS = HISTORIA + ["app/pages/5_Chat.py", SIMULADOR]
+# menu (D-077), em app/paginas/6_Explorar.py
+HISTORIA = ["app/Inicio.py", "app/paginas/1_Quão_certo_é.py", "app/paginas/2_Onde_está_o_mercado.py",
+            "app/paginas/3_Para_onde_vai.py", "app/paginas/4_Sobre_os_dados.py"]
+SOBRE, MERCADO, SIMULADOR = HISTORIA[4], HISTORIA[2], "app/paginas/6_Explorar.py"
+PAGINAS = HISTORIA + ["app/paginas/5_Chat.py", SIMULADOR]
 
 
 def mapa_componente(at) -> dict | None:
@@ -56,7 +56,7 @@ def arquivos_versionaveis(padrao: str) -> list[Path]:
     """Arquivos que o git versionaria (`git ls-files`); sem repositório git (cópia ou zip do GitHub), varre o disco
     pulando as pastas ignoradas pelo .gitignore."""
     import subprocess
-    # -z: sem ele, o git põe entre aspas os nomes com acento ("app/pages/2_An\303\241lises.py") e eles se perdem
+    # -z: sem ele, o git põe entre aspas os nomes com acento ("app/paginas/2_An\303\241lises.py") e eles se perdem
     r = subprocess.run(["git", "-C", str(RAIZ), "ls-files", "-z", "-co", "--exclude-standard", padrao],
                        capture_output=True, text=True, encoding="utf-8")
     if r.returncode == 0 and r.stdout.strip("\0"):
@@ -76,7 +76,7 @@ def apontar_painel(copia: Path, publico: Path | None = None) -> dict:
     """Aponta o painel para `copia` (modo completo) ou, se `copia` não existir e `publico` for dado, para o conjunto
     público (modo demonstração). Devolve as variáveis anteriores para restaurar()."""
     # as páginas importam `comum`, que fica em app/: no `streamlit run` app/ entra no caminho pela página inicial;
-    # nos testes, uma página de app/pages/ pode rodar primeiro
+    # nos testes, uma página de app/paginas/ pode rodar primeiro
     if str(RAIZ / "app") not in sys.path:
         sys.path.insert(0, str(RAIZ / "app"))
     anterior = {v: os.environ.get(v) for v in VARIAVEIS}

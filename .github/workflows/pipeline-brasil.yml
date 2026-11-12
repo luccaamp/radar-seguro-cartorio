@@ -64,8 +64,9 @@ jobs:
         run: |
           tag="brasil-$(date -u +%Y-%m-%d)"
           if gh release view "$tag" >/dev/null 2>&1; then tag="${tag}-r${{ github.run_number }}"; fi
+          # --latest=false: a publicação mensal não toma o lugar da versão do projeto (v1.0, v2.0) como "Latest"
           gh release create "$tag" saida/brasil_uf.csv saida/malha_uf.geojson saida/manifesto.json saida/o_que_mudou.md \
-            --title "Brasil, camada 1 — $(date -u +%d/%m/%Y)" --notes-file saida/o_que_mudou.md
+            --latest=false --title "Brasil, camada 1 — $(date -u +%d/%m/%Y)" --notes-file saida/o_que_mudou.md
           { echo "✅ Publicado: **$tag** (anterior: ${{ steps.anterior.outputs.tag }})"; echo; cat saida/o_que_mudou.md; } >> "$GITHUB_STEP_SUMMARY"
       - name: Ensaio numa branch (nada publicado)
         if: github.ref != 'refs/heads/main'
