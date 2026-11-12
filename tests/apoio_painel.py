@@ -96,3 +96,15 @@ def restaurar(anterior: dict) -> None:
         else:
             os.environ[v] = valor
     _limpar_caches()
+
+
+def pagina_em_mg(caminho: str):
+    """Uma página do painel (AppTest) com o escopo MG (D-088): o padrão é o Sudeste, e os testes que escolhem um
+    município de MG pelo nome usam o recorte de MG (seletor `f_mun_MG`, nomes sem a UF)."""
+    from streamlit.testing.v1 import AppTest
+    at = AppTest.from_file(str(caminho if Path(caminho).is_absolute() else RAIZ / caminho), default_timeout=120)
+    at.session_state["escopo"] = "MG"
+    return at.run()
+
+
+SELETOR_MUNICIPIO_MG = "f_mun_MG"

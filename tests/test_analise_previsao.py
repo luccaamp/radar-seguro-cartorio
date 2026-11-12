@@ -166,15 +166,15 @@ def test_previsao_reproduz_o_t2_e_a_base(_copia_real):
     oficial."""
     from src.analise import dados
     from src.motor import calcular_serventias
-    from src.transform.gold import carregar_insumos
+    from src.transform.gold import carregar_insumos, insumos_da_uf
     sem = estado.ler_semente()
     lim = yaml.safe_load((RAIZ / "config" / "regras_classificacao.yaml").read_text(encoding="utf-8"))["versoes"]["v2"]
-    with duckdb.connect(str(_copia_real["copia"]), read_only=True) as con:
-        peso = con.execute("SELECT peso_classe_indeterminada_base FROM gold.execucao WHERE regra_classe = 'v2'"
-                           ).fetchone()[0]
+    with duckdb.connect(str(_copia_real["copia"]), read_only=True) as con:   # só MG: o banco tem o Sudeste (D-088)
+        peso = con.execute("SELECT peso_classe_indeterminada_base FROM gold.execucao WHERE regra_classe = 'v2' "
+                           "AND uf = 'MG'").fetchone()[0]
         premio = con.execute("SELECT mercado_premio_emitido FROM gold.fato_mercado_uf WHERE nivel = 'base' AND "
-                             "regra_classe = 'v2' AND cenario_stf = 'mantem'").fetchone()[0]
-        serie, ins = dados.serie_arrecadacao(con), carregar_insumos(con)
+                             "regra_classe = 'v2' AND cenario_stf = 'mantem' AND uf = 'MG'").fetchone()[0]
+        serie, ins = dados.serie_arrecadacao(con, uf="MG"), insumos_da_uf(carregar_insumos(con), "MG")
     y = pv.serie_mg(serie).loc[:"2025-2"]
     tab, _ = pv.origem_movel(y)
     t2 = json.loads((RAIZ / "docs/qa/analises/testes_metodos_resultados.json").read_text(encoding="utf-8"))

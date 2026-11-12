@@ -3,7 +3,8 @@
 Regras (CLAUDE.md, D-026 a D-030):
 - só leem tabelas do conjunto público já auditado (`config/publico.yaml`), por uma conexão só de leitura recebida de
   fora (a do painel); nenhuma tabela interna, nada de SQL livre (testado em tests/test_chat.py);
-- sempre com a UF como parâmetro; hoje só MG tem dados (expansão na E7);
+- sempre com a UF como parâmetro; o estudo completo cobre as UFs do escopo (o Sudeste, D-088: MG calibrada, SP, RJ e
+  ES preliminares); as outras UFs só pela consulta `brasil` (camada 1, D-087);
 - regra v1 e mínimo/máximo só nos totais da UF (D-027); abaixo da UF, as contagens por filtro (todas publicadas
   desde a D-078) e, desde a D-048 (D-038), o resultado por serventia (`consultar_serventia`, pelo CNS ou pelo
   município; nunca nome de pessoa);
@@ -17,11 +18,15 @@ from pathlib import Path
 
 import duckdb
 
+from src import estados_config
+
 RAIZ = Path(__file__).resolve().parents[2]
 # texto oficial das normas, versionado sem a assinatura (D-064; scripts/exportar_normas.py copia do bronze)
 NORMAS_DIR = RAIZ / "data" / "normas" / "2026-10-17"
 NORMAS_BRONZE = RAIZ / "data" / "bronze" / "normas" / "2026-10-17"
-UFS_COM_DADOS = ("MG",)
+# UFs com o estudo completo (camada 2): as do escopo (config/escopo.yaml; o Sudeste desde a D-088). As outras têm só o
+# cadastro (camada 1, página Brasil), que a ferramenta consultar_brasil responde
+UFS_COM_DADOS = tuple(estados_config.ufs())
 CENARIOS = {"mantem": "regra mantida", "suspende_8_17": "STF suspende os arts. 8º a 17",
             "parcial": "decisão parcial (fração do déficit exigida = suposição)"}
 NORMAS = {"227": ("prov_227_2026_pagina.txt", "Prov. CNJ 227/2026"),
@@ -33,7 +38,8 @@ SINONIMOS = {
     "situacao": {"provido": "PROVIDO", "provida": "PROVIDO", "titular": "PROVIDO", "vago": "VAGO", "vaga": "VAGO",
                  "interino": "VAGO", "interina": "VAGO", "interinidade": "VAGO", "sob intervencao": "SOB INTERVENÇÃO",
                  "intervencao": "SOB INTERVENÇÃO", "conversao em diligencia": "CONVERSÃO EM DILIGÊNCIA",
-                 "diligencia": "CONVERSÃO EM DILIGÊNCIA"},
+                 "diligencia": "CONVERSÃO EM DILIGÊNCIA", "nao informada": "NÃO INFORMADA",
+                 "nao informado": "NÃO INFORMADA", "sem situacao": "NÃO INFORMADA"},
     "atribuicao": {"notas": "notas", "tabelionato de notas": "notas", "registro civil": "rcpn", "rcpn": "rcpn",
                    "registro de imoveis": "ri", "imoveis": "ri", "ri": "ri", "protesto": "protesto",
                    "titulos e documentos": "rtd_rcpj", "pessoa juridica": "rtd_rcpj", "rtd": "rtd_rcpj",
@@ -78,20 +84,27 @@ def _uf(uf: str) -> str | None:
 
 
 def _sem_uf(uf: str) -> dict:
-    return {"erro": f"Sem dados para a UF {uf!r}: o projeto cobre só MG por enquanto (expansão estado por estado na "
-                    "E7 do roteiro). Diga que não há dado para essa UF."}
+    return {"erro": f"Sem o estudo do seguro para a UF {uf!r}: o projeto cobre {', '.join(UFS_COM_DADOS)} por enquanto "
+                    "(expansão estado por estado). Para contar os cartórios dela, use consultar_brasil. Não estime "
+                    "prêmio nem déficit dessa UF."}
 
 
-def _citar(con, tabela: str) -> str:
+def preliminar(uf: str) -> bool:
+    """A UF usa as premissas de MG herdadas como suposição (D-081, D-088): os números dela são estimativa preliminar."""
+    return estados_config.premissas_da_uf(uf, {})[1]
+
+
+def _citar(con, tabela: str, uf: str = "MG") -> str:
     versao, executado = con.execute("SELECT versao_premissas, executado_em FROM gold.execucao "
-                                    "WHERE regra_classe = 'v2'").fetchone()
+                                    "WHERE regra_classe = 'v2' AND uf = ?", [uf]).fetchone()
+    extra = "; estimativa preliminar: premissas de MG, ainda não calibradas para esta UF" if preliminar(uf) else ""
     return (f"Fonte: {tabela} (CNJ/Justiça Aberta, RAIS/PDET e SUSEP SES; estimativa de mercado com premissas "
-            f"públicas); carga {executado:%Y-%m-%d}; premissas v{versao}.")
+            f"públicas); carga {executado:%Y-%m-%d}; premissas v{versao}{extra}.")
 
 
-def _uf_linhas(con, cenario: str, regra: str = "v2") -> dict:
-    df = con.execute("SELECT * FROM gold.fato_mercado_uf WHERE regra_classe = ? AND cenario_stf = ?",
-                     [regra, cenario]).df()
+def _uf_linhas(con, cenario: str, regra: str = "v2", uf: str = "MG") -> dict:
+    df = con.execute("SELECT * FROM gold.fato_mercado_uf WHERE regra_classe = ? AND cenario_stf = ? AND uf = ?",
+                     [regra, cenario, uf]).df()
     return {r["nivel"]: r for _, r in df.iterrows()}
 
 
@@ -125,36 +138,38 @@ def contar_serventias(con: duckdb.DuckDBPyConnection, uf: str, recorte: str = "t
     atribuição)."""
     if not _uf(uf):
         return _sem_uf(uf)
+    uf = _uf(uf)
     if _sem_acento(recorte or "total") in ("total", "todas", "todos", ""):
-        base = _uf_linhas(con, "mantem")["base"]
-        return {"uf": "MG", "recorte": "total da UF", "serventias_ativas": _br(base["n_serventias_ativas"], 0),
-                "empregados_clt": _br(base["clt"], 0), "citar": _citar(con, "gold.fato_mercado_uf")}
+        base = _uf_linhas(con, "mantem", uf=uf)["base"]
+        return {"uf": uf, "recorte": "total da UF", "serventias_ativas": _br(base["n_serventias_ativas"], 0),
+                "empregados_clt": _br(base["clt"], 0), "citar": _citar(con, "gold.fato_mercado_uf", uf)}
     achado = _recorte(recorte)
     if achado is None:
         return {"erro": f"recorte {recorte!r} não existe; use um destes: {RECORTES}"}
     f, v = achado
     linha = con.execute("SELECT n_serventias_ativas, clt FROM gold.mercado_filtro_uf WHERE visao = ? "
-                        "AND regra_classe = 'v2' AND nivel = 'base'", [f"{f}={v}"]).fetchone()
+                        "AND regra_classe = 'v2' AND nivel = 'base' AND uf = ?", [f"{f}={v}", uf]).fetchone()
     if linha is None:
         return {"erro": f"recorte {recorte!r} sem linha em gold.mercado_filtro_uf"}
-    r = {"uf": "MG", "recorte": f"{f} = {v}", "serventias_ativas_no_recorte": _br(linha[0], 0),
+    r = {"uf": uf, "recorte": f"{f} = {v}", "serventias_ativas_no_recorte": _br(linha[0], 0),
          "empregados_clt_no_recorte": _br(linha[1], 0)}
     if f == "classe":
         r["observacao"] = "classe pela regra v2 (Prov. 243, Classe 1 até R$ 300 mil por semestre), aproximada"
-    return {**r, "citar": _citar(con, "gold.mercado_filtro_uf")}
+    return {**r, "citar": _citar(con, "gold.mercado_filtro_uf", uf)}
 
 
 def passivo_e_obrigadas(con: duckdb.DuckDBPyConnection, uf: str) -> dict:
     """Passivo trabalhista estimado (todas as ativas e só as obrigadas) e o número de obrigadas pelo Prov. 227."""
     if not _uf(uf):
         return _sem_uf(uf)
-    n = _uf_linhas(con, "mantem")
+    uf = _uf(uf)
+    n = _uf_linhas(con, "mantem", uf=uf)
     faixa = lambda col, fmt: _com_faixa(n, col, fmt)  # noqa: E731
-    return {"uf": "MG", "obrigadas_prov_227": faixa("n_universo", aprox),
+    return {"uf": uf, "obrigadas_prov_227": faixa("n_universo", aprox),
             "passivo_todas_as_ativas": faixa("passivo_todas", brl),
             "passivo_das_obrigadas": faixa("passivo_universo", brl),
             "observacao": "obrigadas = sem interinos e sem Classe 1 (art. 19 do 227); classe aproximada",
-            "citar": _citar(con, "gold.fato_mercado_uf")}
+            "citar": _citar(con, "gold.fato_mercado_uf", uf)}
 
 
 def deficit_e_mercado(con: duckdb.DuckDBPyConnection, uf: str, cenario_stf: str = "mantem") -> dict:
@@ -166,14 +181,15 @@ def deficit_e_mercado(con: duckdb.DuckDBPyConnection, uf: str, cenario_stf: str 
          "decisao_parcial": "parcial"}.get(c, c)
     if c not in CENARIOS:
         return {"erro": f"cenário {cenario_stf!r} não existe; use {list(CENARIOS)}"}
-    n = _uf_linhas(con, c)
+    uf = _uf(uf)
+    n = _uf_linhas(con, c, uf=uf)
     faixa = lambda col, fmt: _com_faixa(n, col, fmt)  # noqa: E731
-    r = {"uf": "MG", "cenario_stf": CENARIOS[c], "serventias_com_deficit": faixa("n_deficit", aprox),
+    r = {"uf": uf, "cenario_stf": CENARIOS[c], "serventias_com_deficit": faixa("n_deficit", aprox),
          "deficit": faixa("valor_descoberto", brl),
          "importancia_segurada_mercado": faixa("mercado_importancia_segurada", brl),
          "premio_anual_mercado": faixa("mercado_premio_emitido", brl),
          "premio_anual_seguradora_hipotetica": faixa("seguradora_premio_emitido", brl),
-         "citar": _citar(con, "gold.fato_mercado_uf")}
+         "citar": _citar(con, "gold.fato_mercado_uf", uf)}
     if c == "mantem":
         # D-042 (D-069): base > faixa provável P5–P95 > extremos só se pedirem. A faixa provável é a mesma do painel
         # (analises.faixa_d042); os extremos ficam à parte (no teste real, o modelo os chamou de "faixa provável")
@@ -182,7 +198,7 @@ def deficit_e_mercado(con: duckdb.DuckDBPyConnection, uf: str, cenario_stf: str 
                                      "importancia_segurada_mercado": ("mercado_importancia_segurada",
                                                                       "importancia_segurada"),
                                      "premio_anual_mercado": ("mercado_premio_emitido", "premio")}.items():
-            f = analises.faixa_d042(con, "MG", medida)
+            f = analises.faixa_d042(con, uf, medida)
             r[chave] = f"{brl(n['base'][col])} no cenário base; faixa provável (P5–P95): {f['faixa_provavel']}"
             r[f"{chave}_extremos_teoricos_so_se_pedirem"] = f"{brl(n['min'][col])} a {brl(n['max'][col])}"
     return r
@@ -203,16 +219,17 @@ def simular(con: duckdb.DuckDBPyConnection, uf: str, taxa: float | None = None, 
     s = fracao(market_share, p["market_share_hipotetico"]["valores"]["base"])
     if not (0 < t <= 0.2 and 0 < s <= 1):
         return {"erro": "taxa entre 0% e 20% e market share entre 0% e 100%"}
-    is_ = float(_uf_linhas(con, c)["base"]["mercado_importancia_segurada"])
+    uf = _uf(uf)
+    is_ = float(_uf_linhas(con, c, uf=uf)["base"]["mercado_importancia_segurada"])
     premio = is_ * t
     custos = sum(float(p[k]["valores"]["base"]) for k in ("sinistralidade", "comissao", "despesa_administrativa"))
-    return {"uf": "MG", "cenario_stf": CENARIOS[c], "taxa": pct(t), "market_share": pct(s),
+    return {"uf": uf, "cenario_stf": CENARIOS[c], "taxa": pct(t), "market_share": pct(s),
             "importancia_segurada_mercado": brl(is_), "premio_anual_mercado": brl(premio),
             "premio_anual_seguradora_hipotetica": brl(premio * s),
             "resultado_tecnico_mercado": brl(premio * (1 - custos)),
             "conta": f"prêmio = IS {brl(is_)} × taxa {pct(t)}; seguradora = prêmio × {pct(s)}",
             "observacao": "resultado técnico antes de impostos, resseguro e capital; nível base, regra v2",
-            "citar": _citar(con, "gold.fato_mercado_uf e premissas vigentes")}
+            "citar": _citar(con, "gold.fato_mercado_uf e premissas vigentes", uf)}
 
 
 def _obrigada(peso: float) -> str:
@@ -228,14 +245,15 @@ def consultar_serventia(con: duckdb.DuckDBPyConnection, uf: str, cns: str | None
     mantém). Identifica o cartório pelo CNS e pelo município; não há nome de pessoa na tabela."""
     if not _uf(uf):
         return _sem_uf(uf)
-    citar = _citar(con, "gold.serventia_publico")
+    uf = _uf(uf)
+    citar = _citar(con, "gold.serventia_publico", uf)
     if cns:
         codigo = re.sub(r"\D", "", str(cns)).zfill(6)
-        df = con.execute("SELECT * FROM gold.serventia_publico WHERE cns = ?", [codigo]).df()
+        df = con.execute("SELECT * FROM gold.serventia_publico WHERE cns = ? AND uf = ?", [codigo, uf]).df()
         if df.empty:
-            return {"erro": f"CNS {cns!r} não é de uma serventia ativa de MG nesta carga"}
+            return {"erro": f"CNS {cns!r} não é de uma serventia ativa de {uf} nesta carga"}
         s = df.iloc[0]
-        return {"uf": "MG", "cns": s["cns"], "municipio": s["municipio"], "regiao_imediata": s["regiao_imediata"],
+        return {"uf": uf, "cns": s["cns"], "municipio": s["municipio"], "regiao_imediata": s["regiao_imediata"],
                 "situacao": s["situacao_juridica"], "atribuicoes": s["atribuicoes"],
                 "empregados_clt": "não declarado" if s["clt"] != s["clt"] else _br(s["clt"], 0),
                 "receita_semestral_2025": "sem receita válida" if s["receita_ref"] != s["receita_ref"]
@@ -247,14 +265,14 @@ def consultar_serventia(con: duckdb.DuckDBPyConnection, uf: str, cns: str | None
                               "é um valor esperado (chance × parte descoberta), não o déficit real do cartório",
                 "citar": citar}
     if municipio:
-        df = con.execute("SELECT * FROM gold.serventia_publico ORDER BY cns").df()
+        df = con.execute("SELECT * FROM gold.serventia_publico WHERE uf = ? ORDER BY cns", [uf]).df()
         df = df[df["municipio"].map(lambda m: _sem_acento(str(m))) == _sem_acento(municipio)]
         if df.empty:
-            return {"erro": f"município {municipio!r} sem serventia ativa em MG (confira a grafia)"}
+            return {"erro": f"município {municipio!r} sem serventia ativa em {uf} (confira a grafia e a UF)"}
         linhas = [{"cns": r["cns"], "situacao": r["situacao_juridica"], "classe": r["classe"],
                    "obrigada": _obrigada(float(r["peso_universo"])), "premio_anual": brl(r["premio_emitido"])}
                   for _, r in df.head(30).iterrows()]
-        return {"uf": "MG", "municipio": df["municipio"].iloc[0], "serventias_ativas": _br(len(df), 0),
+        return {"uf": uf, "municipio": df["municipio"].iloc[0], "serventias_ativas": _br(len(df), 0),
                 "obrigadas": aprox(df["peso_universo"].sum()), "premio_anual_do_municipio": brl(df["premio_emitido"].sum()),
                 "serventias": linhas, **({"observacao": "lista com as 30 primeiras, pela ordem do CNS"}
                                          if len(df) > 30 else {}),
@@ -309,14 +327,41 @@ def buscar_norma(pergunta: str, provimento: str | None = None) -> dict:
                       "coletado em 2026-10-17). Não é parecer jurídico.")}
 
 
+def brasil(uf: str | None = None) -> dict:
+    """Camada 1 (D-087): cartórios ativos, sem titular, municípios com cartório e por 100 mil habitantes de uma UF ou
+    das 27, da mesma publicação que a página Brasil lê (Release mensal conferida, ou a cópia de data/brasil). Sem
+    prêmio nem déficit: esses só existem nas UFs do estudo completo."""
+    from src.painel import brasil as br
+    p = br.publicacao()
+    citar = (f"Fonte: CNJ, Justiça Aberta (cadastro de serventias de {', '.join(p.manifesto['fontes']['cnj_cadastro']['coletado_em'])}) "
+             f"e IBGE (população estimada {p.manifesto['fontes']['ibge']['populacao_estimada']}); publicação de "
+             f"{p.data} ({p.origem}).")
+
+    def linha(x: dict) -> dict:
+        return {"uf": x["uf"], "estado": x["nome"], "cartorios_ativos": _br(x["serventias_ativas"], 0),
+                "sem_titular": pct(x["pct_vagas"]), "municipios_com_cartorio": f"{_br(x['municipios_com_cartorio'], 0)} "
+                f"de {_br(x['municipios'], 0)}", "por_100_mil_habitantes": _br(x["por_100mil_hab"], 1),
+                "estudo_do_seguro": "sim" if x["uf"] in UFS_COM_DADOS else "não (só o cadastro, camada 1)"}
+    if uf:
+        u = str(uf).strip().upper()
+        x = next((x for x in p.linhas if x["uf"] == u), None)
+        if x is None:
+            return {"erro": f"UF {uf!r} não existe"}
+        return {**linha(x), "citar": citar}
+    t = br.totais(p)
+    return {"brasil": {"cartorios_ativos": _br(t["serventias_ativas"], 0), "sem_titular": pct(t["pct_vagas"]),
+                       "por_100_mil_habitantes": _br(t["por_100mil_hab"], 1)},
+            "tabela": [linha(x) for x in sorted(p.linhas, key=lambda x: -x["serventias_ativas"])], "citar": citar}
+
+
 RECORTES = ["total", "classe 1", "classe 2", "classe 3", "classe indeterminada", "provido", "vago",
-            "sob intervencao", "conversao em diligencia", "notas", "registro civil", "registro de imoveis", "protesto",
+            "sob intervencao", "conversao em diligencia", "nao informada", "notas", "registro civil", "registro de imoveis", "protesto",
             "titulos e documentos"]
 # consultas próprias do chat (anteriores à Etapa 3); as do painel vêm de src/painel/analises.py
 PROPRIAS = {"contar_serventias": contar_serventias, "passivo_e_obrigadas": passivo_e_obrigadas,
             "deficit_e_mercado": deficit_e_mercado, "simular": simular, "buscar_norma": buscar_norma,
-            "consultar_serventia": consultar_serventia}
-PROPRIAS_SEM_CONEXAO = {"buscar_norma"}
+            "consultar_serventia": consultar_serventia, "brasil": brasil}
+PROPRIAS_SEM_CONEXAO = {"buscar_norma", "brasil"}
 
 
 # ------------------------------------------------------------------ as 5 ferramentas do chat (Etapa 5; D-062)
@@ -336,6 +381,10 @@ CONSULTAS = {
         "passivo_e_obrigadas": "passivo trabalhista (todas e obrigadas) e quantas são obrigadas pelo Prov. 227",
         "deficit_e_mercado": "serventias com déficit, déficit, importância segurada e prêmio num cenário do STF",
         "simular": "prêmio com outra taxa (%) e outro market share (%) (use `taxa` e `market_share`)",
+        "regiao": "o Sudeste somado (MG, SP, RJ e ES): prêmio, faixa provável da região, os 6 indicadores e uma "
+                  "linha por estado (calibrado ou estimativa preliminar)",
+        "brasil": "cartórios ativos, % sem titular, municípios com cartório e por 100 mil habitantes de QUALQUER UF "
+                  "ou das 27 (use `uf`, ou nada para todas); só contagens do cadastro, sem prêmio",
     },
     "consultar_mercado": {
         "grupos": "os seis tipos de cartório (k-means, notebook 04) e o grupo-alvo do seguro (Mercado)",
@@ -352,7 +401,7 @@ CONSULTAS = {
     "consultar_analises": {
         "previsao_mercado": "projeção de 2026 ou 2027: obrigadas, subidas, passivo, déficit, IS e prêmio (use `ano` "
                             "e, se pedirem, `leitura_limite`)",
-        "previsao_arrecadacao": "projeção da arrecadação semestral de MG 2026–27 com P10–P90",
+        "previsao_arrecadacao": "projeção da arrecadação semestral da UF 2026–27 com P10–P90",
         "subidas_comparacao": "subidas da Classe 1 para a 2: projeção principal e a recalibração (105 a 145) como "
                               "comparação",
         "passivo_m5": "quanto o passivo das obrigadas cresce em 2026 e 2027 (M5)",
@@ -387,7 +436,9 @@ DESCRICOES = {
     "consultar_decisoes": "Decisões de método do projeto, normas (Provimentos 227, 213 e 243) e situação da ADI 8015.",
 }
 PARAMETROS = {   # parâmetro → (esquema, ferramentas que o aceitam)
-    "uf": ({"type": "string", "description": "sigla da UF; hoje só MG tem dados (padrão MG)"},
+    "uf": ({"type": "string", "description": f"sigla da UF com o estudo completo: {', '.join(UFS_COM_DADOS)} (padrão "
+                                              "MG, a única calibrada; nas outras, estimativa preliminar). Outra UF: "
+                                              "só a contagem de cartórios, por consultar_numeros/brasil"},
            ("consultar_numeros", "consultar_mercado", "consultar_analises", "consultar_qualidade")),
     "medida": ({"type": "string", "enum": ["premio", "deficit", "importancia_segurada"],
                 "description": "para faixa_d042"}, ("consultar_numeros",)),
@@ -399,7 +450,8 @@ PARAMETROS = {   # parâmetro → (esquema, ferramentas que o aceitam)
     "market_share": ({"type": "number", "description": "para simular: market share em %, ex.: 10"},
                      ("consultar_numeros",)),
     "cns": ({"type": "string", "description": "CNS do cartório (6 dígitos)"}, ("consultar_mercado",)),
-    "municipio": ({"type": "string", "description": "nome do município de MG"}, ("consultar_mercado",)),
+    "municipio": ({"type": "string", "description": "nome do município (passe também a `uf` dele; padrão MG)"},
+                  ("consultar_mercado",)),
     "indicador": ({"type": "string", "enum": ["obrigados", "classe_3"],
                    "description": "para percentual_por_municipio"}, ("consultar_mercado",)),
     "ano": ({"type": "integer", "description": "para previsao_mercado: 2026 ou 2027"}, ("consultar_analises",)),

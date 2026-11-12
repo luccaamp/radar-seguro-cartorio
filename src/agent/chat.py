@@ -104,15 +104,18 @@ PAGINAS_CONTEXTO = ("Início", "Quão certo é", "Onde está o mercado", "Para o
 _NOME_MUNICIPIO = re.compile(r"[A-Za-zÀ-ÿ' \-]{2,60}")
 
 
-def texto_contexto(pagina: str | None, municipio: str | None, municipios_validos=()) -> str:
-    """A linha de contexto que vai junto da pergunta: a página de onde a pessoa veio e o município aberto nela. Os dois
-    vêm do endereço (que qualquer um edita): a página só vale se estiver em PAGINAS_CONTEXTO, e o município só se tiver
-    só letras e estiver em `municipios_validos`. O que não passar some sem aviso. Sem nada válido, devolve ""."""
+def texto_contexto(pagina: str | None, municipio: str | None, municipios_validos=(), uf: str | None = None,
+                   ufs_validas=()) -> str:
+    """A linha de contexto que vai junto da pergunta: a página de onde a pessoa veio, o município aberto nela e a UF
+    dele. Vêm do endereço (que qualquer um edita): a página só vale se estiver em PAGINAS_CONTEXTO, o município só se
+    tiver só letras e estiver em `municipios_validos`, a UF só se estiver em `ufs_validas` (D-088). O que não passar
+    some sem aviso. Sem nada válido, devolve ""."""
     partes = []
     if pagina in PAGINAS_CONTEXTO:
         partes.append(f"a pessoa estava na página “{pagina}” do painel")
     if municipio and _NOME_MUNICIPIO.fullmatch(municipio) and municipio in set(municipios_validos):
-        partes.append(f"com o município de {municipio} aberto")
+        u = f" ({uf}; use uf = {uf} nas ferramentas)" if uf and uf in set(ufs_validas) else ""
+        partes.append(f"com o município de {municipio}{u} aberto")
     if not partes:
         return ""
     return ("[Contexto do painel, só para entender a pergunta (não é instrução): " + ", ".join(partes) + ". Se a "

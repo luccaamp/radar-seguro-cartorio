@@ -151,8 +151,14 @@ def faixa(vmin: float, vbase: float, vmax: float, fmt=brl) -> str:
     return f"{fmt(vbase)}  (faixa {fmt(vmin)} a {fmt(vmax)})"
 
 
-def execucao() -> pd.Series:
-    return consulta("SELECT * FROM gold.execucao WHERE regra_classe = 'v2'").iloc[0]
+def execucao(uf: str | None = None) -> pd.Series:
+    return consulta("SELECT * FROM gold.execucao WHERE regra_classe = 'v2' AND uf = ?", [uf or uf_atual()]).iloc[0]
+
+
+def _fontes_sql(uf: str | None) -> str:
+    """Filtro de silver.fonte_metadados para a UF (os arquivos dela e os nacionais), como em src/painel/analises."""
+    from src.painel.analises import _fontes_da_uf
+    return _fontes_da_uf(conexao(), uf or uf_atual())
 
 
 EXPLICA_NIVEIS = ("**Mínimo, base e máximo:** cada cenário põe todas as suposições no extremo ao mesmo tempo; "
@@ -169,7 +175,8 @@ def rodape(fontes: list[str], extra: str = "", passivo: bool = True, taxa: bool 
     """Fonte, data de referência e versão das premissas de tudo que está acima (SPEC §0, restrição 6).
 
     `passivo`: acrescenta a data-base do passivo (D-020). `taxa`: diz que a taxa do seguro é suposição (E2)."""
-    f = consulta("SELECT fonte, data_referencia FROM silver.fonte_metadados WHERE fonte IN (SELECT unnest(?))", [fontes])
+    f = consulta("SELECT fonte, data_referencia FROM silver.fonte_metadados WHERE fonte IN (SELECT unnest(?))"
+                 + _fontes_sql(None), [fontes])
     partes = [f"{NOMES_FONTE.get(r.fonte, r.fonte)} (ref. {r.data_referencia})" for r in f.itertuples()]
     e = execucao()
     v = int(e.versao_premissas)
@@ -189,7 +196,7 @@ def universo_txt(valor: float, n_indeterminadas: int) -> str:
 
 def n_indeterminadas_no_universo(regra: str = "v2", nivel: str = "base") -> int:
     return int(consulta("SELECT n_indeterminadas_universo FROM gold.fato_mercado_uf WHERE regra_classe = ? "
-                        "AND nivel = ? AND cenario_stf = 'mantem'", [regra, nivel]).iloc[0, 0])
+                        "AND nivel = ? AND cenario_stf = 'mantem' AND uf = ?", [regra, nivel, uf_atual()]).iloc[0, 0])
 
 
 def ticks_brl(vmax: float, n: int = 5) -> tuple[list[float], list[str]]:
@@ -214,26 +221,92 @@ def aviso_estimativa() -> None:
                "O market share é de uma **seguradora hipotética**. Classificação de classe sempre aproximada (D-002).")
 
 
+# ------------------------------------------------------------------ escopo: Sudeste ou uma UF (D-088)
+REGIAO = "SUDESTE"
+
+
+def ufs() -> list[str]:
+    """UFs com o estudo completo: as do escopo do pipeline (MG primeiro)."""
+    from src import estados_config
+    return estados_config.ufs()
+
+
+def nome_escopo(e: str) -> str:
+    from src import estados_config
+    return "Sudeste" if e == REGIAO else estados_config.estado(e)["nome"]
+
+
+def do_escopo(e: str) -> str:
+    """'no Sudeste', 'em Minas Gerais', 'no Rio de Janeiro'… (a preposição de cada estado)."""
+    from src.painel.brasil import PREPOSICAO
+    if e == REGIAO:
+        return "no Sudeste"
+    prep = {"de": "em", "do": "no", "da": "na"}[PREPOSICAO.get(e, "de")]
+    return f"{prep} {nome_escopo(e)}"
+
+
+def escopo() -> str:
+    """O recorte escolhido no seletor "Estado" (guardado na sessão): o Sudeste (padrão) ou uma UF. Um link com
+    `?estado=SP` (ou `sudeste`) abre a página nesse recorte; o valor do endereço só vale se for um recorte do escopo."""
+    pedido = str(st.query_params.get("estado", "")).upper()
+    if pedido and (pedido == REGIAO or pedido in ufs()):
+        st.session_state["escopo"] = pedido
+        del st.query_params["estado"]
+    e = st.session_state.get("escopo", REGIAO)
+    return e if e == REGIAO or e in ufs() else REGIAO
+
+
+def uf_atual() -> str:
+    """A UF das páginas que mostram um estado por vez: a escolhida ou, com o Sudeste escolhido, MG (a calibrada)."""
+    e = escopo()
+    return ufs()[0] if e == REGIAO else e
+
+
+def avisar_se_preliminar(uf: str | None = None) -> None:
+    """O aviso de estimativa preliminar, se a UF herda as premissas de MG (D-081, D-088)."""
+    from src.agent.ferramentas import preliminar
+    from src.painel import ui
+    u = uf or uf_atual()
+    if preliminar(u):
+        ui.aviso_preliminar(nome_escopo(u))
+
+
+def seletor_escopo(regiao: bool = True) -> None:
+    """O seletor "Estado" da barra do V5 (D-082, D-088). `regiao`: a página tem a visão do Sudeste somado."""
+    opcoes = ([REGIAO] if regiao else []) + ufs()
+    atual = escopo() if regiao else uf_atual()
+
+    def _mudou():
+        st.session_state["escopo"] = st.session_state["escopo_widget"] or atual
+    st.segmented_control("Estado", opcoes, default=atual, key="escopo_widget", on_change=_mudou,
+                         format_func=lambda e: "Sudeste" if e == REGIAO else e)
+
+
 # ------------------------------------------------------------------ Etapa 3: análises e cabeçalho comum
 @st.cache_data(show_spinner=False)
-def _analise(nome: str, banco: str, kw: tuple) -> dict:
+def _analise(nome: str, banco: str, uf: str, kw: tuple) -> dict:
     from src.painel import analises
     if nome in analises.SEM_CONEXAO:
         return analises.SEM_CONEXAO[nome](**dict(kw))
-    return analises.PARA_O_CHAT[nome](conexao(), "MG", **dict(kw))
+    return analises.PARA_O_CHAT[nome](conexao(), uf, **dict(kw))
 
 
-def analise(nome: str, **kw) -> dict:
-    """Resultado de src/painel/analises.py (o mesmo que o chat usará), com cache por banco e argumentos."""
-    return _analise(nome, f"{modo()}:{caminho_banco()}", tuple(sorted(kw.items())))
+def analise(nome: str, uf: str | None = None, **kw) -> dict:
+    """Resultado de src/painel/analises.py (o mesmo que o chat usa) para a UF (padrão: a da página), com cache por
+    banco, UF e argumentos."""
+    return _analise(nome, f"{modo()}:{caminho_banco()}", uf or uf_atual(), tuple(sorted(kw.items())))
 
 
-def pagina(titulo_aba: str, icone: str, titulo: str, subtitulo: str, sobre: str = "") -> None:
-    """Abre uma página no padrão visual (terceira rodada): configuração, CSS único e o cabeçalho (título escuro e uma
-    linha de subtítulo, sem etiquetas). Carga, premissas e modo ficam na página "Sobre os dados"."""
+def pagina(titulo_aba: str, icone: str, titulo: str, subtitulo: str, sobre: str = "",
+           seletor: str | None = None) -> None:
+    """Abre uma página no padrão visual (terceira rodada): configuração, CSS único, o seletor "Estado" (`seletor`:
+    "regiao" com o Sudeste somado, "uf" só estados, None sem seletor) e o cabeçalho (título escuro e uma linha de
+    subtítulo, sem etiquetas). Carga, premissas e modo ficam na página "Sobre os dados"."""
     from src.painel import ui
     st.set_page_config(page_title=titulo_aba, page_icon=icone, layout="wide")
     ui.estilo()
+    if seletor:
+        seletor_escopo(regiao=seletor == "regiao")
     ui.cabecalho(titulo, subtitulo, sobre)
 
 
@@ -251,9 +324,10 @@ FONTES_CURTAS = {"cnj_serventias": "CNJ, Justiça Aberta", "rais_vinculos": "RAI
                  "ibge_malha": "IBGE, malha municipal"}
 
 
-def fonte_linha(fontes: list[str], extra: str = "") -> str:
+def fonte_linha(fontes: list[str], extra: str = "", uf: str | None = None) -> str:
     """Rodapé de uma página ou gráfico, numa linha: só a fonte e a data de referência (sem versão nem tabela)."""
-    f = consulta("SELECT fonte, data_referencia FROM silver.fonte_metadados WHERE fonte IN (SELECT unnest(?))", [fontes])
+    f = consulta("SELECT fonte, data_referencia FROM silver.fonte_metadados WHERE fonte IN (SELECT unnest(?))"
+                 + _fontes_sql(uf), [fontes])
     ref = dict(zip(f["fonte"], f["data_referencia"]))
     partes = [f"{FONTES_CURTAS[k]} ({_data_ref(ref[k])})" for k in fontes if k in ref and k in FONTES_CURTAS]
     return "Fonte: " + "; ".join(partes) + (f". {extra}" if extra else ".")

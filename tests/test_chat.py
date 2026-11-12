@@ -37,7 +37,7 @@ def con(painel_demo):
 
 def test_ferramentas_devolvem_os_numeros_do_gold(con):
     ref = con.execute("SELECT * FROM gold.fato_mercado_uf WHERE nivel = 'base' AND regra_classe = 'v2' "
-                      "AND cenario_stf = 'mantem'").df().iloc[0]
+                      "AND cenario_stf = 'mantem' AND uf = 'MG'").df().iloc[0]
     r = ferramentas.executar(con, "consultar_numeros", {"analise": "contar_serventias", "uf": "mg"})
     assert r["serventias_ativas"] == ferramentas._br(ref["n_serventias_ativas"], 0) and "premissas v" in r["citar"]
     r = ferramentas.executar(con, "consultar_numeros", {"analise": "passivo_e_obrigadas"})   # UF padrão: MG
@@ -62,14 +62,14 @@ def test_consultas_do_painel_devolvem_o_mesmo_que_as_paginas(con):
     assert ferramentas.executar(con, "consultar_decisoes", {"analise": "situacao_adi"}) == analises.situacao_adi()
     assert "erro" in ferramentas.executar(con, "consultar_analises", {"analise": "previsao_mercado", "ano": 2040})
     assert "erro" in ferramentas.executar(con, "consultar_numeros", {"analise": "tornado"})   # é de outra ferramenta
-    assert "erro" in ferramentas.executar(con, "consultar_mercado", {"analise": "grupos", "uf": "SP"})
+    assert "erro" in ferramentas.executar(con, "consultar_mercado", {"analise": "grupos", "uf": "BA"})   # fora do Sudeste
 
 
 def test_consultar_serventia_por_cns_e_por_municipio(con):
     """D-048 (D-038): o resultado por serventia sai de gold.serventia_publico, pelo CNS ou pelo município, e a soma
     dos prêmios bate com o total da UF."""
-    s = con.execute("SELECT * FROM gold.serventia_publico WHERE premio_emitido > 0 ORDER BY premio_emitido DESC "
-                    "LIMIT 1").df().iloc[0]
+    s = con.execute("SELECT * FROM gold.serventia_publico WHERE premio_emitido > 0 AND uf = 'MG' "
+                    "ORDER BY premio_emitido DESC LIMIT 1").df().iloc[0]
     pedir = lambda **kw: ferramentas.executar(con, "consultar_mercado", {"analise": "consultar_serventia", **kw})  # noqa: E731
     r = pedir(cns=s["cns"])
     assert r["premio_anual"] == ferramentas.brl(s["premio_emitido"]) and r["municipio"] == s["municipio"]
@@ -78,10 +78,12 @@ def test_consultar_serventia_por_cns_e_por_municipio(con):
     assert any(x["cns"] == s["cns"] for x in r["serventias"])
     assert "erro" in pedir(cns="000000")
     assert "erro" in pedir()
-    total, uf = con.execute("SELECT (SELECT sum(premio_emitido) FROM gold.serventia_publico), mercado_premio_emitido "
-                            "FROM gold.fato_mercado_uf WHERE nivel = 'base' AND regra_classe = 'v2' "
-                            "AND cenario_stf = 'mantem'").fetchone()
-    assert total == pytest.approx(uf)
+    for u in ferramentas.UFS_COM_DADOS:   # em cada UF (D-088), a soma por serventia bate com o total
+        linha = con.execute("SELECT (SELECT sum(premio_emitido) FROM gold.serventia_publico WHERE uf = ?), "
+                            "mercado_premio_emitido FROM gold.fato_mercado_uf WHERE nivel = 'base' AND regra_classe = "
+                            "'v2' AND cenario_stf = 'mantem' AND uf = ?", [u, u]).fetchone()
+        if linha:
+            assert linha[0] == pytest.approx(linha[1]), u
 
 
 def test_filtros_uf_sem_dados_e_erros_viram_resposta(con):
@@ -90,7 +92,7 @@ def test_filtros_uf_sem_dados_e_erros_viram_resposta(con):
     for recorte in ("vago", "interino", "Vago (interino)"):
         assert contar(recorte)["recorte"] == "situacao = VAGO"
     assert contar("Classe 3")["recorte"] == "classe = 3"
-    assert "erro" in contar("total", uf="SP")
+    assert "erro" in contar("total", uf="BA")   # fora do estudo completo (o Sudeste, D-088)
     assert "erro" in contar("CNS 012345")
     assert "erro" in ferramentas.executar(con, "nao_existe", {})
     assert "erro" in ferramentas.executar(con, "consultar_numeros", "{json quebrado")
@@ -351,8 +353,8 @@ def test_sem_dado_a_frase_e_a_da_d069(con, monkeypatch):
     """D-069: sem dado ou fora do escopo, "Não foi possível encontrar essa resposta nos dados do painel." (prompt v3,
     perguntas prontas e o detector de "não sei" da avaliação)."""
     prompt = chat.prompt_sistema("c")
-    assert prompt.count(chat.SEM_DADO) == 3 and "Não possuo" not in prompt and llm.config()["versao_prompt"] == 3
-    pronta = {"ferramenta": "consultar_numeros", "argumentos": {"analise": "contar_serventias", "uf": "SP"}}
+    assert prompt.count(chat.SEM_DADO) == 3 and "Não possuo" not in prompt and llm.config()["versao_prompt"] == 4
+    pronta = {"ferramenta": "consultar_numeros", "argumentos": {"analise": "contar_serventias", "uf": "BA"}}
     assert chat.responder_sem_modelo(con, pronta).texto == chat.SEM_DADO
     for frase in (chat.SEM_DADO, "Não consegui encontrar isso nos dados.", "Essa informação não está nos dados do "
                   "painel.", "nao foi possivel localizar essa resposta"):
@@ -597,9 +599,9 @@ def test_pagina_do_chat_descarta_contexto_falso(painel_demo, monkeypatch):
 
 
 def test_mercado_com_municipio_oferece_perguntar_sobre_ele(painel_demo):
-    from streamlit.testing.v1 import AppTest
-    at = AppTest.from_file(str(RAIZ / "app/paginas/2_Onde_está_o_mercado.py"), default_timeout=120).run()
-    at.selectbox(key="f_mun").set_value("Uberaba").run()
+    from apoio_painel import SELETOR_MUNICIPIO_MG, pagina_em_mg
+    at = pagina_em_mg("app/paginas/2_Onde_está_o_mercado.py")
+    at.selectbox(key=SELETOR_MUNICIPIO_MG).set_value("Uberaba").run()
     tela = " ".join(m.value for m in at.markdown)
     links = re.findall(r'href="(Chat\?[^"]+)"', tela)
     assert links and all("municipio=Uberaba" in x and "pagina=Onde%20est%C3%A1%20o%20mercado" in x for x in links)

@@ -70,8 +70,12 @@ def contratos_silver(con: duckdb.DuckDBPyConnection) -> list[Checagem]:
         condicao(con, f"{s}.serventia", "UF válida", f"uf NOT IN {tuple(UFS_VALIDAS)}"),
         condicao(con, f"{s}.serventia", "status no domínio", "status NOT IN ('Ativo', 'Inativo', 'Extinto')"),
         condicao(con, f"{s}.serventia", "situação jurídica no domínio (ativas)",
-                 "status = 'Ativo' AND coalesce(situacao_juridica, '') NOT IN "
+                 "status = 'Ativo' AND coalesce(situacao_juridica, '') <> '' AND situacao_juridica NOT IN "
                  "('PROVIDO', 'VAGO', 'SOB INTERVENÇÃO', 'CONVERSÃO EM DILIGÊNCIA')"),
+        # vazio = a fonte não informou (26 ativas no ES em 2026-10-17; nenhuma em MG): o modelo trata como não vaga
+        _com_detalhe(condicao(con, f"{s}.serventia", "situação jurídica não informada (ativas)",
+                              "status = 'Ativo' AND coalesce(situacao_juridica, '') = ''", "aviso"),
+                     "{n} ativas sem situação jurídica no cadastro; tratadas como não vagas (suposição, D-088)"),
         chave_unica(con, f"{s}.serventia_colaboradores", "cns"),
         condicao(con, f"{s}.serventia_colaboradores", "colaboradores CLT entre 0 e 1000",
                  "informado AND (clt < 0 OR clt > 1000)"),
@@ -181,14 +185,17 @@ def controle_arrecadacao(con: duckdb.DuckDBPyConnection, ufs: list[str] | None =
             WHERE versao = 1 AND semestre IS NOT NULL
               AND cns IN (SELECT cns FROM silver.serventia WHERE status = 'Ativo' AND uf = '{uf}')
             GROUP BY 1""").fetchall())
-        for periodo, ref in ctl["silver"]["totais"].items():
+        if "silver" not in ctl:   # estado novo (D-088): o total do silver nasce da primeira carga dele
+            out.append(Checagem("silver.serventia_arrecadacao", f"total {uf} × controle do silver", "aviso", 1,
+                                f"{uf} ainda sem total do silver registrado (primeira carga); só o BI confere"))
+        for periodo, ref in (ctl.get("silver") or {}).get("totais", {}).items():
             v = float(atual.get(periodo) or 0.0)
             queda = (ref - v) / ref
             out.append(Checagem("silver.serventia_arrecadacao", f"total {uf} {periodo} × controle do silver (queda ≤ "
                                 f"{_pct(ctl['silver']['tolerancia_queda'])})", "erro",
                                 int(queda > ctl["silver"]["tolerancia_queda"]),
                                 f"atual {_mi(v)}; controle {_mi(ref)} ({_pct(-queda, True)})"))
-        for periodo, ref in ctl["bi"]["totais"].items():
+        for periodo, ref in (ctl.get("bi") or {}).get("totais", {}).items():
             v = float(atual.get(periodo) or 0.0)
             dif, tol = v / ref - 1, ctl["bi"]["tolerancias"][periodo]
             out.append(Checagem("silver.serventia_arrecadacao", f"total {uf} {periodo} × BI do CNJ (±{_pct(tol)})",

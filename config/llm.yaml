@@ -32,7 +32,7 @@ historico_mensagens: 6           # fonte: suposição (o chat da D-036 usava as 
                                  # 3 respostas); mais histórico deixa cada chamada maior e mais lenta
 
 prompt_sistema: config/prompts/agente_sistema.md
-versao_prompt: 3                 # mudou o texto do prompt? suba a versão e registre na avaliação (eval/)
+versao_prompt: 4                 # mudou o texto do prompt? suba a versão e registre na avaliação (eval/); v4: o Sudeste e o Brasil (D-088)
                                  # v2 (D-067): "Não possuo esse dado no momento."; sem ferramenta, sem linha de fonte
                                  # v3 (D-069): "Não foi possível encontrar essa resposta nos dados do painel."; o P10–P90
                                  # da projeção não se chama "faixa provável"

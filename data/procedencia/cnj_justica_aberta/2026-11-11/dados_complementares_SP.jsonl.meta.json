@@ -1,0 +1,9 @@
+{
+ "coletado_em": "2026-11-11T23:51:56-03:00",
+ "versao_coletor": "fase1-0.1",
+ "url": "https://justicaabertaapi.cnj.jus.br/v1/api/serventias/{cns}/dados-complementares",
+ "metodo": "GET",
+ "origem_lista": "cnj_justica_aberta\\2026-10-17\\serventias_SP.json",
+ "serventias_ativas": 1559,
+ "sha256": "ef82634e25895dc392d3cc1c00fb794be6f44943c0f1feb279ef3ddfdd7bcded"
+}

@@ -26,7 +26,7 @@ httpx = pytest.importorskip("httpx")
 
 pytestmark = pytest.mark.navegador
 RAIZ = Path(__file__).resolve().parents[1]
-PAGINA = "/Onde_está_o_mercado"
+PAGINA = "/Onde_está_o_mercado?estado=MG"   # o recorte de MG (o padrão é o Sudeste, D-088): estes testes conferem MG
 BH = "3106200"            # Belo Horizonte (código IBGE): o maior déficit de MG
 CONTAGEM = "3118601"      # vizinha de BH, na mesma região intermediária
 UBERABA = "3170107"
@@ -106,18 +106,28 @@ def abrir(nav, largura=1280, altura=900, tema="light", preparar=True):
 def clicar_dentro(page, area_id: str) -> None:
     """Clique de mouse num ponto em que o próprio navegador diz que o município está por cima (o centro da caixa pode
     cair fora, em município côncavo, e a borda pode cair no vizinho)."""
+    # Com `?estado=` o Streamlit roda a página de novo logo depois de abrir e o mapa é redesenhado; no CI (mais lento)
+    # a busca podia cair no meio da troca (PR #30). Tenta de novo por até 15 s; se falhar, diz o que está por cima.
     alvo = page.locator(f'.rd-areas path[data-id="{area_id}"]')
-    alvo.scroll_into_view_if_needed()
-    ponto = alvo.evaluate("""p => {
-        const b = p.getBBox(), m = p.getScreenCTM(), q = p.ownerSVGElement.createSVGPoint(), raiz = p.getRootNode();
-        for (const i of [10, 8, 12, 6, 14, 4, 16, 2, 18]) for (const j of [10, 8, 12, 6, 14, 4, 16, 2, 18]) {
-            q.x = b.x + b.width * i / 20; q.y = b.y + b.height * j / 20;
-            const s = q.matrixTransform(m);
-            if (s.x >= 0 && s.y >= 0 && s.x < innerWidth && s.y < innerHeight && raiz.elementFromPoint(s.x, s.y) === p)
-                return [s.x, s.y];
-        }
-        return null; }""")
-    assert ponto, f"nenhum ponto dentro de {area_id}"
+    ponto, cima = None, None
+    for _ in range(30):
+        alvo.scroll_into_view_if_needed()
+        ponto, cima = alvo.evaluate("""p => {
+            const b = p.getBBox(), m = p.getScreenCTM(), q = p.ownerSVGElement.createSVGPoint(), raiz = p.getRootNode();
+            for (const i of [10, 8, 12, 6, 14, 4, 16, 2, 18]) for (const j of [10, 8, 12, 6, 14, 4, 16, 2, 18]) {
+                q.x = b.x + b.width * i / 20; q.y = b.y + b.height * j / 20;
+                const s = q.matrixTransform(m);
+                if (s.x >= 0 && s.y >= 0 && s.x < innerWidth && s.y < innerHeight && raiz.elementFromPoint(s.x, s.y) === p)
+                    return [[s.x, s.y], null];
+            }
+            q.x = b.x + b.width / 2; q.y = b.y + b.height / 2;
+            const s = q.matrixTransform(m), e = raiz.elementFromPoint(s.x, s.y);
+            return [null, e ? `${e.tagName}.${e.getAttribute('class') || ''}#${e.getAttribute('data-id') || ''} ` +
+                              `em (${Math.round(s.x)}, ${Math.round(s.y)}) de ${innerWidth}×${innerHeight}` : 'nada']; }""")
+        if ponto:
+            break
+        time.sleep(0.5)
+    assert ponto, f"nenhum ponto dentro de {area_id}; no centro: {cima}"
     page.mouse.click(*ponto)
 
 

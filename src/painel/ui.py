@@ -11,7 +11,16 @@ import streamlit as st
 
 ESTILO = Path(__file__).with_name("estilo.css")
 SELOS = {"dado": "dado", "suposicao": "suposição", "projecao": "projeção", "faixa": "faixa provável",
-         "sensibilidade": "sensibilidade", "comparacao": "comparação", "alerta": "alerta"}
+         "sensibilidade": "sensibilidade", "comparacao": "comparação", "alerta": "alerta",
+         "preliminar": "estimativa preliminar", "calibrado": "calibrado"}
+
+
+def aviso_preliminar(nome: str) -> None:
+    """Faixa de aviso dos estados que herdam as premissas de MG (D-081, D-088): todo número do modelo é estimativa
+    preliminar até a calibração do estado."""
+    _html(f'<div class="rd-frase-bloco">{selo("preliminar")} Os números do modelo para {_t(nome)} usam as premissas '
+          "de Minas Gerais, ainda não calibradas para este estado. O cadastro, os empregados e a arrecadação são dados "
+          "do próprio estado.</div>")
 CHAT = "Chat"   # endereço da página do chat (app/paginas/5_Chat.py)
 
 
@@ -130,17 +139,18 @@ def grafico(fig) -> None:
 
 
 def tabela(colunas: list[str], linhas: list[list[str]], numericas: set[int] = frozenset(),
-           mudas: set[int] = frozenset(), so_no_computador: set[int] = frozenset()) -> None:
+           mudas: set[int] = frozenset(), so_no_computador: set[int] = frozenset(), html: set[int] = frozenset()) -> None:
     """Tabela compacta em HTML. `numericas`: índices das colunas de número (alinhadas à direita, classe rd-num);
     `mudas`: colunas de texto secundário; `so_no_computador`: colunas escondidas em tela estreita (≤ 640 px), para a
-    tabela caber no celular sem rolagem lateral."""
+    tabela caber no celular sem rolagem lateral; `html`: colunas que já vêm em HTML seguro (um `selo`), sem escapar."""
     def classes(i):
         return " ".join(c for c, sim in (("rd-num", i in numericas), ("rd-mudo", i in mudas and i not in numericas),
                                          ("rd-so-pc", i in so_no_computador)) if sim)
 
     def cel(i, v):
         classe = classes(i)
-        return f'<td class="{classe}">{_t(v)}</td>' if classe else f"<td>{_t(v)}</td>"
+        conteudo = v if i in html else _t(v)
+        return f'<td class="{classe}">{conteudo}</td>' if classe else f"<td>{conteudo}</td>"
     cab = "".join(f'<th class="rd-so-pc">{_t(c)}</th>' if i in so_no_computador else f"<th>{_t(c)}</th>"
                   for i, c in enumerate(colunas))
     corpo = "".join("<tr>" + "".join(cel(i, v) for i, v in enumerate(ln)) + "</tr>" for ln in linhas)
@@ -167,19 +177,19 @@ def fonte(texto: str) -> None:
     _html(f'<div class="rd-fonte">{_t(texto)}</div>')
 
 
-def link_chat(pergunta: str, pagina: str = "", municipio: str = "") -> str:
+def link_chat(pergunta: str, pagina: str = "", municipio: str = "", uf: str = "") -> str:
     """Endereço relativo da página do chat com a pergunta no parâmetro ?pergunta= (a página do chat precisa
     lê-lo). Link HTML, e não st.page_link: este só acha a página quando o painel roda pela
-    Início, e cada página também roda sozinha (testes). `pagina` e `municipio` levam o contexto (V5, D-082): a página
-    do chat confere os dois antes de usar (src/agent/chat.texto_contexto)."""
-    extra = "".join(f"&{k}={quote(v)}" for k, v in (("pagina", pagina), ("municipio", municipio)) if v)
+    Início, e cada página também roda sozinha (testes). `pagina`, `municipio` e `uf` levam o contexto (V5, D-082;
+    D-088): a página do chat confere os três antes de usar (src/agent/chat.texto_contexto)."""
+    extra = "".join(f"&{k}={quote(v)}" for k, v in (("pagina", pagina), ("municipio", municipio), ("uf", uf)) if v)
     return f"{CHAT}?pergunta={quote(pergunta)}{extra}"
 
 
-def sugestoes(perguntas: list[str], pagina: str = "", municipio: str = "") -> None:
+def sugestoes(perguntas: list[str], pagina: str = "", municipio: str = "", uf: str = "") -> None:
     """De 2 a 3 perguntas para o chat, ligadas ao que a página mostra; cada uma abre o chat com a pergunta e, com
-    `pagina` e `municipio`, com o contexto de onde a pessoa estava (V5, D-082)."""
-    links = "".join(f'<a class="rd-sugestao" href="{_t(link_chat(p, pagina, municipio))}" target="_self">{_t(p)}</a>'
+    `pagina`, `municipio` e `uf`, com o contexto de onde a pessoa estava (V5, D-082)."""
+    links = "".join(f'<a class="rd-sugestao" href="{_t(link_chat(p, pagina, municipio, uf))}" target="_self">{_t(p)}</a>'
                     for p in perguntas)
     _html(f'<div class="rd-sugestoes"><div class="rd-sugestoes-tit">Pergunte ao chat</div>'
           f'<div class="rd-sugestoes-links">{links}</div></div>')

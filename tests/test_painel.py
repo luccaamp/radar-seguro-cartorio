@@ -14,7 +14,7 @@ import duckdb
 import pandas as pd
 import pytest
 
-from apoio_painel import RAIZ
+from apoio_painel import RAIZ, pagina_em_mg
 
 pytestmark = pytest.mark.usefixtures("painel_demo")
 # terceira rodada (D-051): os 10 números foram para "Sobre os dados"; a projeção, para "Para onde vai"
@@ -63,7 +63,7 @@ def test_funcoes_no_formato_das_ferramentas_do_chat(painel_demo):
             json.dumps(r)   # serializável (o chat manda para o modelo)
             assert r["citar"].startswith("Fonte:") and "premissas v" in r["citar"], nome
             assert {"fonte", "carga", "versao_premissas", "data_referencia"} <= set(r), nome
-            assert f(con, "SP").get("erro"), nome   # outra UF: erro, como nas ferramentas atuais
+            assert f(con, "BA").get("erro"), nome   # UF fora do estudo completo (D-088): erro, como no chat
     for nome, f in analises.SEM_CONEXAO.items():
         r = f()
         json.dumps(r)
@@ -75,7 +75,7 @@ def test_ferramentas_do_chat_nao_mudaram():
     ferramentas da Etapa 5; as análises do painel ficam em src/painel/analises.py)."""
     from src.agent import ferramentas
     assert set(ferramentas.PROPRIAS) == {"contar_serventias", "passivo_e_obrigadas", "deficit_e_mercado", "simular",
-                                         "buscar_norma", "consultar_serventia"}
+                                         "buscar_norma", "consultar_serventia", "brasil"}   # brasil: D-088
     assert set(ferramentas.PROPRIAS) <= ferramentas.alcancaveis()
 
 
@@ -102,11 +102,11 @@ def test_d042_bate_com_as_tabelas_e_segue_a_ordem(painel_demo, medida):
     from comum import brl
     from src.painel import analises
     with con_demo(painel_demo) as con:
-        mc = con.execute("SELECT * FROM gold.analise_monte_carlo WHERE variante = 'independentes' AND medida = ?",
-                         [medida]).df().iloc[0]
+        mc = con.execute("SELECT * FROM gold.analise_monte_carlo WHERE variante = 'independentes' AND medida = ? "
+                         "AND uf = 'MG'", [medida]).df().iloc[0]
         col = analises.MEDIDAS_D042[medida][0]
         f = con.execute(f"SELECT nivel, {col} FROM gold.fato_mercado_uf WHERE regra_classe = 'v2' "
-                        "AND cenario_stf = 'mantem'").df().set_index("nivel")[col]
+                        "AND cenario_stf = 'mantem' AND uf = 'MG'").df().set_index("nivel")[col]
         r = analises.faixa_d042(con, "MG", medida)
     v = r["valores"]
     assert (v["p05"], v["p95"], v["p50"]) == (mc["p05"], mc["p95"], mc["p50"])
@@ -120,7 +120,7 @@ def test_d042_bate_com_as_tabelas_e_segue_a_ordem(painel_demo, medida):
     linha = tela[tela.index(f'<td class="rd-num">{r["valor_base"]}</td>'):]
     assert linha.index(r["valor_base"]) < linha.index(r["extremos"])
     if medida == "premio":
-        inicio = html(rodar(INICIO))
+        inicio = html(pagina_em_mg(INICIO))   # o Início abre no Sudeste (D-088); o número de MG, com MG escolhido
         valor, unidade = r["valor_base"].rsplit(" ", 1)
         i_base = inicio.index(f'<div class="rd-num">{valor} <small>{unidade}')
         assert i_base < inicio.index(r["faixa_provavel"]) and r["extremos"] not in inicio
@@ -129,7 +129,7 @@ def test_d042_bate_com_as_tabelas_e_segue_a_ordem(painel_demo, medida):
 def test_sensibilidades_da_d042_batem_com_a_tabela(painel_demo):
     from src.painel import analises
     with con_demo(painel_demo) as con:
-        s = con.execute("SELECT * FROM gold.analise_sensibilidade_metodo").df().set_index("chave")
+        s = con.execute("SELECT * FROM gold.analise_sensibilidade_metodo WHERE uf = 'MG'").df().set_index("chave")
         met = analises.escolhas_metodo_passivo(con, "MG")
         lit = analises.leitura_literal_receita(con, "MG")
     assert {r["chave"]: r["efeito_passivo"] for r in met["tabela"]} == \

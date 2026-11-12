@@ -4,19 +4,23 @@ limitações. O detalhe de qualidade (conferências, contratos, sensibilidades d
 import pandas as pd
 import streamlit as st
 
-from comum import (FONTES_NAO_USADAS, NOMES_FONTE, _data_ref, analise, aviso_modo, carga_em_uso, data_base_passivo,
-                   demonstracao, execucao, md_seguro, num, pagina, pasta_publico, rodape)
+from comum import (FONTES_NAO_USADAS, NOMES_FONTE, _data_ref, analise, avisar_se_preliminar, aviso_modo, carga_em_uso,
+                   data_base_passivo, demonstracao, execucao, md_seguro, nome_escopo, num, pagina, pasta_publico,
+                   rodape, uf_atual)
 from src import publico
+from src.agent.ferramentas import preliminar
 from src.painel import ui
 
 oficiais = analise("numeros_oficiais")
 fontes = analise("qualidade_fontes")
 premio = analise("faixa_d042", medida="premio")
 pagina("Sobre os dados", "ℹ️", "Sobre os dados",
-       "De onde vêm os números, como foram calculados e o que eles ainda não respondem.", sobre="Sobre os dados")
+       "De onde vêm os números, como foram calculados e o que eles ainda não respondem.", sobre="Sobre os dados",
+       seletor="uf")
 aviso_modo()
+avisar_se_preliminar()
 
-st.header("Os 10 números oficiais")
+st.header(f"Os 10 números oficiais de {nome_escopo(uf_atual())}")
 ui.tabela(["#", "Número", "Valor base", "Extremos teóricos", "Origem"],
           [[str(n["numero"]), n["rotulo"], n["valor"], f"{n['minimo']} a {n['maximo']}" if n["minimo"] != n["maximo"]
             else "—", "dado público" if n["natureza"] == "dado" else "suposição do modelo"]
@@ -44,7 +48,8 @@ ui.tabela(["Item", "Valor"], [
     ["Versão das premissas", f"v{int(e.versao_premissas)} (suposições aprovadas pelo autor, em config/premissas/)"],
     ["Regra da Classe 1 (fora da obrigação)", "receita de até R$ 300 mil por semestre (Prov. CNJ 243)"],
     ["Nível das suposições", "base (o mínimo e o máximo dão os extremos teóricos)"],
-    ["Estado", "Minas Gerais"],
+    ["Estado", nome_escopo(uf_atual()) + (" (premissas de MG herdadas como suposição: estimativa preliminar, D-088)"
+                                          if preliminar(uf_atual()) else " (premissas calibradas)")],
     ["Data-base da dívida trabalhista", f"{data_base_passivo()} (art. 4º do Prov. CNJ 227), salário da RAIS sem correção"],
     ["Peso dos cartórios de classe indeterminada", f"{num(100 * e.peso_classe_indeterminada_base, 1)}%"],
     ["Faixa provável", f"P5 a P95 de {premio['sorteios']} simulações das suposições"],

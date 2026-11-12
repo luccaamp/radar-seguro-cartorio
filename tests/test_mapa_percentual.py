@@ -19,13 +19,13 @@ def con(painel_demo):
 def test_percentual_por_municipio_confere_com_a_tabela(con, indicador, coluna):
     from src.painel import analises
     r = analises.percentual_por_municipio(con, "MG", indicador)
-    n_areas = con.execute("SELECT count(*) FROM gold.geo_area_municipio").fetchone()[0]
+    n_areas = con.execute("SELECT count(*) FROM gold.geo_area_municipio WHERE uf = 'MG'").fetchone()[0]
     assert len(r["valores"]) == r["areas"] == n_areas
     assert all(0 <= v <= 1 for v in r["valores"].values())
     bh = con.execute(f"SELECT {coluna} / count(*) FROM gold.serventia_publico WHERE municipio = 'Belo Horizonte'"
                      ).fetchone()[0]
     assert r["valores"]["3106200"] == pytest.approx(bh)
-    total = con.execute(f"SELECT {coluna} / count(*) FROM gold.serventia_publico").fetchone()[0]
+    total = con.execute(f"SELECT {coluna} / count(*) FROM gold.serventia_publico WHERE uf = 'MG'").fetchone()[0]
     assert r["estado"] == f"{100 * total:.1f}%".replace(".", ",")
     assert r["zeros"] == sum(v <= 0 for v in r["valores"].values())
     assert len(r["maiores_com_5_ou_mais"]) == 3 and r["citar"].startswith("Fonte:")
@@ -42,7 +42,7 @@ def test_obrigados_bate_com_o_numero_oficial(con):
 def test_indicador_invalido_e_outra_uf(con):
     from src.painel import analises
     assert "erro" in analises.percentual_por_municipio(con, "MG", "classe_9")
-    assert analises.percentual_por_municipio(con, "SP").get("erro")
+    assert analises.percentual_por_municipio(con, "BA").get("erro")   # fora do estudo completo (D-088)
 
 
 def test_chat_alcanca_o_mapa_em_percentual():
@@ -63,6 +63,7 @@ def test_pagina_troca_o_mapa_pelo_seletor(painel_demo):
     from streamlit.testing.v1 import AppTest
     at = AppTest.from_file(str(RAIZ / MERCADO), default_timeout=120)
     at.session_state["f_indicador"] = "% obrigados"
+    at.session_state["escopo"] = "MG"   # o recorte de MG (o padrão é o Sudeste, D-088)
     at.run()
     assert not at.exception
     d = mapa_componente(at)

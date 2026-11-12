@@ -64,7 +64,9 @@ jobs:
     name: Dados reais (modo completo)
     needs: testes
     runs-on: ubuntu-26.04
-    timeout-minutes: 60
+    # com as 4 UFs do Sudeste (D-088) o job passou de 60 min (pipeline ~12 min + testes ~55 min); o limite do
+    # GitHub para um job no repositório público e gratuito é de 6 h
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.3

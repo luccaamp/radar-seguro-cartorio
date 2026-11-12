@@ -8,7 +8,7 @@ import tomllib
 import streamlit as st
 
 from comum import (aviso_modo, caminho_banco, carga_em_uso, conexao, consulta, demonstracao, execucao, md_seguro, modo,
-                   rodape)
+                   rodape, ufs)
 from src import llm
 from src.agent import chat
 from src.painel import ui
@@ -43,8 +43,8 @@ def _ler_contexto() -> None:
     """Contexto que veio do link de outra página (V5, D-082: Chat?pergunta=…&pagina=…&municipio=…). Os dois valores
     vêm do endereço, que qualquer um edita: só ficam se passarem em chat.texto_contexto (página da lista, município
     que existe no cadastro). Saem do endereço como a pergunta, e valem para a sessão até outro link trocar."""
-    pagina, municipio = st.query_params.get("pagina"), st.query_params.get("municipio")
-    for p in ("pagina", "municipio"):
+    pagina, municipio, uf = (st.query_params.get(p) for p in ("pagina", "municipio", "uf"))
+    for p in ("pagina", "municipio", "uf"):
         if p in st.query_params:
             del st.query_params[p]
     if not (pagina or municipio):
@@ -52,8 +52,9 @@ def _ler_contexto() -> None:
     validos = set(consulta("SELECT municipio FROM gold.dim_municipio")["municipio"])
     pagina = pagina if pagina in chat.PAGINAS_CONTEXTO else None
     municipio = municipio if municipio and chat.texto_contexto(None, municipio, validos) else None
+    uf = uf if uf in ufs() else None
     st.session_state["chat_contexto"] = {"pagina": pagina, "municipio": municipio,
-                                         "texto": chat.texto_contexto(pagina, municipio, validos)}
+                                         "texto": chat.texto_contexto(pagina, municipio, validos, uf, ufs())}
 
 
 def _mostrar_contexto() -> None:

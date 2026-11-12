@@ -13,7 +13,7 @@ import time
 import duckdb
 import pytest
 
-from apoio_painel import RAIZ, mapa_componente
+from apoio_painel import RAIZ, SELETOR_MUNICIPIO_MG, mapa_componente, pagina_em_mg
 
 # dados_reais: lê o banco completo; fora da suíte padrão
 pytestmark = [pytest.mark.dados_reais, pytest.mark.usefixtures("banco_temporario")]
@@ -32,10 +32,9 @@ def db(banco_temporario):
 
 
 def mercado(municipio=None):
-    from streamlit.testing.v1 import AppTest
-    at = AppTest.from_file(MERCADO, default_timeout=120).run()
+    at = pagina_em_mg(MERCADO)
     if municipio:
-        at.selectbox(key="f_mun").set_value(municipio).run()
+        at.selectbox(key=SELETOR_MUNICIPIO_MG).set_value(municipio).run()
     assert not at.exception, at.exception
     return at
 
@@ -56,7 +55,7 @@ def textos_tabelas(at) -> list[str]:
 def test_estado_do_mercado(db):
     at = mercado()
     mapa = mapa_componente(at)
-    areas = db.execute("SELECT * FROM gold.mercado_area_publico").df()
+    areas = db.execute("SELECT * FROM gold.mercado_area_publico WHERE uf = 'MG'").df()   # o banco tem o Sudeste
     assert mapa is not None
     # E3: legenda com título, o zero à parte e as faixas em R$
     assert mapa["tituloLegenda"] and mapa["legenda"][0]["faixa"] == "zero"
@@ -64,7 +63,7 @@ def test_estado_do_mercado(db):
     # E5: sem serventia como fundo (não clicável), com legenda própria
     assert mapa["fundo"] and mapa["legendaFundo"]
     # D-078: uma área por município com serventia, todas com o nome do município; somam o déficit de MG
-    com_serv = db.execute("SELECT count(*) FROM gold.dim_municipio WHERE n_serventias > 0").fetchone()[0]
+    com_serv = db.execute("SELECT count(*) FROM gold.dim_municipio WHERE n_serventias > 0 AND uf = 'MG'").fetchone()[0]
     assert len(mapa["areas"]) == com_serv and (areas["tipo"] == "municipio").all()
     assert sum(a["valor"] for a in mapa["areas"]) == pytest.approx(float(areas["valor_descoberto"].sum()), rel=0.005)
     # D-083: o zero tem cor neutra, fora da escala
@@ -77,16 +76,18 @@ def test_estado_do_mercado(db):
 
 
 @pytest.mark.parametrize("municipio_sql, rotulo", [
-    ("SELECT municipio FROM gold.dim_municipio ORDER BY n_serventias DESC LIMIT 1", "grande"),
-    ("SELECT municipio FROM gold.dim_municipio WHERE n_serventias BETWEEN 3 AND 5 ORDER BY municipio LIMIT 1", "medio"),
-    ("SELECT municipio FROM gold.dim_municipio WHERE n_serventias BETWEEN 1 AND 2 ORDER BY municipio LIMIT 1", "pequeno")])
+    ("SELECT municipio FROM gold.dim_municipio WHERE uf = 'MG' ORDER BY n_serventias DESC LIMIT 1", "grande"),
+    ("SELECT municipio FROM gold.dim_municipio WHERE uf = 'MG' AND n_serventias BETWEEN 3 AND 5 ORDER BY municipio "
+     "LIMIT 1", "medio"),
+    ("SELECT municipio FROM gold.dim_municipio WHERE uf = 'MG' AND n_serventias BETWEEN 1 AND 2 ORDER BY municipio "
+     "LIMIT 1", "pequeno")])
 def test_filtro_de_municipio_destaque_com_contexto(municipio_sql, rotulo, db):
     """U1: MG inteiro como contexto, destaque com contorno forte, zoom na intermediária; o pequeno também com os números
     dele (D-078)."""
     nome = db.execute(municipio_sql).fetchone()[0]
     at = mercado(municipio=nome)
     mapa, geral = mapa_componente(at), mapa_componente(mercado())
-    cod = db.execute("SELECT cod_ibge FROM gold.dim_municipio WHERE municipio = ?", [nome]).fetchone()[0]
+    cod = db.execute("SELECT cod_ibge FROM gold.dim_municipio WHERE municipio = ? AND uf = 'MG'", [nome]).fetchone()[0]
     assert mapa["selecionado"] == str(cod)                    # destaque com contorno forte (classe rd-sel no JS)
     assert len(mapa["areas"]) > 300                           # contexto: MG inteiro
     largura = lambda m: float(m["viewBox"].split()[2])        # noqa: E731
@@ -98,23 +99,26 @@ def test_filtro_de_municipio_destaque_com_contexto(municipio_sql, rotulo, db):
 
 
 # ------------------------------------------------------------------ consistência numérica
-def test_somas_por_classe_e_situacao_fecham_o_total(db):
+@pytest.mark.parametrize("uf", ["MG", "SP", "RJ", "ES"])   # cada UF do Sudeste fecha o próprio total (D-088)
+def test_somas_por_classe_e_situacao_fecham_o_total(db, uf):
     geral = db.execute("SELECT * FROM gold.fato_mercado_uf WHERE regra_classe = 'v2' AND nivel = 'base' "
-                       "AND cenario_stf = 'mantem'").df().iloc[0]
+                       "AND cenario_stf = 'mantem' AND uf = ?", [uf]).df().iloc[0]
     for filtro in ("classe", "situacao"):
         s = db.execute("SELECT * FROM gold.mercado_filtro_uf WHERE filtro = ? AND regra_classe = 'v2' "
-                       "AND nivel = 'base'", [filtro]).df()
+                       "AND nivel = 'base' AND uf = ?", [filtro, uf]).df()
         for col in ("n_serventias_ativas", "clt", "passivo_todas", "passivo_universo", "valor_descoberto", "n_deficit"):
             assert s[col].sum() == pytest.approx(geral[col], rel=1e-6), (filtro, col)
     a = db.execute("SELECT sum(n_serventias_ativas) FROM gold.mercado_filtro_uf WHERE filtro = 'atribuicao' "
-                   "AND regra_classe = 'v2' AND nivel = 'base'").fetchone()[0]
+                   "AND regra_classe = 'v2' AND nivel = 'base' AND uf = ?", [uf]).fetchone()[0]
     assert a >= geral["n_serventias_ativas"]   # uma serventia tem várias atribuições (explicado na tela)
 
 
 def test_faixas_ordenadas_em_cada_filtro(db):
     df = db.execute("SELECT * FROM gold.mercado_filtro_uf").df()
-    assert len(df) == 13 * 6   # todos os recortes em toda regra e nível (D-078)
-    for (visao, regra), g in df.groupby(["visao", "regra_classe"]):
+    from src.transform import visoes
+    # todos os recortes (14 desde o "não informada", D-088) em toda regra e nível (D-078), por UF
+    assert len(df) == len(visoes.filtros()) * 6 * df["uf"].nunique()
+    for (uf, visao, regra), g in df.groupby(["uf", "visao", "regra_classe"]):
         g = g.set_index("nivel")
         for col in ("passivo_todas", "passivo_universo", "valor_descoberto", "mercado_importancia_segurada",
                     "mercado_premio_emitido"):
@@ -149,12 +153,11 @@ def test_simulador_nos_tres_cenarios(cenario):
 
 def test_desempenho_da_troca_de_filtro():
     """Troca de município: medida no AppTest (inclui renderizar); alvo de ~2 s."""
-    from streamlit.testing.v1 import AppTest
-    at = AppTest.from_file(MERCADO, default_timeout=120).run()
+    at = pagina_em_mg(MERCADO)
     tempos = []
     for nome in ("Belo Horizonte", "Uberaba", "Todos"):
         t0 = time.perf_counter()
-        at.selectbox(key="f_mun").set_value(nome).run()
+        at.selectbox(key=SELETOR_MUNICIPIO_MG).set_value(nome).run()
         tempos.append(time.perf_counter() - t0)
     print("tempos de troca de município (s):", [round(t, 2) for t in tempos])
     assert max(tempos) < 4.0

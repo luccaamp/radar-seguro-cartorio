@@ -76,15 +76,16 @@ def test_tabelas_publicas_reproduzem_o_motor_completo(cenarios):
     from apoio_painel import BANCO_REAL
     from src import estado
     from src.motor import calcular_serventias, premissas_nivel
-    from src.transform.gold import carregar_insumos
+    from src.transform.gold import carregar_insumos, insumos_da_uf
     regras = yaml.safe_load(open("config/regras_classificacao.yaml", encoding="utf-8"))
     lim_base = regras["versoes"][regras["versao_base"]]["limites"]
-    with duckdb.connect(str(BANCO_REAL), read_only=True) as con:
-        ins = carregar_insumos(con)
+    with duckdb.connect(str(BANCO_REAL), read_only=True) as con:   # só MG: o banco tem o Sudeste (D-088)
+        ins = insumos_da_uf(carregar_insumos(con), "MG")
         semente, _ = estado.premissas_vigentes(con)
-        var = con.sql("SELECT * FROM gold.simulador_variantes").df()
-        fx = con.sql("SELECT * FROM gold.simulador_base_classe").df()
-        peso = dict(con.execute("SELECT regra_classe, peso_classe_indeterminada_base FROM gold.execucao").fetchall())
+        var = con.sql("SELECT * FROM gold.simulador_variantes WHERE uf = 'MG'").df()
+        fx = con.sql("SELECT * FROM gold.simulador_base_classe WHERE uf = 'MG'").df()
+        peso = dict(con.execute("SELECT regra_classe, peso_classe_indeterminada_base FROM gold.execucao "
+                                "WHERE uf = 'MG'").fetchall())
     rng = random.Random(19)
     padrao = var[(var.premissa_variada == "base") & (var.regra_classe == "v2") & (var.metodo_rateio == "por_empregados_cnj")]
     linhas = [padrao.iloc[0]] + [var.iloc[rng.randrange(len(var))] for _ in range(5)]

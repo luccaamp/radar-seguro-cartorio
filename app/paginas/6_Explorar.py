@@ -11,8 +11,8 @@ import pandas as pd
 import streamlit as st
 import yaml
 
-from comum import (RAIZ, _br, aprox, aviso_estimativa, brl, conexao, consulta, demonstracao, md_seguro, num, pagina,
-                   pct, rodape, universo_txt)
+from comum import (RAIZ, _br, aprox, avisar_se_preliminar, aviso_estimativa, brl, conexao, consulta, demonstracao,
+                   do_escopo, md_seguro, num, pagina, pct, rodape, uf_atual, universo_txt)
 from src import cenarios, estado
 from src.analise.sensibilidade import faixas_suposicoes
 from src.model import simulador
@@ -20,15 +20,17 @@ from src.model.premissas import PremissaInvalida, com_novo_base
 from src.model.rateio import METODOS
 from src.motor import calcular_serventias, peso_indeterminada, premissas_nivel, resumo_mercado
 from src.painel import explorar, graficos, ui
-from src.transform.gold import carregar_insumos
+from src.transform.gold import carregar_insumos, insumos_da_uf
 
 # modo demonstração (D-029): sem dados internos, recalcula a partir de gold.simulador_* (src/model/simulador.py)
 DEMO = demonstracao()
 
-pagina("Explorar · Simule você mesmo", "🎛️", "E se as suposições fossem outras?",
+pagina("Explorar · Simule você mesmo", "🎛️", f"E se as suposições fossem outras {do_escopo(uf_atual())}?",
        "Mude a taxa do seguro, a adesão e o cenário do STF e veja o prêmio, a faixa provável e o que mais pesa "
-       "mudarem na hora. Com os controles no padrão, os números são os do painel.", sobre="Explorar")
+       "mudarem na hora. Com os controles no padrão, os números são os do painel.", sobre="Explorar", seletor="uf")
+UF = uf_atual()   # um estado por vez (D-088)
 aviso_estimativa()
+avisar_se_preliminar(UF)
 
 CONFIG = RAIZ / "config"
 REGRAS = yaml.safe_load((CONFIG / "regras_classificacao.yaml").read_text(encoding="utf-8"))
@@ -46,16 +48,22 @@ ROT_MET = {"por_empregados_cnj": "Por empregados (CNJ) — padrão", "arrecadaca
 
 
 @st.cache_resource
-def insumos():
+def _insumos_todos():
     return carregar_insumos(conexao())
+
+
+@st.cache_resource
+def insumos(uf: str):
+    """Os insumos do modelo da UF (as serventias e os vínculos da RAIS dela; D-088). Cache por UF."""
+    return insumos_da_uf(_insumos_todos(), uf)
 
 
 @st.cache_data
 def calcular(regra: str, metodo: str, ajustes_json: str, versao: int) -> pd.DataFrame:
     semente, _ = estado.premissas_vigentes(conexao())
     lim = REGRAS["versoes"][regra]["limites"]
-    p = premissas_nivel(semente, "base", peso_indeterminada(insumos().serventias, lim), json.loads(ajustes_json))
-    return calcular_serventias(insumos(), p, lim, metodo, limites_faixa=LIM_BASE)[0]
+    p = premissas_nivel(semente, "base", peso_indeterminada(insumos(UF).serventias, lim), json.loads(ajustes_json))
+    return calcular_serventias(insumos(UF), p, lim, metodo, limites_faixa=LIM_BASE)[0]
 
 
 LIM_BASE = REGRAS["versoes"][REGRAS["versao_base"]]["limites"]  # classe das faixas de déficit (D-019)
@@ -66,16 +74,16 @@ def peso_indet(regra: str) -> float:
     """Peso da classe indeterminada no nível base: calculado das serventias (completo) ou lido do gold (demonstração,
     mesmo valor, gravado pela carga em gold.execucao)."""
     if DEMO:
-        return float(consulta("SELECT peso_classe_indeterminada_base FROM gold.execucao WHERE regra_classe = ?",
-                              [regra]).iloc[0, 0])
-    return peso_indeterminada(insumos().serventias, REGRAS["versoes"][regra]["limites"])
+        return float(consulta("SELECT peso_classe_indeterminada_base FROM gold.execucao WHERE regra_classe = ? "
+                              "AND uf = ?", [regra, UF]).iloc[0, 0])
+    return peso_indeterminada(insumos(UF).serventias, REGRAS["versoes"][regra]["limites"])
 
 
 pb = premissas_nivel(semente, "base", peso_indet(REGRAS["versao_base"]))
 P = semente["premissas"]
-VARIANTES = consulta("SELECT * FROM gold.simulador_variantes") if DEMO else None
+VARIANTES = consulta("SELECT * FROM gold.simulador_variantes WHERE uf = ?", [UF]) if DEMO else None
 # projeção 2026–27 (notebook 07): os totais por faixa de déficit só existem nas cargas que os gravam
-PREV = consulta("SELECT * FROM gold.analise_previsao WHERE bloco = 'mercado'")
+PREV = consulta("SELECT * FROM gold.analise_previsao WHERE bloco = 'mercado' AND uf = ?", [UF])
 ANOS_PROJ = sorted({int(a) for a in PREV["periodo"]
                     if explorar.totais_projetados(PREV, {}, int(a), PROJ_CFG["leitura_limite_principal"],
                                                   PROJ_CFG["variante_principal"]) is not None})
@@ -299,7 +307,7 @@ def totais_demo(regra: str, metodo: str) -> dict | None:
     t = {k: linha[k] for k in ("n_serventias_ativas", "clt", "passivo_todas", "n_universo", "n_indeterminadas_universo",
                                "passivo_universo")}
     faixas = consulta("SELECT faixa, peso_com_passivo, passivo_ponderado FROM gold.simulador_base_classe "
-                      "WHERE variante_id = ?", [int(linha["variante_id"])])
+                      "WHERE variante_id = ? AND uf = ?", [int(linha["variante_id"]), UF])
     for f in faixas.itertuples():
         t[f"peso_com_passivo_{f.faixa}"] = f.peso_com_passivo
         t[f"passivo_ponderado_{f.faixa}"] = f.passivo_ponderado
@@ -339,7 +347,7 @@ except PremissaInvalida as e:
     st.stop()
 
 ref = consulta("SELECT * FROM gold.fato_mercado_uf WHERE nivel = 'base' AND regra_classe = 'v2' AND cenario_stf = 'mantem'"
-               ).iloc[0]
+               " AND uf = ?", [UF]).iloc[0]
 
 
 def delta(atual: float, referencia: float, fmt=brl, minimo: float = 0.5) -> str | None:
@@ -363,7 +371,7 @@ ui.resposta("Com essas suposições, as seguradoras receberiam por ano, em prêm
 if proj:
     st.caption(md_seguro(f"**Projeção para {ano}** ({LIM_CURTO[limite_proj]}): o universo e o passivo por faixa "
                          "são o valor central da projeção do notebook 07 (receita de 2025 × crescimento projetado de "
-                         "MG × desvio sorteado de cada cartório), com o passivo de 2025. A faixa por sorteio abaixo "
+                         f"{UF} × desvio sorteado de cada cartório), com o passivo de 2025. A faixa por sorteio abaixo "
                          "mede só as suposições do prêmio, não a incerteza da receita projetada (essa está em "
                          "\"Para onde vai\")."))
 

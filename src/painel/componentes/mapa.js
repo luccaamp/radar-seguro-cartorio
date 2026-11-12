@@ -90,7 +90,8 @@ export function moverVista(v, dx, dy, inteiro) {
 // Quantos nomes mostrar: o número de base, crescendo com o zoom em relação à vista inicial (até ROTULOS_MAX); 0 fica 0.
 export function maxRotulosNaVista(base, inicial, vista) {
   if (!base) return 0;
-  return Math.min(ROTULOS_MAX, Math.max(base, Math.round(base * (inicial.w / vista.w))));
+  // o teto vale para o crescimento com o zoom; uma base maior (os 27 estados no mapa do Brasil, D-088) fica como veio
+  return Math.min(Math.max(ROTULOS_MAX, base), Math.max(base, Math.round(base * (inicial.w / vista.w))));
 }
 
 export function rotulosNaVista(candidatos, v) {

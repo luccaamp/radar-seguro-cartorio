@@ -53,3 +53,23 @@ def test_nenhum_codigo_de_uf_fixo_nos_coletores():
     for arq in (RAIZ / "src" / "ingest").glob("*.py"):
         texto = arq.read_text(encoding="utf-8")
         assert not re.search(r"""["']MG["']""", texto), arq.name
+
+
+def test_snapshots_por_uf_sobrepoem_so_a_uf_e_mg_continua_igual():
+    """Um estado que entra depois tem as coletas dele em outra data (D-088): `snapshots_por_uf` muda só aquela UF; MG
+    (sem entrada própria) lê as mesmas pastas de antes, e os colaboradores vêm da pasta do cadastro."""
+    from src.transform.silver import snapshots_da_uf
+    esc = {"snapshots": {"ibge": "2026-10-18", "cnj_justica_aberta": "2026-10-17", "cnj_arrecadacoes": "2026-10-18"},
+           "snapshots_por_uf": {"SP": {"ibge": "2026-11-11", "cnj_arrecadacoes": "2026-11-11",
+                                       "cnj_colaboradores": "2026-11-11"}}}
+    mg, sp = snapshots_da_uf(esc, "MG"), snapshots_da_uf(esc, "SP")
+    assert mg == {**esc["snapshots"], "cnj_colaboradores": "2026-10-17"}
+    assert sp["ibge"] == sp["cnj_arrecadacoes"] == sp["cnj_colaboradores"] == "2026-11-11"
+    assert sp["cnj_justica_aberta"] == "2026-10-17"   # o cadastro continua o mesmo de MG
+
+
+def test_totais_do_bi_dos_estados_novos_tem_fonte():
+    for uf in ("SP", "RJ", "ES"):
+        e = estados_config.estado(uf)
+        bi = e["controle_arrecadacao"]["bi"]
+        assert bi["fonte"] and set(bi["totais"]) == {"2025-1", "2025-2"} and e["premissas"] == "herdada"

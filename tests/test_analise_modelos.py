@@ -450,15 +450,15 @@ def test_sensibilidade_reproduz_a_base_e_o_t7(_copia_real):
     from src.analise import dados
     from src.model import simulador
     from src.motor import calcular_serventias, premissas_nivel, resumo_mercado
-    from src.transform.gold import carregar_insumos
+    from src.transform.gold import carregar_insumos, insumos_da_uf
     sem = estado.ler_semente()
     lim = yaml.safe_load((RAIZ / "config" / "regras_classificacao.yaml").read_text(encoding="utf-8"))["versoes"]["v2"]
-    with duckdb.connect(str(_copia_real["copia"]), read_only=True) as con:
-        peso = con.execute("SELECT peso_classe_indeterminada_base FROM gold.execucao WHERE regra_classe = 'v2'"
-                           ).fetchone()[0]
+    with duckdb.connect(str(_copia_real["copia"]), read_only=True) as con:   # só MG: o banco tem o Sudeste (D-088)
+        peso = con.execute("SELECT peso_classe_indeterminada_base FROM gold.execucao WHERE regra_classe = 'v2' "
+                           "AND uf = 'MG'").fetchone()[0]
         premio = con.execute("SELECT mercado_premio_emitido FROM gold.fato_mercado_uf WHERE nivel = 'base' AND "
-                             "regra_classe = 'v2' AND cenario_stf = 'mantem'").fetchone()[0]
-        sv, ins = dados.serventias(con), carregar_insumos(con)
+                             "regra_classe = 'v2' AND cenario_stf = 'mantem' AND uf = 'MG'").fetchone()[0]
+        sv, ins = dados.serventias(con, uf="MG"), insumos_da_uf(carregar_insumos(con), "MG")
     p = premissas_nivel(sem, "base", peso)
     recalc = resumo_mercado(calcular_serventias(ins, p, lim["limites"], limites_faixa=lim["limites"])[0], p, CENARIOS,
                             "mantem")

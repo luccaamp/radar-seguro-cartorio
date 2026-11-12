@@ -9,7 +9,8 @@ import re
 import duckdb
 import pytest
 
-from apoio_painel import HISTORIA, MERCADO, PAGINAS, RAIZ, SIMULADOR, SOBRE, mapa_componente
+from apoio_painel import (HISTORIA, MERCADO, PAGINAS, RAIZ, SELETOR_MUNICIPIO_MG, SIMULADOR, SOBRE, mapa_componente,
+                          pagina_em_mg)
 
 pytestmark = pytest.mark.usefixtures("painel_demo")
 
@@ -98,7 +99,7 @@ def test_simulador_padrao_igual_ao_cenario_base_do_painel(painel_demo):
     at = rodar(SIMULADOR)
     from comum import aprox, brl
     ref = ler(painel_demo, "SELECT * FROM gold.fato_mercado_uf WHERE nivel = 'base' AND regra_classe = 'v2' "
-                           "AND cenario_stf = 'mantem'").iloc[0]
+                           "AND cenario_stf = 'mantem' AND uf = 'MG'").iloc[0]   # o Simule abre em MG
     m = {x.label: x for x in at.metric}
     assert m["Obrigadas (universo)"].value == aprox(ref["n_universo"])
     assert m["Passivo dos obrigados"].value == brl(ref["passivo_universo"])
@@ -122,7 +123,8 @@ def test_simulador_uma_premissa_do_passivo_usa_a_grade(painel_demo):
     fap.set_value(2.0).run()
     assert not at.exception and not at.warning
     var = ler(painel_demo, "SELECT passivo_universo FROM gold.simulador_variantes WHERE regra_classe = 'v2' AND "
-                           "metodo_rateio = 'por_empregados_cnj' AND premissa_variada = 'fap' AND fap = 2.0")
+                           "metodo_rateio = 'por_empregados_cnj' AND premissa_variada = 'fap' AND fap = 2.0 "
+                           "AND uf = 'MG'")
     assert len(var) == 1
     assert [m.value for m in at.metric if m.label == "Passivo dos obrigados"] == [brl(var.iloc[0, 0])]
 
@@ -191,10 +193,11 @@ def test_mercado_municipio_pequeno_aparece_sozinho(painel_demo):
     """D-078 (D-038, fase 2): no modo demonstração, um município com 1 serventia mostra os números dele e entra no
     mapa com área própria, sem aviso de agregação."""
     d = ler(painel_demo, """SELECT d.municipio, d.cod_ibge FROM gold.dim_municipio d
-                            WHERE d.n_serventias = 1 ORDER BY d.municipio LIMIT 1""").iloc[0]
-    com_serv = int(ler(painel_demo, "SELECT count(*) FROM gold.dim_municipio WHERE n_serventias > 0").iloc[0, 0])
-    at = rodar(MERCADO)
-    at.selectbox(key="f_mun").set_value(d["municipio"]).run()
+                            WHERE d.n_serventias = 1 AND d.uf = 'MG' ORDER BY d.municipio LIMIT 1""").iloc[0]
+    com_serv = int(ler(painel_demo, "SELECT count(*) FROM gold.dim_municipio WHERE n_serventias > 0 AND uf = 'MG'"
+                       ).iloc[0, 0])
+    at = pagina_em_mg(MERCADO)
+    at.selectbox(key=SELETOR_MUNICIPIO_MG).set_value(d["municipio"]).run()
     assert not at.exception
     assert not any("agregad" in i.value for i in at.info)
     tela = html(at)

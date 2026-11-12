@@ -43,7 +43,7 @@ def test_pipeline_com_saida_redirecionada(tmp_path):
     env["PYTHONIOENCODING"] = "cp1252"
     with open(log, "wb") as saida:
         r = subprocess.run([sys.executable, "pipeline.py", "--a-partir-de", "silver"], cwd=copia, env=env,
-                           stdout=saida, stderr=subprocess.STDOUT, timeout=600)
+                           stdout=saida, stderr=subprocess.STDOUT, timeout=1800)  # 4 UFs (D-088): > 10 min
     texto = log.read_bytes().decode("utf-8", errors="replace")
     assert r.returncode == 0, texto[-2000:]
     assert "≥" in texto and "contratos do gold" in texto

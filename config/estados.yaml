@@ -35,3 +35,59 @@ MG:
       tolerancias: {"2025-1": 0.01, "2025-2": 0.03}
       motivo_tolerancia_2025_2: BI incompleto no 2º sem/2025 (168 CNS de MG ausentes em 18/10/2026)
   premissas: vigente          # config/premissas/ (versão vigente); calibradas para MG
+
+# Sudeste (D-088, 2026-11-12): SP, RJ e ES entram na camada 2 com as premissas HERDADAS de MG (`fonte: suposição`,
+# D-081) até a calibração de cada estado. Os totais do BI saem do mesmo cálculo que deu os de MG (soma de "Valor
+# arrecadação" do CSV nacional do BI, períodos de 01/01 a 30/06/2025 e de 01/07 a 31/12/2025, nos CNS ativos do cadastro
+# de 2026-10-17 da UF; o cálculo reproduz exatamente os totais de MG acima). Sem total do silver: o primeiro é o da
+# carga do Sudeste. Tolerâncias do BI iguais às de MG; o BI cobre menos cartórios nos estados novos (avisos).
+SP:
+  nome: São Paulo
+  cod_ibge: 35
+  fonte_cod_ibge: IBGE, API de localidades (servicodados.ibge.gov.br/api/v1/localidades/estados), coleta de 2026-11-11
+  pacote_rais: RAIS_VINC_PUB_SP.7z
+  fonte_pacote_rais: ftp://ftp.mtps.gov.br/pdet/microdados/RAIS/2025/ (listagem conferida em 2026-11-12; 1.107.305.918 bytes)
+  apelidos_municipios: {}
+  normas_locais: []            # não levantadas ainda (fonte: suposição: só as normas nacionais)
+  controle_arrecadacao:
+    bi:
+      fonte: CNJ, Painel de Dados Estatísticos das Serventias Extrajudiciais (exportação manual em 2026-10-18)
+      data_referencia: 2025-12-31
+      totais: {"2025-1": 5052160959.98, "2025-2": 5806940679.74}
+      tolerancias: {"2025-1": 0.01, "2025-2": 0.03}
+      cobertura_bi: 1.552 e 1.509 dos 1.559 CNS ativos (1º e 2º sem/2025)
+  premissas: herdada           # as de MG, como suposição, até a calibração (D-081)
+RJ:
+  nome: Rio de Janeiro
+  cod_ibge: 33
+  fonte_cod_ibge: IBGE, API de localidades (servicodados.ibge.gov.br/api/v1/localidades/estados), coleta de 2026-11-11
+  pacote_rais: RAIS_VINC_PUB_MG_ES_RJ.7z
+  fonte_pacote_rais: ftp://ftp.mtps.gov.br/pdet/microdados/RAIS/2025/ (o mesmo pacote de MG, já no bronze)
+  apelidos_municipios:
+    # Conferido pela IA comparando a grafia da fonte com a lista oficial do IBGE (D-088, 2026-11-11).
+    PARATI: 3303807            # CNPJ (Receita); IBGE: "Paraty"
+  normas_locais: []            # não levantadas ainda (fonte: suposição: só as normas nacionais)
+  controle_arrecadacao:
+    bi:
+      fonte: CNJ, Painel de Dados Estatísticos das Serventias Extrajudiciais (exportação manual em 2026-10-18)
+      data_referencia: 2025-12-31
+      totais: {"2025-1": 1195145371.64, "2025-2": 1410684013.71}
+      tolerancias: {"2025-1": 0.01, "2025-2": 0.03}
+      cobertura_bi: 377 e 370 dos 457 CNS ativos (1º e 2º sem/2025; o BI cobre bem menos que em MG)
+  premissas: herdada
+ES:
+  nome: Espírito Santo
+  cod_ibge: 32
+  fonte_cod_ibge: IBGE, API de localidades (servicodados.ibge.gov.br/api/v1/localidades/estados), coleta de 2026-11-11
+  pacote_rais: RAIS_VINC_PUB_MG_ES_RJ.7z
+  fonte_pacote_rais: ftp://ftp.mtps.gov.br/pdet/microdados/RAIS/2025/ (o mesmo pacote de MG, já no bronze)
+  apelidos_municipios: {}
+  normas_locais: []            # não levantadas ainda (fonte: suposição: só as normas nacionais)
+  controle_arrecadacao:
+    bi:
+      fonte: CNJ, Painel de Dados Estatísticos das Serventias Extrajudiciais (exportação manual em 2026-10-18)
+      data_referencia: 2025-12-31
+      totais: {"2025-1": 354173159.64, "2025-2": 385037533.78}
+      tolerancias: {"2025-1": 0.01, "2025-2": 0.03}
+      cobertura_bi: 306 e 294 dos 332 CNS ativos (1º e 2º sem/2025)
+  premissas: herdada
