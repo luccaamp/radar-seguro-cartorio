@@ -155,13 +155,19 @@ def test_mapa_desenha_as_areas_e_a_legenda_sem_erro(nav):
     assert page.locator(".rd-fundo path").count() >= 1
     assert page.locator(".rd-mapa-legenda .rd-mapa-item").count() >= 3
     assert page.locator(".rd-areas path.rd-f-zero").count() > 0                  # o zero neutro aparece
-    # V3 (D-089): a divisa fina de MG por cima, os outros estados em cinza por baixo
-    assert page.locator(".rd-divisas path").count() == 1 and page.locator(".rd-vizinhos path").count() >= 1
+    # V3 (D-089): as divisas finas dos 4 estados por cima (a de MG, em foco, mais forte); os municípios de SP, RJ e ES
+    # em cinza (clicáveis: trocam o foco); os outros estados em cinza por baixo
+    assert page.locator(".rd-divisas path").count() == 4 and page.locator(".rd-divisas path.rd-foco").count() == 1
+    assert page.locator(".rd-fora path").count() > 700 and page.locator(".rd-vizinhos path").count() >= 1
     etiquetas = page.locator(".rd-destaque text").all_text_contents()   # texto de SVG não tem innerText
     assert [e.split(" · ")[0] for e in etiquetas] == ["▲ Belo Horizonte", "▲ Uberlândia", "▲ Uberaba"], etiquetas
     assert all(" · R$ " in e for e in etiquetas)                              # os 3 maiores déficits, com o valor
     assert page.locator(".rd-rotulos > text[data-id]").count() > 3            # e mais nomes, sem se sobrepor
-    assert page.locator(".rd-mapa-info").inner_text().startswith("DÉFICIT · MINAS GERAIS")
+    assert page.locator(".rd-mapa-info").inner_text().startswith("FALTA COBRIR · MINAS GERAIS")
+    # V3: a barra (busca e estados) e, ao lado, os 10 que mais faltam cobrir
+    assert page.locator(".rd-mapa-busca input").count() == 1
+    assert page.locator(".rd-mapa-ufs button[aria-pressed='true']").inner_text() == "MG"
+    assert page.locator(".rd-mapa-rank button").count() == 10
     # cada nome cai sobre o próprio município (o ponto vem de ponto_interno, em Python)
     for t in page.locator(".rd-rotulos > text[data-id]").all()[:8]:
         alvo = t.get_attribute("data-id")
@@ -169,7 +175,7 @@ def test_mapa_desenha_as_areas_e_a_legenda_sem_erro(nav):
         assert t.evaluate("""(t, id) => { const b = t.getBoundingClientRect(), r = t.getRootNode();
             t.style.display = 'none'; const e = r.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2);
             t.style.display = ''; return e && e.getAttribute('data-id') === id; }""", alvo), alvo
-    assert page.locator(".rd-mapa-resumo").inner_text().startswith("Os maiores déficits estão em Belo Horizonte")
+    assert page.locator(".rd-mapa-resumo").inner_text().startswith("O que falta cobrir está concentrado em Belo Horizonte")
     assert_letra_legivel(page)
     assert not erros, erros
     page.close()
@@ -177,12 +183,12 @@ def test_mapa_desenha_as_areas_e_a_legenda_sem_erro(nav):
 
 def test_clique_escolhe_o_municipio_e_enquadra(nav):
     page, erros = abrir(nav)
-    caixa_mg = page.locator(".rd-mapa svg").get_attribute("viewBox")
+    caixa_mg = page.locator(".rd-mapa-svg").get_attribute("viewBox")
     clicar_dentro(page, BH)
     escolhido(page, "Belo Horizonte")
     page.locator(f'.rd-areas path.rd-sel[data-id="{BH}"]').wait_for()
-    assert page.locator('[data-testid="stSelectbox"] input[role="combobox"]').first.input_value() == "Belo Horizonte"
-    assert page.locator(".rd-mapa svg").get_attribute("viewBox") != caixa_mg       # zoom na região
+    assert page.locator(".rd-mapa-lado h2").inner_text() == "Belo Horizonte"     # V3: os números dele ao lado
+    assert page.locator(".rd-mapa-svg").get_attribute("viewBox") != caixa_mg       # zoom na região
     assert_letra_legivel(page)                                                     # com zoom, a letra não encolhe
     # outro clique, num vizinho que fica no enquadramento, troca o município (o gatilho não fica preso no primeiro)
     clicar_dentro(page, CONTAGEM)
@@ -194,8 +200,8 @@ def test_clique_escolhe_o_municipio_e_enquadra(nav):
 
 def test_celular_390_px_sem_rolagem_horizontal_e_clique(nav):
     page, erros = abrir(nav, 390, 844)
-    largura_svg = page.locator(".rd-mapa svg").evaluate("e => e.getBoundingClientRect().width")
-    assert 300 < largura_svg <= 390
+    largura_svg = page.locator(".rd-mapa-svg").evaluate("e => e.getBoundingClientRect().width")
+    assert 280 < largura_svg <= 390                     # dentro do cartão do mapa (V3), com a margem dele
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
     clicar_dentro(page, UBERABA)
     escolhido(page, "Uberaba")

@@ -216,7 +216,10 @@ def dados_mapa(geometrias: dict[str, dict], valores: dict[str, float | None], no
                legenda_sem: str = "", rotular_todas: bool = False, estados: dict[str, dict] | None = None,
                nomes_estados: dict[str, str] | None = None, vizinhos: dict[str, dict] | None = None,
                info: dict[str, str] | None = None, texto_zero: str = "Zero", unidade_legenda: str = "",
-               destaques: int = 0) -> dict[str, Any]:
+               destaques: int = 0, regiao: dict[str, dict] | None = None, fora: dict[str, dict] | None = None,
+               fora_info: dict[str, dict] | None = None, dicas: dict[str, dict] | None = None,
+               lado: dict | None = None, busca: list[dict] | None = None, ufs: list[dict] | None = None,
+               escopo_regiao: str = "", regiao_ativa: bool = True, fonte: str = "") -> dict[str, Any]:
     """O que o componente recebe (JSON): viewBox, áreas com caminho, faixa, nome e texto do balão, áreas de fundo
     (não clicáveis), legenda, o selecionado e os rótulos. `enquadrar` limita o viewBox a essas áreas (zoom num
     recorte); `viewBoxInteiro` é o estado inteiro, para o botão `rotulo_inteiro` e os limites do zoom e do arrastar.
@@ -229,21 +232,33 @@ def dados_mapa(geometrias: dict[str, dict], valores: dict[str, float | None], no
     cada estado (com mais de um, o JS mostra só os nomes dos estados até o zoom aproximar); `vizinhos` são as outras
     UFs, em cinza, só como referência (não entram no enquadramento); `info` é o cartão do total ({titulo, valor,
     nota}); `destaques` dá o valor em R$ aos N primeiros rótulos, que viram etiquetas; a legenda traz
-    quantas áreas há em cada faixa (`n`, com `unidade_legenda`) e o zero com `texto_zero`."""
+    quantas áreas há em cada faixa (`n`, com `unidade_legenda`) e o zero com `texto_zero`.
+
+    Foco num estado da região (V3, D-089): `regiao` são os outros estados da região (divisa e nome, sem cor); `fora`
+    ({id: geometria}) são os municípios deles, em cinza e clicáveis (o clique troca o foco), com `fora_info`
+    ({id: {uf, nome, dica}}); o mapa abre enquadrado no estado e o zoom vai até a região inteira. `dicas` ({id: {uf,
+    valor, sub, linhas}}) é o balão de cada município; `lado` é o painel ao lado (a lista dos maiores ou o município
+    escolhido), `busca` ([{id, nome, uf}]) a busca por nome, `ufs` ([{uf, ativo}]) os botões dos estados, e
+    `escopo_regiao`/`regiao_ativa` o botão "Ver o … inteiro"; `fonte` vai dentro do cartão, abaixo da legenda. Todo
+    texto já vem escrito daqui (o JS não calcula nem formata dado)."""
     fundo = list(fundo)
-    proj = Projecao(list(geometrias.values()) + fundo)
+    fora = fora or {}
+    fora_info = fora_info or {}
+    dicas = dicas or {}
+    proj = Projecao(list(geometrias.values()) + fundo + list(fora.values()))
     cor, legenda = faixas({a: valores.get(a) for a in geometrias}, fmt=fmt_legenda, teto_fixo=teto_fixo)
     legenda[0] = {**legenda[0], "texto": texto_zero}
     contagem = {f: list(cor.values()).count(f) for f in set(cor.values())}
     legenda = [{**item, "n": contagem.get(item["faixa"], 0)} for item in legenda]
     nomes_estados = nomes_estados or {}
 
-    def _estado(uf: str, g: dict, ativo: bool) -> dict:
+    def _estado(uf: str, g: dict, tipo: str) -> dict:
+        """tipo: "ativo" (o recorte), "regiao" (outro estado da região: divisa e nome) ou "vizinho" (só a sigla)."""
         x, y = proj.xy(*ponto_interno(g))
-        return {"uf": uf, "nome": nomes_estados.get(uf, uf) if ativo else uf, "d": proj.caminho(g), "x": x, "y": y,
-                "ativo": ativo}
+        return {"uf": uf, "nome": nomes_estados.get(uf, uf) if tipo != "vizinho" else uf, "d": proj.caminho(g),
+                "x": x, "y": y, "ativo": tipo == "ativo", "regiao": tipo != "vizinho"}
     no_recorte = [a for a in (enquadrar or []) if a in geometrias]
-    alvo = [geometrias[a] for a in no_recorte]
+    alvo = [geometrias[a] for a in no_recorte] or (list(geometrias.values()) if fora else [])
     caixa = proj.caixa(alvo) if alvo else (0.0, 0.0, proj.largura, proj.altura)
     sel = selecionado if selecionado in geometrias else None
     if rotulos is None:
@@ -267,7 +282,9 @@ def dados_mapa(geometrias: dict[str, dict], valores: dict[str, float | None], no
         "viewBoxInteiro": " ".join(_n(v) for v in (0.0, 0.0, proj.largura, proj.altura)),
         "rotuloInteiro": rotulo_inteiro,
         "areas": [{"id": a, "d": proj.caminho(g), "faixa": cor[a], "valor": _valor(valores.get(a)),
-                   "nome": nomes.get(a, a), "texto": textos.get(a, "")} for a, g in geometrias.items()],
+                   "nome": nomes.get(a, a), "texto": textos.get(a, ""), **({"dica": dicas[a]} if a in dicas else {})}
+                  for a, g in geometrias.items()],
+        "fora": [{"id": a, "d": proj.caminho(g), **fora_info.get(a, {})} for a, g in fora.items()],
         "fundo": [{"d": proj.caminho(g)} for g in fundo],
         "selecionado": sel,
         # áreas sem valor (o mapa do Brasil: as UFs sem o estudo do seguro) ganham um item na legenda, em hachura
@@ -281,10 +298,17 @@ def dados_mapa(geometrias: dict[str, dict], valores: dict[str, float | None], no
         "rotulosInteiro": _rotulos(maiores_estado),
         "maxRotulosInteiro": N_ROTULOS if rotulos > 0 else 0,
         "tamanhoRotulo": round(caixa[2] * TAMANHO_ROTULO, 1),
-        "estados": [_estado(u, g, True) for u, g in (estados or {}).items()]
-                   + [_estado(u, g, False) for u, g in (vizinhos or {}).items()],
+        "estados": [_estado(u, g, "ativo") for u, g in (estados or {}).items()]
+                   + [_estado(u, g, "regiao") for u, g in (regiao or {}).items()]
+                   + [_estado(u, g, "vizinho") for u, g in (vizinhos or {}).items()],
         "info": info or None,
         "unidadeLegenda": unidade_legenda,
+        "lado": lado or None,
+        "busca": busca or [],
+        "ufs": ufs or [],
+        "escopoRegiao": escopo_regiao,
+        "regiaoAtiva": regiao_ativa,
+        "fonte": fonte,
     }
 
 
@@ -317,16 +341,26 @@ def _registrar():
     return _componente
 
 
-def mapa_clicavel(dados: dict[str, Any], key: str, ao_escolher: Callable[[str], None] | None = None) -> str | None:
+def mapa_clicavel(dados: dict[str, Any], key: str, ao_escolher: Callable[[str | None], None] | None = None,
+                  ao_estado: Callable[[str], None] | None = None) -> str | None:
     """Mostra o mapa e devolve o código da área clicada nesta execução (ou None). `ao_escolher` roda antes da página
-    ser executada de novo, então pode mudar o valor de outro widget (por exemplo, o seletor de município)."""
+    ser executada de novo, então pode mudar o estado da página (o município escolhido); recebe None quando o painel
+    ao lado pede a lista de volta ("Ver os 10…"). `ao_estado` recebe o recorte pedido pelos botões dos estados, por
+    "Ver o … inteiro" ou pelo clique num município de outro estado (só os de `ufs` e `escopoRegiao` valem)."""
     import streamlit as st
-    ids = [a["id"] for a in dados["areas"]]
+    ids = [a["id"] for a in dados["areas"]] + [a["id"] for a in dados.get("fora", [])]
+    recortes = {u["uf"] for u in dados.get("ufs", [])} | ({dados["escopoRegiao"]} if dados.get("escopoRegiao") else set())
 
     def _ao_mudar() -> None:
-        escolhido = clique_valido((st.session_state.get(key) or {}).get("municipio"), ids)
-        if escolhido and ao_escolher:
+        valor = (st.session_state.get(key) or {}).get("municipio")
+        escolhido = clique_valido(valor, ids)
+        if ao_escolher and (escolhido or valor == ""):
             ao_escolher(escolhido)
 
-    resultado = _registrar()(data=dados, key=key, on_municipio_change=_ao_mudar)
+    def _ao_mudar_estado() -> None:
+        pedido = (st.session_state.get(key) or {}).get("estado")
+        if ao_estado and isinstance(pedido, str) and pedido in recortes:
+            ao_estado(pedido)
+
+    resultado = _registrar()(data=dados, key=key, on_municipio_change=_ao_mudar, on_estado_change=_ao_mudar_estado)
     return clique_valido(getattr(resultado, "municipio", None), ids)

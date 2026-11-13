@@ -108,3 +108,10 @@ def pagina_em_mg(caminho: str):
 
 
 SELETOR_MUNICIPIO_MG = "f_mun_MG"
+
+
+def escolher_municipio(at, nome: str, chave: str = SELETOR_MUNICIPIO_MG):
+    """Escolhe o município como o clique ou a busca do mapa fazem (V3, D-089: a página não tem mais o seletor; a
+    escolha fica na sessão, em `f_mun_<recorte>`, com o rótulo do município) e roda a página de novo."""
+    at.session_state[chave] = nome
+    return at.run()

@@ -1416,3 +1416,16 @@ Medida do "antes", usada na comparação final dos slides. O autor já fez a med
 - **Erro da IA:** no primeiro V3, "as cores da main" foram lidas como só os tons, e as faixas por quantil ficaram (`docs/erros_ia.md`).
 - **Não conferido:** o link público (depois do merge e do Reboot).
 - **Próximo passo:** PR com auto-merge; Reboot pelo autor; conferência no link público; PR C (textos e navegação).
+
+## 2026-11-13 (2) — PR #32 juntado e começo do "repositório limpo"
+- **O que foi feito:** PR #32 (mapa V3) juntado às 07:53 UTC, com os 3 jobs verdes depois da correção do teste da legenda (`96288ef`). No link público, o mapa do Sudeste já é o do V3, sem precisar de Reboot. Com o plano do repositório limpo aprovado pelo autor: cópia completa em `C:\radar_arquivo\repositorio_2026-11-13\` (espelho do git, anexos e textos das 4 Releases, lista dos PRs e dados do repositório); reescrita dos e-mails com o `git-filter-repo` numa cópia, sem Gmail nenhum no resultado; este clone passou a fazer commits com o e-mail noreply.
+- **Decisões:** nada foi publicado nem renomeado; a parte dos documentos parou por causa do achado abaixo.
+- **Limitações encontradas:** `docs/qa/analises` (61 gráficos e o JSON dos testes de métodos, lido por `src/analise/classificacao.py`) não é documento interno; 72 arquivos de código citam os documentos internos em comentários.
+- **Próximo passo:** o autor decide o que fazer com os documentos, o `CLAUDE.md`, o OK da Letícia e o pedido de renomear o repositório; depois, o repositório novo e o PR C.
+
+## 2026-11-13 (3) — O resto do V3 no painel (PR B2) e o repositório fica como está
+- **O que foi feito:** o autor desistiu de trocar o repositório (a limpeza é só para deixá-lo apresentável) e mostrou que o painel não estava igual ao V3. Comparação item por item e correção: barra do mapa com a busca, os botões dos estados e "Ver o Sudeste inteiro"; painel ao lado com os 10 maiores ou o município escolhido; foco num estado com os municípios dos outros em cinza e clicáveis; balão com números; textos, legenda e fonte do V3 dentro do cartão. Os seletores "Estado" e "Município" e a tabela dos 10 maiores saíram desta página. `src/painel/mapa.py` (`dados_mapa` com `regiao`, `fora`, `dicas`, `lado`, `busca`, `ufs`, `fonte`; `mapa_clicavel` com o gatilho `estado`), `componentes/mapa.js` e `mapa.css`, a página e os testes (`tests/apoio_painel.escolher_municipio` no lugar do seletor).
+- **Decisões:** o resumo diz "Dos N municípios com cartório, em Z…" em vez de "Todos os N municípios têm cartório" (há 2 sem cartório no mapa). Os 3 números do alto e o "Mostrar no mapa" ficaram.
+- **Conferência:** suíte padrão, `-m navegador` 8 passed, 30 testes de JavaScript; painel local no modo demonstração (Sudeste, MG, RJ, busca, "Ver os 10…", "Ver o Sudeste inteiro", clique em outro estado, balão, tema escuro, celular de 375 px).
+- **Erros da IA:** o painel saiu sem partes do V3 e foi dito "igual ao V3"; testes acrescentados por heredoc (`docs/erros_ia.md`).
+- **Próximo passo:** PR com auto-merge, Reboot pelo autor, conferência no link público lado a lado com o V3; depois o PR C.

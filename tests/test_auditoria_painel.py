@@ -13,7 +13,7 @@ import time
 import duckdb
 import pytest
 
-from apoio_painel import RAIZ, SELETOR_MUNICIPIO_MG, mapa_componente, pagina_em_mg
+from apoio_painel import RAIZ, escolher_municipio, mapa_componente, pagina_em_mg
 
 # dados_reais: lê o banco completo; fora da suíte padrão
 pytestmark = [pytest.mark.dados_reais, pytest.mark.usefixtures("banco_temporario")]
@@ -34,7 +34,7 @@ def db(banco_temporario):
 def mercado(municipio=None):
     at = pagina_em_mg(MERCADO)
     if municipio:
-        at.selectbox(key=SELETOR_MUNICIPIO_MG).set_value(municipio).run()
+        escolher_municipio(at, municipio)
     assert not at.exception, at.exception
     return at
 
@@ -69,8 +69,9 @@ def test_estado_do_mercado(db):
     assert sum(a["valor"] for a in mapa["areas"]) == pytest.approx(float(areas["valor_descoberto"].sum()), rel=0.005)
     # D-083: o zero tem cor neutra, fora da escala
     assert all((a["faixa"] == "zero") == (a["valor"] == 0) for a in mapa["areas"])
-    # ranking: os 10 municípios com mais déficit, numa tabela abaixo do mapa
-    assert html(at).count("º</td>") == 10
+    # ranking: os 10 municípios com mais déficit, no painel ao lado do mapa (V3, D-089), do maior para o menor
+    lista = mapa["lado"]["lista"]
+    assert [i["pos"] for i in lista] == [f"{n}º" for n in range(1, 11)] and lista[0]["frac"] == 1
     # E7, E8: números dos cartões no formato do painel
     for v in re.findall(r'<div class="rd-num">([^<]+)<', html(at)):
         assert "R$ 0,00" not in v and not v.endswith("…")
@@ -158,7 +159,7 @@ def test_desempenho_da_troca_de_filtro():
     tempos = []
     for nome in ("Belo Horizonte", "Uberaba", "Todos"):
         t0 = time.perf_counter()
-        at.selectbox(key=SELETOR_MUNICIPIO_MG).set_value(nome).run()
+        escolher_municipio(at, nome)
         tempos.append(time.perf_counter() - t0)
     print("tempos de troca de município (s):", [round(t, 2) for t in tempos])
     assert max(tempos) < 4.0

@@ -89,4 +89,67 @@ button.rd-mapa-item:hover, button.rd-mapa-item[aria-pressed="true"] { background
 button.rd-mapa-item[aria-pressed="true"] { outline: 1px solid var(--linha-2, #cbd0c8); }
 .rd-mapa-item i { display: block; width: 100%; height: 12px; border-radius: 2px; border: 1px solid var(--mapa-borda, rgba(70, 80, 76, .5)); }
 .rd-mapa-n { font-size: 10px; color: var(--mudo, #5f6a65); }
+.rd-mapa-fonte { margin: 10px 0 0; font-size: 11.5px; color: var(--mudo, #5f6a65); }
+/* V3: o mapa num cartão e, ao lado, a lista dos maiores ou o município escolhido; abaixo de 960 px, um embaixo do outro */
+.rd-mapa-grade { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+@media (max-width: 960px) { .rd-mapa-grade { grid-template-columns: minmax(0, 1fr); } }
+.rd-mapa-c, .rd-mapa-lado { background: var(--superficie, #ffffff); border: 1px solid var(--linha, #e1e4de);
+  border-radius: 10px; min-width: 0; }
+.rd-mapa-c { padding: 14px; }
+.rd-mapa-grade svg { max-height: 640px; }
+.rd-mapa-controles { align-items: center; margin-bottom: 10px; }
+.rd-mapa-ufs { display: inline-flex; gap: 4px; }
+.rd-mapa-ufs .rd-mapa-botao[aria-pressed="true"] { background: var(--texto, #16201d); color: var(--superficie, #ffffff);
+  border-color: var(--texto, #16201d); }
+.rd-mapa-busca { position: relative; flex: 1 1 220px; max-width: 320px; }
+.rd-mapa-busca input { width: 100%; box-sizing: border-box; font: inherit; font-size: 13.5px; padding: 7px 10px 7px 32px;
+  border: 1px solid var(--linha-2, #cbd0c8); border-radius: 8px; background: var(--superficie, #ffffff);
+  color: var(--texto, #16201d); }
+.rd-mapa-busca input:focus-visible { outline: 2px solid var(--acento, #0f6b5c); outline-offset: 2px; }
+.rd-mapa-busca svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px;
+  stroke: var(--mudo, #5f6a65); fill: none; stroke-width: 2; }
+.rd-mapa-sug { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px;
+  list-style: none; background: var(--superficie, #ffffff); border: 1px solid var(--linha-2, #cbd0c8); border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(22, 32, 29, .14); max-height: 260px; overflow: auto; }
+.rd-mapa-sug li { padding: 6px 8px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between;
+  gap: 8px; font-size: 13.5px; }
+.rd-mapa-sug li span { color: var(--mudo, #5f6a65); font-size: 12px; }
+.rd-mapa-sug li[aria-selected="true"], .rd-mapa-sug li:hover { background: var(--superficie-2, #f7f8f5); }
+/* municípios dos outros estados da região (foco num estado): cinza, como os vizinhos; o clique troca o foco */
+.rd-fora path { fill: var(--mapa-vizinho, #e6e8e4); stroke: var(--mapa-vizinho-borda, #cfd3cc); stroke-width: .4;
+  vector-effect: non-scaling-stroke; cursor: pointer; }
+.rd-divisas path.rd-foco { stroke-width: 1.5; stroke-opacity: 1; }
+/* balão do município (V3) */
+.rd-mapa-dica { position: absolute; z-index: 6; pointer-events: none; min-width: 210px; max-width: 260px; padding: 10px 12px;
+  background: var(--superficie, #ffffff); color: var(--texto, #16201d); border: 1px solid var(--linha-2, #cbd0c8);
+  border-radius: 10px; box-shadow: 0 6px 24px rgba(22, 32, 29, .14); font-size: 12.5px; }
+.rd-mapa-dica.rd-fixa { pointer-events: auto; }
+.rd-mapa-dica b { display: block; font-size: 14px; }
+.rd-mapa-dica-uf { color: var(--mudo, #5f6a65); font-size: 12px; }
+.rd-mapa-dica-v { font-size: 18px; font-weight: 700; margin: 4px 0 2px; font-variant-numeric: tabular-nums; }
+.rd-mapa-dica dl { display: grid; grid-template-columns: auto auto; gap: 1px 12px; margin: 6px 0 0;
+  font-variant-numeric: tabular-nums; }
+.rd-mapa-dica dt { color: var(--mudo, #5f6a65); }
+.rd-mapa-dica dd { margin: 0; text-align: right; }
+.rd-mapa-dica .rd-mapa-botao { margin-top: 8px; width: 100%; }
+/* painel ao lado (V3): a lista dos maiores com barras, ou os números do município escolhido */
+.rd-mapa-lado { padding: 14px 16px; }
+.rd-mapa-lado h2 { margin: 0 0 2px; font-size: 16px; line-height: 1.3; font-weight: 700; color: var(--texto, #16201d); }
+.rd-mapa-ctx { margin: 0 0 10px; color: var(--mudo, #5f6a65); font-size: 12.5px; }
+.rd-mapa-rank { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.rd-mapa-rank button { width: 100%; display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 2px 8px;
+  align-items: center; padding: 6px; border: 0; background: none; font: inherit; font-size: 13.5px; color: inherit;
+  text-align: left; cursor: pointer; border-radius: 6px; }
+.rd-mapa-rank button:hover { background: var(--superficie-2, #f7f8f5); }
+.rd-mapa-rank button:focus-visible { outline: 2px solid var(--acento, #0f6b5c); outline-offset: 1px; }
+.rd-pos { color: var(--mudo, #5f6a65); font-size: 12px; font-variant-numeric: tabular-nums; }
+.rd-nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rd-vl { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 13px; }
+.rd-bar { grid-column: 2 / 4; height: 4px; border-radius: 2px; background: var(--linha, #e1e4de); overflow: hidden; }
+.rd-bar i { display: block; height: 100%; background: var(--mapa-4, #2178a8); }
+.rd-mapa-det-v { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; margin: 6px 0 0; }
+.rd-mapa-det dl { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; margin: 12px 0;
+  font-variant-numeric: tabular-nums; font-size: 13.5px; }
+.rd-mapa-det dt { color: var(--texto-2, #47524e); }
+.rd-mapa-det dd { margin: 0; font-weight: 600; text-align: right; }
 @media (prefers-reduced-motion: reduce) { .rd-areas path { transition: none; } }

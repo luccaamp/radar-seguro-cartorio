@@ -9,7 +9,7 @@ import re
 import duckdb
 import pytest
 
-from apoio_painel import (HISTORIA, MERCADO, PAGINAS, RAIZ, SELETOR_MUNICIPIO_MG, SIMULADOR, SOBRE, mapa_componente,
+from apoio_painel import (HISTORIA, MERCADO, PAGINAS, RAIZ, SIMULADOR, SOBRE, escolher_municipio, mapa_componente,
                           pagina_em_mg)
 
 pytestmark = pytest.mark.usefixtures("painel_demo")
@@ -45,7 +45,9 @@ def test_pagina_roda_com_faixa_e_carga_no_rodape(pagina):
     import comum
     assert comum.modo() == "demonstracao"
     if pagina in HISTORIA and pagina != SOBRE:
-        textos = html(at) + "".join(a["text"] for f in figuras(at) for a in f["layout"].get("annotations", []))
+        mapa = mapa_componente(at) or {}   # no Mercado, a fonte fica dentro do cartão do mapa (V3, D-089)
+        textos = (html(at) + "".join(a["text"] for f in figuras(at) for a in f["layout"].get("annotations", []))
+                  + mapa.get("fonte", ""))
         assert "Fonte: CNJ, Justiça Aberta (" in textos
         return
     assert any("Modo demonstração" in c.value and "Como rodar" in c.value for c in at.caption)
@@ -197,7 +199,7 @@ def test_mercado_municipio_pequeno_aparece_sozinho(painel_demo):
     com_serv = int(ler(painel_demo, "SELECT count(*) FROM gold.dim_municipio WHERE n_serventias > 0 AND uf = 'MG'"
                        ).iloc[0, 0])
     at = pagina_em_mg(MERCADO)
-    at.selectbox(key=SELETOR_MUNICIPIO_MG).set_value(d["municipio"]).run()
+    escolher_municipio(at, d["municipio"])
     assert not at.exception
     assert not any("agregad" in i.value for i in at.info)
     tela = html(at)

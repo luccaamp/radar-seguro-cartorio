@@ -599,9 +599,8 @@ def test_pagina_do_chat_descarta_contexto_falso(painel_demo, monkeypatch):
 
 
 def test_mercado_com_municipio_oferece_perguntar_sobre_ele(painel_demo):
-    from apoio_painel import SELETOR_MUNICIPIO_MG, pagina_em_mg
-    at = pagina_em_mg("app/paginas/2_Onde_está_o_mercado.py")
-    at.selectbox(key=SELETOR_MUNICIPIO_MG).set_value("Uberaba").run()
+    from apoio_painel import escolher_municipio, pagina_em_mg
+    at = escolher_municipio(pagina_em_mg("app/paginas/2_Onde_está_o_mercado.py"), "Uberaba")
     tela = " ".join(m.value for m in at.markdown)
     links = re.findall(r'href="(Chat\?[^"]+)"', tela)
     assert links and all("municipio=Uberaba" in x and "pagina=Onde%20est%C3%A1%20o%20mercado" in x for x in links)

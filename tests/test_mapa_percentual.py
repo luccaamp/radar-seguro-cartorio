@@ -73,8 +73,8 @@ def test_pagina_troca_o_mapa_pelo_seletor(painel_demo):
     at.session_state["f_indicador"] = "Déficit (R$)"
     at.run()
     d = mapa_componente(at)
-    assert d["tituloLegenda"] == "Déficit (falta cobrir) no município, R$ · Minas Gerais"
+    assert d["tituloLegenda"] == "Falta cobrir (déficit) no município, R$ · Minas Gerais"
     # V3 (D-089): o total num cartão, o zero explicado, as faixas sem o "R$" e os 3 maiores com o valor
-    assert d["info"]["titulo"] == "Déficit · Minas Gerais" and d["legenda"][0]["texto"] == "Zero: nenhum obrigado"
+    assert d["info"]["titulo"] == "Falta cobrir · Minas Gerais" and d["legenda"][0]["texto"] == "Zero: nenhum obrigado"
     assert not any("R$" in x["texto"] for x in d["legenda"]) and sum(1 for r in d["rotulos"] if "valor" in r) == 3
     assert [e["uf"] for e in d["estados"] if e["ativo"]] == ["MG"]
