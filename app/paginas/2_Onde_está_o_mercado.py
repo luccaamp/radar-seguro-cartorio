@@ -17,11 +17,14 @@ from comum import (REGIAO, analise, avisar_se_preliminar, brl, consulta, do_esco
                    num, pagina, pct, ufs)
 from src.agent.ferramentas import preliminar
 from src.painel import brasil, ui
+from src.painel.brasil import do_estado
 from src.painel.mapa import brl_curto, dados_mapa, mapa_clicavel, pct_curto
 
 pagina("Onde está o mercado", "🗺️", "Onde está o dinheiro?",
        "O déficit de cobertura, que é o que vira seguro, se concentra nas maiores cidades. Escolha um município para "
-       "ver a parte dele.", sobre="Onde está o mercado", seletor="regiao")
+       "ver a parte dele.", sobre="Onde está o mercado")
+# V3 (D-089): o estado e o município se escolhem no próprio mapa (botões dos estados e busca, na barra dele); a página
+# guarda a escolha na sessão: `escopo` (comum.escopo) e `f_mun_<recorte>` (o rótulo do município, ou "Todos")
 TOPO = 10   # municípios na lista do ranking
 METRICA = "valor_descoberto"
 E = escopo()
@@ -51,7 +54,6 @@ municipios = tab(f"""SELECT m.cod_ibge, m.uf, m.nome, m.regiao_imediata, m.regia
                             d.n_serventias
                      FROM silver.municipio_ibge m JOIN gold.geo_area_municipio a USING (cod_ibge)
                      JOIN gold.dim_municipio d USING (cod_ibge) WHERE m.{EM} ORDER BY m.nome, m.uf""", (UFS,))
-sem = tab(f"SELECT municipio, uf FROM gold.dim_municipio WHERE n_serventias = 0 AND {EM}", (UFS,))
 # ranking do recorte: o déficit de cada município com cartório, do maior para o menor (no Sudeste, refeito sobre os
 # 4 estados; num estado, o mesmo de gold.ranking_municipio_publico)
 ranking = (areas[["area_id", "area_nome", "uf", METRICA]].rename(columns={"area_nome": "municipio", METRICA: "valor"})
@@ -68,18 +70,14 @@ def rotulo(nome: str, uf: str) -> str:
 
 
 municipios["rotulo"] = [rotulo(n, u) for n, u in zip(municipios["nome"], municipios["uf"])]
-sem_rotulos = [rotulo(n, u) for n, u in zip(sem["municipio"], sem["uf"])]
 
-# ------------------------------------------------------------------ o filtro principal
-c_filtro, _ = st.columns([4, 8])
-escolhido = c_filtro.selectbox("Município", ["Todos"] + sorted(municipios["rotulo"].tolist() + sem_rotulos),
-                               key=f"f_mun_{E}")
-mun = (municipios[municipios["rotulo"] == escolhido].iloc[0]
-       if escolhido not in ("Todos", *sem_rotulos) else None)
+# ------------------------------------------------------------------ o município escolhido (no mapa: clique ou busca)
+escolhido = st.session_state.get(f"f_mun_{E}", "Todos")
+com_area = set(areas["area_id"])
+achados = municipios[(municipios["rotulo"] == escolhido) & municipios["area_id"].isin(com_area)]
+mun = achados.iloc[0] if len(achados) else None
 foco = areas[areas["area_id"] == mun["area_id"]].iloc[0] if mun is not None else None
 mun_nome = mun["nome"] if mun is not None else None
-if escolhido in sem_rotulos:
-    st.info(f"{escolhido} não tem cartório no cadastro do CNJ. Mostrando o mapa inteiro.")
 
 # ------------------------------------------------------------------ até 3 números
 if foco is None:
@@ -100,14 +98,29 @@ else:
               ui.kpi("Cartórios no município", num(foco["n_serventias"]), "ativos no cadastro do CNJ")], 3)
 
 
-# ------------------------------------------------------------------ mapa clicável (largura inteira; D-083)
-# clicar num município faz o mesmo que escolhê-lo no seletor acima (o seletor continua sendo o caminho pelo teclado)
+# ------------------------------------------------------------------ mapa clicável (V3, D-089): mapa num cartão e, ao lado,
+# a lista dos maiores ou o município escolhido. Clique, busca e "Ver os 10…" mudam o município; os botões dos estados,
+# "Ver o Sudeste inteiro" e o clique num município de outro estado mudam o recorte.
+TODAS = ufs()
+todas = tab("SELECT area_id, area_nome, uf FROM gold.mercado_area_publico WHERE uf IN (SELECT unnest(?))", (TODAS,))
+uf_da_area = dict(zip(todas["area_id"], todas["uf"]))
+nome_da_area = dict(zip(todas["area_id"], todas["area_nome"]))
 rotulo_da_area = dict(zip(municipios["area_id"], municipios["rotulo"]))
 
 
-def _escolher(area_id: str) -> None:
-    if area_id in rotulo_da_area:
+def _escolher(area_id: str | None) -> None:
+    if area_id is None:                       # "Ver os 10 que mais faltam cobrir"
+        st.session_state[f"f_mun_{E}"] = "Todos"
+    elif area_id in rotulo_da_area:
         st.session_state[f"f_mun_{E}"] = rotulo_da_area[area_id]
+    elif area_id in uf_da_area:               # a busca achou um município de outro estado: o foco vai para lá
+        u = uf_da_area[area_id]
+        st.session_state["escopo"] = u
+        st.session_state[f"f_mun_{u}"] = nome_da_area[area_id]
+
+
+def _recorte(pedido: str) -> None:
+    st.session_state["escopo"] = pedido
 
 
 ids_int = (list(municipios.loc[(municipios["regiao_intermediaria"] == mun["regiao_intermediaria"])
@@ -124,8 +137,47 @@ def malha_ufs() -> dict[str, dict]:
 
 
 UF_GEO = malha_ufs()
-estados_mapa = dict(estados={u: UF_GEO[u] for u in UFS if u in UF_GEO}, nomes_estados={u: nome_escopo(u) for u in UFS},
-                    vizinhos={u: g for u, g in UF_GEO.items() if u not in UFS}, unidade_legenda="mun.")
+OUTRAS = [u for u in TODAS if u not in UFS]   # num estado: os outros da região, em cinza e clicáveis
+geo_fora = geometrias("SELECT area_id, geometria FROM gold.geo_mapa_publico WHERE uf IN (SELECT unnest(?))",
+                      (OUTRAS,)) if OUTRAS else {}
+DE_UF = {u: do_estado(u, nome_escopo(u)) for u in TODAS}               # "de Minas Gerais", "do Rio de Janeiro"
+estados_mapa = dict(estados={u: UF_GEO[u] for u in UFS if u in UF_GEO},
+                    regiao={u: UF_GEO[u] for u in OUTRAS if u in UF_GEO},
+                    nomes_estados={u: nome_escopo(u) for u in TODAS},
+                    vizinhos={u: g for u, g in UF_GEO.items() if u not in TODAS}, unidade_legenda="mun.",
+                    fora=geo_fora,
+                    fora_info={a: {"uf": uf_da_area[a], "dica": {"uf": nome_escopo(uf_da_area[a]),
+                                                                 "sub": f"Clique para ver só {nome_escopo(uf_da_area[a])}"}}
+                               for a in geo_fora},
+                    busca=[{"id": r.area_id, "nome": r.area_nome, "uf": r.uf}
+                           for r in todas.sort_values(["area_nome", "uf"]).itertuples()],
+                    ufs=[{"uf": u, "nome": nome_escopo(u), "ativo": u == E} for u in TODAS],
+                    escopo_regiao=REGIAO, regiao_ativa=E == REGIAO)
+# o painel ao lado (V3): os 10 que mais faltam cobrir no recorte, ou os números do município escolhido
+pos_da_area = dict(zip(ranking["area_id"], ranking["posicao"]))
+total_regiao = float(tab("SELECT sum(valor_descoberto) AS v FROM gold.mercado_area_publico WHERE uf IN "
+                         "(SELECT unnest(?))", (TODAS,))["v"].iloc[0])
+total_uf = areas.groupby("uf")[METRICA].sum().to_dict()
+DO_RECORTE = "do Sudeste" if E == REGIAO else DE_UF[E]
+if foco is None:
+    topo = ranking.head(TOPO)
+    maior = float(topo["valor"].iloc[0]) or 1.0
+    lado = {"titulo": f"Onde mais falta cobrir {do_escopo(E)}",
+            "contexto": f"Os {TOPO} municípios somam {pct(topo['valor'].sum() / total)} do déficit {DO_RECORTE} "
+                        f"({brl(total)}).",
+            "lista": [{"id": r.area_id, "pos": f"{num(r.posicao)}º", "nome": rotulo(r.municipio, r.uf),
+                       "valor": brl(r.valor), "frac": round(float(r.valor) / maior, 4)} for r in topo.itertuples()]}
+else:
+    v = float(foco[METRICA])
+    lado = {"titulo": mun_nome, "contexto": nome_escopo(foco["uf"]), "valor": brl(v),
+            "sub": (f"falta cobrir · {num(pos_da_area[foco['area_id']])}º de {num(len(areas))} municípios {DO_RECORTE}"
+                    if v > 0 else "tem cartório, mas o modelo estima que nenhum é obrigado à garantia"),
+            "linhas": [["Cartórios", num(foco["n_serventias"])], ["Empregados com carteira", num(foco["clt"])],
+                       ["Obrigados à garantia", "≈ " + num(foco["n_universo"])],
+                       [f"Parte do déficit {DE_UF[foco['uf']]}", pct(v / total_uf[foco["uf"]]) if v > 0 else "0%"],
+                       ["Parte do déficit do Sudeste", pct(v / total_regiao, 2) if v > 0 else "0%"]],
+            "voltar": f"Ver os {TOPO} que mais faltam cobrir"}
+estados_mapa["lado"] = lado
 # o que o mapa mostra (V5, D-082): o déficit em R$ ou um indicador de classe em % (o mapa da aba Classes)
 INDICADORES = {"Déficit (R$)": None, "% obrigados": "obrigados", "% na Classe 3": "classe_3"}
 escolha = st.segmented_control("Mostrar no mapa", list(INDICADORES), default="Déficit (R$)", key="f_indicador")
@@ -135,19 +187,28 @@ if indicador is None:
     valores = dict(zip(areas["area_id"], areas[METRICA]))
     textos = {r.area_id: f"Cartórios: {num(r.n_serventias)} · Déficit: {r.valor_txt} ({r.pct_txt} {DE})"
               for r in areas.itertuples()}
-    # resumo em uma frase (V5): o que o mapa mostra no recorte que está na tela
+    # balão de cada município (V3): valor, posição no recorte e alguns números
+    dicas = {r.area_id: {"uf": nome_escopo(r.uf), "valor": brl(r.valor_descoberto),
+                         "sub": (f"falta cobrir · {num(pos_da_area[r.area_id])}º de {num(len(areas))} municípios "
+                                 f"{DO_RECORTE}" if r.valor_descoberto > 0
+                                 else "tem cartório, mas o modelo estima que nenhum é obrigado à garantia"),
+                         "linhas": [["Cartórios", num(r.n_serventias)], ["Obrigados à garantia", "≈ " + num(r.n_universo)],
+                                    ["Parte do déficit do estado",
+                                     pct(r.valor_descoberto / total_uf[r.uf]) if r.valor_descoberto > 0 else "0%"]]}
+             for r in areas.itertuples()}
+    # resumo em uma frase (V3): onde se concentra e quantos têm zero
     n_zero = int((areas[METRICA] <= 0).sum())
     tres = [rotulo(r.area_nome, r.uf) for r in areas.sort_values(METRICA, ascending=False).head(3).itertuples()]
-    resumo = (f"Os maiores déficits estão em {tres[0]}, {tres[1]} e {tres[2]}; {num(n_zero)} dos {num(len(areas))} "
-              "municípios com cartório têm déficit zero (em cinza). Clique num município para ver os números dele.")
-    # protótipo V3 (D-089): legenda "R$ 150 mil a R$ 300 mil" sem o "R$" (já no título), zero explicado, o total num
-    # cartão e as 3 maiores com o valor
-    extra = dict(titulo_legenda=f"Déficit (falta cobrir) no município, R$ · {NOME}",
+    resumo = (f"O que falta cobrir está concentrado em {tres[0]}, {tres[1]} e {tres[2]}. Dos {num(len(areas))} "
+              f"municípios com cartório, em {num(n_zero)} o modelo estima que nenhum é obrigado à garantia.")
+    # protótipo V3 (D-089): legenda "150 mil a 300 mil" (o "R$" no título), zero explicado, o total num cartão e as 3
+    # maiores com o valor
+    extra = dict(titulo_legenda=f"Falta cobrir (déficit) no município, R$ · {NOME}",
                  fmt_legenda=lambda v: brl_curto(v).removeprefix("R$ "), texto_zero="Zero: nenhum obrigado",
-                 info={"titulo": f"Déficit · {NOME}", "valor": brl(total),
+                 info={"titulo": f"Falta cobrir · {NOME}", "valor": brl(total),
                        "nota": f"{num(len(areas))} municípios com cartório"},
-                 destaques=3)
-    nota_cor = "Cor = déficit do município (suposição do modelo)"
+                 destaques=3, dicas=dicas)
+    nota_cor = "Valores estimados com as suposições do estudo"
 else:
     por_uf = {u: analise("percentual_por_municipio", uf=u, indicador=indicador) for u in UFS}
     pc = next(iter(por_uf.values()))
@@ -163,20 +224,22 @@ else:
         resumo = (f"{pc['frase_estado']}; {num(pc['zeros'])} dos {num(pc['areas'])} municípios com cartório têm 0% "
                   f"(em cinza). Com 5 ou mais cartórios, os maiores: {', '.join(pc['maiores_com_5_ou_mais'])}.")
     # sem rótulos: muitos municípios pequenos empatam em 100%, e o rótulo apontaria um deles ao acaso
-    extra = dict(titulo_legenda=f"{pc['titulo']} (% dos cartórios do município)", fmt_legenda=pct_curto,
-                 teto_fixo=1.0, rotulos=0)
+    extra = dict(titulo_legenda=f"{pc['titulo']} (% dos cartórios do município) · {NOME}", fmt_legenda=pct_curto,
+                 teto_fixo=1.0, rotulos=0,
+                 dicas={r.area_id: {"uf": nome_escopo(r.uf), "valor": pct(valores_pc.get(r.area_id, 0)),
+                                    "sub": pc["titulo"].lower(), "linhas": [["Cartórios", num(r.n_serventias)]]}
+                        for r in areas.itertuples()})
     nota_cor = f"Cor = {pc['titulo'].lower()} (% dos cartórios do município; classe aproximada)"
-if mun is not None:
-    resumo = (f"Região de {mun['regiao_intermediaria']} ({mun['uf']}), com {mun_nome} em destaque (contorno grosso). "
-              f"As cores seguem a mesma escala do mapa inteiro ({NOME}).")
+preliminar_txt = ("; SP, RJ e ES com as de Minas Gerais (estimativa preliminar)" if VARIAS
+                  else "; com as de Minas Gerais (estimativa preliminar)" if preliminar(E) else "")
 mapa_clicavel(dados_mapa(geo_dados, valores, nomes, textos, fundo=geo_sem.values(),
                          selecionado=foco["area_id"] if foco is not None else None, enquadrar=ids_int,
-                         resumo=resumo, legenda_fundo="Sem cartório no cadastro do CNJ",
-                         rotulo_inteiro="Ver o mapa inteiro", **estados_mapa, **extra),
-              key=f"mapa_{E}", ao_escolher=_escolher)
-ui.fonte(fonte_linha(["cnj_serventias", "rais_vinculos", "ibge_malha"], nota_cor
-                     + ("; SP, RJ e ES com as premissas de MG (estimativa preliminar)" if VARIAS else ""),
-                     uf=UFS[0]))
+                         resumo=resumo, legenda_fundo="Sem cartório",
+                         rotulo_inteiro="Ver o Sudeste inteiro",
+                         fonte=fonte_linha(["cnj_serventias", "rais_vinculos", "ibge_malha"], nota_cor + preliminar_txt,
+                                           uf=UFS[0]) + ".",
+                         **estados_mapa, **extra),
+              key=f"mapa_{E}", ao_escolher=_escolher, ao_estado=_recorte)
 
 # ------------------------------------------------------------------ quadro do município (V5, D-082): os cartórios dele
 if mun is not None:
@@ -195,14 +258,7 @@ if mun is not None:
                          "Déficit e prêmio por cartório: estimativas do modelo (nível base); classe aproximada",
                          uf=mun["uf"]))
 
-# ------------------------------------------------------------------ ranking: os maiores e o município escolhido
-linhas = ranking.head(TOPO)
-if mun is not None and mun["area_id"] not in set(linhas["area_id"]):
-    linhas = pd.concat([linhas, ranking[ranking["area_id"] == mun["area_id"]]])
-ui.tabela(["Posição", "Município", "Déficit", f"Parte {DE}"],
-          [[f"{num(r.posicao)}º", rotulo(r.municipio, r.uf), brl(r.valor), pct(r.valor / total)]
-           for r in linhas.itertuples()], numericas={0, 2, 3})
-
+# (o ranking dos maiores fica no painel ao lado do mapa, V3)
 if VARIAS:   # no Sudeste: a parte de cada estado no déficit
     partes = areas.groupby("uf")[METRICA].sum().sort_values(ascending=False)
     ui.frase("Parte de cada estado no déficit do Sudeste: "

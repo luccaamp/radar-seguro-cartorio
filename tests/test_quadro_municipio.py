@@ -61,11 +61,11 @@ def test_chat_alcanca_o_quadro():
 
 
 def test_pagina_mostra_o_quadro_quando_ha_municipio(con):
-    from apoio_painel import SELETOR_MUNICIPIO_MG, pagina_em_mg
+    from apoio_painel import escolher_municipio, pagina_em_mg
     at = pagina_em_mg(MERCADO)
     assert not at.exception
     assert not [h for h in at.header if h.value.startswith("Os cartórios de")]   # MG inteira: sem quadro
-    at.selectbox(key=SELETOR_MUNICIPIO_MG).set_value("Uberaba").run()
+    escolher_municipio(at, "Uberaba")
     assert not at.exception
     assert [h.value for h in at.header] == ["Os cartórios de Uberaba"]
     tela = "\n".join(m.value for m in at.markdown)

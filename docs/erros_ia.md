@@ -1117,3 +1117,27 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** o fluxo da D-073 (cada bloco na sua branch) foi tratado como autorização permanente.
 - **Correção:** nada foi commitado; a IA propõe commit, push e PR e espera o pedido. A branch só tem as mudanças sem commit, e voltar à `main` com elas é um `git switch main`.
 - **Bom para os slides?** não
+
+## 2026-11-13 — Plano do "repositório limpo" contou `docs/qa/` como documento interno
+- **Onde:** plano revisado das 9 ideias (item 3), aprovado pelo autor.
+- **O que aconteceu:** o plano mandava tirar `docs/qa/` (64 arquivos) do público e do histórico como rascunho. A pasta `docs/qa/analises` tem os 61 gráficos dos notebooks e o `testes_metodos_resultados.json`, que `src/analise/classificacao.py` lê. O plano também não contou que 72 arquivos de código citam os documentos internos em comentários (por exemplo "(docs/erros_ia.md, 2026-10-20)").
+- **Como foi detectado:** pela IA, com um `grep` antes de reescrever a cópia, já com o plano aprovado.
+- **Causa provável:** a lista foi feita pelo nome das pastas, sem procurar quem lê cada uma.
+- **Correção:** nada foi reescrito além dos e-mails (numa cópia); a parte dos documentos voltou para o autor decidir. Regra: antes de propor tirar um arquivo, procurar no código e nos testes quem o lê ou o cita.
+- **Bom para os slides?** sim (conferir antes de apagar)
+
+## 2026-11-13 — O painel saiu sem partes do V3 aprovado e foi dito "igual ao V3"
+- **Onde:** PR B (#32) e a conferência do link público depois do merge.
+- **O que aconteceu:** o autor aprovou o protótipo V3 inteiro, mas o painel ficou sem a barra do mapa (busca, botões dos estados e "Ver o Sudeste inteiro"), sem o painel ao lado (os 10 maiores ou o município escolhido), sem o balão com números e sem o foco num estado com os outros em cinza. Os filtros continuaram no alto da página, e os textos ficaram diferentes ("Déficit · Sudeste" em vez de "Falta cobrir · Sudeste", "Sem cartório no cadastro do CNJ", outro resumo e outra fonte). A IA anotou no ESTADO_ATUAL que essas partes "ficaram de fora (o painel já tem)" sem perguntar e depois disse ao autor que o mapa público estava "igual ao V3" por ter visto só os cartões.
+- **Como foi detectado:** pelo autor, com as capturas do painel e do V3 lado a lado.
+- **Causa provável:** a IA trocou partes do protótipo por equivalentes que já existiam no painel, por conta própria, e conferiu o resultado procurando o que tinha feito, não comparando com o protótipo.
+- **Correção:** o painel passou a ter tudo o que o V3 tem (D-089, PR B2). Regra: um protótipo aprovado vai inteiro para o painel; tirar ou trocar qualquer parte é decisão do autor. A conferência compara as duas telas lado a lado, item por item.
+- **Bom para os slides?** sim
+
+## 2026-11-13 — Testes acrescentados por heredoc no shell, pela terceira vez
+- **Onde:** `tests/js/mapa.test.mjs` (os 6 testes do V3 completo).
+- **O que aconteceu:** os testes foram acrescentados com `cat >> … <<EOF` no shell, contra a regra do `CLAUDE.md` (código só com a ferramenta de edição).
+- **Como foi detectado:** pela IA, logo depois.
+- **Causa provável:** pressa; o atalho "acrescentar no fim" parece inofensivo.
+- **Correção:** o conteúdo foi conferido (30 testes passando) e fica como está. Regra: nenhum `>>`, `cat <<` nem `sed` em arquivo do projeto, nem para acrescentar.
+- **Bom para os slides?** não

@@ -107,54 +107,97 @@ export function camadasDeNomes(z, varios) {
   return { municipios, destaques: municipios, estados: z < ZOOM_SEM_ESTADOS };
 }
 
+// O nome de um estado aparece? (V3) Os da região sempre (se couberem); o do estado em foco, só até ZOOM_SEM_ESTADOS
+// (aproximado, ele só atrapalha); os vizinhos de fora da região, só com pouco zoom.
+export function mostraNomeDoEstado(e, z, varios) {
+  if (e.ativo && !varios) return z < ZOOM_SEM_ESTADOS;
+  return e.regiao ? true : z < ZOOM_SEM_ESTADOS;
+}
+
+// Busca de município: sem acento e sem diferença de maiúsculas; os que começam com o texto vêm primeiro; até `max`.
+export const semAcento = (s) => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+export function buscar(lista, texto, max = 8) {
+  const t = semAcento(String(texto || "").trim());
+  if (t.length < 2) return [];
+  return (lista || []).map((x) => ({ x, k: semAcento(x.nome) })).filter((o) => o.k.includes(t))
+    .sort((a, b) => (b.k.startsWith(t) - a.k.startsWith(t)) || a.k.localeCompare(b.k)).slice(0, max).map((o) => o.x);
+}
+
 export function rotulosNaVista(candidatos, v) {
   return (candidatos || []).filter((r) => r.x >= v.x && r.x <= v.x + v.w && r.y >= v.y && r.y <= v.y + v.h);
 }
 
 // Desenha o mapa dentro de `raiz` e chama `aoEscolher(id)` no clique. O teclado escolhe o município pelo seletor da
 // página (851 paradas de Tab no mapa atrapalhariam mais do que ajudariam). Devolve o <svg>. Pode ser chamada de novo com dados novos: limpa o que desenhou antes.
-export function desenhar(raiz, dados, aoEscolher, doc = globalThis.document) {
+export function desenhar(raiz, dados, aoEscolher, doc = globalThis.document, acoes = {}) {
   limpar(raiz);
   const svg = el(doc, "svg", {
-    viewBox: dados.viewBox, role: "img", preserveAspectRatio: "xMidYMid meet",
+    viewBox: dados.viewBox, role: "img", preserveAspectRatio: "xMidYMid meet", class: "rd-mapa-svg",
     "aria-label": dados.resumo || dados.tituloLegenda || "Mapa",
   }, true);
-  // camadas (V3, D-089): os estados vizinhos em cinza, por baixo; os municípios; os sem cartório; as divisas finas dos
-  // estados, por cima (não pegam o clique); os nomes
+  // com o painel ao lado (V3): o mapa num cartão (barra, mapa, legenda e fonte) e, ao lado, a lista dos maiores ou o
+  // município escolhido; no celular, o painel vai para baixo (CSS)
+  let alvo = raiz, lado = null;
+  if (dados.lado) {
+    const grade = el(doc, "div", { class: "rd-mapa-grade" });
+    alvo = el(doc, "div", { class: "rd-mapa-c" });
+    lado = painelLado(doc, dados.lado, aoEscolher, acoes);
+    grade.appendChild(alvo); grade.appendChild(lado); raiz.appendChild(grade);
+  }
+  // camadas (V3, D-089): os estados vizinhos em cinza, por baixo; os municípios dos outros estados da região, em cinza
+  // (o clique troca o foco); os municípios; os sem cartório; as divisas finas dos estados da região, por cima (não
+  // pegam o clique); os nomes
   const estados = dados.estados || [];
   const varios = estados.filter((e) => e.ativo).length > 1;
+  const comFoco = !varios && estados.some((e) => e.regiao && !e.ativo);
   const gVizinhos = el(doc, "g", { class: "rd-vizinhos", "aria-hidden": "true" }, true);
+  const gFora = el(doc, "g", { class: "rd-fora" }, true);
   const gAreas = el(doc, "g", { class: "rd-areas" }, true);
   const gFundo = el(doc, "g", { class: "rd-fundo" }, true);
   const gDivisas = el(doc, "g", { class: "rd-divisas", "aria-hidden": "true" }, true);
   const gRotulos = el(doc, "g", { class: "rd-rotulos", "aria-hidden": "true" }, true);
-  for (const e of estados) (e.ativo ? gDivisas : gVizinhos).appendChild(el(doc, "path", { d: e.d }, true));
+  for (const e of estados) {
+    (e.regiao || e.ativo ? gDivisas : gVizinhos).appendChild(
+      el(doc, "path", { d: e.d, ...(comFoco && e.ativo ? { class: "rd-foco" } : {}) }, true));
+  }
+  const caixaVista = el(doc, "div", { class: "rd-mapa-vista" });
+  const balao = dica(doc, caixaVista, aoEscolher);
   let selecionado = null;
   const caminhos = [];   // [path, faixa, classe] para destacar uma faixa pela legenda
   for (const a of dados.areas || []) {
     const sel = a.id === dados.selecionado;
     const classe = classeFaixa(a.faixa) + (sel ? " rd-sel" : "");
     const path = el(doc, "path", { d: a.d, "data-id": a.id, class: classe }, true);
-    const titulo = el(doc, "title", {}, true);
-    titulo.textContent = a.texto ? `${a.nome}\n${a.texto}` : a.nome;
-    path.appendChild(titulo);
-    path.addEventListener("click", () => aoEscolher(a.id));
+    if (a.dica) balao.ligar(path, a, () => aoEscolher(a.id));
+    else {
+      const titulo = el(doc, "title", {}, true);
+      titulo.textContent = a.texto ? `${a.nome}\n${a.texto}` : a.nome;
+      path.appendChild(titulo);
+      path.addEventListener("click", () => aoEscolher(a.id));
+    }
     caminhos.push([path, String(a.faixa), classe]);
     if (sel) selecionado = path; else gAreas.appendChild(path);
   }
+  for (const a of dados.fora || []) {   // outro estado da região: clicar põe o foco nele
+    const path = el(doc, "path", { d: a.d, "data-id": a.id }, true);
+    const trocar = () => acoes.estado && acoes.estado(a.uf);
+    if (a.dica) balao.ligar(path, a, trocar, false);
+    else path.addEventListener("click", trocar);
+    gFora.appendChild(path);
+  }
   if (selecionado) gAreas.appendChild(selecionado);   // por último: o contorno do selecionado fica por cima
   for (const f of dados.fundo || []) gFundo.appendChild(el(doc, "path", { d: f.d }, true));
-  for (const g of [gVizinhos, gAreas, gFundo, gDivisas, gRotulos]) svg.appendChild(g);
+  for (const g of [gVizinhos, gFora, gAreas, gFundo, gDivisas, gRotulos]) svg.appendChild(g);
   const inicial = lerVista(dados.viewBox);
   const inteiro = lerVista(dados.viewBoxInteiro) || inicial;
-  if (inicial) raiz.appendChild(barra(doc, dados, () => mostrar(inteiro)));
+  if (inicial) alvo.appendChild(barra(doc, dados, () => mostrar(inteiro), aoEscolher, acoes));
   // a vista: o mapa e os cartões por cima dele (no celular, o total e o resumo vão para baixo do mapa, pelo CSS)
-  const caixaVista = el(doc, "div", { class: "rd-mapa-vista" });
   caixaVista.appendChild(svg);
   if (inicial) caixaVista.appendChild(botoesZoom(doc, inicial, inteiro, () => vista, (v) => mostrar(v)));
   if (dados.info) caixaVista.appendChild(cartaoInfo(doc, dados.info));
   if (dados.resumo) caixaVista.appendChild(cartaoResumo(doc, dados.resumo, () => rotular()));
-  raiz.appendChild(caixaVista);
+  caixaVista.appendChild(balao.no);
+  alvo.appendChild(caixaVista);
   const medir = () => (typeof svg.getBoundingClientRect === "function" ? svg.getBoundingClientRect() : { width: 0, height: 0 });
   let vista = inicial;
 
@@ -228,8 +271,11 @@ export function desenhar(raiz, dados, aoEscolher, doc = globalThis.document) {
       return false;
     };
     // 2) os nomes dos estados (com pouco zoom); os vizinhos, em cinza e só a sigla
-    if (camadas.estados && inicial) {
-      for (const e of rotulosNaVista(estados, vb)) nomear(e.x, e.y, e.nome, e.ativo ? "rd-uf" : "rd-uf-vizinho", tam, null);
+    if (inicial) {
+      const ordem = rotulosNaVista(estados, vb).sort((a, b) => (b.ativo - a.ativo) || (b.regiao - a.regiao));
+      for (const e of ordem) {
+        if (mostraNomeDoEstado(e, z, varios)) nomear(e.x, e.y, e.nome, e.ativo ? "rd-uf" : "rd-uf-vizinho", tam, null);
+      }
     }
     // 3) os municípios: mais nomes quanto maior o zoom
     let n = 0;
@@ -259,10 +305,110 @@ export function desenhar(raiz, dados, aoEscolher, doc = globalThis.document) {
     }).observe(svg);
   }
   // clicar numa faixa da legenda destaca só os municípios dela; clicar de novo volta ao normal
-  raiz.appendChild(legenda(doc, dados, (faixa) => {
+  alvo.appendChild(legenda(doc, dados, (faixa) => {
     for (const [path, f, classe] of caminhos) path.setAttribute("class", faixa === null || f === faixa ? classe : classe + " rd-apagado");
   }));
+  if (dados.fonte) {
+    const p = el(doc, "p", { class: "rd-mapa-fonte" });
+    p.textContent = dados.fonte;
+    alvo.appendChild(p);
+  }
   return svg;
+}
+
+// Balão do município (V3): nome, estado, valor e alguns números, já escritos pelo Python (`a.dica`: {uf, valor, sub,
+// linhas}). Com mouse, segue o ponteiro e o clique escolhe; no toque, o primeiro toque fixa o balão com "Ver detalhes".
+function dica(doc, caixa, aoEscolher) {
+  const no = el(doc, "div", { class: "rd-mapa-dica", hidden: "" });
+  no.hidden = true;
+  const toque = () => !!(doc.defaultView && doc.defaultView.matchMedia && doc.defaultView.matchMedia("(hover: none)").matches);
+  const encher = (a, botao, acao) => {
+    limpar(no);
+    const add = (tag, classe, texto) => { const e = el(doc, tag, classe ? { class: classe } : {}); e.textContent = texto; no.appendChild(e); return e; };
+    add("b", "", a.nome);
+    if (a.dica.uf) add("div", "rd-mapa-dica-uf", a.dica.uf);
+    if (a.dica.valor) add("div", "rd-mapa-dica-v", a.dica.valor);
+    if (a.dica.sub) add("div", "rd-mapa-dica-uf", a.dica.sub);
+    if ((a.dica.linhas || []).length) {
+      const dl = el(doc, "dl");
+      for (const [k, v] of a.dica.linhas) {
+        const dt = el(doc, "dt"); dt.textContent = k; const dd = el(doc, "dd"); dd.textContent = v;
+        dl.appendChild(dt); dl.appendChild(dd);
+      }
+      no.appendChild(dl);
+    }
+    if (botao) {
+      const b = el(doc, "button", { type: "button", class: "rd-mapa-botao" });
+      b.textContent = botao;
+      b.addEventListener("click", () => { no.hidden = true; acao(); });
+      no.appendChild(b);
+    }
+  };
+  const posicionar = (e) => {
+    if (typeof caixa.getBoundingClientRect !== "function") return;
+    const r = caixa.getBoundingClientRect(), w = no.offsetWidth || 220, h = no.offsetHeight || 120;
+    let x = e.clientX - r.left + 14, y = e.clientY - r.top + 14;
+    if (x + w > r.width - 4) x = e.clientX - r.left - w - 14;
+    if (y + h > r.height - 4) y = e.clientY - r.top - h - 14;
+    no.style.left = Math.max(4, x) + "px";
+    no.style.top = Math.max(4, y) + "px";
+  };
+  let fixa = false;
+  return {
+    no,
+    // `detalhes`: o toque mostra "Ver detalhes" (escolher); num município de outro estado, o toque já troca o foco
+    ligar(path, a, acao, detalhes = true) {
+      path.addEventListener("pointermove", (e) => {
+        if (e.pointerType === "touch" || fixa) return;
+        encher(a); no.hidden = false; no.classList.remove("rd-fixa"); posicionar(e);
+      });
+      path.addEventListener("pointerleave", () => { if (!fixa) no.hidden = true; });
+      path.addEventListener("click", (e) => {
+        if (detalhes && (e.pointerType === "touch" || toque())) {
+          fixa = true; encher(a, "Ver detalhes", acao); no.hidden = false; no.classList.add("rd-fixa"); posicionar(e);
+          return;
+        }
+        fixa = false; no.hidden = true; acao();
+      });
+    },
+    fechar() { fixa = false; no.hidden = true; },
+  };
+}
+
+// Ao lado do mapa (V3): sem município escolhido, os maiores do recorte (cada um um botão que escolhe); com um, os números
+// dele e o botão que volta à lista. Tudo já escrito pelo Python (`lado`).
+function painelLado(doc, lado, aoEscolher, acoes) {
+  const aside = el(doc, "aside", { class: "rd-mapa-lado", "aria-live": "polite" });
+  const h = el(doc, "h2"); h.textContent = lado.titulo || ""; aside.appendChild(h);
+  if (lado.contexto) { const p = el(doc, "p", { class: "rd-mapa-ctx" }); p.textContent = lado.contexto; aside.appendChild(p); }
+  if (lado.lista) {
+    const ol = el(doc, "ol", { class: "rd-mapa-rank" });
+    for (const it of lado.lista) {
+      const li = el(doc, "li"), b = el(doc, "button", { type: "button", "data-id": it.id });
+      for (const [classe, texto] of [["rd-pos", it.pos], ["rd-nm", it.nome], ["rd-vl", it.valor]]) {
+        const s = el(doc, "span", { class: classe }); s.textContent = texto; b.appendChild(s);
+      }
+      const bar = el(doc, "span", { class: "rd-bar" }), i = el(doc, "i");
+      i.style.width = `${Math.max(0, Math.min(1, Number(it.frac) || 0)) * 100}%`;
+      bar.appendChild(i); b.appendChild(bar);
+      b.addEventListener("click", () => aoEscolher(it.id));
+      li.appendChild(b); ol.appendChild(li);
+    }
+    aside.appendChild(ol);
+  } else {
+    const det = el(doc, "div", { class: "rd-mapa-det" });
+    if (lado.valor) { const v = el(doc, "div", { class: "rd-mapa-det-v" }); v.textContent = lado.valor; det.appendChild(v); }
+    if (lado.sub) { const s = el(doc, "div", { class: "rd-mapa-ctx" }); s.textContent = lado.sub; det.appendChild(s); }
+    const dl = el(doc, "dl");
+    for (const [k, v] of lado.linhas || []) {
+      const dt = el(doc, "dt"); dt.textContent = k; const dd = el(doc, "dd"); dd.textContent = v;
+      dl.appendChild(dt); dl.appendChild(dd);
+    }
+    det.appendChild(dl);
+    if (lado.voltar) det.appendChild(botao(doc, lado.voltar, lado.voltar, () => acoes.limpar && acoes.limpar()));
+    aside.appendChild(det);
+  }
+  return aside;
 }
 
 function botao(doc, texto, rotulo, acao) {
@@ -272,12 +418,67 @@ function botao(doc, texto, rotulo, acao) {
   return b;
 }
 
-// Acima do mapa: "Ver o estado inteiro" (ou "Ver o mapa inteiro").
-function barra(doc, dados, verInteiro) {
+// Acima do mapa (V3): a busca de município, os botões dos estados e "Ver o … inteiro". Com `escopoRegiao`, o botão
+// "inteiro" volta à região (se o foco está num estado) ou só ao enquadramento inteiro (se já está na região).
+function barra(doc, dados, verInteiro, aoEscolher, acoes) {
   const div = el(doc, "div", { class: "rd-mapa-controles" });
+  if ((dados.busca || []).length) div.appendChild(caixaBusca(doc, dados.busca, aoEscolher));
+  if ((dados.ufs || []).length) {
+    const ufs = el(doc, "span", { class: "rd-mapa-ufs", role: "group", "aria-label": "Estado" });
+    for (const u of dados.ufs) {
+      const b = botao(doc, u.uf, `Ver só ${u.nome || u.uf}`, () => acoes.estado && acoes.estado(u.ativo ? dados.escopoRegiao : u.uf));
+      b.setAttribute("aria-pressed", String(!!u.ativo));
+      ufs.appendChild(b);
+    }
+    div.appendChild(ufs);
+  }
   const texto = dados.rotuloInteiro || "Ver o estado inteiro";
-  div.appendChild(botao(doc, texto, texto, verInteiro));
+  const regiao = dados.escopoRegiao && !dados.regiaoAtiva;
+  div.appendChild(botao(doc, texto, texto, () => (regiao && acoes.estado ? acoes.estado(dados.escopoRegiao) : verInteiro())));
   return div;
+}
+
+// Busca de município (V3): sugestões ao digitar 2 letras, setas e Enter escolhem, Esc fecha.
+function caixaBusca(doc, lista, aoEscolher) {
+  const caixa = el(doc, "div", { class: "rd-mapa-busca" });
+  const input = el(doc, "input", { type: "search", placeholder: "Buscar município", autocomplete: "off",
+                                   "aria-label": "Buscar município", role: "combobox", "aria-expanded": "false",
+                                   "aria-controls": "rd-mapa-sug" });
+  const ul = el(doc, "ul", { class: "rd-mapa-sug", id: "rd-mapa-sug", role: "listbox", hidden: "" });
+  ul.hidden = true;
+  let opcoes = [], ativo = -1;
+  const fechar = () => { ul.hidden = true; input.setAttribute("aria-expanded", "false"); };
+  const ir = (x) => { input.value = x.nome; fechar(); aoEscolher(x.id); };
+  input.addEventListener("input", () => {
+    limpar(ul); ativo = -1;
+    opcoes = buscar(lista, input.value);
+    if (String(input.value).trim().length < 2) { fechar(); return; }
+    if (!opcoes.length) { const li = el(doc, "li"); li.textContent = "Nenhum município com esse nome"; ul.appendChild(li); }
+    opcoes.forEach((x, i) => {
+      const li = el(doc, "li", { role: "option", id: `rd-op-${i}` });
+      li.textContent = x.nome;
+      const s = el(doc, "span"); s.textContent = x.uf; li.appendChild(s);
+      li.addEventListener("mousedown", (e) => { e.preventDefault(); ir(x); });
+      ul.appendChild(li);
+    });
+    ul.hidden = false; input.setAttribute("aria-expanded", "true");
+  });
+  input.addEventListener("keydown", (e) => {
+    const lis = [...ul.querySelectorAll("li[role=option]")];
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault(); if (!lis.length) return;
+      ativo = (ativo + (e.key === "ArrowDown" ? 1 : -1) + lis.length) % lis.length;
+      lis.forEach((l, i) => l.setAttribute("aria-selected", String(i === ativo)));
+      input.setAttribute("aria-activedescendant", lis[ativo].id);
+    } else if (e.key === "Enter" && opcoes.length) { e.preventDefault(); ir(opcoes[Math.max(0, ativo)]); }
+    else if (e.key === "Escape") fechar();
+  });
+  input.addEventListener("blur", () => setTimeout(fechar, 120));
+  const lupa = el(doc, "svg", { viewBox: "0 0 24 24", "aria-hidden": "true" }, true);
+  lupa.appendChild(el(doc, "circle", { cx: 11, cy: 11, r: 7 }, true));
+  lupa.appendChild(el(doc, "path", { d: "m20 20-4-4" }, true));
+  caixa.appendChild(lupa); caixa.appendChild(input); caixa.appendChild(ul);
+  return caixa;
 }
 
 // No canto do mapa (V3): + e − (zoom no centro da vista).
@@ -416,5 +617,8 @@ export default function (component) {
   const { data, setTriggerValue, parentElement } = component;
   const raiz = parentElement.querySelector(".rd-mapa");
   if (!raiz || !data) return;
-  desenhar(raiz, data, (id) => setTriggerValue("municipio", id));
+  desenhar(raiz, data, (id) => setTriggerValue("municipio", id), undefined, {
+    estado: (uf) => setTriggerValue("estado", uf),
+    limpar: () => setTriggerValue("municipio", ""),
+  });
 }

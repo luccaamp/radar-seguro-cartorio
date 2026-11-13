@@ -32,6 +32,8 @@ def test_pagina_roda_e_tem_rodape(pagina):
         import json   # o JSON do gráfico escapa os acentos: lê as anotações já decodificadas
         textos = "\n".join(m.value for m in at.markdown) + "".join(
             a["text"] for g in at.get("plotly_chart") for a in json.loads(g.proto.spec)["layout"].get("annotations", []))
+        from apoio_painel import mapa_componente
+        textos += (mapa_componente(at) or {}).get("fonte", "")   # no Mercado, dentro do cartão do mapa (V3, D-089)
         assert "Fonte: CNJ, Justiça Aberta (" in textos
         return
     rodapes = [c.value for c in at.caption if "Fontes:" in c.value]
@@ -165,7 +167,7 @@ def test_painel_com_banco_marcado_somente_leitura(banco_temporario, tmp_path):
 def test_mercado_municipio_pequeno_aparece_sozinho(banco_temporario):
     """D-078 (D-038, fase 2): um município com 1 serventia tem área própria no mapa, os números dele e a posição no
     ranking, sem aviso de agregação."""
-    from apoio_painel import SELETOR_MUNICIPIO_MG, pagina_em_mg
+    from apoio_painel import escolher_municipio, pagina_em_mg
     at = pagina_em_mg(MERCADO)   # o padrão é o Sudeste (D-088); o teste é o de MG
     with duckdb.connect(str(banco_temporario["copia"]), read_only=True) as con:  # mesma configuração da conexão do app
         nome, cod = con.sql("SELECT municipio, cod_ibge FROM gold.dim_municipio WHERE n_serventias = 1 "
@@ -173,15 +175,16 @@ def test_mercado_municipio_pequeno_aparece_sozinho(banco_temporario):
         pos, total = con.execute("SELECT posicao, n_municipios FROM gold.ranking_municipio_publico "
                                  "WHERE metrica = 'valor_descoberto' AND cod_ibge = ?", [cod]).fetchone()
         com_serv = con.sql("SELECT count(*) FROM gold.dim_municipio WHERE n_serventias > 0 AND uf = 'MG'").fetchone()[0]
-    at.selectbox(key=SELETOR_MUNICIPIO_MG).set_value(nome).run()
+    escolher_municipio(at, nome)
     assert not at.exception
     assert not any("agregad" in i.value for i in at.info)
     tela = "\n".join(m.value for m in at.markdown).replace("&#36;", "$")
     assert f"Déficit em {nome}" in tela
     assert re.findall(r'Cartórios no município</div><div class="rd-num">([^<]+)<', tela) == ["1"]
     assert f"{pos}º de {total:,}".replace(",", ".") + " municípios no déficit" in tela
-    assert f"<td>{nome}</td>" in tela   # a linha dele no ranking, abaixo dos 10 primeiros
     from apoio_painel import mapa_componente
+    lado = mapa_componente(at)["lado"]   # V3 (D-089): os números dele no painel ao lado do mapa, com a posição
+    assert lado["titulo"] == nome and f"{pos}º de {total:,}".replace(",", ".") in lado["sub"]
     locais = [a["id"] for a in mapa_componente(at)["areas"]]
     assert len(locais) == total == com_serv and str(cod) in locais
 

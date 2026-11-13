@@ -12,7 +12,7 @@ const mod = await import("data:text/javascript;base64," + Buffer.from(fonte).toS
 class No {
   constructor(tag, ns = null) {
     this.tagName = tag; this.namespaceURI = ns; this.attrs = {}; this.children = []; this.listeners = {};
-    this.textContent = ""; this.parentNode = null;
+    this.textContent = ""; this.parentNode = null; this.style = {};
   }
   setAttribute(k, v) { this.attrs[k] = String(v); }
   getAttribute(k) { return this.attrs[k] ?? null; }
@@ -66,7 +66,8 @@ const ESTADOS = [
 test("camadas (V3): vizinhos por baixo, municípios, sem cartório, divisas por cima, nomes", () => {
   const svg = mod.desenhar(new No("div"), { ...dados(), estados: ESTADOS }, () => {}, doc);
   const grupos = svg.children.map((g) => g.getAttribute("class"));
-  assert.deepEqual(grupos, ["rd-vizinhos", "rd-areas", "rd-fundo", "rd-divisas", "rd-rotulos"]);   // ordem de desenho
+  // ordem de desenho; rd-fora: os municípios dos outros estados da região (vazio aqui)
+  assert.deepEqual(grupos, ["rd-vizinhos", "rd-fora", "rd-areas", "rd-fundo", "rd-divisas", "rd-rotulos"]);
   assert.equal(svg.querySelector(".rd-divisas").children.length, 2);                 // um contorno por estado do recorte
   assert.equal(svg.querySelector(".rd-vizinhos").children.length, 1);
   for (const c of [".rd-divisas", ".rd-vizinhos"]) {
@@ -338,4 +339,89 @@ test("botões +, − e estado inteiro mudam o viewBox", () => {
   botoes[0].dispatch("click");
   assert.equal(svg.getAttribute("viewBox"), "0 0 1000 800");
   assert.ok(!svg.getAttribute("class").includes("rd-aproximado"));
+});
+
+// ------------------------------------------------------------------ V3 completo (D-089): barra, painel ao lado, foco
+const LADO_LISTA = { titulo: "Onde mais falta cobrir no Sudeste", contexto: "Os 10 municípios somam 50,4%",
+                     lista: [{ id: "3100302", pos: "1º", nome: "Município C (MG)", valor: "R$ 60,8 mi", frac: 1 },
+                             { id: "3100203", pos: "2º", nome: "Município B (MG)", valor: "R$ 26,2 mi", frac: 0.43 }] };
+
+test("V3: mapa num cartão e a lista ao lado; clicar na lista escolhe o município", () => {
+  const raiz = new No("div"), escolhidos = [];
+  mod.desenhar(raiz, { ...dados(), lado: LADO_LISTA, fonte: "Fonte: X." }, (id) => escolhidos.push(id), doc);
+  const grade = raiz.children[0];
+  assert.equal(grade.getAttribute("class"), "rd-mapa-grade");
+  assert.deepEqual(grade.children.map((c) => c.getAttribute("class")), ["rd-mapa-c", "rd-mapa-lado"]);
+  const cartao = grade.children[0];
+  assert.ok(cartao.querySelector(".rd-mapa-vista") && cartao.querySelector(".rd-mapa-legenda"));
+  assert.equal(cartao.querySelector(".rd-mapa-fonte").textContent, "Fonte: X.");   // a fonte dentro do cartão
+  const itens = grade.children[1].querySelectorAll("button");
+  assert.equal(itens.length, 2);
+  assert.equal(itens[1].querySelector(".rd-vl").textContent, "R$ 26,2 mi");
+  assert.equal(itens[1].querySelector(".rd-bar").children[0].style.width, "43%");
+  itens[0].dispatch("click");
+  assert.deepEqual(escolhidos, ["3100302"]);
+});
+
+test("V3: município escolhido ao lado, com o botão que volta à lista", () => {
+  const raiz = new No("div"), limpos = [];
+  const lado = { titulo: "Município B", contexto: "Minas Gerais", valor: "R$ 8,9 mi", sub: "falta cobrir · 3º",
+                 linhas: [["Cartórios", "45"]], voltar: "Ver os 10 que mais faltam cobrir" };
+  mod.desenhar(raiz, { ...dados(), lado }, () => {}, doc, { limpar: () => limpos.push(1) });
+  const aside = raiz.querySelector(".rd-mapa-lado");
+  assert.equal(aside.querySelector(".rd-mapa-det-v").textContent, "R$ 8,9 mi");
+  assert.equal(aside.querySelector("dd").textContent, "45");
+  const voltar = aside.querySelector(".rd-mapa-botao");
+  assert.equal(voltar.textContent, "Ver os 10 que mais faltam cobrir");
+  voltar.dispatch("click");
+  assert.equal(limpos.length, 1);
+});
+
+test("V3: barra com a busca, os estados e o Sudeste inteiro; os botões pedem o recorte", () => {
+  const raiz = new No("div"), pedidos = [];
+  const ufs = [{ uf: "MG", nome: "Minas Gerais", ativo: true }, { uf: "SP", nome: "São Paulo", ativo: false }];
+  mod.desenhar(raiz, { ...dados(), viewBoxInteiro: "0 0 1000 800", rotuloInteiro: "Ver o Sudeste inteiro",
+                       busca: [{ id: "1", nome: "Abaeté", uf: "MG" }], ufs, escopoRegiao: "SUDESTE",
+                       regiaoAtiva: false }, () => {}, doc, { estado: (u) => pedidos.push(u) });
+  const barra = raiz.querySelector(".rd-mapa-controles");
+  assert.ok(barra.querySelector(".rd-mapa-busca").querySelector("input"));
+  const botoes = barra.querySelectorAll(".rd-mapa-botao");
+  assert.deepEqual(botoes.map((b) => b.textContent), ["MG", "SP", "Ver o Sudeste inteiro"]);
+  assert.equal(botoes[0].getAttribute("aria-pressed"), "true");
+  botoes[1].dispatch("click");   // outro estado
+  botoes[0].dispatch("click");   // o estado em foco de novo: volta à região
+  botoes[2].dispatch("click");   // "Ver o Sudeste inteiro" com o foco num estado: volta à região
+  assert.deepEqual(pedidos, ["SP", "SUDESTE", "SUDESTE"]);
+});
+
+test("V3: busca sem acento e sem maiúsculas, os que começam com o texto primeiro", () => {
+  const lista = [{ id: "1", nome: "Abaeté", uf: "MG" }, { id: "2", nome: "Ribeirão Preto", uf: "SP" },
+                 { id: "3", nome: "Preto Velho", uf: "MG" }];
+  assert.deepEqual(mod.buscar(lista, "ABAETE").map((x) => x.id), ["1"]);
+  assert.deepEqual(mod.buscar(lista, "preto").map((x) => x.id), ["3", "2"]);
+  assert.deepEqual(mod.buscar(lista, "p"), []);   // menos de 2 letras
+});
+
+test("V3: foco num estado: os municípios dos outros em cinza (o clique troca o foco), a divisa do foco mais forte", () => {
+  const raiz = new No("div"), pedidos = [];
+  const estados = [{ ...ESTADOS[0], regiao: true }, { ...ESTADOS[1], ativo: false, regiao: true }, ESTADOS[2]];
+  const svg = mod.desenhar(raiz, { ...dados(), estados, fora: [{ id: "3500105", uf: "SP", d: "M600 0L700 0L700 10Z" }] },
+                           () => {}, doc, { estado: (u) => pedidos.push(u) });
+  const fora = svg.querySelector(".rd-fora").children;
+  assert.equal(fora.length, 1);
+  fora[0].dispatch("click");
+  assert.deepEqual(pedidos, ["SP"]);
+  const divisas = svg.querySelector(".rd-divisas").children;
+  assert.equal(divisas.length, 2);                                    // MG e SP (a região); GO fica nos vizinhos
+  assert.equal(divisas[0].getAttribute("class"), "rd-foco");
+  assert.equal(divisas[1].getAttribute("class"), null);
+});
+
+test("V3: nomes dos estados: os da região sempre; o do foco some com zoom; os vizinhos só com pouco zoom", () => {
+  const foco = { ativo: true, regiao: true }, outro = { ativo: false, regiao: true }, viz = { ativo: false, regiao: false };
+  assert.equal(mod.mostraNomeDoEstado(foco, 1, false), true);
+  assert.equal(mod.mostraNomeDoEstado(foco, 3, false), false);
+  assert.equal(mod.mostraNomeDoEstado(outro, 3, false), true);
+  assert.equal(mod.mostraNomeDoEstado(foco, 3, true), true);          // no Sudeste inteiro, os 4 sempre
+  assert.equal(mod.mostraNomeDoEstado(viz, 3, true), false);
 });

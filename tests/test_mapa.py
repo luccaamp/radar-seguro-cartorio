@@ -169,9 +169,17 @@ def test_dados_mapa_e_json_e_tem_o_que_o_js_le():
     json.dumps(d, allow_nan=False)                            # JSON válido, sem NaN
     assert set(d) == {"viewBox", "viewBoxInteiro", "rotuloInteiro", "areas", "fundo", "selecionado", "legenda",
                       "tituloLegenda", "legendaFundo", "resumo", "rotulos", "maxRotulos", "rotulosInteiro",
-                      "maxRotulosInteiro", "tamanhoRotulo", "estados", "info", "unidadeLegenda", "nFundo"}
+                      "maxRotulosInteiro", "tamanhoRotulo", "estados", "info", "unidadeLegenda", "nFundo",
+                      # V3 completo (D-089): outros estados da região, painel ao lado, busca, botões dos estados, fonte
+                      "fora", "lado", "busca", "ufs", "escopoRegiao", "regiaoAtiva", "fonte"}
     assert d["estados"] == [] and d["info"] is None and d["unidadeLegenda"] == ""
+    assert d["fora"] == [] and d["lado"] is None and d["busca"] == [] and d["ufs"] == [] and d["fonte"] == ""
     assert d["legendaFundo"] == "Sem" and d["nFundo"] == 1
+    # foco num estado: os municípios de fora entram na projeção mas o mapa abre enquadrado só nas áreas do recorte
+    f = m.dados_mapa(GEO, {}, {}, {}, fora={"9": quadrado(-40, -20, 0.5)}, fora_info={"9": {"uf": "SP"}},
+                     regiao={"SP": quadrado(-40, -20, 0.5)}, nomes_estados={"SP": "São Paulo"})
+    assert f["fora"][0]["uf"] == "SP" and f["viewBox"] != f["viewBoxInteiro"]
+    assert f["estados"] == [{**f["estados"][0], "uf": "SP", "nome": "São Paulo", "ativo": False, "regiao": True}]
     assert m.dados_mapa(GEO, {}, {}, {}, legenda_fundo="Sem")["legendaFundo"] == ""   # sem fundo, sem o item
     areas = {a["id"]: a for a in d["areas"]}
     assert areas["1"]["nome"] == "Um" and areas["2"]["nome"] == "2"          # sem nome: o código
