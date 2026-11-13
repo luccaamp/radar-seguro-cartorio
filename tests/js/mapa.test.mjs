@@ -57,14 +57,81 @@ const dados = () => ({
   tamanhoRotulo: 20,
 });
 
-test("contorno do estado: uma cópia de cada área e do fundo, por baixo das áreas", () => {
-  const svg = mod.desenhar(new No("div"), dados(), () => {}, doc);
+const ESTADOS = [
+  { uf: "MG", nome: "Minas Gerais", d: "M0 0L500 0L500 800Z", x: 250, y: 400, ativo: true },
+  { uf: "SP", nome: "São Paulo", d: "M500 0L1000 0L1000 800Z", x: 750, y: 400, ativo: true },
+  { uf: "GO", nome: "GO", d: "M0 0L-100 0L-100 100Z", x: 50, y: 50, ativo: false },
+];
+
+test("camadas (V3): vizinhos por baixo, municípios, sem cartório, divisas por cima, nomes", () => {
+  const svg = mod.desenhar(new No("div"), { ...dados(), estados: ESTADOS }, () => {}, doc);
   const grupos = svg.children.map((g) => g.getAttribute("class"));
-  assert.deepEqual(grupos, ["rd-contorno", "rd-areas", "rd-fundo", "rd-rotulos"]);   // ordem de desenho
-  const contorno = svg.querySelector(".rd-contorno");
-  assert.equal(contorno.children.length, 3 + 1);
-  assert.equal(contorno.getAttribute("aria-hidden"), "true");
-  assert.equal(contorno.children[0].listeners.click, undefined);                     // não pega o clique
+  assert.deepEqual(grupos, ["rd-vizinhos", "rd-areas", "rd-fundo", "rd-divisas", "rd-rotulos"]);   // ordem de desenho
+  assert.equal(svg.querySelector(".rd-divisas").children.length, 2);                 // um contorno por estado do recorte
+  assert.equal(svg.querySelector(".rd-vizinhos").children.length, 1);
+  for (const c of [".rd-divisas", ".rd-vizinhos"]) {
+    assert.equal(svg.querySelector(c).getAttribute("aria-hidden"), "true");
+    assert.equal(svg.querySelector(c).children[0].listeners.click, undefined);       // não pegam o clique
+  }
+});
+
+test("camadasDeNomes: no Sudeste sem zoom, só os estados; com zoom, os municípios; num estado, sempre", () => {
+  assert.deepEqual(mod.camadasDeNomes(1, true), { municipios: false, destaques: false, estados: true });
+  assert.deepEqual(mod.camadasDeNomes(mod.ZOOM_MUNICIPIOS, true), { municipios: true, destaques: true, estados: true });
+  assert.deepEqual(mod.camadasDeNomes(1, false), { municipios: true, destaques: true, estados: true });
+  assert.equal(mod.camadasDeNomes(mod.ZOOM_SEM_ESTADOS, false).estados, false);
+});
+
+test("Sudeste inteiro: só os nomes dos estados (os vizinhos com a sigla); aproximando, os municípios", () => {
+  const raiz = new No("div");
+  const rotulos = [{ id: "3100302", texto: "Cidade C", x: 260, y: 300, valor: "R$ 60,8 mi" },
+                   { id: "3100203", texto: "Cidade B", x: 600, y: 300 }];
+  const svg = mod.desenhar(raiz, { ...dados(), estados: ESTADOS, rotulos, maxRotulos: 5, viewBoxInteiro: "0 0 1000 800" },
+                           () => {}, doc);
+  const textos = () => svg.querySelector(".rd-rotulos").todos().filter((n) => n.tagName === "text")
+    .map((t) => t.textContent || t.children.map((s) => s.textContent).join(""));
+  assert.deepEqual(textos(), ["Minas Gerais", "São Paulo", "GO"]);
+  const mais = raiz.querySelectorAll(".rd-mapa-botao").find((b) => b.textContent === "+");
+  mais.dispatch("click");                                                             // zoom 1,6: municípios, sem estados
+  assert.deepEqual(textos(), ["▲ Cidade C · R$ 60,8 mi", "Cidade B"]);
+  const etiqueta = svg.querySelector(".rd-destaque");
+  assert.equal(etiqueta.children[0].tagName, "rect");                                 // a pílula atrás do texto
+  assert.ok(Number(etiqueta.children[0].getAttribute("width")) > 0);
+});
+
+test("cartões sobre o mapa: total, zoom e resumo que se fecha", () => {
+  const raiz = new No("div");
+  mod.desenhar(raiz, { ...dados(), resumo: "Frase.", info: { titulo: "Déficit · Sudeste", valor: "R$ 243,3 mi",
+                                                             nota: "1.666 municípios com cartório" } }, () => {}, doc);
+  const vista = raiz.querySelector(".rd-mapa-vista");
+  assert.equal(vista.children[0].tagName, "svg");
+  const info = vista.querySelector(".rd-mapa-info");
+  assert.deepEqual(info.children.map((c) => c.textContent), ["Déficit · Sudeste", "R$ 243,3 mi", "1.666 municípios com cartório"]);
+  assert.ok(vista.querySelector(".rd-mapa-zoom"));
+  const resumo = vista.querySelector(".rd-mapa-resumo-c");
+  assert.equal(resumo.querySelector(".rd-mapa-tag").textContent, "Resumo");
+  resumo.querySelector(".rd-mapa-fechar").dispatch("click");
+  assert.equal(resumo.hidden, true);
+  const sem = new No("div");
+  mod.desenhar(sem, dados(), () => {}, doc);
+  assert.equal(sem.querySelector(".rd-mapa-info"), null);                             // sem info, sem cartão
+});
+
+test("legenda: quantas áreas por faixa e, ao clicar, só aquela faixa em destaque", () => {
+  const raiz = new No("div");
+  const svg = mod.desenhar(raiz, { ...dados(), unidadeLegenda: "mun.",
+                                   legenda: [{ faixa: "zero", texto: "Zero", n: 1 }, { faixa: "3", texto: "até 10", n: 1234 }] },
+                           () => {}, doc);
+  const itens = raiz.querySelector(".rd-mapa-legenda").querySelectorAll(".rd-mapa-item");
+  assert.deepEqual(itens.map((i) => i.tagName), ["button", "button", "span"]);       // o fundo não é botão
+  assert.equal(itens[1].querySelector(".rd-mapa-n").textContent, `${(1234).toLocaleString("pt-BR")} mun.`);
+  const classe = (id) => svg.querySelectorAll("path").find((p) => p.getAttribute("data-id") === id).getAttribute("class");
+  itens[1].dispatch("click");
+  assert.equal(itens[1].getAttribute("aria-pressed"), "true");
+  assert.ok(classe("3100104").includes("rd-apagado") && !classe("3100203").includes("rd-apagado"));
+  itens[1].dispatch("click");                                                         // de novo: volta ao normal
+  assert.ok(!classe("3100104").includes("rd-apagado"));
+  assert.equal(itens[1].getAttribute("aria-pressed"), "false");
 });
 
 test("tamanhoLetra: px fixos na tela viram unidades do viewBox, pela menor escala; sem medida, null", () => {
@@ -117,7 +184,10 @@ test("rótulos: texto puro, na posição e no tamanho que vieram do Python, com 
   assert.equal(ts[0].tagName, "text");
   assert.equal(ts[0].textContent, "<b>C</b>");                 // literal, nunca HTML
   assert.equal(ts[0].children.length, 0);
-  assert.deepEqual([ts[0].getAttribute("x"), ts[0].getAttribute("y")], ["25", "5"]);
+  assert.equal(ts[0].getAttribute("y"), "5");
+  // x = 25 colado na borda esquerda: o nome (≈ 0,6 × 20 × 8 = 96 de largura) vai para dentro, até começar no 0
+  assert.equal(ts[0].getAttribute("x"), "48");
+  assert.equal(ts[1].getAttribute("x"), "400");                 // longe da borda: fica onde veio
   assert.equal(ts[0].getAttribute("font-size"), "20");
   assert.equal(ts[0].getAttribute("stroke-width"), "5");
   const sem = mod.desenhar(new No("div"), { ...dados(), rotulos: undefined }, () => {}, doc);
@@ -247,9 +317,9 @@ test("arrastar move a vista, sem o centro sair do estado", () => {
   assert.equal(longe.y + longe.h / 2, 0);
 });
 
-test("mais nomes com mais zoom, até 12; zero continua zero; só os que estão na tela", () => {
+test("mais nomes com mais zoom, até ROTULOS_MAX; zero continua zero; só os que estão na tela", () => {
   assert.equal(mod.maxRotulosNaVista(3, INTEIRO, INTEIRO), 3);
-  assert.equal(mod.maxRotulosNaVista(3, INTEIRO, { w: 500 }), 6);
+  assert.equal(mod.maxRotulosNaVista(3, INTEIRO, { w: 500 }), 12);                     // cresce com o quadrado do zoom
   assert.equal(mod.maxRotulosNaVista(3, INTEIRO, { w: 50 }), mod.ROTULOS_MAX);
   assert.equal(mod.maxRotulosNaVista(0, INTEIRO, { w: 50 }), 0);
   const c = [{ x: 10, y: 10 }, { x: 900, y: 700 }];
@@ -261,11 +331,11 @@ test("botões +, − e estado inteiro mudam o viewBox", () => {
   const svg = mod.desenhar(raiz, { ...dados(), viewBoxInteiro: "0 0 1000 800", rotuloInteiro: "Ver o estado" },
                            () => {}, doc);
   const botoes = raiz.querySelectorAll(".rd-mapa-botao");
-  assert.deepEqual(botoes.map((b) => b.textContent), ["+", "−", "Ver o estado"]);
-  botoes[0].dispatch("click");
+  assert.deepEqual(botoes.map((b) => b.textContent), ["Ver o estado", "+", "−"]);   // o zoom fica no canto do mapa
+  botoes[1].dispatch("click");
   assert.equal(svg.getAttribute("viewBox"), "187.5 150 625 500");
   assert.ok(svg.getAttribute("class").includes("rd-aproximado"));
-  botoes[2].dispatch("click");
+  botoes[0].dispatch("click");
   assert.equal(svg.getAttribute("viewBox"), "0 0 1000 800");
   assert.ok(!svg.getAttribute("class").includes("rd-aproximado"));
 });

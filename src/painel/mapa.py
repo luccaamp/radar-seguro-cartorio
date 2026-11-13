@@ -25,9 +25,10 @@ CASAS = 1                 # casas decimais das coordenadas no viewBox (0,1 de 10
 N_FAIXAS = 6              # faixas de cor acima de zero (tokens --mapa-1 … --mapa-6 em src/painel/estilo.css)
 QUANTIL_TETO = 0.95       # a cor satura no percentil 95, como no mapa anterior (Plotly)
 FOLGA = 0.06              # margem em volta do enquadramento, em fração do lado maior
-N_ROTULOS = 3             # rótulos com o nome nas áreas de maior valor, com o estado inteiro na tela (V5, D-082)
-N_ROTULOS_RECORTE = 8     # numa região (município escolhido): mais nomes, a área é menor (autor, 2026-11-10)
-N_CANDIDATOS = 30         # candidatos em ordem de valor; o JS pula os que se sobrepõem e, com zoom, mostra mais
+N_ROTULOS = 25            # nomes com o estado inteiro na tela; o JS pula os que se sobrepõem (protótipo V3, D-089)
+N_ROTULOS_RECORTE = 25    # numa região (município escolhido)
+N_DESTAQUES = 3           # os 3 de maior valor ganham uma etiqueta com o valor (V3: "▲ São Paulo · R$ 60,8 mi")
+N_CANDIDATOS = 150        # candidatos em ordem de valor; o JS pula os que se sobrepõem e, com zoom, mostra mais
 TAMANHO_ROTULO = 0.022    # letra do rótulo em fração da largura do enquadramento, só se o JS não medir a tela
 
 
@@ -125,9 +126,11 @@ def faixas(valores: dict[str, float | None], n: int = N_FAIXAS, quantil: float =
         else:
             out[area] = str(min(n, max(1, math.ceil(v / passo)))) if passo > 0 else str(n)
     legenda = [{"faixa": "zero", "texto": "Zero"}]
-    if passo > 0:
-        legenda += [{"faixa": str(i), "texto": f"até {fmt(passo * i)}"} for i in range(1, n)]
-        legenda.append({"faixa": str(n), "texto": f"até {fmt(min(passo * n, teto))}" if teto_fixo is not None
+    if passo > 0:   # "até 150 mil", "150 mil a 300 mil", …, "mais de 750 mil" (a legenda do V3, D-089)
+        legenda += [{"faixa": str(i), "texto": f"até {fmt(passo)}" if i == 1 else f"{fmt(passo * (i - 1))} a {fmt(passo * i)}"}
+                    for i in range(1, n)]
+        legenda.append({"faixa": str(n), "texto": (f"{fmt(passo * (n - 1))} a {fmt(min(passo * n, teto))}" if n > 1
+                                                   else f"até {fmt(min(passo * n, teto))}") if teto_fixo is not None
                         else f"mais de {fmt(passo * (n - 1))}"})
     return out, legenda
 
@@ -210,17 +213,35 @@ def dados_mapa(geometrias: dict[str, dict], valores: dict[str, float | None], no
                enquadrar: Iterable[str] | None = None, titulo_legenda: str = "", resumo: str = "",
                legenda_fundo: str = "", rotulos: int | None = None, rotulo_inteiro: str = "Ver o estado inteiro",
                fmt_legenda: Callable[[float], str] | None = None, teto_fixo: float | None = None,
-               legenda_sem: str = "", rotular_todas: bool = False) -> dict[str, Any]:
+               legenda_sem: str = "", rotular_todas: bool = False, estados: dict[str, dict] | None = None,
+               nomes_estados: dict[str, str] | None = None, vizinhos: dict[str, dict] | None = None,
+               info: dict[str, str] | None = None, texto_zero: str = "Zero", unidade_legenda: str = "",
+               destaques: int = 0) -> dict[str, Any]:
     """O que o componente recebe (JSON): viewBox, áreas com caminho, faixa, nome e texto do balão, áreas de fundo
     (não clicáveis), legenda, o selecionado e os rótulos. `enquadrar` limita o viewBox a essas áreas (zoom num
     recorte); `viewBoxInteiro` é o estado inteiro, para o botão `rotulo_inteiro` e os limites do zoom e do arrastar.
     Rótulos: até N_CANDIDATOS áreas de maior valor do recorte (as enquadradas, ou todas), em ordem; o JS mostra as
     `rotulos` primeiras que estão na tela e não se sobrepõem (sem `rotulos`: N_ROTULOS no estado inteiro,
     N_ROTULOS_RECORTE numa região; com zoom, o JS mostra mais), com a letra de tamanho fixo em px (`tamanhoRotulo` é
-    só a reserva, proporcional à largura do enquadramento)."""
+    só a reserva, proporcional à largura do enquadramento).
+
+    Do protótipo V3 (D-089): `estados` ({UF: geometria}) desenha as divisas finas por cima dos municípios e o nome de
+    cada estado (com mais de um, o JS mostra só os nomes dos estados até o zoom aproximar); `vizinhos` são as outras
+    UFs, em cinza, só como referência (não entram no enquadramento); `info` é o cartão do total ({titulo, valor,
+    nota}); `destaques` dá o valor em R$ aos N primeiros rótulos, que viram etiquetas; a legenda traz
+    quantas áreas há em cada faixa (`n`, com `unidade_legenda`) e o zero com `texto_zero`."""
     fundo = list(fundo)
     proj = Projecao(list(geometrias.values()) + fundo)
     cor, legenda = faixas({a: valores.get(a) for a in geometrias}, fmt=fmt_legenda, teto_fixo=teto_fixo)
+    legenda[0] = {**legenda[0], "texto": texto_zero}
+    contagem = {f: list(cor.values()).count(f) for f in set(cor.values())}
+    legenda = [{**item, "n": contagem.get(item["faixa"], 0)} for item in legenda]
+    nomes_estados = nomes_estados or {}
+
+    def _estado(uf: str, g: dict, ativo: bool) -> dict:
+        x, y = proj.xy(*ponto_interno(g))
+        return {"uf": uf, "nome": nomes_estados.get(uf, uf) if ativo else uf, "d": proj.caminho(g), "x": x, "y": y,
+                "ativo": ativo}
     no_recorte = [a for a in (enquadrar or []) if a in geometrias]
     alvo = [geometrias[a] for a in no_recorte]
     caixa = proj.caixa(alvo) if alvo else (0.0, 0.0, proj.largura, proj.altura)
@@ -234,8 +255,9 @@ def dados_mapa(geometrias: dict[str, dict], valores: dict[str, float | None], no
         return sorted(com_valor, key=lambda a: (-float(valores[a]), a))[:N_CANDIDATOS if rotulos > 0 else 0]
 
     def _rotulos(ids) -> list[dict]:
-        return [{"id": a, "texto": nomes.get(a, a), **dict(zip(("x", "y"), proj.xy(*ponto_interno(geometrias[a]))))}
-                for a in ids]
+        return [{"id": a, "texto": nomes.get(a, a), **dict(zip(("x", "y"), proj.xy(*ponto_interno(geometrias[a])))),
+                 **({"valor": brl(float(valores[a]))} if i < destaques else {})}
+                for i, a in enumerate(ids)]
 
     maiores = _maiores(no_recorte or geometrias)
     # com o estado inteiro na tela (botão "Ver o estado inteiro"), os nomes são os maiores do estado
@@ -251,13 +273,18 @@ def dados_mapa(geometrias: dict[str, dict], valores: dict[str, float | None], no
         # áreas sem valor (o mapa do Brasil: as UFs sem o estudo do seguro) ganham um item na legenda, em hachura
         "legenda": legenda + ([{"faixa": "sem", "texto": legenda_sem}] if legenda_sem else []),
         "tituloLegenda": titulo_legenda,
-        "legendaFundo": legenda_fundo,
+        "legendaFundo": legenda_fundo if fundo else "",   # o item "sem cartório" só quando há algum no recorte
+        "nFundo": len(fundo),
         "resumo": resumo,
         "rotulos": _rotulos(maiores),
         "maxRotulos": max(0, rotulos),
         "rotulosInteiro": _rotulos(maiores_estado),
         "maxRotulosInteiro": N_ROTULOS if rotulos > 0 else 0,
         "tamanhoRotulo": round(caixa[2] * TAMANHO_ROTULO, 1),
+        "estados": [_estado(u, g, True) for u, g in (estados or {}).items()]
+                   + [_estado(u, g, False) for u, g in (vizinhos or {}).items()],
+        "info": info or None,
+        "unidadeLegenda": unidade_legenda,
     }
 
 

@@ -16,8 +16,8 @@ import streamlit as st
 from comum import (REGIAO, analise, avisar_se_preliminar, brl, consulta, do_escopo, escopo, fonte_linha, nome_escopo,
                    num, pagina, pct, ufs)
 from src.agent.ferramentas import preliminar
-from src.painel import ui
-from src.painel.mapa import dados_mapa, mapa_clicavel, pct_curto
+from src.painel import brasil, ui
+from src.painel.mapa import brl_curto, dados_mapa, mapa_clicavel, pct_curto
 
 pagina("Onde está o mercado", "🗺️", "Onde está o dinheiro?",
        "O déficit de cobertura, que é o que vira seguro, se concentra nas maiores cidades. Escolha um município para "
@@ -115,6 +115,17 @@ ids_int = (list(municipios.loc[(municipios["regiao_intermediaria"] == mun["regia
            if mun is not None else None)
 geo_dados = geometrias(f"SELECT area_id, geometria FROM gold.geo_mapa_publico WHERE {EM}", (UFS,))
 geo_sem = geometrias(f"SELECT area_id, geometria FROM gold.geo_sem_serventia WHERE {EM}", (UFS,))
+
+
+@st.cache_data
+def malha_ufs() -> dict[str, dict]:
+    """Contorno de cada UF (malha do IBGE versionada em data/brasil): as divisas do recorte e os vizinhos em cinza."""
+    return brasil.geometrias(brasil.local())
+
+
+UF_GEO = malha_ufs()
+estados_mapa = dict(estados={u: UF_GEO[u] for u in UFS if u in UF_GEO}, nomes_estados={u: nome_escopo(u) for u in UFS},
+                    vizinhos={u: g for u, g in UF_GEO.items() if u not in UFS}, unidade_legenda="mun.")
 # o que o mapa mostra (V5, D-082): o déficit em R$ ou um indicador de classe em % (o mapa da aba Classes)
 INDICADORES = {"Déficit (R$)": None, "% obrigados": "obrigados", "% na Classe 3": "classe_3"}
 escolha = st.segmented_control("Mostrar no mapa", list(INDICADORES), default="Déficit (R$)", key="f_indicador")
@@ -129,7 +140,13 @@ if indicador is None:
     tres = [rotulo(r.area_nome, r.uf) for r in areas.sort_values(METRICA, ascending=False).head(3).itertuples()]
     resumo = (f"Os maiores déficits estão em {tres[0]}, {tres[1]} e {tres[2]}; {num(n_zero)} dos {num(len(areas))} "
               "municípios com cartório têm déficit zero (em cinza). Clique num município para ver os números dele.")
-    extra = dict(titulo_legenda="Déficit de cobertura do município")
+    # protótipo V3 (D-089): legenda "R$ 150 mil a R$ 300 mil" sem o "R$" (já no título), zero explicado, o total num
+    # cartão e as 3 maiores com o valor
+    extra = dict(titulo_legenda=f"Déficit (falta cobrir) no município, R$ · {NOME}",
+                 fmt_legenda=lambda v: brl_curto(v).removeprefix("R$ "), texto_zero="Zero: nenhum obrigado",
+                 info={"titulo": f"Déficit · {NOME}", "valor": brl(total),
+                       "nota": f"{num(len(areas))} municípios com cartório"},
+                 destaques=3)
     nota_cor = "Cor = déficit do município (suposição do modelo)"
 else:
     por_uf = {u: analise("percentual_por_municipio", uf=u, indicador=indicador) for u in UFS}
@@ -155,7 +172,7 @@ if mun is not None:
 mapa_clicavel(dados_mapa(geo_dados, valores, nomes, textos, fundo=geo_sem.values(),
                          selecionado=foco["area_id"] if foco is not None else None, enquadrar=ids_int,
                          resumo=resumo, legenda_fundo="Sem cartório no cadastro do CNJ",
-                         rotulo_inteiro="Ver o mapa inteiro", **extra),
+                         rotulo_inteiro="Ver o mapa inteiro", **estados_mapa, **extra),
               key=f"mapa_{E}", ao_escolher=_escolher)
 ui.fonte(fonte_linha(["cnj_serventias", "rais_vinculos", "ibge_malha"], nota_cor
                      + ("; SP, RJ e ES com as premissas de MG (estimativa preliminar)" if VARIAS else ""),

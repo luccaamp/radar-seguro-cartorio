@@ -125,6 +125,16 @@ def test_contorno_do_municipio_escolhido_se_ve_em_todas_as_faixas(tema):
         assert delta_e(t["ouro"], t[f]) >= 20, (tema, f, round(delta_e(t["ouro"], t[f]), 1))
 
 
+@pytest.mark.parametrize("tema", ["claro", "escuro"])
+def test_divisas_e_vizinhos_do_mapa(tema):
+    """Protótipo V3 (D-089): a divisa entre os estados se vê sobre a superfície (≥ 3:1, elemento gráfico) e o estado
+    vizinho, em cinza, não se confunde com nenhuma faixa nem com o zero (ΔE ≥ 10)."""
+    t = TEMAS[tema]
+    assert contraste(t["mapa-divisa"], t["superficie"]) >= 3.0, tema
+    for f in ["mapa-zero", *FAIXAS]:
+        assert delta_e(t["mapa-vizinho"], t[f]) >= 10, (tema, f, round(delta_e(t["mapa-vizinho"], t[f]), 1))
+
+
 def test_fundo_do_escuro_e_neutro():
     for f in FUNDOS:
         r, g, b = (int(TEMAS["escuro"][f][i:i + 2], 16) for i in (1, 3, 5))

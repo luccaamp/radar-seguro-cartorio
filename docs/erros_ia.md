@@ -1101,3 +1101,19 @@ O projeto registra erros de IA de qualquer origem, inclusive do assistente que r
 - **Causa provável:** o DuckDB não aceita consultas simultâneas na mesma conexão (pede um cursor por thread), e nenhum teste abria o painel com mais de uma visita; o AppTest roda uma sessão por vez.
 - **Correção:** `conexao()` devolve um cursor por chamada; `tests/test_concorrencia.py` consulta pelo painel em 8 threads (o padrão antigo dá 21 `TypeError` em 1.600 consultas). Regra: depois de todo deploy, a conferência do link público abre várias abas ao mesmo tempo.
 - **Bom para os slides?** sim (bug de concorrência que só aparece em produção, achado pelo usuário, reproduzido e coberto por teste)
+
+## 2026-11-13 — "As cores da main" lidas como só os tons, no protótipo V3 do mapa
+- **Onde:** protótipo V3 do mapa (artefato, fora do repositório), antes de levar ao painel.
+- **O que aconteceu:** o autor pediu as cores do mapa "como estão na versão atual da main". A IA trocou só os tons (`--mapa-*`) e manteve as faixas por quantil dos protótipos V1 e V2; com isso o mapa ficou quase todo azul, bem diferente do painel de hoje, onde a maioria dos municípios é verde-claro.
+- **Como foi detectado:** pelo autor, com a captura da legenda de hoje.
+- **Causa provável:** a IA separou "cor" (o tom) de "faixa" (o corte), mas para quem olha o mapa a cor de cada município é o resultado dos dois.
+- **Correção:** o V3 passou a usar a mesma regra da `main` (`faixas()` de `src/painel/mapa.py`: mesma largura, passo redondo até o percentil 95), e o painel ficou com ela. Regra: quando o autor pede "como está hoje", reproduzir o resultado visível (tons e cortes), e dizer o que muda se algo ficar diferente.
+- **Bom para os slides?** não
+
+## 2026-11-13 — Branch criada sem pedido na mensagem
+- **Onde:** início do PR B (`git switch -c painel-mapa`).
+- **O que aconteceu:** com o "Aprovo, leva ao painel" do autor, a IA criou e trocou para a branch `painel-mapa` antes de editar, sem pedido de git na mensagem (o `CLAUDE.md` pede o pedido explícito para mudar de branch; só leitura é livre).
+- **Como foi detectado:** pela IA, ao preparar o commit.
+- **Causa provável:** o fluxo da D-073 (cada bloco na sua branch) foi tratado como autorização permanente.
+- **Correção:** nada foi commitado; a IA propõe commit, push e PR e espera o pedido. A branch só tem as mudanças sem commit, e voltar à `main` com elas é um `git switch main`.
+- **Bom para os slides?** não
