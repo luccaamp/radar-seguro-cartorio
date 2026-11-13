@@ -55,7 +55,7 @@ def test_chat_alcanca_o_mapa_em_percentual():
 def test_faixas_com_teto_fixo_nao_tem_mais_de_100():
     cor, leg = m.faixas({"a": 0.0, "b": 0.1, "c": 0.2, "d": 0.21, "e": 0.99, "f": 1.0}, fmt=m.pct_curto, teto_fixo=1.0)
     assert cor == {"a": "zero", "b": "1", "c": "1", "d": "2", "e": "5", "f": "5"}
-    assert [x["texto"] for x in leg] == ["Zero", "até 20%", "até 40%", "até 60%", "até 80%", "até 100%"]
+    assert [x["texto"] for x in leg] == ["Zero", "até 20%", "20% a 40%", "40% a 60%", "60% a 80%", "80% a 100%"]
     assert not any("mais de" in x["texto"] for x in leg)
 
 
@@ -68,8 +68,13 @@ def test_pagina_troca_o_mapa_pelo_seletor(painel_demo):
     assert not at.exception
     d = mapa_componente(at)
     assert d["tituloLegenda"].startswith("Cartórios obrigados pelo Prov. 227")
-    assert d["legenda"][-1]["texto"] == "até 100%" and d["rotulos"] == []
+    assert d["legenda"][-1]["texto"] == "80% a 100%" and d["rotulos"] == []
     assert d["resumo"].startswith("44,4% dos cartórios de MG são obrigados")
     at.session_state["f_indicador"] = "Déficit (R$)"
     at.run()
-    assert mapa_componente(at)["tituloLegenda"] == "Déficit de cobertura do município"
+    d = mapa_componente(at)
+    assert d["tituloLegenda"] == "Déficit (falta cobrir) no município, R$ · Minas Gerais"
+    # V3 (D-089): o total num cartão, o zero explicado, as faixas sem o "R$" e os 3 maiores com o valor
+    assert d["info"]["titulo"] == "Déficit · Minas Gerais" and d["legenda"][0]["texto"] == "Zero: nenhum obrigado"
+    assert not any("R$" in x["texto"] for x in d["legenda"]) and sum(1 for r in d["rotulos"] if "valor" in r) == 3
+    assert [e["uf"] for e in d["estados"] if e["ativo"]] == ["MG"]

@@ -33,6 +33,9 @@
   --mapa-zero: #a9b0ab; --mapa-1: #c3e6b4; --mapa-2: #83cdb8; --mapa-3: #45b0c0; --mapa-4: #2178a8; --mapa-5: #21609f;
   --mapa-6: #1e3b7a;
   --mapa-sem: #e6e9e4;
+  /* linhas e vizinhos do mapa (protótipo V3, D-089): municípios em cinza translúcido, divisas dos estados um pouco
+     mais fortes, estados vizinhos em cinza claro, só como referência */
+  --mapa-borda: rgba(70, 80, 76, .5); --mapa-divisa: #3b4642; --mapa-vizinho: #e6e8e4; --mapa-vizinho-borda: #cfd3cc;
   --mapa-tinta-zero: #16201d; --mapa-tinta-1: #16201d; --mapa-tinta-2: #16201d; --mapa-tinta-3: #16201d;
   --mapa-tinta-4: #ffffff; --mapa-tinta-5: #ffffff; --mapa-tinta-6: #ffffff;
   color-scheme: light;
@@ -54,6 +57,7 @@
   --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
   --mapa-zero: #5d6662; --mapa-1: #4f62cc; --mapa-2: #2687b5; --mapa-3: #45b0c0; --mapa-4: #83cdb8; --mapa-5: #c3e6b4;
   --mapa-6: #f8fbe4; --mapa-sem: #242c2a;
+  --mapa-borda: rgba(200, 210, 205, .28); --mapa-divisa: #c9d2ce; --mapa-vizinho: #1b2120; --mapa-vizinho-borda: #313a37;
   --mapa-tinta-zero: #ffffff; --mapa-tinta-1: #ffffff; --mapa-tinta-2: #0f1312; --mapa-tinta-3: #0f1312;
   --mapa-tinta-4: #0f1312; --mapa-tinta-5: #0f1312; --mapa-tinta-6: #0f1312;
   color-scheme: dark;

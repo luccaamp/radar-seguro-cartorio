@@ -155,11 +155,15 @@ def test_mapa_desenha_as_areas_e_a_legenda_sem_erro(nav):
     assert page.locator(".rd-fundo path").count() >= 1
     assert page.locator(".rd-mapa-legenda .rd-mapa-item").count() >= 3
     assert page.locator(".rd-areas path.rd-f-zero").count() > 0                  # o zero neutro aparece
-    assert page.locator(".rd-contorno path").count() == 851 + page.locator(".rd-fundo path").count()
-    rotulos = page.locator(".rd-rotulos text").all_text_contents()   # texto de SVG não tem innerText
-    assert rotulos == ["Belo Horizonte", "Uberlândia", "Uberaba"], rotulos     # os 3 maiores déficits de MG
-    # cada rótulo cai sobre o próprio município (o ponto vem de ponto_interno, em Python)
-    for t in page.locator(".rd-rotulos text").all():
+    # V3 (D-089): a divisa fina de MG por cima, os outros estados em cinza por baixo
+    assert page.locator(".rd-divisas path").count() == 1 and page.locator(".rd-vizinhos path").count() >= 1
+    etiquetas = page.locator(".rd-destaque text").all_text_contents()   # texto de SVG não tem innerText
+    assert [e.split(" · ")[0] for e in etiquetas] == ["▲ Belo Horizonte", "▲ Uberlândia", "▲ Uberaba"], etiquetas
+    assert all(" · R$ " in e for e in etiquetas)                              # os 3 maiores déficits, com o valor
+    assert page.locator(".rd-rotulos > text[data-id]").count() > 3            # e mais nomes, sem se sobrepor
+    assert page.locator(".rd-mapa-info").inner_text().startswith("DÉFICIT · MINAS GERAIS")
+    # cada nome cai sobre o próprio município (o ponto vem de ponto_interno, em Python)
+    for t in page.locator(".rd-rotulos > text[data-id]").all()[:8]:
         alvo = t.get_attribute("data-id")
         t.scroll_into_view_if_needed()   # elementFromPoint só enxerga o que está na tela
         assert t.evaluate("""(t, id) => { const b = t.getBoundingClientRect(), r = t.getRootNode();

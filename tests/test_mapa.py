@@ -94,7 +94,7 @@ def test_faixas_zero_neutro_sem_valor_e_teto_no_quantil():
     assert seq == sorted(seq) and set(seq) == set(range(1, m.N_FAIXAS))
     assert m.faixas({"a": 10.0, "b": 1000.0, **{str(i): 50.0 for i in range(40)}})[0]["b"] == str(m.N_FAIXAS)
     assert legenda[0] == {"faixa": "zero", "texto": "Zero"} and len(legenda) == m.N_FAIXAS + 1
-    assert [x["texto"] for x in legenda[1:3]] == ["até R$ 20,00", "até R$ 40,00"]
+    assert [x["texto"] for x in legenda[1:3]] == ["até R$ 20,00", "R$ 20,00 a R$ 40,00"]   # intervalos (V3, D-089)
     assert legenda[-1]["texto"] == "mais de R$ 100,00"
 
 
@@ -169,12 +169,34 @@ def test_dados_mapa_e_json_e_tem_o_que_o_js_le():
     json.dumps(d, allow_nan=False)                            # JSON válido, sem NaN
     assert set(d) == {"viewBox", "viewBoxInteiro", "rotuloInteiro", "areas", "fundo", "selecionado", "legenda",
                       "tituloLegenda", "legendaFundo", "resumo", "rotulos", "maxRotulos", "rotulosInteiro",
-                      "maxRotulosInteiro", "tamanhoRotulo"}
+                      "maxRotulosInteiro", "tamanhoRotulo", "estados", "info", "unidadeLegenda", "nFundo"}
+    assert d["estados"] == [] and d["info"] is None and d["unidadeLegenda"] == ""
+    assert d["legendaFundo"] == "Sem" and d["nFundo"] == 1
+    assert m.dados_mapa(GEO, {}, {}, {}, legenda_fundo="Sem")["legendaFundo"] == ""   # sem fundo, sem o item
     areas = {a["id"]: a for a in d["areas"]}
     assert areas["1"]["nome"] == "Um" and areas["2"]["nome"] == "2"          # sem nome: o código
     assert areas["1"]["faixa"] == "zero" and areas["4"]["faixa"] == "sem" and areas["4"]["valor"] is None
     assert d["selecionado"] == "2" and len(d["fundo"]) == 1
     assert d["viewBox"].split()[:2] == ["0", "0"]
+
+
+def test_dados_mapa_com_o_desenho_do_v3():
+    """Protótipo V3 (D-089): divisas e nome de cada estado, vizinhos só com a sigla, cartão do total, zero explicado,
+    quantas áreas há em cada faixa e o valor nos 3 maiores (as etiquetas)."""
+    vals = {"1": 10.0, "2": 40.0, "3": 30.0, "4": 0.0}
+    d = m.dados_mapa(GEO, vals, {"1": "Um", "2": "Dois", "3": "Três"}, {},
+                     estados={"MG": quadrado(-50, -20, 2)}, nomes_estados={"MG": "Minas Gerais"},
+                     vizinhos={"GO": quadrado(-52, -16, 2)}, info={"titulo": "Déficit · MG", "valor": "R$ 80"},
+                     texto_zero="Zero: nenhum obrigado", unidade_legenda="mun.", destaques=2)
+    json.dumps(d, allow_nan=False)
+    assert [(e["uf"], e["nome"], e["ativo"]) for e in d["estados"]] == [("MG", "Minas Gerais", True), ("GO", "GO", False)]
+    assert all(e["d"].startswith("M") and {"x", "y"} <= set(e) for e in d["estados"])
+    assert d["info"] == {"titulo": "Déficit · MG", "valor": "R$ 80"} and d["unidadeLegenda"] == "mun."
+    assert d["legenda"][0] == {"faixa": "zero", "texto": "Zero: nenhum obrigado", "n": 1}
+    assert sum(item["n"] for item in d["legenda"]) == len(GEO)                # toda área conta numa faixa
+    assert [(r["texto"], r.get("valor")) for r in d["rotulos"]] == [("Dois", "R$ 40,00"), ("Três", "R$ 30,00"), ("Um", None)]
+    # os vizinhos não mudam o enquadramento: o viewBox é o mesmo sem eles
+    assert d["viewBox"] == m.dados_mapa(GEO, vals, {}, {})["viewBox"]
 
 
 def test_dados_mapa_ignora_selecionado_e_enquadramento_fora_do_mapa():
