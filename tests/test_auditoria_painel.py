@@ -57,9 +57,10 @@ def test_estado_do_mercado(db):
     mapa = mapa_componente(at)
     areas = db.execute("SELECT * FROM gold.mercado_area_publico WHERE uf = 'MG'").df()   # o banco tem o Sudeste
     assert mapa is not None
-    # E3: legenda com título, o zero à parte e as faixas em R$
+    # E3: legenda com título, o zero à parte e as faixas em R$ (desde o V3, D-089: o "R$" fica no título e cada faixa
+    # diz "150 mil a 300 mil")
     assert mapa["tituloLegenda"] and mapa["legenda"][0]["faixa"] == "zero"
-    assert all("R$" in item["texto"] for item in mapa["legenda"][1:])
+    assert "R$" in mapa["tituloLegenda"] and all(" mil" in i["texto"] or " mi" in i["texto"] for i in mapa["legenda"][1:])
     # E5: sem serventia como fundo (não clicável), com legenda própria
     assert mapa["fundo"] and mapa["legendaFundo"]
     # D-078: uma área por município com serventia, todas com o nome do município; somam o déficit de MG
